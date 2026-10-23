@@ -16,18 +16,18 @@ const UT = {
 };
 const COAX = { range: 45, dmg: 5, rof: 0.16, acc: 0.25, tracer: true };
 const GRENADE = { dmg: 60, splash: 4.5, grenade: true };
-const NAVAL = { dmg: 150, splash: 10, at: true };
+const NAVAL = { dmg: 60, splash: 9, at: true };
 const ARTY = { dmg: 60, splash: 5.5 };
 
 const BT = {
-  hq: { name: 'Centro de Comando', hp: 2200, w: 16, d: 14, income: 5, buildR: 90, time: 3 },
+  hq: { name: 'Centro de Comando', hp: 2200, w: 16, d: 14, income: 5, buildR: 90, time: 3, weapon: { range: 50, dmg: 5, rof: 0.15, acc: 0.3, burst: true, tracer: true } },
   depot: { name: 'Depósito de Suprimentos', short: 'Depósito', hp: 700, w: 12, d: 10, cost: 300, time: 14, income: 7, buildR: 50 },
   barracks: { name: 'Quartel', short: 'Quartel', hp: 950, w: 15, d: 10, cost: 400, time: 18, trains: ['rifle', 'bazooka'], buildR: 50 },
   factory: { name: 'Fábrica de Tanques', short: 'Fábrica', hp: 1500, w: 20, d: 16, cost: 850, time: 26, trains: ['sherman'], buildR: 50, req: 'barracks' },
   mgnest: { name: 'Ninho de Metralhadora', short: 'Ninho MG', hp: 600, w: 7, d: 7, cost: 250, time: 10, buildR: 35, weapon: { range: 48, dmg: 5, rof: 0.13, acc: 0.3, burst: true, tracer: true } },
   atgun: { name: 'Canhão AT 57mm', short: 'Canhão AT', hp: 550, w: 7, d: 7, cost: 350, time: 12, buildR: 35, weapon: { range: 65, dmg: 110, rof: 4, acc: 0.7, at: true, proj: 'shell', splash: 3 } },
   hospital: { name: 'Hospital de Campanha', short: 'Hospital', hp: 650, w: 14, d: 12, cost: 350, time: 15, buildR: 45, heal: 4, healR: 32 },
-  bunker: { name: 'Casamata alemã', team: 'de', hp: 450, w: 9, d: 8, weapon: { range: 150, dmg: 4, rof: 0.1, acc: 0.22, burst: true, tracer: true } },
+  bunker: { name: 'Casamata alemã', team: 'de', hp: 450, w: 9, d: 8, weapon: { range: 150, dmg: 4, rof: 0.1, acc: 0.3, burst: true, tracer: true } },
   nest_de: { name: 'Ninho de MG42', team: 'de', hp: 420, w: 7, d: 7, weapon: { range: 55, dmg: 5, rof: 0.09, acc: 0.26, burst: true, tracer: true } },
   dehq: { name: 'Quartel-General Alemão', team: 'de', hp: 4000, w: 26, d: 20 },
 };
@@ -1047,7 +1047,7 @@ function updCivs(dt) {
 /* ---------- apoio naval ---------- */
 function navalStrike(x, z) {
   if (S.naval > 0) return;
-  S.naval = 45;
+  S.naval = 60;
   toast('Destróieres abrindo fogo! Cuidado com fogo amigo.', 'good');
   for (let i = 0; i < 6; i++) {
     later(0.5 + i * 0.45, () => {
