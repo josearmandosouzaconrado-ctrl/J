@@ -100,6 +100,13 @@ const TEX = {
     g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
   }),
 };
+TEX.blood = canvasTex(64, 64, (g) => {
+  for (let i = 0; i < 7; i++) {
+    const x = 32 + (Math.random() - 0.5) * 22, y = 32 + (Math.random() - 0.5) * 22, r = 8 + Math.random() * 12;
+    const gr = g.createRadialGradient(x, y, 1, x, y, r); gr.addColorStop(0, 'rgba(92,14,10,0.85)'); gr.addColorStop(1, 'rgba(70,10,8,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  }
+});
 const decalMats = new Map();
 function decalMat(tex) {
   let m = decalMats.get(tex);
@@ -120,7 +127,13 @@ G.flare = new THREE.CylinderGeometry(0.74, 1, 1, 12);
 G.cyl6 = new THREE.CylinderGeometry(1, 1, 1, 6);
 G.cyl12 = new THREE.CylinderGeometry(1, 1, 1, 12);
 G.dome = new THREE.SphereGeometry(1, 14, 6, 0, Math.PI * 2, 0, Math.PI / 2);
-const VC_MAT = new THREE.MeshLambertMaterial({ vertexColors: true });
+const VC_MAT = new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 14, specular: 0x1a1a18 });
+G.limbT = new THREE.CylinderGeometry(1, 0.78, 1, 10);
+G.limb = new THREE.CylinderGeometry(1, 1, 1, 10);
+G.sph16 = new THREE.SphereGeometry(1, 16, 12);
+G.dome16 = new THREE.SphereGeometry(1, 18, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+G.torso12 = new THREE.CylinderGeometry(1, 0.82, 1, 14);
+G.ico1 = new THREE.IcosahedronGeometry(1, 1);
 /* ---------- detalhe procedural no shader (textura sem imagens, sem repetição visível) ---------- */
 const NOISE_GLSL = `
 float hash3(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
@@ -137,7 +150,8 @@ const DETAIL = {
     float streak = vnoise(vec3(p.x * 16.0, p.y * 1.3, p.z * 16.0));
     float chip = step(0.86, vnoise(p * 23.0));
     diffuseColor.rgb *= 0.88 + 0.2 * n - 0.09 * smoothstep(0.55, 1.0, streak);
-    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.34, 0.33, 0.3), chip * 0.25);`,
+    diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.34, 0.33, 0.3), chip * 0.25);
+    diffuseColor.rgb *= mix(0.6, 1.0, smoothstep(0.0, 1.5, p.y));`,
   // alvenaria de pedra e telhas nas vilas
   stone: `
     vec3 p = vDPos;
@@ -275,15 +289,18 @@ function roleExtras(B, team, role) {
 function soldierBody(B, team, pal, variant) {
   const sk = pal.skin, us = team === 'us', de = team === 'de';
   B.cf = camoFor(team, variant, pal.jacket);
-  B.add(G.box, pal.pants, 0.46, 0.26, 0.3, 0, 1.0, 0);
-  B.add(G.torso, pal.jacket, 0.33, 0.62, 0.2, 0, 1.43, 0);
+  B.add(G.limb, pal.pants, 0.24, 0.3, 0.16, 0, 1.0, 0);
+  B.add(G.torso12, pal.jacket, 0.33, 0.62, 0.2, 0, 1.43, 0);
+  B.add(G.sph16, pal.jacket, 0.27, 0.18, 0.15, 0, 1.56, 0.03);
+  B.add(G.sph16, pal.jacket, 0.29, 0.16, 0.18, 0, 1.18, 0);
   for (const sx of [-1, 1]) {
     B.add(G.sph, pal.jacket, 0.13, 0.12, 0.14, sx * 0.29, 1.69, 0);
     B.add(G.box, de ? pal.collar : 0x5c5a3a, 0.1, 0.11, 0.03, sx * 0.13, 1.56, 0.2);
     B.add(G.box, de ? pal.collar : 0x5a5838, 0.11, 0.1, 0.03, sx * 0.13, 1.24, 0.19);
   }
   B.add(G.cyl8, sk, 0.085, 0.12, 0.085, 0, 1.79, 0.01);
-  B.add(G.sph, sk, 0.19, 0.22, 0.2, 0, 1.99, 0.02);
+  B.add(G.sph16, sk, 0.18, 0.21, 0.19, 0, 1.99, 0.02);
+  B.add(G.box, sk, 0.22, 0.1, 0.18, 0, 1.9, 0.05);
   B.add(G.box, 0xb88a64, 0.055, 0.085, 0.07, 0, 1.96, 0.21);
   B.add(G.box, 0x7a4a3a, 0.085, 0.016, 0.02, 0, 1.9, 0.2);
   for (const sx of [-1, 1]) {
@@ -293,9 +310,9 @@ function soldierBody(B, team, pal, variant) {
     B.add(G.sph, sk, 0.04, 0.06, 0.03, sx * 0.19, 1.98, 0.0);
   }
   if (us) {
-    B.add(G.dome, pal.helm, 0.27, 0.25, 0.29, 0, 2.03, 0);
-    B.add(G.cyl12, pal.helm, 0.3, 0.035, 0.32, 0, 2.03, 0);
-    B.add(G.cyl12, pal.band, 0.276, 0.06, 0.296, 0, 2.09, 0);
+    B.add(G.dome16, pal.helm, 0.235, 0.21, 0.255, 0, 2.04, 0);
+    B.add(G.cyl12, pal.helm, 0.265, 0.03, 0.285, 0, 2.04, 0);
+    B.add(G.cyl12, pal.band, 0.24, 0.05, 0.26, 0, 2.09, 0);
     if (variant === 1) for (const [x, z] of [[0.1, 0.1], [-0.12, -0.05], [0.02, -0.15], [-0.05, 0.14]]) B.add(G.ico, 0x4a5a2c, 0.08, 0.06, 0.08, x, 2.24, z);
     else B.add(G.box, 0xe8e2d2, 0.08, 0.05, 0.02, 0, 2.14, 0.28);
     for (const sx of [-1, 1]) B.add(G.box, pal.web, 0.025, 0.2, 0.025, sx * 0.17, 1.94, 0.05);
@@ -309,16 +326,18 @@ function soldierBody(B, team, pal, variant) {
     if (variant === 1) B.add(G.box, 0x8a7f58, 0.08, 0.75, 0.03, 0, 1.45, 0.22, 0, 0, 0.62);
     B.add(G.box, 0x5f6268, 0.64, 0.09, 0.4, 0, 1.26, 0);
     B.add(G.box, 0x6b6747, 0.22, 0.18, 0.1, -0.08, 1.36, 0.22);
-    B.add(G.box, pal.pack, 0.34, 0.4, 0.15, 0, 1.5, -0.27);
+    B.add(G.box, pal.pack, 0.36, 0.42, 0.17, 0, 1.5, -0.28);
+    B.add(G.box, pal.pack, 0.3, 0.12, 0.05, 0, 1.62, -0.38);
     B.add(G.box, 0x76704d, 0.3, 0.16, 0.12, 0, 1.28, -0.28);
-    B.add(G.cyl8, 0x6d6a4c, 0.08, 0.36, 0.08, 0, 1.74, -0.27, 0, 0, Math.PI / 2);
+    B.add(G.limb, 0x8a7d52, 0.11, 0.42, 0.11, 0, 1.76, -0.27, 0, 0, Math.PI / 2);
+    for (const sx of [-1, 1]) B.add(G.limb, 0x4a3f2a, 0.115, 0.03, 0.115, sx * 0.13, 1.76, -0.27, 0, 0, Math.PI / 2);
     B.add(G.box, 0x4f4f45, 0.13, 0.3, 0.03, 0, 1.2, -0.36);
     B.add(G.cyl8, 0x5e4a30, 0.02, 0.22, 0.02, 0, 1.42, -0.36);
     B.add(G.cyl8, 0x5f6040, 0.075, 0.17, 0.075, 0.28, 1.03, -0.1);
     B.add(G.box, 0x3a3a34, 0.04, 0.3, 0.03, -0.27, 1.0, -0.06);
   } else if (de && SC.biome === 'tropical') {
-    B.add(G.dome, pal.helm, 0.26, 0.22, 0.28, 0, 2.05, 0);
-    B.add(G.cyl12, pal.helm, 0.27, 0.04, 0.29, 0, 2.05, 0);
+    B.add(G.dome16, pal.helm, 0.235, 0.2, 0.255, 0, 2.05, 0);
+    B.add(G.cyl12, pal.helm, 0.245, 0.035, 0.265, 0, 2.05, 0);
     B.add(G.box, 0xd9b52a, 0.06, 0.06, 0.02, 0, 2.17, 0.27);
     B.add(G.box, 0x9a8f68, 0.42, 0.3, 0.03, 0, 1.94, -0.26, 0.2, 0, 0);
     for (const sx of [-1, 1]) B.add(G.box, 0x9a8f68, 0.03, 0.28, 0.24, sx * 0.27, 1.94, -0.05, 0, 0, sx * 0.15);
@@ -328,8 +347,8 @@ function soldierBody(B, team, pal, variant) {
     B.add(G.box, pal.pack, 0.32, 0.32, 0.14, 0, 1.5, -0.26);
     B.add(G.cyl8, 0x4a4c3a, 0.07, 0.16, 0.07, 0.27, 1.02, -0.1);
   } else if (de) {
-    B.add(G.dome, pal.helm, 0.25, 0.24, 0.27, 0, 2.05, 0);
-    B.add(G.flare, pal.helm, 0.3, 0.14, 0.32, 0, 2.0, -0.01, -0.12, 0, 0);
+    B.add(G.dome16, pal.helm, 0.225, 0.22, 0.245, 0, 2.05, 0);
+    B.add(G.flare, pal.helm, 0.27, 0.13, 0.29, 0, 2.0, -0.01, -0.12, 0, 0);
     if (variant === 1) for (const [x, z] of [[0.12, 0.05], [-0.1, -0.08], [0.0, 0.12]]) B.add(G.ico, 0x4e5a35, 0.08, 0.05, 0.08, x, 2.24, z);
     B.add(G.box, pal.collar, 0.34, 0.08, 0.24, 0, 1.76, 0);
     B.add(G.box, pal.web, 0.62, 0.08, 0.38, 0, 1.13, 0);
@@ -360,7 +379,10 @@ const WEAPONS = {
   rifle: (B, team) => {
     const wood = team === 'de' ? 0x5a3a22 : 0x6e4527, met = 0x2a2b2b;
     B.add(G.box, wood, 0.07, 0.15, 0.3, 0, -0.04, -0.44);
+    B.add(G.box, wood, 0.072, 0.1, 0.12, 0, -0.07, -0.3, 0.35, 0, 0);
+    B.add(G.box, 0x2a2b2b, 0.075, 0.16, 0.02, 0, -0.04, -0.6);
     B.add(G.box, wood, 0.06, 0.08, 0.2, 0, -0.005, -0.2);
+    B.add(G.box, 0x2a2b2b, 0.02, 0.06, 0.06, 0, -0.07, -0.08);
     B.add(G.box, met, 0.07, 0.09, 0.32, 0, 0.01, 0.05);
     B.add(G.box, wood, 0.07, 0.07, 0.44, 0, -0.005, 0.4);
     B.add(G.cyl8, met, 0.022, team === 'de' ? 0.42 : 0.34, 0.022, 0, 0.01, team === 'de' ? 0.8 : 0.76, Math.PI / 2, 0, 0);
@@ -409,23 +431,36 @@ function makeSoldier(team, kind) {
   const key = team + variant + 's' + skin + role + (civ ? '' : SC.id);
   const g = new THREE.Group(); g.rotation.order = 'YXZ';
   VM(merged('body' + key, B => { soldierBody(B, team, pal, variant); roleExtras(B, team, role); }), g, 0, 0, 0, true);
-  const thighG = merged('thigh' + key, B => { B.cf = camoFor(team, variant, pal.pants); B.add(G.box, pal.pants, 0.2, 0.5, 0.23, 0, -0.25, 0); B.add(G.box, pal.pants, 0.05, 0.14, 0.12, (team === 'us' ? 0.11 : 0.1), -0.25, 0.02); });
+  const thighG = merged('thigh' + key, B => {
+    B.cf = camoFor(team, variant, pal.pants);
+    B.add(G.sph16, pal.pants, 0.12, 0.11, 0.13, 0, 0, 0);
+    B.add(G.limbT, pal.pants, 0.118, 0.52, 0.13, 0, -0.26, 0);
+    B.add(G.box, pal.pants, 0.05, 0.15, 0.12, 0.11, -0.26, 0.02);
+  });
   const shinG = merged('shin' + key, B => {
-    B.add(G.box, pal.pants, 0.18, 0.3, 0.2, 0, -0.15, 0);
     const jb = team === 'de' && SC.biome !== 'tropical';
-    B.add(G.box, jb ? pal.boot : pal.legging, 0.195, jb ? 0.34 : 0.2, 0.215, 0, jb ? -0.3 : -0.34, 0);
-    B.add(G.box, pal.boot, 0.19, 0.12, 0.3, 0, -0.46, 0.05);
+    B.add(G.sph16, pal.pants, 0.1, 0.1, 0.11, 0, 0, 0.01);
+    B.add(G.limbT, pal.pants, 0.098, 0.3, 0.108, 0, -0.15, 0);
+    B.add(G.limb, jb ? pal.boot : pal.legging, 0.1, jb ? 0.34 : 0.2, 0.11, 0, jb ? -0.3 : -0.35, 0);
+    if (!jb) for (let i = 0; i < 3; i++) B.add(G.limb, 0x6a604a, 0.104, 0.02, 0.114, 0, -0.29 - i * 0.05, 0);
+    B.add(G.box, pal.boot, 0.17, 0.1, 0.25, 0, -0.47, 0.05);
+    B.add(G.sph16, pal.boot, 0.085, 0.06, 0.09, 0, -0.47, 0.17);
+    B.add(G.box, 0x1a1612, 0.18, 0.03, 0.31, 0, -0.52, 0.06);
   });
   const upperG = merged('upper' + key, B => {
     B.cf = camoFor(team, variant, pal.jacket);
     if (role === 'med') { B.add(G.box, 0xf2f0e8, 0.165, 0.12, 0.175, 0, -0.1, 0); B.add(G.box, 0xb3241d, 0.17, 0.035, 0.06, 0, -0.1, 0); }
-    B.add(G.box, pal.jacket, 0.15, 0.38, 0.16, 0, -0.18, 0);
+    B.add(G.sph16, pal.jacket, 0.1, 0.1, 0.1, 0, 0, 0);
+    B.add(G.limbT, pal.jacket, 0.088, 0.38, 0.092, 0, -0.18, 0);
     if (team === 'us' && variant === 2) for (let i = 0; i < 3; i++) for (const sx of [-1, 1]) B.add(G.box, 0xc9b25a, 0.012, 0.025, 0.12, sx * 0.077, -0.1 - i * 0.045, 0);
   });
   const foreG = merged('fore' + key, B => {
     B.cf = camoFor(team, variant, pal.jacket);
-    B.add(G.box, pal.jacket, 0.14, 0.3, 0.15, 0, -0.14, 0);
-    B.add(G.sph, pal.skin, 0.075, 0.08, 0.075, 0, -0.33, 0.02);
+    B.add(G.sph16, pal.jacket, 0.078, 0.078, 0.08, 0, 0, 0);
+    B.add(G.limbT, pal.jacket, 0.076, 0.3, 0.078, 0, -0.15, 0);
+    B.add(G.limb, pal.jacket, 0.07, 0.04, 0.072, 0, -0.29, 0);
+    B.add(G.sph16, pal.skin, 0.055, 0.075, 0.05, 0, -0.35, 0.015);
+    B.add(G.sph16, pal.skin, 0.022, 0.035, 0.022, -0.035, -0.33, 0.05);
   });
   const leg = (x) => {
     const th = new THREE.Group(); th.position.set(x, 0.98, 0); VM(thighG, th, 0, 0, 0, false);
@@ -468,6 +503,12 @@ TEX.track2 = canvasTex(64, 32, (g) => {
     g.fillStyle = '#1a1916'; g.fillRect(x + 13, 0, 2, 32);
   }
 })
+TEX.serial = (txt) => canvasTex(256, 48, (g) => {
+  g.font = 'bold 30px "Courier New", monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillStyle = 'rgba(236,232,214,0.92)'; g.fillText(txt, 128, 26);
+});
+const SERIAL_TEX = {};
+function serialTex(t) { return SERIAL_TEX[t] || (SERIAL_TEX[t] = TEX.serial(t)); }
 TEX.num = (txt) => canvasTex(96, 48, (g) => {
   g.font = 'bold 38px Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
   g.lineWidth = 6; g.strokeStyle = '#f0ede2'; g.strokeText(txt, 48, 26); g.fillStyle = '#7a1c16'; g.fillText(txt, 48, 26);
@@ -543,6 +584,9 @@ function turretSherman(B, s) {
   B.add(G.cyl12, P0, 0.3, 0.06, 0.3, -0.45, 1.1, -0.15);
   for (const x of [-0.75, 0.0]) B.add(G.box, dark, 0.14, 0.14, 0.1, x, 1.13, 0.55);
   crewBust(B, 0.45, 1.55, -0.35, 'us');
+  // cobertor enrolado e amarrado na lateral da torre
+  B.add(G.limb, 0x9a8a55, 0.22, 1.5, 0.22, -1.32, 0.5, -0.5, Math.PI / 2, 0, 0);
+  for (const z of [-1.05, 0.05]) B.add(G.limb, 0x4a3f2a, 0.235, 0.05, 0.235, -1.32, 0.5, z, Math.PI / 2, 0, 0);
   // metralhadora .50 no pino e antena de rádio
   B.add(G.cyl8, met, 0.03, 0.4, 0.03, 0.05, 1.3, -0.75);
   B.add(G.box, met, 0.13, 0.15, 0.48, 0.05, 1.55, -0.6);
@@ -684,6 +728,8 @@ function makeTank(kind) {
       const h = P(G.plane, decalMat(TEX.star), 1.1, 1.1, 1, sx * (s.W / 2 + 0.01), 1.62, -0.6, g, false); h.rotation.y = sx * Math.PI / 2;
     }
     const top = P(G.plane, decalMat(TEX.star), 1.5, 1.5, 1, 0, 2.165, -1.4, g, false); top.rotation.x = -Math.PI / 2;
+    const ser = serialTex('USA 30' + (62000 + Math.floor(Math.random() * 9000)));
+    for (const sx of [-1, 1]) { const d = P(G.plane, decalMat(ser), 2.4, 0.45, 1, sx * (s.W / 2 + 0.012), 1.42, 1.0, g, false); d.rotation.y = sx * Math.PI / 2; }
   } else {
     const hx = kind === 'tiger' ? s.W * 0.49 + 0.02 : s.W / 2 + 0.235, tx = kind === 'tiger' ? 1.42 : 1.39;
     for (const sx of [-1, 1]) {
@@ -691,6 +737,7 @@ function makeTank(kind) {
       const n = P(G.plane, decalMat(NUM_TEX[kind]), 1.0, 0.5, 1, sx * tx, kind === 'tiger' ? 0.62 : 0.5, kind === 'tiger' ? 0.5 : -0.2, tur, false); n.rotation.y = sx * Math.PI / 2;
     }
   }
+  const sh = blob(g, 1); sh.scale.set(s.W * 1.9, s.L * 1.35, 1);
   g.userData = { turret: tur, gun, muzzle, trackMat: tm, wheels: [], L: s.L };
   return g;
 }
@@ -707,17 +754,23 @@ function tarpRoll(B, x, y, z, len, col) { B.add(G.cyl8, col || 0x6a6345, 0.22, l
 const HULL_EXTRA = {
   sherman(B) {
     tarpRoll(B, 0.85, 2.38, -2.2, 1.0);
+    for (let i = 0; i < 4; i++) B.add(G.torus, 0x8a7a50, 0.38 - i * 0.02, 0.38 - i * 0.02, 0.9, -1.0, 2.2 + i * 0.03, -1.3, Math.PI / 2, 0, 0);
+    for (const z of [1.2, 0.6]) for (const sx of [-1, 1]) B.add(G.sph16, 0x3d3e36, 0.04, 0.04, 0.04, sx * 0.62, 2.31, z + 0.3);
+    for (let i = 0; i < 4; i++) B.add(G.box, 0x3f4322, 3.18, 0.02, 0.03, 0, 1.25 + i * 0.25, 0.4 - i * 0.8);
     B.add(G.ico, 0x5e5a3c, 0.6, 0.25, 0.5, 0.75, 2.3, -1.4);
     jerry(B, 1.25, 2.4, -2.95, 0); jerry(B, 1.0, 2.4, -2.95, 0);
     for (let i = 0; i < 6; i++) B.add(G.box, i % 2 ? 0x8a7a58 : 0x7c6e50, 0.55, 0.3, 0.32, -1.25 + (i % 3) * 0.42, 1.66 + Math.floor(i / 3) * 0.28, 3.05 - Math.floor(i / 3) * 0.5, 0.42, 0, 0);
     B.add(G.box, 0x2c2b25, 0.15, 0.15, 0.6, -1.35, 1.95, 2.7, 0.42, 0, 0);
   },
   panzer4(B) {
+    for (let i = 0; i < 7; i++) for (const y of [1.25, 1.85]) B.add(G.sph16, 0x5a5236, 0.045, 0.045, 0.045, -1.05 + i * 0.35, y, 2.64);
+    for (let i = 0; i < 3; i++) B.add(G.torus, 0x6a6040, 0.34, 0.34, 0.8, 0.6, 1.98 + i * 0.03, -1.0, Math.PI / 2, 0, 0);
     tarpRoll(B, 0, 1.98, -2.9, 1.6, 0x5d5a3c);
     for (const x of [-0.9, -0.6]) jerry(B, x, 2.05, -2.2, 0, 0x6b6440);
     B.add(G.box, 0x3d3e36, 0.4, 0.3, 1.0, 0.95, 1.95, -1.9);
   },
   tiger(B) {
+    for (let i = 0; i < 9; i++) for (const y of [1.3, 1.95]) B.add(G.sph16, 0x5a5236, 0.05, 0.05, 0.05, -1.8 + i * 0.45, y, 3.63);
     tarpRoll(B, 0, 2.25, -3.3, 2.2, 0x5d5a3c);
     B.add(G.box, 0x3d3e36, 0.5, 0.35, 1.4, -1.5, 2.2, -2.4);
     for (const x of [1.2, 1.5]) jerry(B, x, 2.28, -2.6, 0, 0x6b6440);
@@ -758,6 +811,7 @@ function vehicleShell(kind, s, hullFn, turretFn, gunFn, gunLen, tracks, wheels, 
   const gun = VM(merged('gun' + kind, gunFn), tur, 0, s.gy, s.gz, true);
   const muzzle = new THREE.Object3D(); muzzle.position.set(0, s.gy, s.gz + gunLen + 0.15); tur.add(muzzle);
   if (decals) decals(g, tur);
+  const sh = blob(g, 1); sh.scale.set((s.W || 3) * 1.9, s.L * 1.35, 1);
   g.userData = { turret: tur, gun, muzzle, trackMat: tm, wheels: ws, L: s.L };
   return g;
 }

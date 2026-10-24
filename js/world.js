@@ -708,7 +708,7 @@ function buildWorld(scene) {
   for (let i = 0; i < nLogs; i++) { const p = freeSpot(-980, SC.coast ? 228 : 600); if (p) logs.push([p[0], p[1], wrr(0, 3)]); }
   if (!SC.coast) for (let i = 0; i < 70; i++) { const x = wrr(-520, 520), z = wrr(232, 330); if (!nearRoad(x, z, 5)) { if (i % 2) rocks.push([x, z, wrr(1.2, 2.2), wrr(0.8, 1.3)]); else logs.push([x, z, wrr(0, 3)]); } }
   const rockCols = { normandy: [0x77736b, 0x6b675f, 0x837e74], med: [0x9a958a, 0x8c877c], desert: [0x9a7f5c, 0x8a6f4f, 0xa88b66], winter: [0x6f6e6a, 0x7d7c78], tropical: [0xb8b0a0, 0x9a9488, 0x6d6a60] }[bio];
-  inst(G.ico, rocks, rockCols, (r, d) => { d.position.set(r[0], groundH(r[0], r[1]) + r[3] * 0.35, r[1]); d.rotation.set(r[2], r[0] % 6, 0); d.scale.set(r[2], r[3], r[2] * 0.9); });
+  inst(G.ico1, rocks, rockCols, (r, d) => { d.position.set(r[0], groundH(r[0], r[1]) + r[3] * 0.35, r[1]); d.rotation.set(r[2], r[0] % 6, 0); d.scale.set(r[2], r[3], r[2] * 0.9); });
   for (const r of rocks) { MAP.coverPts.add({ x: r[0], z: r[1], r: r[2] + 1.3, q: 1.3 }); if (r[2] > 1.4) MAP.obstacles.add({ x: r[0], z: r[1], r: r[2] * 0.8 }); }
   const logList = [];
   for (const l of logs) {

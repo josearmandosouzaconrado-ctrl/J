@@ -220,6 +220,14 @@ function impact(o) {
 }
 const craterMat = new THREE.MeshLambertMaterial({ map: TEX.crater, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3 });
 for (let i = 0; i < 140; i++) { const m = new THREE.Mesh(G.plane, craterMat); m.rotation.x = -Math.PI / 2; m.visible = false; m.renderOrder = 1; scene.add(m); FX.craters.push(m); }
+const bloodMat = new THREE.MeshLambertMaterial({ map: TEX.blood, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 });
+const bloods = []; let bloodIdx = 0;
+for (let i = 0; i < 60; i++) { const m = new THREE.Mesh(G.plane, bloodMat); m.rotation.x = -Math.PI / 2; m.visible = false; m.renderOrder = 1; scene.add(m); bloods.push(m); }
+function blood(x, z, s) {
+  const h = groundH(x, z); if (h < 0.05) return;
+  const m = bloods[bloodIdx]; bloodIdx = (bloodIdx + 1) % bloods.length;
+  m.position.set(x, h + 0.1, z); m.scale.set(s, s, 1); m.rotation.z = rand() * 6; m.visible = true;
+}
 function crater(x, z, s) {
   const h = groundH(x, z); if (h < 0.05) return;
   const m = FX.craters[FX.cidx]; FX.cidx = (FX.cidx + 1) % FX.craters.length;
@@ -391,7 +399,7 @@ function kill(t) {
   t.alive = false; t.hp = 0; t.deathT = S.time; deselect(t);
   if (t.team === 'us') S.lost++; else S.kills++;
   if (t.bar) t.bar.visible = false;
-  if (t.inf) { t.fall = rand() < 0.5 ? 1 : -1; }
+  if (t.inf) { t.fall = rand() < 0.5 ? 1 : -1; blood(t.x, t.z, rr(1.4, 2.2)); }
   else if (t.unit) {
     explosion(t.x, t.y + 1.6, t.z, 1.5);
     charMesh(t.mesh);
@@ -553,6 +561,7 @@ function nearestEnemy(e, range) {
 function downUnit(t, src) {
   t.downed = true; t.hp = 1; t.bleed = 38; t.target = null; t.forced = null; t.order = 'idle'; t.dest = null;
   t.hop = null; t.medic = null; t.dragged = null; t.speedNow = 0; t.covering = null;
+  blood(t.x, t.z, 1.1);
   deselect(t);
   shout(t, t.team === 'us' ? 'MÉDICO!' : 'SANITÄTER!');
   void src;
