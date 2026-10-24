@@ -10,6 +10,11 @@ Abra `index.html` num navegador (de preferência com o celular deitado), ou publ
 2. **Cabeça de praia.** Quando a praia cai, um navio LST encosta, abre as portas da proa e desembarca o Veículo de Construção (trator D7) escoltado por dois Shermans. Leve o veículo para terra firme e toque em **MONTAR BASE**.
 3. **Avanço.** Construa Depósito, Quartel, Fábrica de Tanques, Ninhos de Metralhadora, Canhões AT e Hospital. Capture Vierville, Saint-Laurent, Colleville e Formigny (cada vila dá +6 suprimentos/s), resista aos contra-ataques e destrua o Quartel-General Alemão em Trévières.
 
+### Unidades
+
+- **Aliados:** Fuzileiro, Bazuqueiro, Meia-lagarta M3, M8 Greyhound, Sherman M4, M10 Wolverine e o Veículo de Construção (trator D7 blindado).
+- **Alemães:** Granadeiro, Panzerschreck, Sd.Kfz. 251, StuG III, Panzer IV e Tiger I.
+
 ### Controles
 
 | Ação | Toque | Mouse/teclado |

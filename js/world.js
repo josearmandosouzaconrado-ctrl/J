@@ -262,23 +262,21 @@ function buildWorld(scene) {
   }
   tg.setAttribute('color', new THREE.BufferAttribute(cols, 3));
   tg.computeVertexNormals();
-  const terrain = new THREE.Mesh(tg, new THREE.MeshLambertMaterial({ vertexColors: true }));
+  const terrain = new THREE.Mesh(tg, addDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'terrain', true));
   terrain.receiveShadow = true; scene.add(terrain);
   // borda distante (campos além do mapa)
-  const far = new THREE.Mesh(new THREE.PlaneGeometry(6000, 3000), new THREE.MeshLambertMaterial({ color: 0x55643a }));
+  const farMat = addDetail(new THREE.MeshLambertMaterial({ color: 0x55643a }), 'terrain', true);
+  const far = new THREE.Mesh(new THREE.PlaneGeometry(6000, 3000), farMat);
   far.rotation.x = -Math.PI / 2; far.position.set(0, 14, -2490); scene.add(far);
   for (const sx of [-1, 1]) {
-    const side = new THREE.Mesh(new THREE.PlaneGeometry(2300, 1160), new THREE.MeshLambertMaterial({ color: 0x55643a }));
+    const side = new THREE.Mesh(new THREE.PlaneGeometry(2300, 1160), farMat);
     side.rotation.x = -Math.PI / 2; side.position.set(sx * (700 + 1150), 16, -420); scene.add(side);
   }
 
   /* mar */
-  const wg = new THREE.PlaneGeometry(4200, 2600, 70, 44); wg.rotateX(-Math.PI / 2); wg.translate(0, 0, 1050);
-  const water = new THREE.Mesh(wg, new THREE.MeshPhongMaterial({ color: 0x3c5a62, specular: 0x3a4a4f, shininess: 40, transparent: true, opacity: 0.86, flatShading: true }));
-  water.userData.base = Float32Array.from(wg.attributes.position.array);
-  scene.add(water); MAP.water = water;
-  const foam = new THREE.Mesh(new THREE.PlaneGeometry(SX, 7), new THREE.MeshBasicMaterial({ color: 0xe9efe9, transparent: true, opacity: 0.45, depthWrite: false }));
-  foam.rotation.x = -Math.PI / 2; foam.position.set(0, 0.08, SHORE_Z + 2); scene.add(foam); MAP.foam = foam;
+  const wg = new THREE.PlaneGeometry(4200, 2600, 140, 90); wg.rotateX(-Math.PI / 2); wg.translate(0, 0, 1050);
+  const water = new THREE.Mesh(wg, makeWaterMaterial());
+  water.renderOrder = 2; scene.add(water); MAP.water = water;
 
   const B = new GeoBuilder();      // casas, igrejas, obstáculos de praia, arame
   const R = new GeoBuilder();      // estradas e trincheiras (chão)
@@ -419,9 +417,9 @@ function buildWorld(scene) {
   trunk.castShadow = true; crown.castShadow = true; scene.add(trunk, crown);
 
   /* malhas estáticas mescladas */
-  const statics = new THREE.Mesh(B.build(), new THREE.MeshLambertMaterial({ vertexColors: true }));
+  const statics = new THREE.Mesh(B.build(), addDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'stone', true));
   statics.castShadow = true; statics.receiveShadow = true; scene.add(statics);
-  const ground = new THREE.Mesh(R.build(), new THREE.MeshLambertMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+  const ground = new THREE.Mesh(R.build(), addDetail(new THREE.MeshLambertMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }), 'ground', true));
   ground.receiveShadow = true; scene.add(ground);
 
   /* frota ao largo */
@@ -452,14 +450,65 @@ function buildWorld(scene) {
   MAP.miniBase = mc; MAP.toM = toM;
 }
 
-/* animação do mar */
+/* mar: ondas no shader, profundidade analítica, espuma da arrebentação */
+function makeWaterMaterial() {
+  const depthFn = `
+    float seaDepth(float z){
+      if (z > 330.0) { float t = clamp((z - 330.0) / 24.0, 0.0, 1.0); return (z - 330.0) * 0.045 + 1.2 * t * t * (3.0 - 2.0 * t); }
+      return -(330.0 - z) * 0.03;
+    }`;
+  return new THREE.ShaderMaterial({
+    uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
+      uTime: { value: 0 }, uSun: { value: new THREE.Vector3(150, 260, 110).normalize() },
+      uDeep: { value: new THREE.Color(0x1d3a44) }, uShallow: { value: new THREE.Color(0x4d7f7c) },
+      uSand: { value: new THREE.Color(0x8d8064) }, uFoam: { value: new THREE.Color(0xf0f4f1) }, uSky: { value: new THREE.Color(0xb3bcbe) },
+    }]),
+    vertexShader: depthFn + `
+      uniform float uTime; varying vec3 vW; varying vec3 vN; varying float vDepth;
+      #include <fog_pars_vertex>
+      void main(){
+        vec3 p = position;
+        float d = seaDepth(p.z);
+        float a = 0.12 + 0.4 * clamp(d / 4.0, 0.0, 1.0);
+        float ph1 = p.x * 0.045 + uTime * 1.1, ph2 = p.z * 0.06 - uTime * 1.4, ph3 = (p.x + p.z) * 0.11 + uTime * 2.0;
+        p.y += (sin(ph1) * 0.35 + cos(ph2) * 0.3 + sin(ph3) * 0.12) * a;
+        float dx = (cos(ph1) * 0.35 * 0.045 + cos(ph3) * 0.12 * 0.11) * a;
+        float dz = (-sin(ph2) * 0.3 * 0.06 + cos(ph3) * 0.12 * 0.11) * a;
+        vN = normalize(vec3(-dx, 1.0, -dz));
+        vDepth = d;
+        vec4 wp = modelMatrix * vec4(p, 1.0); vW = wp.xyz;
+        vec4 mvPosition = viewMatrix * wp;
+        gl_Position = projectionMatrix * mvPosition;
+        #include <fog_vertex>
+      }`,
+    fragmentShader: NOISE_GLSL + depthFn + `
+      uniform float uTime; uniform vec3 uSun, uDeep, uShallow, uSand, uFoam, uSky;
+      varying vec3 vW; varying vec3 vN; varying float vDepth;
+      #include <fog_pars_fragment>
+      void main(){
+        float d = seaDepth(vW.z);
+        float r1 = vnoise(vec3(vW.x * 0.32 + uTime * 0.5, uTime * 0.25, vW.z * 0.32));
+        float r2 = vnoise(vec3(vW.x * 1.2 - uTime * 0.4, uTime * 0.45, vW.z * 1.2 + uTime * 0.3));
+        vec3 n = normalize(vN + vec3(r1 - 0.5, 0.0, r2 - 0.5) * 0.32);
+        vec3 V = normalize(cameraPosition - vW);
+        float fres = pow(1.0 - max(dot(n, V), 0.0), 3.0);
+        vec3 col = mix(uSand, uShallow, smoothstep(-0.05, 0.35, d));
+        col = mix(col, uDeep, smoothstep(1.0, 9.0, d));
+        col = mix(col, uSky, fres * 0.55);
+        float spec = pow(max(dot(n, normalize(uSun + V)), 0.0), 80.0);
+        col += vec3(1.0, 0.97, 0.9) * spec * 0.75;
+        float breakers = smoothstep(0.62, 1.0, sin(d * 4.2 + uTime * 1.5 + r1 * 3.0)) * (1.0 - smoothstep(0.8, 3.6, d)) * smoothstep(0.1, 0.5, d);
+        float edge = 1.0 - smoothstep(0.0, 0.09, abs(d - 0.04 - sin(uTime * 0.8) * 0.05));
+        float foam = clamp(breakers * 0.85 + edge * 0.8, 0.0, 1.0) * (0.55 + 0.45 * r2);
+        foam *= step(0.08, fract(vW.x * 0.07 + r1 * 1.5)) * 0.4 + 0.6;
+        col = mix(col, uFoam, foam);
+        float alpha = mix(0.35, 0.93, smoothstep(0.0, 1.2, d)) + foam * 0.4;
+        gl_FragColor = vec4(col, clamp(alpha, 0.0, 1.0));
+        #include <fog_fragment>
+      }`,
+    transparent: true, fog: true,
+  });
+}
 function updateWater(t) {
-  const w = MAP.water; if (!w) return;
-  const p = w.geometry.attributes.position, b = w.userData.base;
-  for (let i = 0; i < p.count; i++) {
-    const x = b[i * 3], z = b[i * 3 + 2];
-    p.array[i * 3 + 1] = Math.sin(x * 0.045 + t * 1.1) * 0.35 + Math.cos(z * 0.06 - t * 1.4) * 0.3;
-  }
-  p.needsUpdate = true; w.geometry.computeVertexNormals();
-  if (MAP.foam) { MAP.foam.position.z = SHORE_Z + 3 + Math.sin(t * 0.8) * 3; MAP.foam.material.opacity = 0.3 + Math.sin(t * 0.8 + 1) * 0.15; }
+  if (MAP.water) MAP.water.material.uniforms.uTime.value = t;
 }

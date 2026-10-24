@@ -8,10 +8,15 @@ const UT = {
   rifle: { name: 'Fuzileiro', plural: 'Fuzileiros', team: 'us', inf: true, hp: 45, speed: 6.5, range: 32, dmg: 7, rof: 1.5, acc: 0.5, vision: 75, cost: 60, time: 5, r: 0.9, grenade: true },
   bazooka: { name: 'Bazuqueiro', plural: 'Bazuqueiros', team: 'us', inf: true, hp: 45, speed: 6.2, range: 38, dmg: 115, rof: 5.5, acc: 0.6, at: true, proj: 'rocket', splash: 2.5, vision: 75, cost: 120, time: 8, r: 0.9 },
   sherman: { name: 'Sherman M4', plural: 'Shermans', team: 'us', tank: true, hp: 520, speed: 9.5, range: 60, dmg: 95, rof: 3.8, acc: 0.72, at: true, proj: 'shell', splash: 6, vision: 85, cost: 450, time: 16, r: 3.4, turn: 1.3, armor: 1, coax: true },
+  halftrack: { name: 'Meia-lagarta M3', plural: 'Meias-lagartas M3', team: 'us', tank: true, light: true, hp: 320, speed: 12, range: 48, dmg: 6, rof: 0.12, acc: 0.3, tracer: true, vision: 82, cost: 250, time: 10, r: 3.0, turn: 1.6, armor: 1 },
+  greyhound: { name: 'M8 Greyhound', plural: 'M8 Greyhounds', team: 'us', tank: true, light: true, hp: 300, speed: 14, range: 54, dmg: 50, rof: 2.2, acc: 0.7, at: true, proj: 'shell', splash: 2.5, vision: 95, cost: 300, time: 11, r: 2.9, turn: 1.8, armor: 0.75, coax: true },
+  m10: { name: 'M10 Wolverine', plural: 'M10 Wolverines', team: 'us', tank: true, hp: 430, speed: 9.5, range: 72, dmg: 145, rof: 4.6, acc: 0.78, at: true, proj: 'shell', splash: 4, vision: 85, cost: 500, time: 18, r: 3.4, turn: 1.2, armor: 0.85 },
   dozer: { name: 'Veículo de Construção', plural: 'Veículos de Construção', team: 'us', vehicle: true, hp: 650, speed: 7, range: 0, vision: 60, r: 3.4, turn: 1.3, armor: 1 },
   gren: { name: 'Granadeiro', plural: 'Granadeiros', team: 'de', inf: true, hp: 42, speed: 6, range: 32, dmg: 7, rof: 1.6, acc: 0.45, vision: 72, r: 0.9, grenade: true },
   pzschreck: { name: 'Panzerschreck', plural: 'Panzerschrecks', team: 'de', inf: true, hp: 42, speed: 5.8, range: 36, dmg: 115, rof: 6, acc: 0.55, at: true, proj: 'rocket', splash: 2.5, vision: 72, r: 0.9 },
   panzer4: { name: 'Panzer IV', plural: 'Panzer IV', team: 'de', tank: true, hp: 520, speed: 8.5, range: 62, dmg: 95, rof: 4, acc: 0.7, at: true, proj: 'shell', splash: 6, vision: 82, r: 3.5, turn: 1.2, armor: 1, coax: true },
+  sdkfz251: { name: 'Sd.Kfz. 251', plural: 'Sd.Kfz. 251', team: 'de', tank: true, light: true, hp: 320, speed: 11, range: 50, dmg: 6, rof: 0.11, acc: 0.3, tracer: true, vision: 80, r: 3.0, turn: 1.5, armor: 1 },
+  stug: { name: 'StuG III', plural: 'StuG III', team: 'de', tank: true, casemate: true, hp: 580, speed: 8, range: 66, dmg: 115, rof: 4.2, acc: 0.75, at: true, proj: 'shell', splash: 5, vision: 80, r: 3.4, turn: 1.1, armor: 1.1 },
   tiger: { name: 'Tiger I', plural: 'Tigers', team: 'de', tank: true, hp: 1100, speed: 6.5, range: 72, dmg: 150, rof: 5, acc: 0.78, at: true, proj: 'shell', splash: 7, vision: 90, r: 4.1, turn: 0.8, armor: 1.5, coax: true },
 };
 const COAX = { range: 45, dmg: 5, rof: 0.16, acc: 0.25, tracer: true };
@@ -23,7 +28,7 @@ const BT = {
   hq: { name: 'Centro de Comando', hp: 2200, w: 16, d: 14, income: 5, buildR: 90, time: 3, weapon: { range: 50, dmg: 5, rof: 0.15, acc: 0.3, burst: true, tracer: true } },
   depot: { name: 'Depósito de Suprimentos', short: 'Depósito', hp: 700, w: 12, d: 10, cost: 300, time: 14, income: 7, buildR: 50 },
   barracks: { name: 'Quartel', short: 'Quartel', hp: 950, w: 15, d: 10, cost: 400, time: 18, trains: ['rifle', 'bazooka'], buildR: 50 },
-  factory: { name: 'Fábrica de Tanques', short: 'Fábrica', hp: 1500, w: 20, d: 16, cost: 850, time: 26, trains: ['sherman'], buildR: 50, req: 'barracks' },
+  factory: { name: 'Fábrica de Tanques', short: 'Fábrica', hp: 1500, w: 20, d: 16, cost: 850, time: 26, trains: ['halftrack', 'greyhound', 'sherman', 'm10'], buildR: 50, req: 'barracks' },
   mgnest: { name: 'Ninho de Metralhadora', short: 'Ninho MG', hp: 600, w: 7, d: 7, cost: 250, time: 10, buildR: 35, weapon: { range: 48, dmg: 5, rof: 0.13, acc: 0.3, burst: true, tracer: true } },
   atgun: { name: 'Canhão AT 57mm', short: 'Canhão AT', hp: 550, w: 7, d: 7, cost: 350, time: 12, buildR: 35, weapon: { range: 65, dmg: 110, rof: 4, acc: 0.7, at: true, proj: 'shell', splash: 3 } },
   hospital: { name: 'Hospital de Campanha', short: 'Hospital', hp: 650, w: 14, d: 12, cost: 350, time: 15, buildR: 45, heal: 4, healR: 32 },
@@ -308,7 +313,7 @@ function removeEnt(e) {
 function damage(t, amt, src, w) {
   if (!t.alive) return;
   let a = amt;
-  if (t.armored) { if (w.at) a /= (t.armor || 1); else if (w.grenade) a *= t.building ? 1 : 0.25; else a *= 0.05; }
+  if (t.armored) { if (w.at) a /= (t.armor || 1); else if (w.grenade) a *= t.building ? 1 : t.def.light ? 0.6 : 0.25; else a *= t.def.light ? 0.3 : 0.05; }
   t.hp -= a; t.hitT = S.time;
   if (src && src.alive && src.team !== t.team && t.unit && !t.target && t.order !== 'move' && t.def.range > 0) t.target = src;
   if (t.hp <= 0) kill(t);
@@ -502,8 +507,9 @@ function updateUnit(u, dt) {
   } else u.speedNow = Math.max(0, u.speedNow - dt * 20);
 
   if (u.tank && u.mesh.userData.turret) {
-    const want = t ? angDiff(Math.atan2(t.x - u.x, t.z - u.z), u.heading) : 0;
-    u.turretYaw = turnTo(u.turretYaw, want, 1.5 * dt);
+    let want = t ? angDiff(Math.atan2(t.x - u.x, t.z - u.z), u.heading) : 0;
+    if (d.casemate) { if (t && !moving) u.heading = turnTo(u.heading, Math.atan2(t.x - u.x, t.z - u.z), d.turn * dt); want = clamp(want, -0.15, 0.15); }
+    u.turretYaw = turnTo(u.turretYaw, want, (d.proj ? 1.5 : 3) * dt);
     u.mesh.userData.turret.rotation.y = u.turretYaw;
   } else if (u.inf && t && !moving) u.heading = turnTo(u.heading, Math.atan2(t.x - u.x, t.z - u.z), 8 * dt);
 
@@ -537,7 +543,7 @@ function tryFire(u, t, dist, dt) {
       u.mgCool = COAX.rof * (rand() < 0.08 ? 8 : 1);
       if (err < 0.3) fireWeapon(u, t, COAX, dist);
     }
-    if (err > 0.07 || u.cool > 0) return;
+    if (err > (d.proj ? 0.07 : 0.25) || u.cool > 0) return;
   } else if (u.cool > 0) return;
   if (u.inf && Math.abs(angDiff(Math.atan2(t.x - u.x, t.z - u.z), u.heading)) > 0.4) return;
   u.cool = d.rof * (0.85 + rand() * 0.3);
@@ -969,6 +975,10 @@ function spawnWave(n) {
   if (n >= 2) for (let i = 0; i < Math.min(Math.floor((n + 1) / 2), 4); i++) comp.push('panzer4');
   if (n >= 4 && n % 2 === 0) comp.push('tiger');
   if (n >= 8) comp.push('tiger');
+  if (n >= 2) comp.push('sdkfz251');
+  if (n >= 5) comp.push('sdkfz251');
+  if (n >= 3) comp.push('stug');
+  if (n >= 6) comp.push('stug');
   comp.forEach((k) => {
     const u = spawnUnit(k, src.x + rr(-22, 22), src.z + rr(10, 30), { heading: 0 });
     u.order = 'amove'; u.dest = { x: tgt.x + rr(-18, 18), z: tgt.z + rr(-18, 18) }; u.wave = true;
@@ -998,7 +1008,21 @@ function updateBase(dt) {
 }
 
 /* ---------- guarnições alemãs ---------- */
+const GAR_EXTRA = { 'Vierville-sur-Mer': ['sdkfz251'], 'Saint-Laurent-sur-Mer': ['stug'], 'Formigny': ['sdkfz251', 'stug'], 'Trévières': ['stug', 'sdkfz251'] };
+function spawnWrecks() {
+  const put = (mesh, x, z, ry, rx, rz, sink) => {
+    const h = groundH(x, z); mesh.position.set(x, Math.max(h, -0.6) - sink, z); mesh.rotation.order = 'YXZ'; mesh.rotation.set(rx, ry, rz);
+    charMesh(mesh); scene.add(mesh);
+    FX.emitters.push({ x, y: Math.max(h, 0) + 2, z, until: 1e12, t: rand(), fire: rand() < 0.5, s: 0.7 });
+  };
+  put(makeTank('sherman'), -330, 292, 2.6, 0.05, 0.12, 0.2);
+  put(makeTank('sherman'), 95, 300, -2.9, -0.04, -0.1, 0.25);
+  put(makeLCVP(0), -120, 334, 0.4, 0.1, 0.2, 0.35);
+  put(makeLCVP(0), 300, 332, -0.5, -0.08, -0.22, 0.3);
+  put(makeLCVP(0), -470, 336, 2.8, 0.06, 0.28, 0.4);
+}
 function spawnGermans() {
+  spawnWrecks();
   for (const [x, z] of MAP.bunkerSpots) { const b = spawnBuilding('bunker', x, z, { complete: true }); b.alwaysSeen = true; S.bunkers.push(b); }
   const bluff = MAP.trenchSpots.filter(p => p[1] > 150).sort(() => rand() - 0.5).slice(0, 18);
   for (const p of bluff) spawnUnit('gren', p[0], p[1], { order: 'hold' });
@@ -1013,6 +1037,7 @@ function spawnGermans() {
     for (let i = 0; i < ps; i++) at('pzschreck');
     for (let i = 0; i < p4; i++) at('panzer4');
     for (let i = 0; i < tig; i++) at('tiger');
+    for (const k of (GAR_EXTRA[t.name] || [])) at(k);
     if (nest) spawnBuilding('nest_de', t.x + 8, t.z + 9, { complete: true });
     if (t.cp) S.cps.push(makeCP(t));
     if (t.hq) {
