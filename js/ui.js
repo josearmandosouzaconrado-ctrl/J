@@ -218,7 +218,7 @@ const UI = {
       const label = i === 0 ? 'Automático' : 'Espaço ' + i;
       if (mode === 'save' && i === 0) return '';
       const info = s ? `${esc(s.name)} • Nv ${s.level} ${esc(s.race)} ${esc(s.cls)}<br><span class="dim">${esc(s.loc)} • ${new Date(s.date).toLocaleString('pt-BR')}</span>` : '<span class="dim">Vazio</span>';
-      return `<div class="slot"><div><b>${label}</b><br>${info}</div>${mode === 'load' ? (s ? `<button class="sbtn" ${f(() => Game.loadGame(i))}>Carregar</button>` : '') : `<button class="sbtn" ${f(() => { Game.saveGame(i); this.slots('save'); })}>Salvar</button>`}${s ? `<button class="sbtn small danger" ${f(() => this.confirm('Apagar este jogo salvo?', () => { localStorage.removeItem(SAVE_PREFIX + i); this.slots(mode); }, () => this.slots(mode)))}>✕</button>` : ''}</div>`;
+      return `<div class="slot"><div><b>${label}</b><br>${info}</div>${mode === 'load' ? (s ? `<button class="sbtn" ${f(() => Game.loadGame(i))}>Carregar</button>` : '') : `<button class="sbtn" ${f(() => { Game.saveGame(i); this.slots('save'); })}>Salvar</button>`}${s ? `<button class="sbtn small danger" ${f(() => this.confirm('Apagar este jogo salvo?', () => { try { localStorage.removeItem(SAVE_PREFIX + i); } catch (e) { } this.slots(mode); }, () => this.slots(mode)))}>✕</button>` : ''}</div>`;
     }).join('');
     const backFn = () => Game.started ? this.openMenu('system') : this.showTitle();
     const el = this.show('slots', `<div class="panel"><div class="ptitle">${mode === 'load' ? 'Carregar Jogo' : 'Salvar Jogo'}</div><div class="slots">${rows}</div><button class="mbtn" ${f(backFn)}>Voltar</button></div>`, { onBack: backFn });
