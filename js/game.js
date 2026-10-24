@@ -119,8 +119,8 @@ const Game = {
   findFree(a) {
     const L = this.level || this.world;
     if (!collides(L, a.x, a.y, a.r)) return;
-    for (let r = 1; r < 30; r++) for (let k = 0; k < 16; k++) {
-      const ang = k / 16 * Math.PI * 2, x = a.x + Math.cos(ang) * r * 8, y = a.y + Math.sin(ang) * r * 8;
+    for (let r = 1; r < 120; r++) for (let k = 0; k < 16 + r; k++) {
+      const ang = k / (16 + r) * Math.PI * 2, x = a.x + Math.cos(ang) * r * 8, y = a.y + Math.sin(ang) * r * 8;
       if (!collides(L, x, y, a.r) && !TWATER[L.tileAt(Math.floor(x / 16), Math.floor(y / 16))]) { a.x = x; a.y = y; return; }
     }
   },
@@ -504,6 +504,21 @@ const Game = {
         break;
       }
     }
+    // mercador viajante na estrada
+    const trav = this.actors.find(a => a.traveler);
+    if (trav && dist(trav.x, trav.y, P.x, P.y) > 700) this.actors.splice(this.actors.indexOf(trav), 1);
+    else if (!trav && !night && W.tileAt(ptx, pty) === T.ROAD && Math.random() < 0.04) {
+      const s = W.nearestSettlement(ptx, pty);
+      for (let k = 0; k < 20; k++) {
+        const ang = Math.random() * Math.PI * 2, r = 12 + Math.random() * 6;
+        const tx = Math.round(ptx + Math.cos(ang) * r), ty = Math.round(pty + Math.sin(ang) * r);
+        if (W.tileAt(tx, ty) !== T.ROAD || W.solidAt(tx, ty)) continue;
+        const npc = new NPC({ role: 'merchant', x: tx, y: ty }, s, new RNG(Math.floor(Math.random() * 1e9)));
+        npc.traveler = true; npc.name = 'Mercador Viajante ' + npc.name.split(' ')[0];
+        this.actors.push(npc);
+        break;
+      }
+    }
     // dragões
     this.dragonT -= 1.2;
     if (this.dragonT <= 0) {
@@ -673,7 +688,7 @@ const Game = {
     Sfx.play('levelup');
     this.centerMsg('NÍVEL ' + this.player.level + '!', 'Abra o menu para escolher seu atributo e talento.');
     this.burst(this.player.x, this.player.y - 10, '#ffe060', 30, 90);
-    setTimeout(() => { if (!UI.current && this.started && !this.player.dead) UI.levelUp(); }, 900);
+    setTimeout(() => { const P = this.player; if (!UI.current && this.started && !P.dead && !this.actors.some(a => a.target === P && !a.dead && a.team === 'enemy')) UI.levelUp(); }, 900);
   },
   victory() {
     this.centerMsg('VORTHAX FOI DERROTADO!', 'Eldoria está salva!');

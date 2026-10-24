@@ -205,7 +205,7 @@ const Combat = {
     dmg = Math.max(1, Math.round(dmg));
     t.hp -= dmg;
     t.flash = 0.1;
-    if (o.kb && !(t.def && t.def.boss) && !t.fly) { t.kbx += o.kb.x; t.kby += o.kb.y; }
+    if (o.kb && !(t.def && t.def.boss) && !t.fly) { const km = t.def && (t.def.r >= 7 || t.def.hp >= 100) ? 0.25 : t === P ? 0.8 : 1; t.kbx += o.kb.x * km; t.kby += o.kb.y * km; }
     if (o.burn) t.addFx('burn', 3, o.burn);
     if (o.poison) t.addFx('poison', 4, o.poison);
     if (o.slow) { t.slowV = Math.min(t.slowT > 0 ? t.slowV : 1, 1 - o.slow); t.slowT = Math.max(t.slowT, 2.5); }
@@ -267,8 +267,9 @@ class Monster extends Actor {
     const L0 = BOSS_L0[id] || 1;
     const hpMul = d.boss ? Math.max(0.55, 1 + 0.08 * (this.lvl - L0)) : 1 + 0.12 * (this.lvl - 1);
     const dmgMul = d.boss ? Math.max(0.6, 1 + 0.07 * (this.lvl - L0)) : 1 + 0.1 * (this.lvl - 1);
-    this.maxHp = this.hp = Math.round(d.hp * hpMul * (opts.hpMul || 1));
-    this.dmg = d.dmg * dmgMul * (opts.dmgMul || 1);
+    const gH = d.ally ? 1 : d.boss ? 1.2 : 1.35, gD = d.ally ? 1 : 1.4;
+    this.maxHp = this.hp = Math.round(d.hp * hpMul * gH * (opts.hpMul || 1));
+    this.dmg = d.dmg * dmgMul * gD * (opts.dmgMul || 1);
     this.spd = d.spd * (opts.spdMul || 1);
     this.r = d.r || 5; this.fly = !!d.fly; this.ai = d.ai; this.aggro = d.aggro || 130;
     this.passive = !!d.passive;
@@ -327,7 +328,7 @@ class Monster extends Actor {
       this.swingT = 0.2;
       const reach = this.r + t.r + 12 * this.sizeScale;
       Game.fx.push({ kind: 'swing', x: this.x, y: this.y - 6 * this.sizeScale, ang, arc: 1.6, r: reach, t: 0, dur: 0.18, color: '#ffffff' });
-      if (dist(this.x, this.y, t.x, t.y) <= reach + 6) {
+      if (dist(this.x, this.y, t.x, t.y) <= reach + 16) {
         const el = d.elem && Math.random() < 0.35 ? d.elem : 'phys';
         Combat.damage(t, this.dmg * (0.85 + Math.random() * 0.3), { src: this, elem: el, poison: d.poison ? d.poison * (1 + this.lvl * 0.1) : 0, kb: { x: Math.cos(ang) * (this.boss ? 160 : 90), y: Math.sin(ang) * (this.boss ? 160 : 90) }, slow: el === 'frost' ? 0.3 : 0, burn: el === 'fire' ? this.dmg * 0.2 : 0 });
       }

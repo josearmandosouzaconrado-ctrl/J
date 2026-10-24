@@ -50,6 +50,7 @@ class Player extends Actor {
     p.perks = new Set(o.perks || []);
     p.buffs = o.buffs || [];
     p.cds = o.cds || {};
+    for (const sl of EQUIP_SLOTS) if (p.equip[sl]) { const inst = p.inv.find(i => i.u === p.equip[sl].u); if (inst) p.equip[sl] = inst; else p.inv.push(p.equip[sl]); }
     p.recalc();
     return p;
   }
@@ -294,7 +295,6 @@ class Player extends Actor {
     let cd = d ? d.cd : 0.33;
     if (this.perks.has('rapido')) cd *= 0.85;
     if (this.buffVal('furia')) cd *= 0.7;
-    if (this.st < 2) { Game.toast('Sem vigor!', '#80ff80'); this.atkT = 0.3; return; }
     const range = wc === 'bow' ? 230 : wc === 'staff' ? 200 : (d ? d.range : 14) + 26;
     const tgt = this.autoAim(range);
     const ang = tgt ? angleTo(this.x, this.y - 6, tgt.x, tgt.y - 6 - tgt.z * 0.6) : this.face;
@@ -309,11 +309,11 @@ class Player extends Actor {
         const a = ang + (n > 1 ? (i - 0.5) * 0.14 : 0);
         Combat.projectile(this, this.x, this.y - 8, a, 'arrow', pk.dmg, { crit: pk.crit, spd: 320, life: 0.9, weapon: true, kind2: 'bow' });
       }
-      this.st -= 3; Sfx.play('bow');
+      this.st = Math.max(0, this.st - 1); Sfx.play('bow');
     } else if (wc === 'staff') {
       const pk = this.rollDamage('staff');
       Combat.projectile(this, this.x, this.y - 10, ang, 'bolt', pk.dmg, { crit: pk.crit, spd: 230, life: 0.9, elem: 'magic', magic: true, color: d.icon.g || '#80a0ff', weapon: true });
-      this.st -= 2; Sfx.play('zap');
+      Sfx.play('zap');
       this.train('destruicao', 0.4);
     } else {
       const arc = d ? d.arc : 0.9, reach = (d ? d.range : 13) + 6;
@@ -324,11 +324,11 @@ class Player extends Actor {
       const hits = Combat.melee(this, ang, arc * 1.6, reach, (a) => {
         const pk = this.rollDamage('melee');
         const ka = angleTo(this.x, this.y, a.x, a.y);
-        Combat.damage(a, pk.dmg, { src: this, crit: pk.crit, drain, kb: { x: Math.cos(ka) * (two ? 200 : 120), y: Math.sin(ka) * (two ? 200 : 120) }, stun: two && pk.crit ? 0.5 : 0 });
+        Combat.damage(a, pk.dmg, { src: this, crit: pk.crit, drain, kb: { x: Math.cos(ka) * (two ? 150 : 60), y: Math.sin(ka) * (two ? 150 : 60) }, stun: two && pk.crit ? 0.5 : 0 });
         if (!a.dead) this.applyExtras(a);
       });
       if (hits) { this.train('combate', 1.2 + hits * 0.4); Game.hitstop = 0.04; }
-      this.st -= two ? 7 : 4;
+      this.st = Math.max(0, this.st - (two ? 3 : 1));
       Sfx.play('swing');
     }
   }

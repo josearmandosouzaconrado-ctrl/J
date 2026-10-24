@@ -62,6 +62,9 @@ const UI = {
   showHUD(on) { this.hud.classList.toggle('hidden', !on); this.controls.classList.toggle('hidden', !on); },
   fade() { const f = document.getElementById('fade'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); },
   toast(text, color = '#f0e0c0', icon) {
+    const now = performance.now();
+    if (this.lastToast === text && now - this.lastToastT < 1500) return;
+    this.lastToast = text; this.lastToastT = now;
     const d = document.createElement('div');
     d.className = 'toast';
     d.innerHTML = (icon ? this.icon(icon) : '') + `<span style="color:${color}">${esc(text)}</span>`;
@@ -320,7 +323,7 @@ const UI = {
         break;
       case 'general': text = `<b>${esc(b.name)}</b>. Tenho de tudo um pouco!`; opts.push({ label: 'Comprar / Vender', fn: () => this.shop(b, 'general') }); opts.push({ label: 'Cozinhar no fogão', fn: () => this.craft('cook', b) }); break;
       case 'alchemist': text = `<b>${esc(b.name)}</b>. Poções, ervas e elixires.`; opts.push({ label: 'Comprar / Vender', fn: () => this.shop(b, 'alchemist') }); opts.push({ label: 'Usar bancada de alquimia', fn: () => this.craft('alchemy', b) }); break;
-      case 'magic': text = `<b>${esc(b.name)}</b>. Tomos arcanos, cajados e joias encantadas.`; opts.push({ label: 'Comprar / Vender', fn: () => this.shop(b, 'magic') }); break;
+      case 'magic': text = `<b>${esc(b.name)}</b>. Tomos arcanos, cajados e joias encantadas.`; opts.push({ label: 'Comprar / Vender', fn: () => this.shop(b, 'magic') }); opts.push({ label: 'Encantar equipamento', fn: () => this.enchant(b) }); break;
       case 'temple':
         text = 'Que a luz dos deuses te proteja, viajante.';
         opts.push({ label: 'Pedir cura (grátis)', fn: () => { P.hp = P.stat.maxHp; P.fx = []; Sfx.play('learn'); Game.toast('Você foi curado.', '#80ff80'); this.building(b); } });
@@ -441,6 +444,28 @@ const UI = {
     render();
   },
 
+  enchant(b) {
+    const P = Game.player;
+    const gems = ['ametista', 'rubi', 'safira', 'esmeralda', 'diamante'];
+    const render = () => {
+      const f = this.reg();
+      const gem = gems.find(g => P.count(g) > 0);
+      const list = P.inv.filter(it => { const d = ITEMS[it.id]; return d.slot && !d.unique && (!it.ench || it.ench.length < 3); });
+      const cost = it => 120 + P.level * 35 * ((it.ench ? it.ench.length : 0) + 1);
+      const rows = list.map(it => `<div class="crow">${this.icon(Items.icon(it))}<div class="cinfo"><b style="color:${Items.color(it)}">${esc(Items.name(it))}</b>${P.isEquipped(it) ? ' <span class="good">(E)</span>' : ''}<br><small>${(it.ench || []).map(e => ENCHANTS[e.k].desc(e.v)).join(' • ') || 'Sem encantamentos'}</small></div>${gem ? `<button class="sbtn gold" ${f(() => {
+        const c = cost(it); if (P.gold < c) return Game.toast('Ouro insuficiente.', '#ff8080');
+        const g = gems.find(g => P.count(g) > 0); P.removeItem(g, 1); P.gold -= c;
+        const lvl = P.level + (g === 'diamante' ? 8 : 0);
+        Items.addEnchants(it, 1, lvl, new RNG((Date.now() ^ hashStr(it.u)) & 0xffffff)); it.r = Math.min(4, Math.max(it.r || 0, it.ench.length + 1));
+        P.recalc(); Sfx.play('learn'); Game.toast('Encantado: ' + Items.name(it), '#c080ff'); render();
+      })}>${cost(it)}o</button>` : ''}</div>`).join('') || '<div class="dim pad">Nenhum equipamento pode ser encantado.</div>';
+      const el = this.show('enchant', `<div class="panel wide"><div class="ptitle">Altar de Encantamento <span class="gold right">${fmt(P.gold)} ouro</span></div>
+        <div class="dim">Cada encantamento consome 1 gema (${gems.map(g => ITEMS[g].name + ': ' + P.count(g)).join(', ')}). Diamantes geram encantamentos mais fortes. Máximo 3 por item.</div>
+        <div class="clist">${rows}</div><button class="mbtn small" ${f(() => this.building(b))}>Voltar</button></div>`, { onBack: () => this.building(b) });
+      this.bind(el, f);
+    };
+    render();
+  },
   // ---------- Loja ----------
   shop(b, kind) {
     const P = Game.player;
