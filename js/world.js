@@ -13,7 +13,7 @@ const WIRE_GAPS = [-400, -220, -60, 180, 330];
 
 const SCENARIOS = {
   omaha: {
-    id: 'omaha', biome: 'normandy', coast: true, bluff: 17, hills: 1, seed: 61944,
+    id: 'omaha', trenches: ['wn', 'hqarc'], biome: 'normandy', coast: true, bluff: 17, hills: 1, seed: 61944,
     title: 'DIA D', subtitle: 'Praia de Omaha, Normandia', card: 'Normandia', when: '6 jun 1944',
     eyebrow: '6 DE JUNHO DE 1944 · 06:30 · SETOR DOG GREEN',
     brief: ['Você comanda a primeira onda da 29ª Divisão de Infantaria. As barcaças Higgins vão abrir a rampa sob o fogo das casamatas alemãs no alto da falésia. Destrua as quatro casamatas para assegurar a praia.',
@@ -22,7 +22,7 @@ const SCENARIOS = {
     sky: 0x9ba6ab, fog: [300, 1200], sun: 0xfff0d8, sunI: 0.8, hemi: [0xcad4da, 0x4a4632, 0.8], skyTop: 0x7f8d96, skyHor: 0xb6b8b0,
   },
   africa: {
-    id: 'africa', biome: 'desert', coast: false, bluff: 10, hills: 1.6, seed: 1943,
+    id: 'africa', trenches: ['wn'], biome: 'desert', coast: false, bluff: 10, hills: 1.6, seed: 1943,
     title: 'KASSERINE', subtitle: 'Passo de Kasserine, Tunísia', card: 'Norte da África', when: 'fev 1943',
     eyebrow: '19 DE FEVEREIRO DE 1943 · II CORPO DOS EUA',
     brief: ['O Afrika Korps de Rommel rompeu as linhas americanas na Tunísia. Seu comboio de caminhões chega pela estrada do deserto: desembarque a infantaria e destrua as quatro posições alemãs que dominam o passo.',
@@ -33,7 +33,7 @@ const SCENARIOS = {
     paint: { us: { paint: 0x6e6a43, camo: null }, de: { paint: 0xab9461, camo: [0x8f7a4c, 0xb9a678] } },
   },
   italia: {
-    id: 'italia', biome: 'med', coast: true, bluff: 9, hills: 1.3, seed: 1944,
+    id: 'italia', trenches: ['wn', 'line2', 'hqring'], biome: 'med', coast: true, bluff: 9, hills: 1.3, seed: 1944,
     title: 'ANZIO', subtitle: 'Desembarque em Anzio, Itália', card: 'Itália', when: '22 jan 1944',
     eyebrow: '22 DE JANEIRO DE 1944 · OPERAÇÃO SHINGLE',
     brief: ['A 3ª Divisão de Infantaria desembarca atrás da Linha Gustav, nas praias de Anzio. As casamatas alemãs nas dunas precisam cair antes que os reforços cheguem.',
@@ -42,7 +42,7 @@ const SCENARIOS = {
     sky: 0xa9bacb, fog: [320, 1250], sun: 0xfff4e2, sunI: 0.9, hemi: [0xd4dde6, 0x56523a, 0.78], skyTop: 0x7896b3, skyHor: 0xc6ccd0,
   },
   ardenas: {
-    id: 'ardenas', biome: 'winter', coast: false, bluff: 12, hills: 2.2, seed: 1212,
+    id: 'ardenas', trenches: ['wn'], biome: 'winter', coast: false, bluff: 12, hills: 2.2, seed: 1212,
     title: 'ARDENAS', subtitle: 'Batalha das Ardenas, Bélgica', card: 'Ardenas', when: 'dez 1944',
     eyebrow: '26 DE DEZEMBRO DE 1944 · RUMO A BASTOGNE',
     brief: ['Bastogne está cercada. O comboio do 3º Exército de Patton chega pela estrada coberta de neve: a infantaria desce dos caminhões e precisa destruir as quatro posições alemãs na floresta.',
@@ -53,7 +53,7 @@ const SCENARIOS = {
     paint: { us: { paint: 0x4f5428, camo: [0xd9dbd6, 0xc5c8c2] }, de: { paint: 0xd6d8d2, camo: [0x9a8a58, 0x6d6a5a] } },
   },
   pacifico: {
-    id: 'pacifico', biome: 'tropical', coast: true, bluff: 8, hills: 1.4, seed: 1544, mountain: [330, -560, 58, 150],
+    id: 'pacifico', trenches: ['wn', 'mountain', 'hqring'], biome: 'tropical', coast: true, bluff: 8, hills: 1.4, seed: 1544, mountain: [330, -560, 58, 150],
     title: 'SAIPAN', subtitle: 'Ilhas Marianas, Pacífico', card: 'Pacífico', when: '15 jun 1944',
     eyebrow: '15 DE JUNHO DE 1944 · 2ª E 4ª DIVISÕES DE FUZILEIROS NAVAIS',
     brief: ['Os Fuzileiros Navais desembarcam nas praias de coral de Saipan. Casamatas japonesas de troncos de coqueiro dominam a praia, e a Marinha Imperial vai mandar contratorpedeiros e caças Zero contra a sua frota.',
@@ -522,8 +522,18 @@ function buildWorld(scene) {
 
   /* trincheiras */
   const zig = (x0, x1, zc, amp, step) => { const p = []; let i = 0; for (let x = x0; x <= x1; x += step, i++) p.push([x, zc + (i % 2 ? amp : -amp) + wrr(-1.5, 1.5)]); return p; };
-  const ring = (cx, cz, r, n) => { const p = []; for (let i = 0; i <= n; i++) { const a = i / n * Math.PI * 2; p.push([cx + Math.cos(a) * r, cz + Math.sin(a) * r * 0.85]); } return p; };
-  MAP.trenchLines = [zig(-480, 480, 170, 3.5, 16), zig(-430, 430, -330, 3.5, 18), ring(60, -850, 125, 26)];
+  const arc = (cx, cz, r, a0, a1, n) => { const p = []; for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n; p.push([cx + Math.cos(a) * r, cz + Math.sin(a) * r * 0.85]); } return p; };
+  // trincheiras só onde a história registra muitas (veja TRENCHES em cada cenário)
+  const T = SC.trenches || ['wn'], hq = TOWN_POS[4];
+  MAP.trenchLines = [];
+  if (T.includes('wn')) for (const [bx, bz] of MAP.bunkerSpots) MAP.trenchLines.push(zig(bx - 42, bx + 42, bz - 16, 3.5, 12));
+  if (T.includes('line2')) MAP.trenchLines.push(zig(-430, 430, -330, 3.5, 18));
+  if (T.includes('hqring')) MAP.trenchLines.push(arc(hq.x, hq.z, 125, 0, Math.PI * 2, 26));
+  if (T.includes('hqarc')) MAP.trenchLines.push(arc(hq.x, hq.z, 125, Math.PI * 0.15, Math.PI * 0.85, 10));
+  if (T.includes('mountain') && SC.mountain) {
+    const [mx, mz] = SC.mountain;
+    MAP.trenchLines.push(arc(mx, mz, 100, Math.PI * 0.05, Math.PI * 0.95, 12), arc(mx, mz, 62, Math.PI * 0.2, Math.PI * 1.1, 9), arc(mx, mz, 100, Math.PI * 1.25, Math.PI * 1.75, 6));
+  }
   const bags = [];
   for (const line of MAP.trenchLines) {
     R.ribbon(line, 2.8, 0.1, bio === 'winter' ? 0x4a443c : bio === 'desert' ? 0x7d6a4c : 0x3a2e22);

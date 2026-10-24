@@ -1391,8 +1391,14 @@ function spawnGermans() {
   const bluff = MAP.trenchSpots.filter(p => p[1] > 150).sort(() => rand() - 0.5).slice(0, 18);
   for (const p of bluff) spawnUnit('gren', p[0], p[1], { order: 'hold' });
   const line2 = MAP.trenchSpots.filter(p => p[1] < -300 && p[1] > -360).sort(() => rand() - 0.5);
-  line2.slice(0, 12).forEach(p => spawnUnit('gren', p[0], p[1], { order: 'hold' }));
-  line2.slice(12, 14).forEach(p => spawnBuilding('nest_de', p[0], p[1] - 4, { complete: true }));
+  if (line2.length >= 14) {
+    line2.slice(0, 12).forEach(p => spawnUnit('gren', p[0], p[1], { order: 'hold' }));
+    line2.slice(12, 14).forEach(p => spawnBuilding('nest_de', p[0], p[1] - 4, { complete: true }));
+  } else {
+    // sem linha de trincheiras: postos avançados nas sebes, pedras e casas
+    for (let i = 0; i < 12; i++) { const x = rr(-420, 420), z = -330 + rr(-14, 14), c = findCover(x, z, x, z - 1, x, z + 40, 14, -20) || { x, z }; spawnUnit('gren', c.x, c.z, { order: 'guard' }); }
+    for (const x of [-180, 200]) { let z = -330; MAP.obstacles.near(x, z, _obs); if (_obs.some(o => Math.hypot(o.x - x, o.z - z) < o.r + 6)) z += 20; spawnBuilding('nest_de', x, z, { complete: true }); }
+  }
   const gar = [[6, 0, 1, 0, 1], [6, 1, 0, 0, 1], [5, 0, 1, 0, 0], [8, 2, 1, 0, 2], [12, 2, 0, 1, 2]];
   MAP.towns.forEach((t, ti) => {
     const [g, p4, nest, tig, ps] = gar[ti];
@@ -1412,8 +1418,9 @@ function spawnGermans() {
       spawnBuilding('flak_de', t.x + 32, t.z + 30, { complete: true });
       spawnBuilding('flak_de', t.x - 34, t.z - 30, { complete: true });
       spawnBuilding('bunker', t.x + 45, t.z + 70, { complete: true });
-      MAP.trenchSpots.filter(p => Math.hypot(p[0] - t.x, p[1] - t.z) > 90 && Math.hypot(p[0] - t.x, p[1] - t.z) < 140).sort(() => rand() - 0.5).slice(0, 10)
-        .forEach(p => spawnUnit('gren', p[0], p[1], { order: 'hold' }));
+      const ringSpots = MAP.trenchSpots.filter(p => Math.hypot(p[0] - t.x, p[1] - t.z) > 90 && Math.hypot(p[0] - t.x, p[1] - t.z) < 140).sort(() => rand() - 0.5).slice(0, 10);
+      ringSpots.forEach(p => spawnUnit('gren', p[0], p[1], { order: 'hold' }));
+      for (let i = ringSpots.length; i < 10; i++) { const a = rand() * Math.PI, x = t.x + Math.cos(a) * 110, z = t.z + Math.sin(a) * 95; spawnUnit('gren', x, z, { order: 'guard' }); }
     }
     if (t.cp) for (let i = 0; i < 4; i++) {
       const c = { x: t.x + rr(-20, 20), z: t.z + rr(-20, 20), mesh: makeSoldier('civ'), ph: rand() * 6, dest: null, wait: rand() * 4, town: t, flee: null, heading: 0 };
