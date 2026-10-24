@@ -247,9 +247,34 @@ function splinter(target) {
   };
 }
 
+const PARA_PAL = { jacket: 0x8a8358, pants: 0x857e55, helm: 0x4a5032, band: 0x3a3f28 };
+function snowSmock(target) {
+  const c1 = new THREE.Color(0xe8eaea), c2 = new THREE.Color(0xc4c8c6);
+  return (x, y, z, base) => { if (base.getHex() !== target) return base; return Math.sin(x * 9 + y * 7) + Math.sin(z * 8 - y * 5) > 1.1 ? c2 : c1; };
+}
+function camoFor(team, variant, target) {
+  if (team !== 'de' || variant !== 1 || SC.biome === 'desert') return null;
+  return SC.biome === 'winter' ? snowSmock(target) : splinter(target);
+}
+function roleExtras(B, team, role) {
+  if (role === 'med') {
+    const y = team === 'us' ? 2.16 : 2.17;
+    for (const [x, z, ry] of [[0, 0.27, 0], [0, -0.27, Math.PI], [0.26, 0, Math.PI / 2], [-0.26, 0, -Math.PI / 2]]) {
+      B.add(G.box, 0xf2f0e8, 0.16, 0.16, 0.02, x, y, z, 0, ry, 0);
+      B.add(G.box, 0xb3241d, 0.11, 0.035, 0.025, x, y, z, 0, ry, 0);
+      B.add(G.box, 0xb3241d, 0.035, 0.11, 0.025, x, y, z, 0, ry, 0);
+    }
+    B.add(G.box, 0x6b6747, 0.26, 0.22, 0.14, -0.25, 1.05, 0.05);
+    B.add(G.box, 0x6b6747, 0.26, 0.22, 0.14, 0.25, 1.05, 0.05);
+  } else if (role === 'para') {
+    for (const [c, yy] of [[0xb22234, 1.62], [0xf3f1ea, 1.58], [0x3c3b6e, 1.6]]) B.add(G.box, c, 0.02, 0.05, 0.1, -0.345, yy, 0.0);
+    B.add(G.box, 0x6d6a4c, 0.3, 0.16, 0.16, 0, 1.0, 0.22);
+    B.add(G.box, 0x4a4f2e, 0.08, 0.32, 0.06, 0.22, 1.32, 0.21);
+  }
+}
 function soldierBody(B, team, pal, variant) {
   const sk = pal.skin, us = team === 'us', de = team === 'de';
-  if (de && variant === 1) B.cf = splinter(pal.jacket);
+  B.cf = camoFor(team, variant, pal.jacket);
   B.add(G.box, pal.pants, 0.46, 0.26, 0.3, 0, 1.0, 0);
   B.add(G.torso, pal.jacket, 0.33, 0.62, 0.2, 0, 1.43, 0);
   for (const sx of [-1, 1]) {
@@ -366,24 +391,26 @@ function makeSoldier(team, kind) {
   const civ = team === 'civ';
   const variant = civ ? (Math.random() * CIV_PALS.length) | 0 : (Math.random() * 3) | 0;
   const skin = civ ? 0 : (Math.random() * SKINS.length) | 0;
+  const role = kind === 'medic' || kind === 'sani' ? 'med' : kind === 'para' ? 'para' : '';
   const base = civ ? CIV_PALS[variant] : SOLDIER_PAL[team];
-  const pal = Object.assign({}, base, { skin: civ ? base.skin : SKINS[skin] });
-  const key = team + variant + 's' + skin;
+  const pal = Object.assign({}, base, civ ? {} : (SC.pal && SC.pal[team]) || {}, role === 'para' ? PARA_PAL : {}, { skin: civ ? base.skin : SKINS[skin] });
+  const key = team + variant + 's' + skin + role + (civ ? '' : SC.id);
   const g = new THREE.Group(); g.rotation.order = 'YXZ';
-  VM(merged('body' + key, B => soldierBody(B, team, pal, variant)), g, 0, 0, 0, true);
-  const thighG = merged('thigh' + key, B => { if (team === 'de' && variant === 1) B.cf = splinter(pal.pants); B.add(G.box, pal.pants, 0.2, 0.5, 0.23, 0, -0.25, 0); B.add(G.box, pal.pants, 0.05, 0.14, 0.12, (team === 'us' ? 0.11 : 0.1), -0.25, 0.02); });
+  VM(merged('body' + key, B => { soldierBody(B, team, pal, variant); roleExtras(B, team, role); }), g, 0, 0, 0, true);
+  const thighG = merged('thigh' + key, B => { B.cf = camoFor(team, variant, pal.pants); B.add(G.box, pal.pants, 0.2, 0.5, 0.23, 0, -0.25, 0); B.add(G.box, pal.pants, 0.05, 0.14, 0.12, (team === 'us' ? 0.11 : 0.1), -0.25, 0.02); });
   const shinG = merged('shin' + key, B => {
     B.add(G.box, pal.pants, 0.18, 0.3, 0.2, 0, -0.15, 0);
     B.add(G.box, team === 'de' ? pal.boot : pal.legging, 0.195, team === 'de' ? 0.34 : 0.2, 0.215, 0, team === 'de' ? -0.3 : -0.34, 0);
     B.add(G.box, pal.boot, 0.19, 0.12, 0.3, 0, -0.46, 0.05);
   });
   const upperG = merged('upper' + key, B => {
-    if (team === 'de' && variant === 1) B.cf = splinter(pal.jacket);
+    B.cf = camoFor(team, variant, pal.jacket);
+    if (role === 'med') { B.add(G.box, 0xf2f0e8, 0.165, 0.12, 0.175, 0, -0.1, 0); B.add(G.box, 0xb3241d, 0.17, 0.035, 0.06, 0, -0.1, 0); }
     B.add(G.box, pal.jacket, 0.15, 0.38, 0.16, 0, -0.18, 0);
     if (team === 'us' && variant === 2) for (let i = 0; i < 3; i++) for (const sx of [-1, 1]) B.add(G.box, 0xc9b25a, 0.012, 0.025, 0.12, sx * 0.077, -0.1 - i * 0.045, 0);
   });
   const foreG = merged('fore' + key, B => {
-    if (team === 'de' && variant === 1) B.cf = splinter(pal.jacket);
+    B.cf = camoFor(team, variant, pal.jacket);
     B.add(G.box, pal.jacket, 0.14, 0.3, 0.15, 0, -0.14, 0);
     B.add(G.sph, pal.skin, 0.075, 0.08, 0.075, 0, -0.33, 0.02);
   });
@@ -400,7 +427,7 @@ function makeSoldier(team, kind) {
   const [legL, shinL] = leg(-0.13), [legR, shinR] = leg(0.13);
   const [armL, foreL] = arm(-0.39), [armR, foreR] = arm(0.39);
   let rifle = null, tube = false;
-  if (!civ) {
+  if (!civ && role !== 'med') {
     let wk = kind === 'bazooka' ? 'bazooka' : kind === 'pzschreck' ? 'pzschreck' : 'rifle';
     if (wk === 'rifle' && variant === 2) wk = team === 'us' ? 'thompson' : 'mp40';
     rifle = new THREE.Group(); g.add(rifle);
@@ -625,9 +652,9 @@ const TANK_PARTS = {
 };
 function makeTank(kind) {
   if (VEH[kind]) return VEH[kind]();
-  const s = TANKS[kind], [hull, turret, gunFn, gunLen] = TANK_PARTS[kind];
+  const s = Object.assign({}, TANKS[kind], (SC.paint && SC.paint[TANK_TEAM[kind]]) || {}), [hull, turret, gunFn, gunLen] = TANK_PARTS[kind];
   const g = new THREE.Group(); g.rotation.order = 'YXZ';
-  VM(merged('hull' + kind, B => { B.cf = paintFn(s.paint, s.camo, 1.3); hull(B, s); if (HULL_EXTRA[kind]) HULL_EXTRA[kind](B, s); }), g, 0, 0, 0, true);
+  VM(merged('hull' + kind + SC.id, B => { B.cf = paintFn(s.paint, s.camo, 1.3); hull(B, s); if (HULL_EXTRA[kind]) HULL_EXTRA[kind](B, s); }), g, 0, 0, 0, true);
   const tm = trackMaterial(1.2);
   let loop = _geoCache.get('loop' + kind);
   if (!loop) { loop = trackLoop(s.L, s.th, kind === 'sherman' ? 0.42 : 0.4, 0.38); _geoCache.set('loop' + kind, loop); }
@@ -635,7 +662,7 @@ function makeTank(kind) {
     const t = new THREE.Mesh(loop, tm); t.scale.x = s.tw; t.position.x = sx * (s.W / 2 - s.tw / 2); t.castShadow = true; g.add(t);
   }
   const tur = new THREE.Group(); tur.position.set(s.tur[0], s.tur[1], s.tur[2]); g.add(tur);
-  VM(merged('turret' + kind, B => { B.cf = paintFn(s.paint, s.camo, 0); turret(B, s); }), tur, 0, 0, 0, true);
+  VM(merged('turret' + kind + SC.id, B => { B.cf = paintFn(s.paint, s.camo, 0); turret(B, s); }), tur, 0, 0, 0, true);
   const gun = VM(merged('gun' + kind, gunFn), tur, 0, s.gy, s.gz, true);
   const muzzle = new THREE.Object3D(); muzzle.position.set(0, s.gy, s.gz + gunLen + 0.2); tur.add(muzzle);
   if (kind === 'sherman') {
@@ -699,9 +726,11 @@ function spinWheel(g, x, y, z, r, w, hub) {
   const m = VM(geo, g, x, y, z, true); return m;
 }
 const RUBBER_C = 0x222220;
+const TANK_TEAM = { sherman: 'us', panzer4: 'de', tiger: 'de', halftrack: 'us', greyhound: 'us', m10: 'us', dozer: 'us', stug: 'de', sdkfz251: 'de' };
 function vehicleShell(kind, s, hullFn, turretFn, gunFn, gunLen, tracks, wheels, decals) {
+  s = Object.assign({}, s, (SC.paint && SC.paint[TANK_TEAM[kind]]) || {});
   const g = new THREE.Group(); g.rotation.order = 'YXZ';
-  VM(merged('hull' + kind, B => { B.cf = paintFn(s.paint, s.camo, 1.2); hullFn(B, s); }), g, 0, 0, 0, true);
+  VM(merged('hull' + kind + SC.id, B => { B.cf = paintFn(s.paint, s.camo, 1.2); hullFn(B, s); }), g, 0, 0, 0, true);
   let tm = null;
   if (tracks) {
     tm = trackMaterial(1.2);
@@ -712,7 +741,7 @@ function vehicleShell(kind, s, hullFn, turretFn, gunFn, gunLen, tracks, wheels, 
   const ws = [];
   for (const w of wheels || []) for (const sx of [-1, 1]) ws.push(spinWheel(g, sx * w[0], w[1], w[2], w[3], w[4], s.paint));
   const tur = new THREE.Group(); tur.position.set(s.tur[0], s.tur[1], s.tur[2]); g.add(tur);
-  if (turretFn) VM(merged('turret' + kind, B => { B.cf = paintFn(s.paint, s.camo, 0); turretFn(B, s); }), tur, 0, 0, 0, true);
+  if (turretFn) VM(merged('turret' + kind + SC.id, B => { B.cf = paintFn(s.paint, s.camo, 0); turretFn(B, s); }), tur, 0, 0, 0, true);
   const gun = VM(merged('gun' + kind, gunFn), tur, 0, s.gy, s.gz, true);
   const muzzle = new THREE.Object3D(); muzzle.position.set(0, s.gy, s.gz + gunLen + 0.15); tur.add(muzzle);
   if (decals) decals(g, tur);
@@ -1037,6 +1066,31 @@ function makePlane(kind) {
       for (const sx of [-1, 1]) decal(g, TEX.cross, 1.3, sx * 4.0, -0.2, 0.7, -Math.PI / 2, 0);
       for (const sx of [-1, 1]) decal(g, TEX.cross, 0.9, sx * 0.58, 0.05, -2.9, 0, sx * Math.PI / 2);
     }
+  } else if (kind === 'c47') {
+    const top = 0x4f5530;
+    VM(merged('planec47', B => {
+      B.cf = planePaint(top, 0x8d908a, null);
+      B.add(G.cyl12, top, 1.2, 9.5, 1.35, 0, 0, 1.0, Math.PI / 2, 0, 0);
+      B.add(G.taper, top, 1.2, 6.5, 1.35, 0, 0.25, -7.0, -Math.PI / 2, 0, 0);
+      B.add(G.sph, top, 1.2, 1.25, 2.2, 0, -0.05, 5.6);
+      B.add(G.box, GLASS, 1.6, 0.45, 0.6, 0, 0.75, 6.6, -0.5, 0, 0);
+      for (let i = 0; i < 6; i++) for (const sx of [-1, 1]) B.add(G.box, GLASS, 0.05, 0.35, 0.4, sx * 1.2, 0.35, 3.5 - i * 1.2);
+      B.add(G.box, 0x161616, 0.06, 1.7, 1.6, -1.23, -0.1, -2.6);
+      wingPlan(B, top, 3.6, 1.4, 11.5, 0.8, -0.7, 1.8, 0.32, 1);
+      wingPlan(B, top, 3.6, 1.4, 11.5, 0.8, -0.7, 1.8, 0.32, -1);
+      wingPlan(B, top, 2.0, 1.0, 4.0, 0.3, 0.6, -9.3, 0.16, 1);
+      wingPlan(B, top, 2.0, 1.0, 4.0, 0.3, 0.6, -9.3, 0.16, -1);
+      B.add(sideProfile([[-8.4, 0.9], [-9.8, 4.2], [-11.0, 4.3], [-11.1, 0.9]], 0.2, 1), top, 1, 1, 1, 0, 0, 0);
+      for (const sx of [-1, 1]) {
+        B.add(G.cyl12, top, 0.85, 4.2, 0.9, sx * 4.3, -0.55, 2.6, Math.PI / 2, 0, 0);
+        B.add(G.cyl12, 0x3e4428, 0.95, 0.9, 0.95, sx * 4.3, -0.55, 4.6, Math.PI / 2, 0, 0);
+        stripes(B, 5.9, 0.55, 3.4, 0.4, -0.55, 0.38, sx);
+      }
+      for (let i = 0; i < 5; i++) B.add(G.cyl12, i % 2 ? 0x161616 : 0xf2f0e8, 1.12 - i * 0.05, 0.5, 1.26 - i * 0.05, 0, 0.12, -4.5 - i * 0.5, Math.PI / 2, 0, 0);
+    }), g, 0, 0, 0, true);
+    for (const sx of [-1, 1]) props.push(propMesh(g, sx * 4.3, -0.55, 5.15, 2.4, 3));
+    decal(g, TEX.star, 2.0, -8.2, -0.36, 1.4, -Math.PI / 2, 0); decal(g, TEX.star, 2.0, 8.2, -0.72, 1.4, Math.PI / 2, 0);
+    for (const sx of [-1, 1]) decal(g, TEX.star, 1.3, sx * 1.26, 0.1, -2.8 + (sx > 0 ? 0 : 1.9), 0, sx * Math.PI / 2);
   } else if (kind === 'b26') {
     const top = 0x4f5530;
     VM(merged('planeb26', B => {
@@ -1106,6 +1160,62 @@ function makeLST() {
   P(G.cyl8, 0x2a2a2a, 0.05, 44, 0.05, 0, 26, -4, g, false);
   const st = P(G.plane, decalMat(TEX.star), 4, 4, 1, W / 2 + 0.05, 1.5, -10, g, false); st.rotation.y = Math.PI / 2;
   g.userData = { doorL, doorR, ramp, L };
+  return g;
+}
+
+/* ---------- navios jogáveis: contratorpedeiro e lancha S-Boot ---------- */
+function ddTurret(g, x, y, z) {
+  const t = new THREE.Group(); t.position.set(x, y, z); g.add(t);
+  VM(merged('ddTurret', B => {
+    B.add(G.box, 0x8a9298, 2.0, 1.3, 2.6, 0, 0.65, 0);
+    B.add(G.cyl12, 0x8a9298, 1.05, 1.3, 1.05, 0, 0.65, -0.9);
+    B.add(G.cyl12, 0x3a4046, 0.13, 3.4, 0.13, 0, 0.75, 2.8, Math.PI / 2, 0, 0);
+  }), t, 0, 0, 0, true);
+  return t;
+}
+function makeShip(kind) {
+  const g = new THREE.Group(); g.rotation.order = 'YXZ';
+  if (kind === 'destroyer') {
+    VM(merged('ddHull', B => {
+      const hullCol = 0x8a9298, low = new THREE.Color(0x3e4c5a);
+      B.cf = (x, y, z, base) => (base.getHex() === hullCol && y < 1.4 ? low : base);
+      const plan = [[0, 24.5], [2.0, 19], [2.9, 10], [2.9, -18], [2.4, -23.5], [-2.4, -23.5], [-2.9, -18], [-2.9, 10], [-2.0, 19]];
+      B.add(planProfile(plan, 4.4, 2), hullCol, 1, 1, 1, 0, -1.6, 0);
+      B.add(planProfile(plan.map(([x, z]) => [x * 0.95, z * 0.97]), 0.08, 1), 0x6d6a62, 1, 1, 1, 0, 2.8, 0);
+      B.add(G.box, hullCol, 3.6, 2.4, 8, 0, 4.0, 7.5);
+      B.add(G.box, hullCol, 3.0, 1.6, 3.4, 0, 5.9, 9.0);
+      B.add(G.box, 0x222830, 3.05, 0.45, 0.1, 0, 6.2, 10.72);
+      B.add(G.cyl8, 0x5a6268, 0.18, 9, 0.18, 0, 9.5, 6.4);
+      B.add(G.box, 0x5a6268, 3.4, 0.12, 0.12, 0, 12.5, 6.4);
+      B.add(G.box, 0x5a6268, 0.8, 0.6, 0.8, 0, 14.2, 6.4);
+      for (const z of [1.0, -4.0]) { B.add(G.cyl12, hullCol, 1.0, 3.8, 1.25, 0, 4.8, z, -0.08, 0, 0); B.add(G.cyl12, 0x1c1c1c, 1.02, 0.5, 1.27, 0, 6.8, z - 0.16, -0.08, 0, 0); }
+      B.add(G.box, hullCol, 2.8, 1.0, 3.0, 0, 3.3, -8.5);
+      for (let i = 0; i < 5; i++) B.add(G.cyl8, 0x4a525a, 0.16, 3.6, 0.16, -0.7 + i * 0.35, 4.1, -8.5, Math.PI / 2, 0, 0);
+      for (const z of [-12.5, 3.5]) for (const sx of [-1, 1]) { B.add(G.cyl8, 0x5a6268, 0.5, 0.5, 0.5, sx * 2.1, 3.1, z); B.add(G.cyl8, 0x2a2a2a, 0.05, 1.4, 0.05, sx * 2.1, 3.6, z + 0.6, Math.PI / 2 - 0.5, 0, 0); }
+      for (const sx of [-1, 1]) B.add(G.box, 0x3a3e40, 0.6, 0.6, 2.4, sx * 1.4, 3.2, -22);
+      B.add(G.box, 0xf2f0e8, 0.06, 1.0, 2.2, 2.85, 1.9, 17.5); B.add(G.box, 0xf2f0e8, 0.06, 1.0, 2.2, -2.85, 1.9, 17.5);
+    }), g, 0, 0, 0, true);
+    const t0 = ddTurret(g, 0, 2.85, 15.5), t1 = ddTurret(g, 0, 5.2, 11.5), t2 = ddTurret(g, 0, 3.9, -14.5), t3 = ddTurret(g, 0, 2.85, -19);
+    const muzzle = new THREE.Object3D(); muzzle.position.set(0, 0.75, 4.6); t0.add(muzzle);
+    g.userData = { turret: t0, turrets: [t1, t2, t3], muzzle, wheels: [], L: 48 };
+  } else {
+    VM(merged('sbootHull', B => {
+      const hc = 0x7a8480, dk = new THREE.Color(0x58625c);
+      B.cf = (x, y, z, base) => (base.getHex() === hc && Math.sin(z * 0.6 + y * 2) > 0.4 ? dk : base);
+      const plan = [[0, 10.5], [1.6, 6], [2.3, 0], [2.2, -8.5], [-2.2, -8.5], [-2.3, 0], [-1.6, 6]];
+      B.add(planProfile(plan, 2.4, 2), hc, 1, 1, 1, 0, -1.1, 0);
+      B.add(G.box, hc, 2.2, 1.4, 3.2, 0, 1.9, 1.0);
+      B.add(G.box, 0x222830, 2.25, 0.35, 0.1, 0, 2.2, 2.62);
+      for (const sx of [-1, 1]) B.add(G.cyl8, hc, 0.4, 5.5, 0.4, sx * 1.1, 1.3, 5.5, Math.PI / 2, 0, 0);
+      B.add(G.box, 0x4a524e, 1.0, 0.4, 1.0, 0, 1.5, -6.5);
+      B.add(G.cyl8, 0x2a2a2a, 0.06, 1.6, 0.06, 0, 1.8, -5.6, Math.PI / 2, 0, 0);
+      B.add(G.cyl8, 0x5a6268, 0.08, 3, 0.08, 0, 4.0, 0.2);
+    }), g, 0, 0, 0, true);
+    const t = new THREE.Group(); t.position.set(0, 1.35, 4.2); g.add(t);
+    VM(merged('sbootGun', B => { B.add(G.box, 0x4a524e, 0.7, 0.5, 0.8, 0, 0.25, 0); B.add(G.cyl8, 0x2a2a2a, 0.06, 1.8, 0.06, 0, 0.35, 1.2, Math.PI / 2, 0, 0); }), t, 0, 0, 0, true);
+    const muzzle = new THREE.Object3D(); muzzle.position.set(0, 0.1, 6.5); t.add(muzzle);
+    g.userData = { turret: t, muzzle, wheels: [], L: 19 };
+  }
   return g;
 }
 

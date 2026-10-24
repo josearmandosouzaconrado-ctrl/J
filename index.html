@@ -159,6 +159,15 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   background: var(--accent); color: #1c1407; border: 0; border-radius: 4px; padding: 14px 22px; min-height: 52px;
 }
 .ghost { background: transparent; border: 1px solid var(--line); border-radius: 4px; padding: 10px 14px; font-weight: 700; font-size: 15px; min-height: 44px; }
+.scen { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; }
+.scen button {
+  text-align: left; padding: 9px 11px; border-radius: 4px; border: 1px solid var(--line); background: rgba(45, 51, 33, 0.7);
+  display: flex; flex-direction: column; gap: 1px; min-height: 52px;
+}
+.scen button b { font-family: var(--display); font-weight: 400; font-size: 15px; letter-spacing: 0.03em; }
+.scen button span { font-size: 13px; color: var(--dim); font-weight: 600; }
+.scen button[aria-checked="true"] { border-color: var(--accent); background: rgba(227, 163, 60, 0.18); box-shadow: inset 3px 0 0 var(--accent); }
+.scen button:disabled { opacity: 0.5; }
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
 .stats div { border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; }
 .stats b { display: block; font-family: var(--display); font-weight: 400; font-size: 26px; font-variant-numeric: tabular-nums; }
@@ -221,16 +230,17 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 <div class="screen" id="intro">
   <div class="brief">
-    <div class="eyebrow">6 DE JUNHO DE 1944 · 06:30 · SETOR DOG GREEN</div>
-    <h1>DIA D</h1>
-    <h2>Praia de Omaha, Normandia</h2>
-    <p>Você comanda a primeira onda da 29ª Divisão de Infantaria. As barcaças Higgins vão abrir a rampa sob o fogo das casamatas alemãs no alto da falésia. Destrua as quatro casamatas para assegurar a praia.</p>
-    <p>Depois, um navio LST trará o Veículo de Construção. Monte a base, treine tropas, fabrique tanques Sherman, capture as vilas e avance até o quartel-general alemão em Trévières.</p>
+    <div class="eyebrow" id="scEyebrow">6 DE JUNHO DE 1944 · 06:30 · SETOR DOG GREEN</div>
+    <h1 id="scTitle">DIA D</h1>
+    <h2 id="scSub">Praia de Omaha, Normandia</h2>
+    <div class="scen" id="scen" role="radiogroup" aria-label="Cenário"></div>
+    <p id="scB1">Você comanda a primeira onda da 29ª Divisão de Infantaria.</p>
+    <p id="scB2"></p>
     <ul>
       <li>Toque num soldado para selecionar. Toque duplo seleciona todos do mesmo tipo.</li>
       <li>Toque no chão para mover e num inimigo para atacar.</li>
       <li>Arraste para mover a câmera. Use pinça para zoom e para girar.</li>
-      <li>Ouriços tchecos, crateras, trincheiras e sebes dão cobertura.</li>
+      <li>Sob fogo, os soldados avançam de cobertura em cobertura: pedras, toras, crateras, muros e casas. Médicos resgatam os feridos.</li>
       <li>Em APOIO chame destróieres, caças P-47 ou bombardeiros B-26.</li>
     </ul>
     <div class="row">
