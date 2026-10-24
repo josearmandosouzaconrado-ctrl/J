@@ -1,0 +1,33 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "guerra:ferro_drone",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/guerra/ferro_drone"
+      },
+      "geometry": {
+        "default": "geometry.guerra_drone"
+      },
+      "animations": {
+        "voar": "animation.guerra.drone"
+      },
+      "scripts": {
+        "animate": [
+          "voar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#AA2823",
+        "overlay_color": "#5F5F64"
+      },
+      "enable_attachables": false
+    }
+  }
+}

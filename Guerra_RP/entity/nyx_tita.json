@@ -1,0 +1,33 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "guerra:nyx_tita",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/guerra/nyx_tita"
+      },
+      "geometry": {
+        "default": "geometry.guerra_tita"
+      },
+      "animations": {
+        "andar": "animation.guerra.tita_andar"
+      },
+      "scripts": {
+        "animate": [
+          "andar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#6E28A5",
+        "overlay_color": "#EB46FF"
+      },
+      "enable_attachables": false
+    }
+  }
+}

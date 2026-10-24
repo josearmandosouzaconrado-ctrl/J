@@ -1,0 +1,28 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "guerra:laser_nyx_sniper",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/guerra/nyx_laser"
+      },
+      "geometry": {
+        "default": "geometry.guerra_laser"
+      },
+      "animations": {
+        "girar": "animation.guerra.projetil"
+      },
+      "scripts": {
+        "animate": [
+          "girar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ]
+    }
+  }
+}

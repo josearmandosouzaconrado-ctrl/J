@@ -1,4 +1,11 @@
-# ⚽ Futebol Craft — Addon de futebol para Minecraft Bedrock
+# Addons para Minecraft Bedrock
+
+Este repositório tem dois addons independentes:
+
+- **Futebol Craft** — futebol com NPCs e modo carreira ([`dist/FutebolCraft.mcaddon`](dist/FutebolCraft.mcaddon))
+- **Guerra Futurista** — facções de ficção científica e terreno que vira campo de batalha ([`dist/GuerraFuturista.mcaddon`](dist/GuerraFuturista.mcaddon))
+
+# ⚽ Futebol Craft
 
 Futebol completo dentro do Minecraft: você joga **com e contra NPCs** que passam, driblam, chutam,
 desarmam e defendem, em um estádio gerado automaticamente. Inclui **Modo Carreira** com liga, copa,
@@ -88,3 +95,59 @@ Para regenerar texturas e o pacote:
 python3 tools/gerar_recursos.py   # requer Pillow
 python3 tools/build.py
 ```
+
+---
+
+# Guerra Futurista
+
+Aperte o **Núcleo de Batalha** e o terreno ao seu redor se transforma, numa onda que parte de você,
+em um campo de batalha futurista. Cada facção ganha uma base com um **Núcleo**, e as tropas
+chegam em ondas para lutar umas contra as outras e contra você.
+
+## Instalação
+
+Abra [`dist/GuerraFuturista.mcaddon`](dist/GuerraFuturista.mcaddon) e ative no mundo os pacotes
+**Guerra Futurista** e **Guerra Futurista (Recursos)**. Requer Bedrock 1.21+, sem experimentos.
+Recomendado: modo criativo ou sobrevivência com o mundo de dia.
+
+## Facções
+
+| Facção | Estilo |
+|---|---|
+| **Legião Solar** (dourado) | Exército disciplinado com energia estelar |
+| **Enxame Nyx** (roxo) | Ciborgues de uma mente coletiva, atacam em ondas |
+| **Coalizão Ferro** (vermelho) | Blindagem pesada, artilharia e titãs de aço |
+| **Vanguarda Aurora** (ciano) | Tecnologia de luz e drones de precisão |
+
+Cada facção tem **Soldado**, **Atirador** (longo alcance), **Artilheiro** (rajadas, mais vida),
+**Médico** (cura aliados e você), **Drone** voador, **Titã** (mech gigante com mísseis) e o
+**Núcleo** da base. Todos têm ovos no inventário criativo para batalhas livres.
+
+## Como funciona a batalha
+
+1. Use o **Núcleo de Batalha** → *Iniciar Batalha*. Escolha sua facção (ou *Apenas assistir*),
+   quais facções participam (2 a 4), o cenário (Cidade em Ruínas, Deserto Marciano, Tundra Neon,
+   Base Orbital), o tamanho (raio 40 ou 56) e a intensidade (Baixa a Caos).
+2. O terreno original é salvo e a transformação começa: chão do cenário, prédios em ruínas,
+   muros de cobertura, crateras, postes de energia e as bases fortificadas.
+3. As tropas chegam em ondas. **Destrua os núcleos inimigos e proteja o seu.**
+4. No fim, o relatório mostra abates e créditos, e você pode **restaurar o terreno** como era antes.
+
+Jogadores perto de você entram na batalha do seu lado.
+
+## Equipamento
+
+| Item | Função |
+|---|---|
+| **Rifle de Plasma** | Tiro rápido em linha reta |
+| **Canhão de Íons** | Tiro pesado e explosivo (recarga 2,5s) |
+| **Granada de Pulso** | Arremessa no ponto mirado |
+| **Escudo de Energia** | Absorção e resistência por alguns segundos |
+| **Comunicador Tático** | Ordens *Atacar*/*Defender*, reforços e **ataque orbital** |
+| **Estandarte** | Segure e suas tropas seguem você |
+
+As explosões não quebram blocos fora da transformação. Créditos ganhos em batalha compram
+melhorias no **Arsenal** (dano, escudo, reforços, ataque orbital) e sobem sua **patente**,
+de Recruta a Lenda da Guerra.
+
+Para regenerar modelos e texturas: `python3 tools/guerra_gerar.py` (requer Pillow).

@@ -1,0 +1,33 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "guerra:solar_nucleo",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/guerra/solar_nucleo"
+      },
+      "geometry": {
+        "default": "geometry.guerra_nucleo"
+      },
+      "animations": {
+        "girar": "animation.guerra.nucleo"
+      },
+      "scripts": {
+        "animate": [
+          "girar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#E1B937",
+        "overlay_color": "#FF8C14"
+      },
+      "enable_attachables": false
+    }
+  }
+}

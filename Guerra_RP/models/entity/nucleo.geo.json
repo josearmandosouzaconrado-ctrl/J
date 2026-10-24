@@ -1,0 +1,138 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.guerra_nucleo",
+        "texture_width": 64,
+        "texture_height": 64,
+        "visible_bounds_width": 4,
+        "visible_bounds_height": 4,
+        "visible_bounds_offset": [
+          0,
+          1.5,
+          0
+        ]
+      },
+      "bones": [
+        {
+          "name": "root",
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -8,
+                0,
+                -8
+              ],
+              "size": [
+                16,
+                4,
+                16
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                -8,
+                4,
+                -8
+              ],
+              "size": [
+                3,
+                12,
+                3
+              ],
+              "uv": [
+                24,
+                20
+              ]
+            },
+            {
+              "origin": [
+                5,
+                4,
+                -8
+              ],
+              "size": [
+                3,
+                12,
+                3
+              ],
+              "uv": [
+                36,
+                20
+              ]
+            },
+            {
+              "origin": [
+                -8,
+                4,
+                5
+              ],
+              "size": [
+                3,
+                12,
+                3
+              ],
+              "uv": [
+                48,
+                20
+              ]
+            },
+            {
+              "origin": [
+                5,
+                4,
+                5
+              ],
+              "size": [
+                3,
+                12,
+                3
+              ],
+              "uv": [
+                0,
+                40
+              ]
+            }
+          ]
+        },
+        {
+          "name": "cristal",
+          "pivot": [
+            0,
+            14,
+            0
+          ],
+          "parent": "root",
+          "cubes": [
+            {
+              "origin": [
+                -3,
+                7,
+                -3
+              ],
+              "size": [
+                6,
+                14,
+                6
+              ],
+              "uv": [
+                0,
+                20
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

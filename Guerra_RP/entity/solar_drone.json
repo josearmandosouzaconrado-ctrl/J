@@ -1,0 +1,33 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "guerra:solar_drone",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/guerra/solar_drone"
+      },
+      "geometry": {
+        "default": "geometry.guerra_drone"
+      },
+      "animations": {
+        "voar": "animation.guerra.drone"
+      },
+      "scripts": {
+        "animate": [
+          "voar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#E1B937",
+        "overlay_color": "#FF8C14"
+      },
+      "enable_attachables": false
+    }
+  }
+}

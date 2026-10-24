@@ -1,0 +1,33 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "guerra:nyx_nucleo",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/guerra/nyx_nucleo"
+      },
+      "geometry": {
+        "default": "geometry.guerra_nucleo"
+      },
+      "animations": {
+        "girar": "animation.guerra.nucleo"
+      },
+      "scripts": {
+        "animate": [
+          "girar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#6E28A5",
+        "overlay_color": "#EB46FF"
+      },
+      "enable_attachables": false
+    }
+  }
+}

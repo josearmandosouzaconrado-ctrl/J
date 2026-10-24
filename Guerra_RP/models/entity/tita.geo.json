@@ -1,0 +1,319 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.guerra_tita",
+        "texture_width": 128,
+        "texture_height": 64,
+        "visible_bounds_width": 4,
+        "visible_bounds_height": 4,
+        "visible_bounds_offset": [
+          0,
+          1.5,
+          0
+        ]
+      },
+      "bones": [
+        {
+          "name": "root",
+          "pivot": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "name": "rightLeg",
+          "pivot": [
+            -5,
+            16,
+            0
+          ],
+          "parent": "root",
+          "cubes": [
+            {
+              "origin": [
+                -8,
+                2,
+                -3
+              ],
+              "size": [
+                6,
+                14,
+                6
+              ],
+              "uv": [
+                52,
+                0
+              ]
+            },
+            {
+              "origin": [
+                -9,
+                0,
+                -5
+              ],
+              "size": [
+                8,
+                2,
+                9
+              ],
+              "uv": [
+                0,
+                39
+              ]
+            }
+          ]
+        },
+        {
+          "name": "leftLeg",
+          "pivot": [
+            5,
+            16,
+            0
+          ],
+          "parent": "root",
+          "cubes": [
+            {
+              "origin": [
+                2,
+                2,
+                -3
+              ],
+              "size": [
+                6,
+                14,
+                6
+              ],
+              "uv": [
+                76,
+                0
+              ]
+            },
+            {
+              "origin": [
+                1,
+                0,
+                -5
+              ],
+              "size": [
+                8,
+                2,
+                9
+              ],
+              "uv": [
+                34,
+                39
+              ]
+            }
+          ]
+        },
+        {
+          "name": "body",
+          "pivot": [
+            0,
+            16,
+            0
+          ],
+          "parent": "root",
+          "cubes": [
+            {
+              "origin": [
+                -6,
+                14,
+                -4
+              ],
+              "size": [
+                12,
+                3,
+                8
+              ],
+              "uv": [
+                68,
+                39
+              ]
+            },
+            {
+              "origin": [
+                -8,
+                17,
+                -5
+              ],
+              "size": [
+                16,
+                11,
+                10
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                -6,
+                28,
+                1
+              ],
+              "size": [
+                12,
+                4,
+                5
+              ],
+              "uv": [
+                28,
+                50
+              ]
+            }
+          ]
+        },
+        {
+          "name": "head",
+          "pivot": [
+            0,
+            28,
+            -2
+          ],
+          "parent": "body",
+          "cubes": [
+            {
+              "origin": [
+                -4,
+                28,
+                -5
+              ],
+              "size": [
+                8,
+                5,
+                6
+              ],
+              "uv": [
+                0,
+                50
+              ]
+            }
+          ]
+        },
+        {
+          "name": "canhaoD",
+          "pivot": [
+            -11,
+            25,
+            0
+          ],
+          "parent": "body",
+          "cubes": [
+            {
+              "origin": [
+                -14,
+                21,
+                -4
+              ],
+              "size": [
+                6,
+                8,
+                8
+              ],
+              "uv": [
+                72,
+                21
+              ]
+            },
+            {
+              "origin": [
+                -13,
+                22,
+                -17
+              ],
+              "size": [
+                4,
+                4,
+                14
+              ],
+              "uv": [
+                0,
+                21
+              ]
+            },
+            {
+              "origin": [
+                -12.5,
+                22.5,
+                -19
+              ],
+              "size": [
+                3,
+                3,
+                2
+              ],
+              "uv": [
+                62,
+                50
+              ]
+            }
+          ]
+        },
+        {
+          "name": "canhaoE",
+          "pivot": [
+            11,
+            25,
+            0
+          ],
+          "parent": "body",
+          "cubes": [
+            {
+              "origin": [
+                8,
+                21,
+                -4
+              ],
+              "size": [
+                6,
+                8,
+                8
+              ],
+              "uv": [
+                100,
+                21
+              ]
+            },
+            {
+              "origin": [
+                9,
+                22,
+                -17
+              ],
+              "size": [
+                4,
+                4,
+                14
+              ],
+              "uv": [
+                36,
+                21
+              ]
+            },
+            {
+              "origin": [
+                9.5,
+                22.5,
+                -19
+              ],
+              "size": [
+                3,
+                3,
+                2
+              ],
+              "uv": [
+                72,
+                50
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

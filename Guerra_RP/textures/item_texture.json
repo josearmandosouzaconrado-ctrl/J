@@ -1,0 +1,36 @@
+{
+  "resource_pack_name": "guerra_futurista",
+  "texture_name": "atlas.items",
+  "texture_data": {
+    "guerra_nucleo_batalha": {
+      "textures": "textures/items/guerra_nucleo_batalha"
+    },
+    "guerra_rifle": {
+      "textures": "textures/items/guerra_rifle"
+    },
+    "guerra_canhao": {
+      "textures": "textures/items/guerra_canhao"
+    },
+    "guerra_granada": {
+      "textures": "textures/items/guerra_granada"
+    },
+    "guerra_escudo": {
+      "textures": "textures/items/guerra_escudo"
+    },
+    "guerra_comunicador": {
+      "textures": "textures/items/guerra_comunicador"
+    },
+    "guerra_estandarte_solar": {
+      "textures": "textures/items/guerra_estandarte_solar"
+    },
+    "guerra_estandarte_nyx": {
+      "textures": "textures/items/guerra_estandarte_nyx"
+    },
+    "guerra_estandarte_ferro": {
+      "textures": "textures/items/guerra_estandarte_ferro"
+    },
+    "guerra_estandarte_aurora": {
+      "textures": "textures/items/guerra_estandarte_aurora"
+    }
+  }
+}

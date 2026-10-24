@@ -1,0 +1,150 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.guerra.olhar": {
+      "loop": true,
+      "bones": {
+        "head": {
+          "rotation": [
+            "query.target_x_rotation",
+            "query.target_y_rotation",
+            0
+          ]
+        }
+      }
+    },
+    "animation.guerra.andar": {
+      "loop": true,
+      "bones": {
+        "rightLeg": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17) * query.modified_move_speed * 70",
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            "-math.cos(query.modified_distance_moved * 38.17) * query.modified_move_speed * 70",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.guerra.mirar": {
+      "loop": true,
+      "bones": {
+        "rightArm": {
+          "rotation": [
+            "-85 + query.target_x_rotation",
+            "-5 + query.target_y_rotation",
+            0
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "-80 + query.target_x_rotation",
+            "35 + query.target_y_rotation",
+            0
+          ]
+        }
+      }
+    },
+    "animation.guerra.tita_andar": {
+      "loop": true,
+      "bones": {
+        "rightLeg": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17) * query.modified_move_speed * 35",
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            "-math.cos(query.modified_distance_moved * 38.17) * query.modified_move_speed * 35",
+            0,
+            0
+          ]
+        },
+        "body": {
+          "rotation": [
+            0,
+            "math.cos(query.modified_distance_moved * 38.17) * query.modified_move_speed * 6",
+            0
+          ]
+        }
+      }
+    },
+    "animation.guerra.drone": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "position": [
+            0,
+            "math.sin(query.life_time * 200) * 1",
+            0
+          ]
+        },
+        "rotor1": {
+          "rotation": [
+            0,
+            "query.life_time * 1440",
+            0
+          ]
+        },
+        "rotor2": {
+          "rotation": [
+            0,
+            "-query.life_time * 1440",
+            0
+          ]
+        },
+        "rotor3": {
+          "rotation": [
+            0,
+            "query.life_time * 1440",
+            0
+          ]
+        },
+        "rotor4": {
+          "rotation": [
+            0,
+            "-query.life_time * 1440",
+            0
+          ]
+        }
+      }
+    },
+    "animation.guerra.nucleo": {
+      "loop": true,
+      "bones": {
+        "cristal": {
+          "rotation": [
+            0,
+            "query.life_time * 60",
+            0
+          ],
+          "position": [
+            0,
+            "math.sin(query.life_time * 90) * 1.5",
+            0
+          ]
+        }
+      }
+    },
+    "animation.guerra.projetil": {
+      "loop": true,
+      "bones": {
+        "body": {
+          "rotation": [
+            "query.life_time * 720",
+            "query.life_time * 540",
+            0
+          ]
+        }
+      }
+    }
+  }
+}

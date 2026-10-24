@@ -1,0 +1,21 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "guerra:granada",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "guerra_granada"
+      },
+      "minecraft:display_name": {
+        "value": "§6Granada de Pulso"
+      },
+      "minecraft:max_stack_size": 16,
+      "minecraft:can_destroy_in_creative": false
+    }
+  }
+}

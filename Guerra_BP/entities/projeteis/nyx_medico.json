@@ -1,0 +1,73 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "guerra:laser_nyx_medico",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "sumir": {
+        "minecraft:instant_despawn": {}
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "guerra_projetil"
+        ]
+      },
+      "minecraft:collision_box": {
+        "width": 0.25,
+        "height": 0.25
+      },
+      "minecraft:projectile": {
+        "on_hit": {
+          "impact_damage": {
+            "damage": 3,
+            "knockback": true,
+            "destroy_on_hit": true
+          },
+          "remove_on_hit": {}
+        },
+        "power": 2.2,
+        "gravity": 0.0,
+        "inertia": 1.0,
+        "liquid_inertia": 1.0,
+        "uncertainty_base": 4,
+        "uncertainty_multiplier": 0.5,
+        "anchor": 1,
+        "offset": [
+          0,
+          -0.1,
+          0
+        ],
+        "reflect_on_hurt": false,
+        "hit_sound": "random.fizz",
+        "shoot_sound": "mob.blaze.shoot"
+      },
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:timer": {
+        "time": 4,
+        "looping": false,
+        "time_down_event": {
+          "event": "guerra:sumir"
+        }
+      }
+    },
+    "events": {
+      "guerra:sumir": {
+        "add": {
+          "component_groups": [
+            "sumir"
+          ]
+        }
+      }
+    }
+  }
+}

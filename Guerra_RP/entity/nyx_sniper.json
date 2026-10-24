@@ -1,0 +1,37 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "guerra:nyx_sniper",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/guerra/nyx_sniper"
+      },
+      "geometry": {
+        "default": "geometry.guerra_sniper"
+      },
+      "animations": {
+        "olhar": "animation.guerra.olhar",
+        "andar": "animation.guerra.andar",
+        "mirar": "animation.guerra.mirar"
+      },
+      "scripts": {
+        "animate": [
+          "olhar",
+          "andar",
+          "mirar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#6E28A5",
+        "overlay_color": "#EB46FF"
+      },
+      "enable_attachables": false
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "guerra:ferro_medico",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/guerra/ferro_medico"
+      },
+      "geometry": {
+        "default": "geometry.guerra_medico"
+      },
+      "animations": {
+        "olhar": "animation.guerra.olhar",
+        "andar": "animation.guerra.andar",
+        "mirar": "animation.guerra.mirar"
+      },
+      "scripts": {
+        "animate": [
+          "olhar",
+          "andar",
+          "mirar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ],
+      "spawn_egg": {
+        "base_color": "#AA2823",
+        "overlay_color": "#5F5F64"
+      },
+      "enable_attachables": false
+    }
+  }
+}
