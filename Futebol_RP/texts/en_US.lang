@@ -1,0 +1,7 @@
+entity.fut:jogador.name=Jogador
+entity.fut:bola.name=Bola de Futebol
+item.fut:chute=Chutar
+item.fut:passe=Passar
+item.fut:dividida=Dividida
+item.fut:pedir=Pedir a Bola
+item.fut:menu=Menu do Futebol

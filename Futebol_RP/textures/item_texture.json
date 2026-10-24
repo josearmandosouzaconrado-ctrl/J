@@ -1,0 +1,11 @@
+{
+  "resource_pack_name": "futebol_craft",
+  "texture_name": "atlas.items",
+  "texture_data": {
+    "fut_chute": { "textures": "textures/items/fut_chute" },
+    "fut_passe": { "textures": "textures/items/fut_passe" },
+    "fut_dividida": { "textures": "textures/items/fut_dividida" },
+    "fut_pedir": { "textures": "textures/items/fut_pedir" },
+    "fut_menu": { "textures": "textures/items/fut_menu" }
+  }
+}

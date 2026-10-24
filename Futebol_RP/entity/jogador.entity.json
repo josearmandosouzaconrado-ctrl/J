@@ -1,0 +1,76 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "fut:jogador",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "s0": "textures/entity/fut/jogador_0",
+        "s1": "textures/entity/fut/jogador_1",
+        "s2": "textures/entity/fut/jogador_2",
+        "s3": "textures/entity/fut/jogador_3",
+        "s4": "textures/entity/fut/jogador_4",
+        "s5": "textures/entity/fut/jogador_5",
+        "s6": "textures/entity/fut/jogador_6",
+        "s7": "textures/entity/fut/jogador_7",
+        "s8": "textures/entity/fut/jogador_8",
+        "s9": "textures/entity/fut/jogador_9",
+        "s10": "textures/entity/fut/jogador_10",
+        "s11": "textures/entity/fut/jogador_11",
+        "s12": "textures/entity/fut/jogador_12",
+        "s13": "textures/entity/fut/jogador_13",
+        "s14": "textures/entity/fut/jogador_14",
+        "s15": "textures/entity/fut/jogador_15",
+        "s16": "textures/entity/fut/jogador_16",
+        "s17": "textures/entity/fut/jogador_17",
+        "s18": "textures/entity/fut/jogador_18",
+        "s19": "textures/entity/fut/jogador_19",
+        "s20": "textures/entity/fut/jogador_20",
+        "s21": "textures/entity/fut/jogador_21",
+        "s22": "textures/entity/fut/jogador_22",
+        "s23": "textures/entity/fut/jogador_23",
+        "s24": "textures/entity/fut/jogador_24",
+        "s25": "textures/entity/fut/jogador_25",
+        "s26": "textures/entity/fut/jogador_26",
+        "s27": "textures/entity/fut/jogador_27",
+        "s28": "textures/entity/fut/jogador_28",
+        "s29": "textures/entity/fut/jogador_29",
+        "s30": "textures/entity/fut/jogador_30",
+        "s31": "textures/entity/fut/jogador_31",
+        "s32": "textures/entity/fut/jogador_32",
+        "s33": "textures/entity/fut/jogador_33",
+        "s34": "textures/entity/fut/jogador_34",
+        "s35": "textures/entity/fut/jogador_35"
+      },
+      "geometry": {
+        "default": "geometry.fut_jogador"
+      },
+      "animations": {
+        "correr": "animation.fut_jogador.correr",
+        "chutar": "animation.fut_jogador.chutar",
+        "comemorar": "animation.fut_jogador.comemorar",
+        "olhar": "animation.fut_jogador.olhar"
+      },
+      "scripts": {
+        "animate": [
+          "olhar",
+          {
+            "correr": "query.property('fut:anim') == 1"
+          },
+          {
+            "chutar": "query.property('fut:anim') == 2"
+          },
+          {
+            "comemorar": "query.property('fut:anim') == 3"
+          }
+        ]
+      },
+      "render_controllers": [
+        "controller.render.fut_jogador"
+      ],
+      "enable_attachables": false
+    }
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "format_version": "1.20.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "fut:pedir",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "texture": "fut_pedir"
+      },
+      "minecraft:display_name": {
+        "value": "§6Pedir a Bola"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:can_destroy_in_creative": false,
+      "minecraft:glint": false
+    }
+  }
+}

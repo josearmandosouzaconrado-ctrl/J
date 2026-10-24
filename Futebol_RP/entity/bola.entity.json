@@ -1,0 +1,14 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "fut:bola",
+      "materials": { "default": "entity_alphatest" },
+      "textures": { "default": "textures/entity/fut/bola" },
+      "geometry": { "default": "geometry.fut_bola" },
+      "animations": { "girar": "animation.fut_bola.girar" },
+      "scripts": { "animate": ["girar"] },
+      "render_controllers": ["controller.render.default"]
+    }
+  }
+}
