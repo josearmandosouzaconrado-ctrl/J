@@ -316,6 +316,17 @@ function soldierBody(B, team, pal, variant) {
     B.add(G.cyl8, 0x5e4a30, 0.02, 0.22, 0.02, 0, 1.42, -0.36);
     B.add(G.cyl8, 0x5f6040, 0.075, 0.17, 0.075, 0.28, 1.03, -0.1);
     B.add(G.box, 0x3a3a34, 0.04, 0.3, 0.03, -0.27, 1.0, -0.06);
+  } else if (de && SC.biome === 'tropical') {
+    B.add(G.dome, pal.helm, 0.26, 0.22, 0.28, 0, 2.05, 0);
+    B.add(G.cyl12, pal.helm, 0.27, 0.04, 0.29, 0, 2.05, 0);
+    B.add(G.box, 0xd9b52a, 0.06, 0.06, 0.02, 0, 2.17, 0.27);
+    B.add(G.box, 0x9a8f68, 0.42, 0.3, 0.03, 0, 1.94, -0.26, 0.2, 0, 0);
+    for (const sx of [-1, 1]) B.add(G.box, 0x9a8f68, 0.03, 0.28, 0.24, sx * 0.27, 1.94, -0.05, 0, 0, sx * 0.15);
+    B.add(G.box, pal.collar, 0.32, 0.07, 0.24, 0, 1.76, 0);
+    B.add(G.box, pal.web, 0.62, 0.08, 0.38, 0, 1.13, 0);
+    for (const sx of [-1, 1]) { B.add(G.box, pal.web, 0.13, 0.12, 0.08, sx * 0.14, 1.15, 0.2); B.add(G.box, pal.web, 0.05, 0.6, 0.03, sx * 0.1, 1.45, 0.205, 0, 0, sx * 0.12); }
+    B.add(G.box, pal.pack, 0.32, 0.32, 0.14, 0, 1.5, -0.26);
+    B.add(G.cyl8, 0x4a4c3a, 0.07, 0.16, 0.07, 0.27, 1.02, -0.1);
   } else if (de) {
     B.add(G.dome, pal.helm, 0.25, 0.24, 0.27, 0, 2.05, 0);
     B.add(G.flare, pal.helm, 0.3, 0.14, 0.32, 0, 2.0, -0.01, -0.12, 0, 0);
@@ -355,6 +366,7 @@ const WEAPONS = {
     B.add(G.cyl8, met, 0.022, team === 'de' ? 0.42 : 0.34, 0.022, 0, 0.01, team === 'de' ? 0.8 : 0.76, Math.PI / 2, 0, 0);
     B.add(G.box, met, 0.02, 0.05, 0.02, 0, 0.05, 0.62);
     if (team === 'de') B.add(G.cyl8, met, 0.015, 0.1, 0.015, 0.06, 0.03, 0.04, 0, 0, Math.PI / 2);
+    if (team === 'de' && SC.biome === 'tropical') B.add(G.box, 0xb0b4b4, 0.02, 0.05, 0.5, 0, -0.02, 1.25);
     B.add(G.box, 0x4a3f2a, 0.015, 0.02, 0.6, -0.04, -0.07, 0.05);
   },
   thompson: (B) => {
@@ -400,7 +412,8 @@ function makeSoldier(team, kind) {
   const thighG = merged('thigh' + key, B => { B.cf = camoFor(team, variant, pal.pants); B.add(G.box, pal.pants, 0.2, 0.5, 0.23, 0, -0.25, 0); B.add(G.box, pal.pants, 0.05, 0.14, 0.12, (team === 'us' ? 0.11 : 0.1), -0.25, 0.02); });
   const shinG = merged('shin' + key, B => {
     B.add(G.box, pal.pants, 0.18, 0.3, 0.2, 0, -0.15, 0);
-    B.add(G.box, team === 'de' ? pal.boot : pal.legging, 0.195, team === 'de' ? 0.34 : 0.2, 0.215, 0, team === 'de' ? -0.3 : -0.34, 0);
+    const jb = team === 'de' && SC.biome !== 'tropical';
+    B.add(G.box, jb ? pal.boot : pal.legging, 0.195, jb ? 0.34 : 0.2, 0.215, 0, jb ? -0.3 : -0.34, 0);
     B.add(G.box, pal.boot, 0.19, 0.12, 0.3, 0, -0.46, 0.05);
   });
   const upperG = merged('upper' + key, B => {
@@ -431,7 +444,7 @@ function makeSoldier(team, kind) {
     let wk = kind === 'bazooka' ? 'bazooka' : kind === 'pzschreck' ? 'pzschreck' : 'rifle';
     if (wk === 'rifle' && variant === 2) wk = team === 'us' ? 'thompson' : 'mp40';
     rifle = new THREE.Group(); g.add(rifle);
-    VM(merged('wpn' + wk + team, B => WEAPONS[wk](B, team)), rifle, 0, 0, 0, false);
+    VM(merged('wpn' + wk + team + (SC.biome === 'tropical' ? 'jp' : ''), B => WEAPONS[wk](B, team)), rifle, 0, 0, 0, false);
     if (wk === 'bazooka' || wk === 'pzschreck') { tube = true; rifle.position.set(0.27, 1.84, 0.12); }
   }
   blob(g, 1.4);
@@ -1036,9 +1049,10 @@ function propMesh(g, x, y, z, r, blades) {
 function makePlane(kind) {
   const g = new THREE.Group(); const props = [];
   if (kind === 'p47' || kind === 'fw190') {
-    const us = kind === 'p47', top = us ? 0x4f5530 : 0x6d7468;
-    VM(merged('plane' + kind, B => {
-      B.cf = planePaint(top, us ? 0x8d908a : 0xa9b4b8, us ? null : [0x58604f, 0x7f857a]);
+    const us = kind === 'p47', navy = us && SC.biome === 'tropical', stripesOn = us && SC.id === 'omaha';
+    const top = us ? (navy ? 0x2f4a66 : 0x4f5530) : 0x6d7468;
+    VM(merged('plane' + kind + (navy ? 'n' : '') + (stripesOn ? 's' : ''), B => {
+      B.cf = planePaint(top, us ? (navy ? 0xc8ccd0 : 0x8d908a) : 0xa9b4b8, us ? null : [0x58604f, 0x7f857a]);
       const L = us ? 1 : 0.85, R = us ? 0.95 : 0.78;
       B.add(G.cyl12, top, R * 0.88, 5.2 * L, R, 0, 0, 1.6 * L, Math.PI / 2, 0, 0);
       B.add(G.taper, top, R * 0.88, 6.2 * L, R, 0, 0.05, -4.1 * L, -Math.PI / 2, 0, 0);
@@ -1052,7 +1066,7 @@ function makePlane(kind) {
       wingPlan(B, top, 1.4, 0.7, 2.4, 0.2, 0.1, -6.9 * L, 0.16, 1);
       wingPlan(B, top, 1.4, 0.7, 2.4, 0.2, 0.1, -6.9 * L, 0.16, -1);
       B.add(sideProfile([[-6.0 * L, 0.3], [-6.5 * L, 2.3], [-7.6 * L, 2.4], [-7.9 * L, 0.3]], 0.16, 1), top, 1, 1, 1, 0, 0, 0);
-      if (us) {
+      if (stripesOn) {
         for (const sx of [-1, 1]) stripes(B, 2.4, 0.45, 2.55, -0.55, -0.35, 0.32, sx);
         for (let i = 0; i < 5; i++) B.add(G.cyl12, i % 2 ? 0x161616 : 0xf2f0e8, 0.82 - i * 0.04, 0.42, 0.86 - i * 0.04, 0, 0.02, -2.6 - i * 0.42, Math.PI / 2, 0, 0);
       }
@@ -1068,7 +1082,8 @@ function makePlane(kind) {
     }
   } else if (kind === 'c47') {
     const top = 0x4f5530;
-    VM(merged('planec47', B => {
+    const sOn = SC.id === 'omaha';
+    VM(merged('planec47' + (sOn ? 's' : ''), B => {
       B.cf = planePaint(top, 0x8d908a, null);
       B.add(G.cyl12, top, 1.2, 9.5, 1.35, 0, 0, 1.0, Math.PI / 2, 0, 0);
       B.add(G.taper, top, 1.2, 6.5, 1.35, 0, 0.25, -7.0, -Math.PI / 2, 0, 0);
@@ -1084,16 +1099,17 @@ function makePlane(kind) {
       for (const sx of [-1, 1]) {
         B.add(G.cyl12, top, 0.85, 4.2, 0.9, sx * 4.3, -0.55, 2.6, Math.PI / 2, 0, 0);
         B.add(G.cyl12, 0x3e4428, 0.95, 0.9, 0.95, sx * 4.3, -0.55, 4.6, Math.PI / 2, 0, 0);
-        stripes(B, 5.9, 0.55, 3.4, 0.4, -0.55, 0.38, sx);
+        if (sOn) stripes(B, 5.9, 0.55, 3.4, 0.4, -0.55, 0.38, sx);
       }
-      for (let i = 0; i < 5; i++) B.add(G.cyl12, i % 2 ? 0x161616 : 0xf2f0e8, 1.12 - i * 0.05, 0.5, 1.26 - i * 0.05, 0, 0.12, -4.5 - i * 0.5, Math.PI / 2, 0, 0);
+      if (sOn) for (let i = 0; i < 5; i++) B.add(G.cyl12, i % 2 ? 0x161616 : 0xf2f0e8, 1.12 - i * 0.05, 0.5, 1.26 - i * 0.05, 0, 0.12, -4.5 - i * 0.5, Math.PI / 2, 0, 0);
     }), g, 0, 0, 0, true);
     for (const sx of [-1, 1]) props.push(propMesh(g, sx * 4.3, -0.55, 5.15, 2.4, 3));
     decal(g, TEX.star, 2.0, -8.2, -0.36, 1.4, -Math.PI / 2, 0); decal(g, TEX.star, 2.0, 8.2, -0.72, 1.4, Math.PI / 2, 0);
     for (const sx of [-1, 1]) decal(g, TEX.star, 1.3, sx * 1.26, 0.1, -2.8 + (sx > 0 ? 0 : 1.9), 0, sx * Math.PI / 2);
   } else if (kind === 'b26') {
     const top = 0x4f5530;
-    VM(merged('planeb26', B => {
+    const sOn = SC.id === 'omaha';
+    VM(merged('planeb26' + (sOn ? 's' : ''), B => {
       B.cf = planePaint(top, 0x8d908a, null);
       B.add(G.cyl12, top, 1.05, 11, 1.15, 0, 0, 1.5, Math.PI / 2, 0, 0);
       B.add(G.taper, top, 1.05, 6.5, 1.15, 0, 0.15, -7.2, -Math.PI / 2, 0, 0);
@@ -1111,9 +1127,9 @@ function makePlane(kind) {
         B.add(G.cyl12, top, 0.95, 5.6, 1.0, sx * 4.4, 0.1, 2.6, Math.PI / 2, 0, 0);
         B.add(G.cyl12, 0x3e4428, 1.05, 1.0, 1.05, sx * 4.4, 0.1, 5.2, Math.PI / 2, 0, 0);
         B.add(G.cyl12, 0x1e1e1c, 0.85, 0.05, 0.85, sx * 4.4, 0.1, 5.72, Math.PI / 2, 0, 0);
-        stripes(B, 6.2, 0.55, 3.3, 0.9, 0.62, 0.38, sx);
+        if (sOn) stripes(B, 6.2, 0.55, 3.3, 0.9, 0.62, 0.38, sx);
       }
-      for (let i = 0; i < 5; i++) B.add(G.cyl12, i % 2 ? 0x161616 : 0xf2f0e8, 0.98 - i * 0.04, 0.5, 1.08 - i * 0.04, 0, 0.1, -4.6 - i * 0.5, Math.PI / 2, 0, 0);
+      if (sOn) for (let i = 0; i < 5; i++) B.add(G.cyl12, i % 2 ? 0x161616 : 0xf2f0e8, 0.98 - i * 0.04, 0.5, 1.08 - i * 0.04, 0, 0.1, -4.6 - i * 0.5, Math.PI / 2, 0, 0);
       B.add(G.box, 0x1c1c1a, 0.5, 0.4, 0.6, 0, 0.4, -11.4);
     }), g, 0, 0, 0, true);
     for (const sx of [-1, 1]) props.push(propMesh(g, sx * 4.4, 0.1, 5.85, 2.5, 4));
@@ -1492,6 +1508,58 @@ const BUILD_GEO = {
     for (const a of [0, 2.1, 4.2]) B.add(G.box, 0x4f5348, 0.25, 0.2, 2.0, Math.sin(a) * 0.9, 0.4, Math.cos(a) * 0.9, 0, a, 0);
     for (let i = 0; i < 3; i++) B.add(G.box, 0x4f5348, 0.35, 0.3, 0.2, 1.6, 0.45 + i * 0.3, -1.4);
   },
+  bunker_jp(B) {
+    B.add(G.box, 0x6f6658, 11, 4, 10, 0, -2.0, 0);
+    B.add(G.ico, 0xc9bf9e, 6.2, 2.6, 5.6, 0, 0.6, -0.4);
+    for (let r = 0; r < 4; r++) B.add(G.cyl8, r % 2 ? 0x6a5236 : 0x5a432b, 0.32, 9, 0.32, 0, 0.35 + r * 0.6, 3.6, 0, 0, Math.PI / 2);
+    for (const sx of [-1, 1]) for (let r = 0; r < 4; r++) B.add(G.cyl8, 0x5a432b, 0.3, 7, 0.3, sx * 4.4, 0.35 + r * 0.6, 0, Math.PI / 2, 0, 0);
+    B.add(G.box, 0x111111, 3.4, 0.5, 0.3, 0, 2.3, 3.72);
+    B.add(G.box, 0x6a5236, 9.6, 0.4, 8, 0, 2.7, 0);
+    B.add(G.roof, 0xc9bf9e, 9.6, 1.4, 8.4, 0, 2.85, 0);
+    for (let i = 0; i < 5; i++) B.add(G.ico, 0x3f6a2c, 1.2, 0.8, 1.2, -3 + i * 1.5, 3.9, -1 + (i % 2));
+  },
+  nest_de_jp(B) {
+    B.add(G.box, DIRT, 8, 4, 8, 0, -2.0, 0);
+    B.add(G.cyl8, 0x8a7d5a, 3.8, 0.35, 3.8, 0, 0.17, 0);
+    for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2; if (a > Math.PI * 0.8 && a < Math.PI * 1.2) continue; for (let r = 0; r < 2; r++) B.add(G.cyl8, 0x5a432b, 0.28, 2.1, 0.28, Math.sin(a) * 2.9, 0.35 + r * 0.55, Math.cos(a) * 2.9, 0, a, Math.PI / 2); }
+  },
+  dehq_jp(B) {
+    B.add(G.box, 0x6f6658, 27, 4, 21, 0, -2.0, 0);
+    B.add(G.box, 0x8a7d62, 26, 0.1, 20, 0, 0.05, 0);
+    B.add(G.box, 0xb8aa8a, 22, 1.0, 13, 0, 0.5, 0);
+    B.add(G.box, 0x6b5a44, 20, 6, 11, 0, 4, 0);
+    for (let i = 0; i < 8; i++) B.add(G.box, 0x3a2e22, 0.3, 6, 0.3, -9.5 + i * 2.7, 4, 5.55);
+    for (let i = 0; i < 6; i++) B.add(G.box, 0xe6dcc0, 1.8, 2.2, 0.1, -7.5 + i * 3, 4.3, 5.56);
+    B.add(G.box, 0x3d4249, 24, 0.4, 15, 0, 7.1, 0);
+    B.add(G.roof, 0x3d4249, 22, 3.2, 13.5, 0, 7.3, 0);
+    B.add(G.box, 0x6b5a44, 10, 3, 7, 0, 11.6, 0);
+    B.add(G.box, 0x3d4249, 13, 0.35, 10, 0, 13.2, 0);
+    B.add(G.roof, 0x3d4249, 11, 2.4, 8.4, 0, 13.4, 0);
+    for (const sx of [-1, 1]) B.add(G.cyl12, 0xc0392b, 0.35, 6.5, 0.35, sx * 3, 3.25, 11);
+    B.add(G.box, 0x1c1c1c, 8, 0.5, 0.6, 0, 6.7, 11); B.add(G.box, 0xc0392b, 7, 0.35, 0.45, 0, 5.6, 11);
+    for (const x of [-9, 9]) bBagRing(B, 2.4, 10, 2, undefined, undefined, at(x, 0, 13, 0));
+  },
+  naval(B) {
+    bPad(B, 16, 12, 0xb8ac90);
+    B.add(G.halfcyl, 0x6c705a, 4.2, 10, 3.8, -3, 0, -2.5, ...ARCH_X);
+    B.add(G.box, 0x2e2f22, 1.6, 2.4, 0.1, -3, 1.2, 1.32);
+    for (const x of [3.5, 6.0]) { B.add(G.cyl12, 0x8a8d84, 1.1, 3.2, 1.1, x, 1.6, -3.5); B.add(G.cyl12, 0x6a6d64, 1.12, 0.1, 1.12, x, 3.2, -3.5); }
+    for (let z = 4; z <= 42; z += 4) for (const sx of [-1, 1]) B.add(G.cyl8, 0x4a3b2a, 0.28, 6, 0.28, sx * 2.6, -1.5, z);
+    B.add(G.box, 0x7a6448, 6.4, 0.3, 40, 0, 1.6, 23);
+    for (let z = 5; z <= 41; z += 2) B.add(G.box, 0x5e4c36, 6.4, 0.04, 0.12, 0, 1.76, z);
+    for (const sx of [-1, 1]) for (let z = 8; z <= 40; z += 8) B.add(G.cyl8, 0x3a3a34, 0.18, 0.6, 0.18, sx * 3.0, 2.0, z);
+    B.add(G.box, 0x3a3d28, 0.5, 9, 0.5, 2.6, 6.3, 34); B.add(G.box, 0x3a3d28, 7, 0.4, 0.4, -0.6, 10.6, 34, 0, 0, 0.05);
+    B.add(G.cyl8, 0x222222, 0.03, 4, 0.03, -3.6, 8.6, 34); B.add(G.box, 0x6b5a3a, 1.2, 0.9, 1.0, -3.6, 6.2, 34);
+    for (let i = 0; i < 4; i++) bCrate(B, 1.0 + (i % 2) * 1.2, 1.75, 14 + Math.floor(i / 2) * 1.1, 1.0, 0.8, 0.9, 0.2);
+    bDrum(B, -1.8, 20, 0x3e4a2c, null, 1.75); bDrum(B, -1.8, 21, 0x5a3b2a, null, 1.75);
+  },
+  coastgun(B) {
+    B.add(G.box, DIRT, 9, 4, 9, 0, -2.0, 0);
+    B.add(G.cyl12, 0xa6a296, 4.2, 0.5, 4.2, 0, 0.25, 0);
+    B.add(G.torus, 0x6a6a64, 3.4, 3.4, 3.4, 0, 0.55, 0, Math.PI / 2, 0, 0);
+    bBagRing(B, 4.4, 18, 2, Math.PI * 0.75, Math.PI * 1.25);
+    for (let i = 0; i < 6; i++) B.add(G.cyl8, 0xb08a3a, 0.16, 0.8, 0.16, -3.2 + i * 0.36, 0.9, -3.0);
+  },
   bunker(B) {
     B.add(G.box, 0x6f6c66, 11, 4, 10, 0, -2.0, 0);
     B.add(sideProfile([[4.2, 0], [4.2, 3.4], [3.6, 4.0], [-3.6, 4.0], [-4.2, 3.4], [-4.2, 0]], 9.4, 3), 0x8e8b82, 1, 1, 1, 0, 0, 0);
@@ -1546,11 +1614,12 @@ const BUILD_GEO = {
     B.add(G.cyl8, 0x3a3a34, 0.12, 12, 0.12, 9, 16, -3);
   },
 };
-const BUILD_SIZE = { hq: [16, 14, 7], depot: [12, 10, 4], barracks: [15, 10, 5], factory: [20, 16, 8], mgnest: [7, 7, 2.5], atgun: [7, 7, 2.5], aa: [7, 7, 2.5], hospital: [14, 12, 4.5] };
+const BUILD_SIZE = { naval: [16, 12, 6], coastgun: [8, 8, 2.5], hq: [16, 14, 7], depot: [12, 10, 4], barracks: [15, 10, 5], factory: [20, 16, 8], mgnest: [7, 7, 2.5], atgun: [7, 7, 2.5], aa: [7, 7, 2.5], hospital: [14, 12, 4.5] };
 
 function makeBuilding(kind) {
   const g = new THREE.Group(); const ud = {};
-  VM(merged('bld' + kind, B => { B.cf = paintFn(-1, kind === 'bunker' ? [0x6f7258, 0x7d6a52] : null, 0); BUILD_GEO[kind](B); }), g, 0, 0, 0, true);
+  const gk = SC.biome === 'tropical' && BUILD_GEO[kind + '_jp'] ? kind + '_jp' : kind;
+  VM(merged('bld' + gk, B => { B.cf = paintFn(-1, kind === 'bunker' && gk === kind ? [0x6f7258, 0x7d6a52] : null, 0); BUILD_GEO[gk](B); }), g, 0, 0, 0, true);
   const SLOPE = Math.PI / 2 - Math.atan2(2.4, 3.95);
   switch (kind) {
     case 'hq':
@@ -1636,13 +1705,195 @@ function makeBuilding(kind) {
       ud.turret = t; ud.muzzle = m; break;
     }
     case 'dehq':
-      ud.flag = flagPole(g, -3, 10.5, 10, TEX.deflag);
-      flagPole(g, 4, 10.5, 10, TEX.deflag);
+      ud.flag = flagPole(g, -3, 10.5, 10, foeFlag());
+      flagPole(g, 4, 10.5, 10, foeFlag());
       for (const x of [-8, 8]) staticGunner(g, 'de', x, 11.5, 0).position.y = 0.0;
       break;
   }
+  if (kind === 'coastgun') {
+    const t = new THREE.Group(); t.position.set(0, 0.7, 0); g.add(t);
+    VM(merged('coastT', B => {
+      B.add(G.box, OD, 2.4, 1.0, 3.0, 0, 0.5, 0);
+      for (const sx of [-1, 1]) { B.add(G.box, OD, 0.25, 0.25, 4.5, sx * 0.9, 0.1, -2.5, 0, sx * 0.3, 0); B.add(G.cyl12, RUBBER, 0.6, 0.35, 0.6, sx * 1.4, 0.0, 0.2, 0, 0, Math.PI / 2); }
+      B.add(G.box, 0x3a3b2c, 0.7, 0.7, 2.2, 0, 1.2, 0.6);
+      B.add(G.cyl12, 0x3a3b2c, 0.17, 7, 0.17, 0, 1.3, 4.6, Math.PI / 2, 0, 0);
+    }), t, 0, 0, 0, true);
+    staticGunner(t, 'us', 1.4, -0.8, 0).position.y = -0.7; staticGunner(g, 'us', -2, -2, 0.4).position.y = -0.1;
+    const m = new THREE.Object3D(); m.position.set(0, 1.3, 8.3); t.add(m);
+    ud.turret = t; ud.muzzle = m;
+  }
+  if (kind === 'naval') ud.flag = flagPole(g, 4, 4, 9, TEX.usflag);
   const sz = BUILD_SIZE[kind];
   if (sz) { ud.scaffold = VM(merged('scaf' + kind, B => bScaffold(B, sz[0] * 0.9, sz[1] * 0.9, sz[2])), g, 0, 0, 0, false); ud.scaffold.visible = false; }
   g.userData = ud;
   return g;
 }
+
+/* ---------- Pacífico: tanques japoneses, caça Zero, navios ---------- */
+TEX.jpflag = canvasTex(96, 64, (g) => { g.fillStyle = '#f4f2ea'; g.fillRect(0, 0, 96, 64); g.fillStyle = '#bc002d'; g.beginPath(); g.arc(48, 32, 19, 0, 7); g.fill(); });
+TEX.hinomaru = canvasTex(64, 64, (g) => { g.fillStyle = '#f4f2ea'; g.beginPath(); g.arc(32, 32, 30, 0, 7); g.fill(); g.fillStyle = '#bc002d'; g.beginPath(); g.arc(32, 32, 25, 0, 7); g.fill(); });
+function foeFlag() { return SC.biome === 'tropical' ? TEX.jpflag : TEX.deflag; }
+
+// Chi-Ha Tipo 97: casco rebitado, torre deslocada com antena em arco (hachimaki)
+VEH.chiha = () => vehicleShell('chiha', { L: 6.2, W: 2.8, tw: 0.42, th: 0.95, paint: 0x7d6c45, camo: [0x4f5a35, 0x9a8a5a], tur: [0.3, 1.95, -0.1], gy: 0.4, gz: 0.85 },
+  (B, s) => {
+    const P0 = s.paint, dark = 0x2c2b25, met = 0x3d3e36, tx = s.W / 2 - s.tw / 2;
+    B.add(sideProfile([[3.0, 0.5], [3.15, 0.95], [2.9, 1.25], [-3.0, 1.25], [-3.1, 0.55]], s.W - 0.9, 2), P0, 1, 1, 1, 0, 0, 0);
+    B.add(sideProfile([[2.6, 1.2], [1.6, 1.95], [-1.4, 1.95], [-2.0, 1.75], [-3.1, 1.7], [-3.15, 1.2]], s.W - 0.1, 3), P0, 1, 1, 1, 0, 0, 0);
+    B.add(G.box, P0, 0.9, 0.6, 1.0, -0.6, 1.95, 1.35);
+    B.add(G.box, dark, 0.4, 0.12, 0.05, -0.6, 2.05, 1.86);
+    B.add(G.sph, met, 0.13, 0.13, 0.13, 0.55, 1.7, 2.2);
+    for (let i = 0; i < 18; i++) B.add(G.sph, met, 0.035, 0.035, 0.035, (i % 2 ? 1 : -1) * (s.W / 2 - 0.04), 1.55, -2.6 + Math.floor(i / 2) * 0.6);
+    B.add(G.box, 0xd9b52a, s.W + 0.02, 0.12, 0.3, 0, 1.6, -0.4);
+    for (const sx of [-1, 1]) {
+      B.add(G.box, P0, s.tw + 0.1, 0.05, s.L - 0.4, sx * tx, 1.0, 0);
+      for (let i = 0; i < 6; i++) wheel(B, sx * (tx + 0.12), 0.3, -2.1 + i * 0.84, 0.26, 0.18, dark, P0);
+      B.add(G.box, met, 0.08, 0.1, 4.6, sx * (tx + 0.24), 0.62, 0);
+      for (let i = 0; i < 3; i++) B.add(G.cyl8, dark, 0.09, 0.14, 0.09, sx * (tx + 0.1), 0.86, -1.6 + i * 1.6, 0, 0, Math.PI / 2);
+      wheel(B, sx * (tx + 0.1), s.th - 0.32, s.L / 2 - 0.35, 0.32, 0.22, dark, met);
+      wheel(B, sx * (tx + 0.1), s.th - 0.3, -s.L / 2 + 0.32, 0.28, 0.2, dark, P0);
+    }
+    B.add(G.cyl8, 0x5a3b2a, 0.15, 1.2, 0.15, 0, 1.25, -3.2, 0, 0, Math.PI / 2);
+    tarpRoll(B, -0.4, 1.95, -2.4, 1.0, 0x6a6345);
+  },
+  (B, s) => {
+    const P0 = s.paint;
+    B.add(G.cyl12, P0, 0.82, 0.75, 0.9, 0, 0.38, 0);
+    B.add(G.cyl12, P0, 0.62, 0.22, 0.62, 0, 0.86, -0.1);
+    B.add(G.box, P0, 0.55, 0.45, 0.3, 0, 0.4, 0.85);
+    B.add(G.torus, 0x2c2c28, 1.25, 1.25, 1.25, 0, 0.95, -0.15, Math.PI / 2, 0, 0);
+    crewBust(B, 0, 1.2, -0.1, 'de');
+  },
+  (B) => { B.add(G.cyl12, 0x3a3b2c, 0.1, 1.0, 0.1, 0, 0, 0.5, Math.PI / 2, 0, 0); B.add(G.cyl12, 0x2c2d22, 0.12, 0.15, 0.12, 0, 0, 1.0, Math.PI / 2, 0, 0); },
+  1.1, { L: 6.2, h: 0.95, rs: 0.34, ri: 0.3, w: 0.42, x: 1.19 }, null, null);
+// Ha-Go Tipo 95: tanque leve com torre à esquerda e canhão de 37 mm
+VEH.hago = () => vehicleShell('hago', { L: 5.4, W: 2.4, tw: 0.36, th: 0.9, paint: 0x7d6c45, camo: [0x4f5a35, 0x9a8a5a], tur: [-0.35, 1.8, 0.4], gy: 0.36, gz: 0.7 },
+  (B, s) => {
+    const P0 = s.paint, dark = 0x2c2b25, met = 0x3d3e36, tx = s.W / 2 - s.tw / 2;
+    B.add(sideProfile([[2.6, 0.5], [2.75, 0.9], [2.4, 1.15], [-2.6, 1.15], [-2.7, 0.55]], s.W - 0.7, 2), P0, 1, 1, 1, 0, 0, 0);
+    B.add(sideProfile([[2.3, 1.1], [1.5, 1.8], [-1.2, 1.8], [-2.7, 1.55], [-2.7, 1.1]], s.W - 0.1, 3), P0, 1, 1, 1, 0, 0, 0);
+    B.add(G.box, P0, 0.8, 0.5, 0.8, 0.5, 1.8, 1.4);
+    B.add(G.box, 0xd9b52a, s.W + 0.02, 0.1, 0.25, 0, 1.45, -0.6);
+    for (const sx of [-1, 1]) {
+      for (let i = 0; i < 4; i++) wheel(B, sx * (tx + 0.1), 0.34, -1.6 + i * 1.05, 0.3, 0.16, dark, P0);
+      B.add(G.box, met, 0.08, 0.1, 3.4, sx * (tx + 0.2), 0.66, 0);
+      wheel(B, sx * (tx + 0.08), s.th - 0.3, s.L / 2 - 0.32, 0.3, 0.2, dark, met);
+      wheel(B, sx * (tx + 0.08), s.th - 0.28, -s.L / 2 + 0.3, 0.26, 0.2, dark, P0);
+    }
+  },
+  (B, s) => {
+    const P0 = s.paint;
+    B.add(G.cyl12, P0, 0.62, 0.65, 0.66, 0, 0.32, 0);
+    B.add(G.cone, P0, 0.55, 0.3, 0.55, 0, 0.8, -0.05);
+    B.add(G.box, P0, 0.4, 0.35, 0.25, 0, 0.36, 0.62);
+    crewBust(B, 0.2, 1.05, -0.2, 'de');
+  },
+  (B) => { B.add(G.cyl12, 0x3a3b2c, 0.06, 1.5, 0.06, 0, 0, 0.75, Math.PI / 2, 0, 0); },
+  1.5, { L: 5.4, h: 0.9, rs: 0.32, ri: 0.28, w: 0.36, x: 1.02 }, null, null);
+TANK_TEAM.chiha = 'de'; TANK_TEAM.hago = 'de';
+
+/* navios genéricos: contratorpedeiros, cruzador e lanchas */
+function shipTurret(g, key, x, y, z, barrels, col) {
+  const t = new THREE.Group(); t.position.set(x, y, z); g.add(t);
+  VM(merged('tur' + key, B => {
+    const w = barrels > 2 ? 3.0 : 2.0;
+    B.add(G.box, col, w, barrels > 2 ? 1.6 : 1.3, barrels > 2 ? 3.4 : 2.6, 0, 0.65, 0);
+    B.add(G.cyl12, col, w * 0.52, barrels > 2 ? 1.6 : 1.3, w * 0.52, 0, 0.65, -0.9);
+    for (let i = 0; i < barrels; i++) B.add(G.cyl12, 0x3a4046, 0.12, barrels > 2 ? 4.2 : 3.4, 0.12, (i - (barrels - 1) / 2) * 0.45, 0.75, barrels > 2 ? 3.3 : 2.8, Math.PI / 2, 0, 0);
+  }), t, 0, 0, 0, true);
+  return t;
+}
+function warshipHull(B, L, Bm, hullCol, lowCol, deckCol) {
+  const low = new THREE.Color(lowCol);
+  B.cf = (x, y, z, base) => (base.getHex() === hullCol && y < 1.4 ? low : base);
+  const h = L / 2;
+  const plan = [[0, h + 0.5], [Bm * 0.35, h - 5], [Bm / 2, h * 0.4], [Bm / 2, -h * 0.75], [Bm * 0.42, -h + 0.5], [-Bm * 0.42, -h + 0.5], [-Bm / 2, -h * 0.75], [-Bm / 2, h * 0.4], [-Bm * 0.35, h - 5]];
+  B.add(planProfile(plan, 4.4, 2), hullCol, 1, 1, 1, 0, -1.6, 0);
+  B.add(planProfile(plan.map(([x, z]) => [x * 0.95, z * 0.97]), 0.08, 1), deckCol, 1, 1, 1, 0, 2.8, 0);
+}
+const _makeShipBase = makeShip;
+makeShip = function (kind) {
+  if (kind === 'destroyer' || kind === 'sboot') return _makeShipBase(kind);
+  const g = new THREE.Group(); g.rotation.order = 'YXZ';
+  if (kind === 'cruiser') {
+    const hc = 0x7e868c;
+    VM(merged('crHull', B => {
+      warshipHull(B, 66, 8, hc, 0x34404c, 0x6d6a62);
+      B.add(G.box, hc, 5.4, 3.0, 12, 0, 4.3, 8);
+      B.add(G.box, hc, 4.4, 2.4, 6, 0, 7.0, 9.5);
+      B.add(G.box, hc, 3.4, 2.0, 3.5, 0, 9.2, 10.5);
+      B.add(G.box, 0x222830, 3.45, 0.4, 0.1, 0, 9.5, 12.27);
+      B.add(G.cyl8, 0x5a6268, 0.22, 12, 0.22, 0, 14, 7);
+      B.add(G.box, 0x5a6268, 4, 0.14, 0.14, 0, 17, 7);
+      for (const z of [0, -6]) { B.add(G.cyl12, hc, 1.3, 5, 1.6, 0, 5.8, z, -0.06, 0, 0); B.add(G.cyl12, 0x1c1c1c, 1.32, 0.5, 1.62, 0, 8.4, z - 0.15, -0.06, 0, 0); }
+      B.add(G.box, hc, 5, 2.4, 8, 0, 4.0, -12);
+      for (const sx of [-1, 1]) for (const z of [4, -2, -8]) { B.add(G.box, hc, 1.2, 0.9, 1.4, sx * 3.4, 3.4, z); B.add(G.cyl8, 0x3a4046, 0.09, 2.2, 0.09, sx * 3.4, 3.6, z + 1.4, Math.PI / 2, 0, 0); }
+      for (const z of [10, -16, 2]) for (const sx of [-1, 1]) B.add(G.cyl8, 0x5a6268, 0.5, 0.6, 0.5, sx * 3.6, 3.1, z);
+    }), g, 0, 0, 0, true);
+    const t0 = shipTurret(g, 'cr', 0, 2.85, 24, 3, hc), t1 = shipTurret(g, 'cr', 0, 5.0, 18.5, 3, hc), t2 = shipTurret(g, 'cr', 0, 5.0, -20, 3, hc), t3 = shipTurret(g, 'cr', 0, 2.85, -25.5, 3, hc);
+    t2.rotation.y = Math.PI; t3.rotation.y = Math.PI;
+    const muzzle = new THREE.Object3D(); muzzle.position.set(0, 0.75, 5.6); t0.add(muzzle);
+    g.userData = { turret: t0, turrets: [t1, t2, t3], muzzle, wheels: [], L: 66 };
+  } else if (kind === 'jdd') {
+    const hc = 0x8d9196;
+    VM(merged('jddHull', B => {
+      warshipHull(B, 46, 5.4, hc, 0x5e6266, 0x6b4a34);
+      B.add(G.box, hc, 3.2, 2.2, 5, 0, 3.9, 9);
+      B.add(G.box, hc, 2.6, 2.2, 3, 0, 6.1, 9.6);
+      B.add(G.box, hc, 2.0, 1.6, 2.2, 0, 7.9, 9.8);
+      B.add(G.box, 0x222830, 2.05, 0.35, 0.1, 0, 8.2, 10.92);
+      B.add(G.cyl8, 0x5a6268, 0.18, 9, 0.18, 0, 11, 7.5);
+      B.add(G.cyl12, hc, 1.3, 4.6, 1.5, 0, 5.2, 3.5, -0.18, 0, 0); B.add(G.cyl12, 0x1c1c1c, 1.32, 0.4, 1.52, 0, 7.4, 3.1, -0.18, 0, 0);
+      B.add(G.cyl12, hc, 1.0, 3.6, 1.15, 0, 4.7, -2.5, -0.14, 0, 0); B.add(G.cyl12, 0x1c1c1c, 1.02, 0.4, 1.17, 0, 6.4, -2.75, -0.14, 0, 0);
+      for (const z of [-6.5, -11]) { B.add(G.cyl12, 0x5a6268, 1.0, 0.6, 1.0, 0, 3.1, z); for (let i = 0; i < 3; i++) B.add(G.cyl8, 0x4a525a, 0.18, 3.8, 0.18, -0.4 + i * 0.4, 3.6, z, Math.PI / 2, 0, 0); }
+    }), g, 0, 0, 0, true);
+    decal(g, TEX.jpflag, 1.6, 0, 15.2, 6.6, 0, Math.PI / 2).scale.set(1.8, 1.2, 1);
+    const t0 = shipTurret(g, 'jdd', 0, 2.85, 15, 2, hc), t1 = shipTurret(g, 'jdd', 0, 3.6, -15, 2, hc), t2 = shipTurret(g, 'jdd', 0, 2.85, -19.5, 2, hc);
+    t1.rotation.y = Math.PI; t2.rotation.y = Math.PI;
+    const muzzle = new THREE.Object3D(); muzzle.position.set(0, 0.75, 4.6); t0.add(muzzle);
+    g.userData = { turret: t0, turrets: [t1, t2], muzzle, wheels: [], L: 46 };
+  } else if (kind === 'pt') {
+    VM(merged('ptHull', B => {
+      const hc = 0x3e4c3e;
+      const plan = [[0, 9.5], [1.5, 5.5], [2.1, 0], [2.0, -8], [-2.0, -8], [-2.1, 0], [-1.5, 5.5]];
+      B.add(planProfile(plan, 2.0, 2), hc, 1, 1, 1, 0, -0.9, 0);
+      B.add(planProfile(plan.map(([x, z]) => [x * 0.94, z * 0.96]), 0.06, 1), 0x6e5a40, 1, 1, 1, 0, 1.1, 0);
+      B.add(G.box, hc, 1.8, 1.1, 2.6, 0, 1.6, 2.5);
+      B.add(G.box, 0x222830, 1.85, 0.3, 0.1, 0, 1.9, 3.82);
+      for (const sx of [-1, 1]) for (const z of [-1, -5]) B.add(G.cyl8, 0x5a6050, 0.32, 4.6, 0.32, sx * 1.6, 1.45, z, Math.PI / 2, 0, 0);
+      for (const sx of [-1, 1]) { B.add(G.cyl8, 0x4a524e, 0.45, 0.5, 0.45, sx * 0.9, 1.4, 0.2); B.add(G.cyl8, 0x1c1c1c, 0.04, 1.2, 0.04, sx * 0.9, 1.8, 0.8, Math.PI / 2 - 0.3, 0, 0); }
+      B.add(G.cyl8, 0x5a6268, 0.06, 2.5, 0.06, 0, 3.0, 2.0);
+    }), g, 0, 0, 0, true);
+    const t = new THREE.Group(); t.position.set(0, 1.2, 6.5); g.add(t);
+    const muzzle = new THREE.Object3D(); muzzle.position.set(0, 0, 3); t.add(muzzle);
+    g.userData = { turret: t, muzzle, wheels: [], L: 18 };
+  }
+  return g;
+};
+
+/* caça Zero A6M */
+function makeZero() {
+  const g = new THREE.Group(), props = [];
+  const top = 0x3d5a3a;
+  VM(merged('planeZero', B => {
+    B.cf = planePaint(top, 0xb8b4a0, null);
+    B.add(G.cyl12, top, 0.72, 4.8, 0.78, 0, 0, 1.4, Math.PI / 2, 0, 0);
+    B.add(G.taper, top, 0.72, 5.6, 0.78, 0, 0.05, -3.7, -Math.PI / 2, 0, 0);
+    B.add(G.cyl12, 0x1e1e1c, 0.88, 1.2, 0.92, 0, 0, 4.2, Math.PI / 2, 0, 0);
+    B.add(G.sph, GLASS, 0.42, 0.45, 1.6, 0, 0.7, 0.3);
+    wingPlan(B, top, 2.6, 1.0, 5.8, 0.5, -0.45, 1.0, 0.22, 1);
+    wingPlan(B, top, 2.6, 1.0, 5.8, 0.5, -0.45, 1.0, 0.22, -1);
+    for (const sx of [-1, 1]) B.add(G.box, 0xd9b52a, 4.4, 0.24, 0.18, sx * 3.4, -0.33, 2.3);
+    wingPlan(B, top, 1.2, 0.6, 2.0, 0.2, 0.1, -6.3, 0.14, 1);
+    wingPlan(B, top, 1.2, 0.6, 2.0, 0.2, 0.1, -6.3, 0.14, -1);
+    B.add(sideProfile([[-5.5, 0.3], [-6.0, 1.9], [-7.0, 2.0], [-7.2, 0.3]], 0.14, 1), top, 1, 1, 1, 0, 0, 0);
+    B.add(G.cyl8, 0x3a3a34, 0.3, 1.8, 0.3, 0, -0.95, 1.2, Math.PI / 2, 0, 0);
+  }), g, 0, 0, 0, true);
+  props.push(propMesh(g, 0, 0, 4.85, 1.9, 3));
+  for (const sx of [-1, 1]) decal(g, TEX.hinomaru, 1.5, sx * 4.0, -0.22, 0.6, -Math.PI / 2, 0);
+  for (const sx of [-1, 1]) decal(g, TEX.hinomaru, 0.9, sx * 0.62, 0.05, -2.6, 0, sx * Math.PI / 2);
+  g.userData = { props };
+  return g;
+}
+const _makePlaneBase = makePlane;
+makePlane = function (kind) { return kind === 'zero' ? makeZero() : _makePlaneBase(kind); };

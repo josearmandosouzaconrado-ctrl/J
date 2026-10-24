@@ -13,13 +13,21 @@ const UT = {
   m10: { name: 'M10 Wolverine', plural: 'M10 Wolverines', team: 'us', tank: true, hp: 430, speed: 9.5, range: 72, dmg: 145, rof: 4.6, acc: 0.78, at: true, proj: 'shell', splash: 4, vision: 85, cost: 500, time: 18, r: 3.4, turn: 1.2, armor: 0.85 },
   medic: { name: 'Médico', plural: 'Médicos', team: 'us', inf: true, medic: true, hp: 45, speed: 7, range: 0, vision: 75, cost: 80, time: 6, r: 0.9 },
   para: { name: 'Paraquedista', plural: 'Paraquedistas', team: 'us', inf: true, hp: 52, speed: 7, range: 33, dmg: 8, rof: 1.3, acc: 0.55, vision: 80, r: 0.9, grenade: true },
-  destroyer: { name: 'Contratorpedeiro', plural: 'Contratorpedeiros', team: 'us', naval: true, hp: 2600, speed: 11, range: 215, dmg: 50, rof: 3.2, acc: 0.5, at: true, proj: 'shell', splash: 6, vision: 160, r: 7, turn: 0.35, armor: 1.4 },
+  destroyer: { name: 'Contratorpedeiro', plural: 'Contratorpedeiros', team: 'us', naval: true, hp: 2600, speed: 11, range: 215, dmg: 50, rof: 3.2, acc: 0.5, at: true, proj: 'shell', splash: 6, vision: 240, r: 7, turn: 0.35, armor: 1.4, cost: 900, time: 30, aa: { range: 150, dmg: 16, rof: 0.35, acc: 0.28 } },
+  cruiser: { name: 'Cruzador leve', plural: 'Cruzadores leves', team: 'us', naval: true, hp: 6000, speed: 9, range: 260, dmg: 75, rof: 1.7, acc: 0.5, at: true, proj: 'shell', splash: 7, vision: 280, r: 10, turn: 0.25, armor: 1.8, cost: 1600, time: 50, aa: { range: 170, dmg: 20, rof: 0.25, acc: 0.3 } },
+  pt: { name: 'Lancha PT', plural: 'Lanchas PT', team: 'us', naval: true, navalTarget: true, hp: 480, speed: 24, range: 140, dmg: 380, rof: 10, acc: 0.55, at: true, proj: 'torpedo', splash: 4, vision: 220, r: 4, turn: 1.0, armor: 1, cost: 260, time: 12 },
   dozer: { name: 'Veículo de Construção', plural: 'Veículos de Construção', team: 'us', vehicle: true, hp: 650, speed: 7, range: 0, vision: 60, r: 3.4, turn: 1.3, armor: 1 },
   gren: { name: 'Granadeiro', plural: 'Granadeiros', team: 'de', inf: true, hp: 42, speed: 6, range: 32, dmg: 7, rof: 1.6, acc: 0.45, vision: 72, r: 0.9, grenade: true },
   pzschreck: { name: 'Panzerschreck', plural: 'Panzerschrecks', team: 'de', inf: true, hp: 42, speed: 5.8, range: 36, dmg: 115, rof: 6, acc: 0.55, at: true, proj: 'rocket', splash: 2.5, vision: 72, r: 0.9 },
   panzer4: { name: 'Panzer IV', plural: 'Panzer IV', team: 'de', tank: true, hp: 520, speed: 8.5, range: 62, dmg: 95, rof: 4, acc: 0.7, at: true, proj: 'shell', splash: 6, vision: 82, r: 3.5, turn: 1.2, armor: 1, coax: true },
   sani: { name: 'Sanitäter', plural: 'Sanitäter', team: 'de', inf: true, medic: true, hp: 42, speed: 6.6, range: 0, vision: 72, r: 0.9 },
   sboot: { name: 'Lancha S-Boot', plural: 'Lanchas S-Boot', team: 'de', naval: true, navalTarget: true, hp: 650, speed: 20, range: 130, dmg: 420, rof: 12, acc: 0.55, at: true, proj: 'torpedo', splash: 4, vision: 200, r: 4, turn: 0.9, armor: 1 },
+  jinf: { name: 'Fuzileiro japonês', plural: 'Fuzileiros japoneses', team: 'de', inf: true, hp: 40, speed: 6.4, range: 32, dmg: 7, rof: 1.7, acc: 0.45, vision: 72, r: 0.9, grenade: true },
+  jat: { name: 'Morteiro de joelho Tipo 89', plural: 'Morteiros Tipo 89', team: 'de', inf: true, hp: 40, speed: 6.0, range: 48, dmg: 50, rof: 5, acc: 0.5, proj: 'grenade', splash: 4.5, vision: 75, r: 0.9 },
+  jmedic: { name: 'Padioleiro japonês', plural: 'Padioleiros japoneses', team: 'de', inf: true, medic: true, hp: 40, speed: 6.6, range: 0, vision: 72, r: 0.9 },
+  chiha: { name: 'Chi-Ha Tipo 97', plural: 'Chi-Ha Tipo 97', team: 'de', tank: true, hp: 340, speed: 9, range: 52, dmg: 65, rof: 3.2, acc: 0.65, at: true, proj: 'shell', splash: 4, vision: 78, r: 3.0, turn: 1.3, armor: 0.8, coax: true },
+  hago: { name: 'Ha-Go Tipo 95', plural: 'Ha-Go Tipo 95', team: 'de', tank: true, light: true, hp: 230, speed: 12, range: 46, dmg: 38, rof: 2.4, acc: 0.65, at: true, proj: 'shell', splash: 2.5, vision: 80, r: 2.6, turn: 1.6, armor: 0.7, coax: true },
+  jdd: { name: 'Contratorpedeiro japonês', plural: 'Contratorpedeiros japoneses', team: 'de', naval: true, hp: 2400, speed: 12, range: 205, dmg: 48, rof: 3, acc: 0.5, at: true, proj: 'shell', splash: 6, vision: 230, r: 7, turn: 0.4, armor: 1.3, aa: { range: 140, dmg: 14, rof: 0.4, acc: 0.26 } },
   sdkfz251: { name: 'Sd.Kfz. 251', plural: 'Sd.Kfz. 251', team: 'de', tank: true, light: true, hp: 320, speed: 11, range: 50, dmg: 6, rof: 0.11, acc: 0.3, tracer: true, vision: 80, r: 3.0, turn: 1.5, armor: 1 },
   stug: { name: 'StuG III', plural: 'StuG III', team: 'de', tank: true, casemate: true, hp: 580, speed: 8, range: 66, dmg: 115, rof: 4.2, acc: 0.75, at: true, proj: 'shell', splash: 5, vision: 80, r: 3.4, turn: 1.1, armor: 1.1 },
   tiger: { name: 'Tiger I', plural: 'Tigers', team: 'de', tank: true, hp: 1100, speed: 6.5, range: 72, dmg: 150, rof: 5, acc: 0.78, at: true, proj: 'shell', splash: 7, vision: 90, r: 4.1, turn: 0.8, armor: 1.5, coax: true },
@@ -40,11 +48,18 @@ const BT = {
   bunker: { name: 'Casamata alemã', team: 'de', hp: 450, w: 9, d: 8, weapon: { range: 150, dmg: 4, rof: 0.1, acc: 0.3, burst: true, tracer: true } },
   nest_de: { name: 'Ninho de MG42', team: 'de', hp: 420, w: 7, d: 7, weapon: { range: 55, dmg: 5, rof: 0.09, acc: 0.26, burst: true, tracer: true } },
   dehq: { name: 'Quartel-General Alemão', team: 'de', hp: 4000, w: 26, d: 20 },
+  naval: { name: 'Base Naval', short: 'Base Naval', hp: 1300, w: 16, d: 12, cost: 700, time: 22, trains: ['pt', 'destroyer', 'cruiser'], buildR: 40, coastOnly: true },
+  coastgun: { name: 'Canhão Costeiro 155mm', short: 'Costeiro', hp: 750, w: 8, d: 8, cost: 450, time: 15, buildR: 40, coastOnly: true, weapon: { range: 245, dmg: 90, rof: 4.5, acc: 0.55, at: true, proj: 'shell', splash: 6 } },
   aa: { name: 'Canhão Antiaéreo 40mm', short: 'Antiaéreo', hp: 500, w: 7, d: 7, cost: 300, time: 12, buildR: 35, aa: { range: 175, dmg: 30, rof: 0.55, acc: 0.34 } },
   flak_de: { name: 'Flak 38 de 20 mm', team: 'de', hp: 380, w: 6, d: 6, aa: { range: 150, dmg: 16, rof: 0.32, acc: 0.28 } },
 };
-const BUILD_ORDER = ['depot', 'barracks', 'factory', 'mgnest', 'atgun', 'aa', 'hospital'];
+const BUILD_ORDER = ['depot', 'barracks', 'factory', 'mgnest', 'atgun', 'aa', 'hospital', 'naval', 'coastgun'];
 
+function foe() { return SC.foe || { adj: 'alemão', adjF: 'alemã', pl: 'alemães', air: 'fw190' }; }
+function dispName(e) { return (SC.names && SC.names[e.kind]) || e.def.name; }
+function strikeName(k) { return (SC.strikeNames && SC.strikeNames[k]) || STRIKES[k].name; }
+function airName(p) { return (SC.airNames && SC.airNames[p.kind]) || p.def.name; }
+function hqTown() { return MAP.towns[4].name; }
 /* ---------- renderizador e cena ---------- */
 const $ = (id) => document.getElementById(id);
 const canvas = $('c');
@@ -309,6 +324,7 @@ function addEnt(o) {
 }
 function spawnUnit(kind, x, z, o) {
   o = o || {};
+  if (SC.unitMap && SC.unitMap[kind]) kind = SC.unitMap[kind];
   const d = UT[kind];
   const mesh = d.inf ? makeSoldier(d.team, kind) : kind === 'dozer' ? makeDozer() : d.naval ? makeShip(kind) : makeTank(kind);
   const u = addEnt({
@@ -658,7 +674,7 @@ function updateUnit(u, dt) {
     if (d.range > 0) {
       if (u.order === 'attack' && u.forced) u.target = u.forced;
       else {
-        const scan = u.order === 'move' ? (u.inf ? 0 : d.range) : u.order === 'hold' ? d.range + 4 : d.vision;
+        const scan = u.order === 'move' ? (u.inf ? 0 : d.range) : u.order === 'hold' ? d.range + 4 : Math.max(d.vision, d.range + 10);
         u.target = scan > 0 ? findTarget(u, scan) : null;
       }
     }
@@ -675,6 +691,13 @@ function updateUnit(u, dt) {
   let tdist = 0;
   const mg = d.medic ? medicGoal(u, dt) : null;
   if (mg) { goal = mg.goal; stop = mg.stop || 1.2; }
+  else if (u.banzai && t && t.unit && !t.def.naval && Math.hypot(t.x - u.x, t.z - u.z) < 38) {
+    // carga banzai: corre com a baioneta sem procurar cobertura
+    tdist = Math.hypot(t.x - u.x, t.z - u.z);
+    if (!u.banzaiCry) { u.banzaiCry = true; shout(u, 'BANZAI!'); }
+    goal = t; stop = 1.3; u.speedMul = 1.35;
+    if (tdist < 2.8 && u.cool <= 0) { u.cool = 1.1; damage(t, 32, u, { dmg: 32 }); u.fireT = S.time; sfx('clank', u.x, u.z); }
+  }
   else if (t) {
     tdist = Math.hypot(t.x - u.x, t.z - u.z) - (t.building ? t.r * 0.8 : 0);
     const inRange = tdist <= d.range;
@@ -733,6 +756,7 @@ function updateUnit(u, dt) {
   const m = u.mesh;
   if (d.naval) {
     u.y = 0;
+    if (d.aa) updateAA(u, dt);
     m.position.set(u.x, 0.15 + Math.sin(S.time * 0.9 + u.id) * 0.2, u.z); m.rotation.y = u.heading;
     m.rotation.z = Math.sin(S.time * 0.7 + u.id) * 0.03; m.rotation.x = Math.sin(S.time * 0.5 + u.id) * 0.015;
     if (u.speedNow > 1) {
@@ -764,15 +788,16 @@ function updateUnit(u, dt) {
 }
 
 /* ---------- navios: lanchas torpedeiras alemãs ---------- */
-function sbootRaid() {
+function sbootRaid(n) {
   const targets = ents.filter(e => e.alive && e.team === 'us' && e.def.naval);
   if (!targets.length) return;
-  for (const sx of [-1, 1]) {
+  const sides = []; for (let i = 0; i < (n || 2); i++) sides.push(i % 2 ? 1 : -1);
+  for (const sx of sides) {
     const u = spawnUnit('sboot', sx * 690, 520 + rr(-40, 40), { heading: sx > 0 ? -Math.PI / 2 : Math.PI / 2 });
     const t = targets[(rand() * targets.length) | 0];
     u.order = 'amove'; u.dest = { x: t.x, z: t.z }; u.alwaysSeen = true;
   }
-  toast('Lanchas torpedeiras S-Boot atacam os navios!', 'bad');
+  toast(SC.biome === 'tropical' ? 'A frota japonesa ataca! Contratorpedeiros inimigos se aproximam.' : 'Lanchas torpedeiras S-Boot atacam os navios!', 'bad');
 }
 
 /* ---------- paraquedistas ---------- */
@@ -888,9 +913,10 @@ function updateBuilding(b, dt) {
     const k = b.queue[0]; b.prodT += dt;
     if (b.prodT >= UT[k].time) {
       b.prodT = 0; b.queue.shift();
-      const sx = b.x + rr(-3, 3), sz = b.z + d.d / 2 + 3;
+      const nv = UT[k].naval;
+      const sx = b.x + rr(-3, 3), sz = nv ? 372 : b.z + d.d / 2 + 3;
       const u = spawnUnit(k, sx, sz, { heading: 0 });
-      const rp = b.rally || { x: b.x + rr(-8, 8), z: b.z + d.d / 2 + 14 + rr(0, 6) };
+      const rp = nv ? { x: b.x + rr(-40, 40), z: 405 + rr(0, 30) } : b.rally || { x: b.x + rr(-8, 8), z: b.z + d.d / 2 + 14 + rr(0, 6) };
       u.order = 'move'; u.dest = { x: rp.x + rr(-4, 4), z: rp.z + rr(-4, 4) };
       refreshPanel(true);
     }
@@ -923,10 +949,13 @@ function updateBuilding(b, dt) {
 }
 function canPlace(kind, x, z) {
   const d = BT[kind], r = Math.max(d.w, d.d) * 0.55;
-  if (groundH(x, z) < 1.4 || (SC.coast && z > 300)) return 'Terreno inválido: muito perto da água.';
+  if (kind === 'naval') {
+    if (!SC.coast) return 'Sem litoral neste cenário.';
+    if (z < 282 || z > 326) return 'A Base Naval precisa ficar na praia, perto da água.';
+  } else if (groundH(x, z) < 1.4 || (SC.coast && z > 300)) return 'Terreno inválido: muito perto da água.';
   let inR = false;
   for (const e of ents) if (e.building && e.alive && e.team === 'us' && e.complete) {
-    const R = e.def.buildR || 40; if (Math.hypot(e.x - x, e.z - z) < R) { inR = true; break; }
+    const R = (e.def.buildR || 40) * (kind === 'naval' || kind === 'coastgun' ? 2.4 : 1); if (Math.hypot(e.x - x, e.z - z) < R) { inR = true; break; }
   }
   if (!inR) return 'Fora da área da base: construa perto das suas construções.';
   for (const e of ents) if (e.building && e.alive && Math.hypot(e.x - x, e.z - z) < e.r + r + 1.5) return 'Espaço ocupado por outra construção.';
@@ -1105,7 +1134,7 @@ function startLanding() {
   toast(road ? 'O comboio chega pela estrada. Preparem-se para desembarcar!' : 'Hora H — as barcaças Higgins se aproximam da praia.');
   later(7, () => toast('Dica: toque em APOIO para chamar ' + (SC.coast ? 'destróieres, ' : '') + 'caças P-47 ou paraquedistas.'));
 }
-function objective1(done) { return 'Destrua as 4 ' + (SC.coast ? 'casamatas alemãs na falésia' : 'posições alemãs na colina') + ' (' + done + '/4).'; }
+function objective1(done) { return 'Destrua as 4 ' + (SC.coast ? 'casamatas ' + foe().pl.replace('ses', 'sas').replace('ães', 'ãs') + ' na praia' : 'posições ' + foe().pl.replace('ães', 'ãs') + ' na colina') + ' (' + done + '/4).'; }
 function updateLanding(dt) {
   updateBoats(dt);
   for (let i = S.reinf.length - 1; i >= 0; i--) {
@@ -1123,7 +1152,7 @@ function updateLanding(dt) {
     for (const [x, z, tx] of [[-200, 760, -180], [170, 800, 150]]) { const u = spawnUnit('destroyer', x, z, { heading: Math.PI }); u.order = 'move'; u.dest = { x: tx, z: 392 }; }
     toast('Contratorpedeiros se aproximam da costa! Selecione-os e toque no mar para movê-los.', 'good');
   }
-  if (SC.coast && !S.sbootDone && S.t > 115) { S.sbootDone = true; sbootRaid(); }
+  if (SC.coast && !S.sbootDone && S.t > 115) { S.sbootDone = true; sbootRaid(2); if (SC.biome === 'tropical') later(20, () => kamikazeRaid(2)); }
   const alive = S.bunkers.filter(b => b.alive).length;
   S.artT -= dt;
   if (S.artT <= 0 && alive > 0) {
@@ -1141,10 +1170,10 @@ function updateLanding(dt) {
     if (bs.length) { const b = bs[(rand() * bs.length) | 0]; const x = b.x + rr(-25, 25), z = b.z + rr(-30, 20); explosion(x, surfaceH(x, z), z, rr(0.8, 1.3)); }
   }
   setPhaseText(null, objective1(4 - alive));
-  if (alive === 0) { toast(SC.coast ? 'PRAIA ASSEGURADA! As casamatas caíram.' : 'COLINA TOMADA! As posições alemãs caíram.', 'good'); startLST(); return; }
+  if (alive === 0) { toast(SC.coast ? 'PRAIA ASSEGURADA! As casamatas caíram.' : 'COLINA TOMADA! As posições inimigas caíram.', 'good'); startLST(); return; }
   const usAlive = ents.some(e => e.alive && e.team === 'us' && !e.def.naval);
   const pending = S.reinf.length || S.boats.some(b => b.state !== 'out');
-  if (!usAlive && !pending) endGame(false, 'A primeira onda foi aniquilada. As posições alemãs resistiram.');
+  if (!usAlive && !pending) endGame(false, 'A primeira onda foi aniquilada. As posições inimigas resistiram.');
 }
 function artilleryShell(x, z) {
   whistle(x, z);
@@ -1254,7 +1283,7 @@ function deployHQ() {
   $('bBuild').hidden = false;
   setSel([hq]);
   toast('Base montada! Construa um Depósito e um Quartel.', 'good');
-  setPhaseText('FASE 3 · AVANÇO NA NORMANDIA', 'Capture as vilas e destrua o Quartel-General Alemão em Trévières.');
+  setPhaseText('FASE 3 · AVANÇO', 'Capture as vilas e destrua o quartel-general ' + foe().adj + ' em ' + hqTown() + '.');
 }
 
 /* ---------- fase 3: base, vilas e contra-ataques ---------- */
@@ -1262,7 +1291,7 @@ function makeCP(t) {
   const g = new THREE.Group(); g.position.set(t.x, groundH(t.x, t.z), t.z);
   P(G.cyl8, 0x8a8a84, 0.12, 12, 0.12, 0, 6, 0, g);
   P(G.box, 0x6e6658, 2.4, 0.6, 2.4, 0, 0.3, 0, g);
-  const cloth = new THREE.Mesh(G.plane, decalMat(TEX.deflag)); cloth.scale.set(3.6, 2.4, 1); cloth.position.set(1.85, 10.6, 0); g.add(cloth);
+  const cloth = new THREE.Mesh(G.plane, decalMat(foeFlag())); cloth.scale.set(3.6, 2.4, 1); cloth.position.set(1.85, 10.6, 0); g.add(cloth);
   scene.add(g);
   const ring = new THREE.Mesh(new THREE.RingGeometry(29, 30, 64), new THREE.MeshBasicMaterial({ color: 0xe0573f, transparent: true, opacity: 0.5, depthWrite: false }));
   ring.rotation.x = -Math.PI / 2; ring.position.set(t.x, groundH(t.x, t.z) + 0.6, t.z); scene.add(ring);
@@ -1276,9 +1305,9 @@ function updCPs() {
     if (us && !de) c.prog = Math.min(1, c.prog + 0.5 / 7);
     else if (de && !us) c.prog = Math.max(-1, c.prog - 0.5 / 7);
     if (c.prog >= 1 && c.owner !== 'us') { c.owner = 'us'; toast(c.town.name + ' libertada! +6 suprimentos/s', 'good'); }
-    if (c.prog <= -1 && c.owner !== 'de') { c.owner = 'de'; toast(c.town.name + ' foi retomada pelos alemães!', 'bad'); }
+    if (c.prog <= -1 && c.owner !== 'de') { c.owner = 'de'; toast(c.town.name + ' foi retomada pelos ' + foe().pl + '!', 'bad'); }
     const k = Math.abs(c.prog);
-    c.cloth.material = decalMat(c.prog >= 0 ? TEX.usflag : TEX.deflag);
+    c.cloth.material = decalMat(c.prog >= 0 ? TEX.usflag : foeFlag());
     c.cloth.position.y = 2 + k * 8.6;
     c.ring.material.color.setHex(c.owner === 'us' ? 0x8fd16f : 0xe0573f);
   }
@@ -1309,8 +1338,9 @@ function spawnWave(n) {
   comp.forEach((k) => {
     const u = spawnUnit(k, src.x + rr(-22, 22), src.z + rr(10, 30), { heading: 0 });
     u.order = 'amove'; u.dest = { x: tgt.x + rr(-18, 18), z: tgt.z + rr(-18, 18) }; u.wave = true;
+    if (u.kind === 'jinf' && rand() < 0.5) u.banzai = true;
   });
-  toast('Contra-ataque alemão! Onda ' + n + ' saindo de ' + (src === hq ? 'Trévières' : src.town.name) + '.', 'bad');
+  toast((SC.biome === 'tropical' ? 'Contra-ataque japonês com cargas banzai!' : 'Contra-ataque ' + foe().adj + '!') + ' Onda ' + n + ' saindo de ' + (src === hq ? hqTown() : src.town.name) + '.', 'bad');
 }
 function waveRetarget() {
   const targets = ents.filter(e => e.alive && e.team === 'us' && e.building);
@@ -1329,8 +1359,8 @@ function updateBase(dt) {
   S.retT = (S.retT || 0) - dt; if (S.retT <= 0) { S.retT = 5; waveRetarget(); }
   const freed = S.cps.filter(c => c.owner === 'us').length;
   const mm = Math.floor(Math.max(0, S.waveT) / 60), ss = Math.floor(Math.max(0, S.waveT) % 60);
-  setPhaseText(null, 'Destrua o QG alemão em Trévières. Vilas libertadas: ' + freed + '/4. Contra-ataque em ' + mm + ':' + String(ss).padStart(2, '0') + '.');
-  if (S.deHQ && !S.deHQ.alive) endGame(true, 'O Quartel-General Alemão em Trévières caiu. A cabeça de praia de Omaha está segura e o caminho para o interior da Normandia está aberto.');
+  setPhaseText(null, 'Destrua o QG ' + foe().adj + ' em ' + hqTown() + '. Vilas libertadas: ' + freed + '/4. Contra-ataque em ' + mm + ':' + String(ss).padStart(2, '0') + '.');
+  if (S.deHQ && !S.deHQ.alive) endGame(true, 'O quartel-general ' + foe().adj + ' em ' + hqTown() + ' caiu. A operação foi um sucesso e o caminho para o interior está aberto.');
   else if (S.usHQ && !S.usHQ.alive) endGame(false, 'O Centro de Comando foi destruído. Sem comando, a cabeça de praia não resistiu ao contra-ataque.');
 }
 
@@ -1423,6 +1453,7 @@ const AIR = {
   b26: { name: 'B-26 Marauder', team: 'us', hp: 320, speed: 72, alt: 85 },
   fw190: { name: 'Fw 190', team: 'de', hp: 110, speed: 100, alt: 62 },
   c47: { name: 'C-47 Skytrain', team: 'us', hp: 260, speed: 66, alt: 62 },
+  zero: { name: 'Zero A6M', team: 'de', hp: 90, speed: 105, alt: 60 },
 };
 const STRIKES = {
   naval: { name: 'Destróieres', desc: 'bombardeio naval', cd: 60, phases: ['landing', 'deploy', 'base'], tip: 'Toque no alvo do bombardeio naval.' },
@@ -1466,8 +1497,8 @@ function removePlane(p) {
 function shootDown(p) {
   if (p.state === 'down') return;
   p.state = 'down'; p.vy = -4;
-  if (p.team === 'de') { S.kills++; toast(p.def.name + ' abatido!', 'good'); }
-  else { S.lost++; toast(p.def.name + ' abatido pela antiaérea!', 'bad'); }
+  if (p.team === 'de') { S.kills++; toast(airName(p) + ' abatido!', 'good'); }
+  else { S.lost++; toast(airName(p) + ' abatido pela antiaérea!', 'bad'); }
 }
 function dropBomb(p) {
   const m = makeBomb(); scene.add(m);
@@ -1513,6 +1544,20 @@ function updatePlane(p, dt) {
       if (groundH(p.x, p.z) > -0.3) areaDamage(p.x, p.z, 7, 80, null, { at: true, splash: 7 }, null);
       removePlane(p); return;
     }
+  } else if (p.role === 'kamikaze') {
+    if (!p.tgt || !p.tgt.alive) { const ships = ents.filter(e => e.alive && e.team === 'us' && e.def.naval); p.tgt = ships[0] || null; if (!p.tgt) { p.role = 'flyby'; return; } }
+    const t = p.tgt, dx = t.x - p.x, dz = t.z - p.z, dh = Math.hypot(dx, dz) || 1;
+    p.dx += (dx / dh - p.dx) * Math.min(1, dt * 1.5); p.dz += (dz / dh - p.dz) * Math.min(1, dt * 1.5);
+    const l = Math.hypot(p.dx, p.dz) || 1; p.dx /= l; p.dz /= l;
+    const yt = dh > 320 ? 70 : 3 + (dh / 320) * 67;
+    p.vy = clamp((yt - p.y) * 2.2, -45, 30);
+    p.x += p.dx * a.speed * dt; p.z += p.dz * a.speed * dt; p.y += p.vy * dt;
+    if (Math.hypot(dh, p.y - 3) < 9) {
+      explosion(p.x, Math.max(p.y, 1.5), p.z, 2.2); damage(t, 650, null, { at: true }); removePlane(p);
+      if (t.alive) toast(dispName(t) + ' atingido por um kamikaze!', 'bad');
+      return;
+    }
+    if (p.y < 0.5) { explosion(p.x, 0, p.z, 1.6); removePlane(p); return; }
   } else {
     const s = (p.tx - p.x) * p.dx + (p.tz - p.z) * p.dz;
     let yt = p.base + a.alt;
@@ -1568,7 +1613,7 @@ function updatePlane(p, dt) {
 }
 function updateAA(b, dt) {
   const w = b.def.aa, ud = b.mesh.userData;
-  b.wcool -= dt;
+  if (b.building) b.wcool -= dt; else { b.aaCool = (b.aaCool || 0) - dt; if (b.aaCool > 0) return; b.aaCool = w.rof; b.wcool = 0; }
   let best = null, bd = w.range;
   for (const p of S.planes) {
     if (p.state === 'down' || p.team === b.team) continue;
@@ -1577,12 +1622,16 @@ function updateAA(b, dt) {
   if (!best) return;
   const lead = bd / 260 * best.def.speed;
   const ax = best.x + best.dx * lead, az = best.z + best.dz * lead, ay = best.y;
-  b.turretYaw = turnTo(b.turretYaw, angDiff(Math.atan2(ax - b.x, az - b.z), b.heading), 3.5 * dt);
-  ud.turret.rotation.y = b.turretYaw;
-  if (ud.barrel) ud.barrel.rotation.x = -Math.atan2(ay - b.y - 2, Math.hypot(ax - b.x, az - b.z));
+  const ship = !b.building;
+  if (!ship) {
+    b.turretYaw = turnTo(b.turretYaw, angDiff(Math.atan2(ax - b.x, az - b.z), b.heading), 3.5 * dt);
+    ud.turret.rotation.y = b.turretYaw;
+    if (ud.barrel) ud.barrel.rotation.x = -Math.atan2(ay - b.y - 2, Math.hypot(ax - b.x, az - b.z));
+  }
   if (b.wcool > 0) return;
   b.wcool = w.rof * (0.9 + rand() * 0.2);
-  b.mesh.updateMatrixWorld(true); ud.muzzle.getWorldPosition(TV2);
+  if (ship) TV2.set(b.x + rr(-3, 3), 5.5, b.z + rr(-8, 8));
+  else { b.mesh.updateMatrixWorld(true); ud.muzzle.getWorldPosition(TV2); }
   const mp = TV2.clone(); muzzleFlash(mp, 1.3);
   const hit = rand() < w.acc * (1 - 0.5 * bd / w.range);
   tracer(mp, TV.set(ax + rr(-3, 3), ay + rr(-2, 2), az + rr(-3, 3)));
@@ -1598,7 +1647,7 @@ function callStrike(kind, x, z) {
   else if (kind === 'p47') {
     spawnPlane('p47', x, z, dx, dz, 'strafe', -5, 700);
     spawnPlane('p47', x, z, dx, dz, 'strafe', 6, 880);
-    toast('P-47 Thunderbolts a caminho!', 'good');
+    toast(strikeName('p47') + ' a caminho!', 'good');
   } else if (kind === 'para') {
     [['para', 'para', 'medic'], ['para', 'bazooka', 'para'], ['para', 'para', 'para']].forEach((ks, i) => {
       const pl = spawnPlane('c47', x, z, dx, dz, 'para', (i - 1) * 16, 740 + i * 30); pl.kinds = ks.slice();
@@ -1606,15 +1655,27 @@ function callStrike(kind, x, z) {
     toast('C-47 com paraquedistas da 101ª a caminho!', 'good');
   } else if (kind === 'b26') {
     for (const [side, lead] of [[-16, 760], [0, 720], [16, 780]]) spawnPlane('b26', x, z, dx, dz, 'bomb', side, lead);
-    toast('B-26 Marauders a caminho! Afaste suas tropas do alvo.', 'good');
+    toast(strikeName('b26') + ' a caminho! Afaste suas tropas do alvo.', 'good');
   }
   marker(x, z, 0xe3a33c);
   updSide();
 }
 function germanRaid(tx, tz, dx, dz) {
-  spawnPlane('fw190', tx, tz, dx, dz, 'strafe', -5, 650);
-  spawnPlane('fw190', tx, tz, dx, dz, 'strafe', 5, 760);
-  toast('Caças Fw 190 da Luftwaffe atacando!', 'bad');
+  const k = foe().air;
+  spawnPlane(k, tx, tz, dx, dz, 'strafe', -5, 650);
+  spawnPlane(k, tx, tz, dx, dz, 'strafe', 5, 760);
+  toast(k === 'zero' ? 'Caças Zero japoneses atacando!' : 'Caças Fw 190 da Luftwaffe atacando!', 'bad');
+}
+// kamikazes: caças Zero mergulham contra os navios
+function kamikazeRaid(n) {
+  const ships = ents.filter(e => e.alive && e.team === 'us' && e.def.naval);
+  if (!ships.length) return;
+  for (let i = 0; i < n; i++) {
+    const t = ships[(rand() * ships.length) | 0], a = rr(-0.8, 0.8);
+    const p = spawnPlane('zero', t.x, t.z, Math.sin(a), Math.cos(a) * -1, 'kamikaze', rr(-10, 10), 700 + i * 90);
+    p.tgt = t;
+  }
+  toast('KAMIKAZES! Caças Zero mergulham contra a frota!', 'bad');
 }
 function raidTarget() {
   const list = ents.filter(e => e.alive && e.team === 'us' && (e.building || e.armored));
@@ -1634,7 +1695,16 @@ function updAir(dt) {
       if (beach.length) { S.prillerDone = true; const v = beach[(rand() * beach.length) | 0]; germanRaid(v.x, v.z, rand() < 0.5 ? 1 : -1, 0.15); }
     }
   } else if (S.phase === 'base') {
-    if (SC.coast) { S.sbootT = (S.sbootT === undefined ? 200 : S.sbootT) - dt; if (S.sbootT <= 0) { S.sbootT = 220; sbootRaid(); } }
+    if (SC.coast) {
+      S.sbootT = (S.sbootT === undefined ? 200 : S.sbootT) - dt;
+      if (S.sbootT <= 0) {
+        S.navalWave = (S.navalWave || 0) + 1;
+        const jp = SC.biome === 'tropical';
+        S.sbootT = jp ? 170 : 220;
+        sbootRaid(jp ? 2 + Math.floor(S.navalWave / 2) : 2);
+        if (jp) later(25, () => kamikazeRaid(2 + Math.floor(S.navalWave / 2)));
+      }
+    }
     S.airT -= dt;
     if (S.airT <= 0) {
       S.airT = 110 + rand() * 50;
@@ -1754,7 +1824,7 @@ function handleTap(sx, sy, right) {
   }
   if (hit && hit.team === 'de') {
     const a = movers.filter(e => e.def.range > 0);
-    if (a.length) orderAttack(a, hit); else toast(hit.def.name + ' · inimigo');
+    if (a.length) orderAttack(a, hit); else toast(dispName(hit) + ' · inimigo');
     return;
   }
   if (!g) return;
@@ -1898,14 +1968,14 @@ function refreshPanel(force) {
   let title = '', info = '', btns = '';
   if (!S.placing && (S.supportOpen || S.strike)) {
     if (S.strike) {
-      title = STRIKES[S.strike].name; info = 'Toque no mapa para escolher o alvo.';
+      title = strikeName(S.strike); info = 'Toque no mapa para escolher o alvo.';
       btns = '<button class="pb warn" data-act="strikecancel">CANCELAR<small>voltar</small></button>';
     } else {
       title = 'Apoio de fogo'; info = 'Escolha o tipo de ataque e depois toque no alvo.';
       for (const k of Object.keys(STRIKES)) {
         if (k === 'naval' && !SC.coast) continue;
         const st = STRIKES[k], ok = supportReady(k), avail = strikeAvail(k);
-        btns += '<button class="pb' + (ok ? ' go' : '') + '" data-act="strike:' + k + '"' + (ok ? '' : ' disabled') + '>' + st.name + '<small>' + (!avail ? 'após montar a base' : ok ? st.desc : 'recarga ' + Math.ceil(S.cd[k]) + 's') + '</small></button>';
+        btns += '<button class="pb' + (ok ? ' go' : '') + '" data-act="strike:' + k + '"' + (ok ? '' : ' disabled') + '>' + strikeName(k) + '<small>' + (!avail ? 'após montar a base' : ok ? st.desc : 'recarga ' + Math.ceil(S.cd[k]) + 's') + '</small></button>';
       }
       btns += '<button class="pb" data-act="supclose">FECHAR<small>&nbsp;</small></button>';
     }
@@ -1922,6 +1992,7 @@ function refreshPanel(force) {
     if (!b.complete) btns += '<div style="flex-basis:100%" class="qbar"><i data-prog="build"></i></div>';
     else if (b.kind === 'hq') {
       for (const k of BUILD_ORDER) {
+        if (BT[k].coastOnly && !SC.coast) continue;
         const bd = BT[k], ok = S.supplies >= bd.cost && (!bd.req || ents.some(e => e.alive && e.kind === bd.req && e.complete));
         btns += '<button class="pb" data-act="build:' + k + '"' + (ok ? '' : ' disabled') + '>' + bd.short + '<small>' + bd.cost + '</small></button>';
       }

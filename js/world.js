@@ -52,6 +52,23 @@ const SCENARIOS = {
     pal: { us: { jacket: 0x5a573c, pants: 0x504d36 }, de: { jacket: 0x656b62, pants: 0x585e55 } },
     paint: { us: { paint: 0x4f5428, camo: [0xd9dbd6, 0xc5c8c2] }, de: { paint: 0xd6d8d2, camo: [0x9a8a58, 0x6d6a5a] } },
   },
+  pacifico: {
+    id: 'pacifico', biome: 'tropical', coast: true, bluff: 8, hills: 1.4, seed: 1544, mountain: [330, -560, 58, 150],
+    title: 'SAIPAN', subtitle: 'Ilhas Marianas, Pacífico', card: 'Pacífico', when: '15 jun 1944',
+    eyebrow: '15 DE JUNHO DE 1944 · 2ª E 4ª DIVISÕES DE FUZILEIROS NAVAIS',
+    brief: ['Os Fuzileiros Navais desembarcam nas praias de coral de Saipan. Casamatas japonesas de troncos de coqueiro dominam a praia, e a Marinha Imperial vai mandar contratorpedeiros e caças Zero contra a sua frota.',
+      'Monte a base, construa uma Base Naval para enfrentar a frota japonesa, resista às cargas banzai e destrua o quartel-general japonês ao pé do Monte Tapochau.'],
+    towns: ['Charan Kanoa', 'Garapan', 'Tanapag', 'Aslito', 'Monte Tapochau'],
+    sky: 0x9cc3de, fog: [320, 1300], sun: 0xfff6e0, sunI: 1.0, hemi: [0xd8ecf6, 0x4a5a32, 0.8], skyTop: 0x5b93c4, skyHor: 0xcfe2ea,
+    water: { deep: 0x124a66, shallow: 0x3cb7b0, sand: 0xd9cfae },
+    pal: { us: { jacket: 0x6c7550, pants: 0x646c4a, helm: 0x5b6a3c, band: 0x4a5a30 }, de: { jacket: 0x857a52, pants: 0x7d7350, helm: 0x645d3c, collar: 0x7a704a, web: 0x5a4632, pack: 0x7a6d48, boot: 0x3d3326, legging: 0x8a7f58 } },
+    paint: { us: { paint: 0x5a6136, camo: null }, de: { paint: 0x7d6c45, camo: [0x4f5a35, 0x9a8a5a] } },
+    unitMap: { gren: 'jinf', pzschreck: 'jat', panzer4: 'chiha', tiger: 'chiha', stug: 'chiha', sdkfz251: 'hago', sani: 'jmedic', sboot: 'jdd' },
+    foe: { adj: 'japonês', adjF: 'japonesa', pl: 'japoneses', air: 'zero' },
+    names: { dehq: 'Quartel-General Japonês', bunker: 'Casamata japonesa', nest_de: 'Ninho de metralhadora Tipo 92', flak_de: 'Canhão AA Tipo 96' },
+    strikeNames: { p47: 'Caças F6F Hellcat', b26: 'Bombardeiros B-25', naval: 'Bombardeio naval' },
+    airNames: { p47: 'F6F Hellcat', b26: 'B-25 Mitchell' },
+  },
 };
 let SC = SCENARIOS.omaha;
 
@@ -91,6 +108,7 @@ function groundH(x, z) {
     const k = smooth((175 - z) / 90) * SC.hills;
     if (k > 0) h += k * (2.6 * Math.sin(x * 0.011 + 1.3) * Math.cos(z * 0.009) + 1.4 * Math.sin(x * 0.027 + z * 0.021) + 0.7 * Math.cos(x * 0.05 - z * 0.04));
   }
+  if (SC.mountain) { const [mx, mz, mh, mr] = SC.mountain, dx = x - mx, dz = z - mz; h += mh * Math.exp(-(dx * dx + dz * dz) / (mr * mr)); }
   if (SC.biome === 'desert') {
     const k = smooth((200 - z) / 120);
     h += k * (1.4 * Math.sin(x * 0.021 + Math.sin(z * 0.013) * 2.2) * Math.sin(z * 0.017) + 0.6 * Math.sin(x * 0.06 + z * 0.045));
@@ -103,6 +121,7 @@ const FIELDS = {
   normandy: [[0.36, 0.47, 0.22], [0.30, 0.41, 0.19], [0.62, 0.57, 0.31], [0.44, 0.36, 0.24], [0.44, 0.53, 0.26], [0.33, 0.44, 0.2], [0.55, 0.55, 0.28]],
   med: [[0.42, 0.5, 0.26], [0.5, 0.48, 0.3], [0.55, 0.45, 0.32], [0.46, 0.55, 0.3], [0.38, 0.44, 0.24], [0.6, 0.55, 0.36]],
   desert: [[0.78, 0.66, 0.46], [0.74, 0.62, 0.43], [0.8, 0.7, 0.5], [0.7, 0.58, 0.4]],
+  tropical: [[0.36, 0.52, 0.2], [0.5, 0.6, 0.24], [0.28, 0.44, 0.15], [0.56, 0.42, 0.28], [0.44, 0.56, 0.22]],
   winter: [[0.9, 0.92, 0.95], [0.86, 0.88, 0.91], [0.92, 0.93, 0.95], [0.8, 0.82, 0.84]],
 };
 function groundColor(x, z, h, c) {
@@ -112,9 +131,12 @@ function groundColor(x, z, h, c) {
   const F = FIELDS[bio][Math.floor(k * FIELDS[bio].length)];
   if (SC.coast && h < 0.12) { r = 0.40; g = 0.39; b = 0.31; }
   else if (SC.coast && z > 236) {
-    const wet = smooth((z - 296) / 30), sand = bio === 'med' ? [0.74, 0.69, 0.57] : [0.8, 0.72, 0.53];
+    const wet = smooth((z - 296) / 30), sand = bio === 'med' ? [0.74, 0.69, 0.57] : bio === 'tropical' ? [0.88, 0.84, 0.72] : [0.8, 0.72, 0.53];
     r = sand[0] - wet * 0.2; g = sand[1] - wet * 0.18; b = sand[2] - wet * 0.13;
-    if (z < 251) { r = 0.55; g = 0.53; b = 0.5; }
+    if (z < 251) { if (bio === 'tropical') { r = 0.8; g = 0.76; b = 0.64; } else { r = 0.55; g = 0.53; b = 0.5; } }
+  } else if (bio === 'tropical' && z > 150) {
+    const gr = smooth((236 - z) / 34);
+    r = lerp(0.78, 0.3, gr); g = lerp(0.74, 0.46, gr); b = lerp(0.6, 0.18, gr);
   } else if (bio === 'desert') {
     r = F[0]; g = F[1]; b = F[2];
     const rock = Math.sin(x * 0.045 + 1.7) * Math.cos(z * 0.05) + (z < 232 && z > 160 ? 0.5 : 0);
@@ -325,6 +347,7 @@ const HOUSE_STYLE = {
   normandy: { walls: [0xcbbd9c, 0xbcae92, 0xd6cbb2, 0xa99d86, 0xc4b69a, 0xb3a58b], roofs: [0x4a4e57, 0x555a62, 0x6e3b2c, 0x7a4433, 0x4f525a], shut: 0x2f3438 },
   med: { walls: [0xd9b98f, 0xe3c9a8, 0xcf9f7a, 0xe8dcc4, 0xd8b07c], roofs: [0xa8553a, 0xb5653f, 0x9c4b33], shut: 0x3f5a3a },
   desert: { walls: [0xe6dcc6, 0xd8c6a0, 0xcdb68e, 0xe9e2d2], roofs: [], shut: 0x2a5268 },
+  tropical: { walls: [0x7a6448, 0x8a7558, 0xb8a888, 0xc9bfa6], roofs: [0x3d4249, 0x8a4a32, 0x4a4e44], shut: 0x3a3226 },
   winter: { walls: [0x9a958c, 0x8a857c, 0xb0a99c, 0x7d776c], roofs: [0xe6ebef, 0xdfe5ea], shut: 0x3a2f28 },
 };
 function addHouse(B, x, z, ry, damaged) {
@@ -357,6 +380,16 @@ function addHouse(B, x, z, ry, damaged) {
 function addChurch(B, x, z) {
   const par = new THREE.Matrix4().makeTranslation(x, groundH(x, z), z);
   const bio = SC.biome;
+  if (bio === 'tropical') {
+    // santuário xintoísta com portal torii
+    B.add(G.box, 0x6b5a44, 8, 4, 10, 0, 1.5, -2, 0, 0, 0, par);
+    B.add(G.roof, 0x3d4249, 10, 3.2, 12.5, 0, 3.5, -2, 0, Math.PI / 2, 0, par);
+    B.add(G.box, 0x3d4249, 11, 0.3, 13, 0, 3.55, -2, 0, 0, 0, par);
+    for (const sx of [-1, 1]) B.add(G.cyl12, 0xc0392b, 0.35, 6.5, 0.35, sx * 2.6, 3.25, 9, 0, 0, 0, par);
+    B.add(G.box, 0x1c1c1c, 7.4, 0.5, 0.6, 0, 6.7, 9, 0, 0, 0, par);
+    B.add(G.box, 0xc0392b, 6.4, 0.35, 0.45, 0, 5.6, 9, 0, 0, 0, par);
+    MAP.obstacles.add({ x, z: z - 2, r: 7 }); return;
+  }
   if (bio === 'desert') {
     B.add(G.box, 0xe9e2d2, 12, 9, 12, 0, 1.5, 0, 0, 0, 0, par);
     B.add(G.dome, 0xf0ece2, 4.6, 4.2, 4.6, 0, 6, 0, 0, 0, 0, par);
@@ -387,6 +420,7 @@ function registerTerrainShaders() {
     float g = 0.84 + 0.14 * n1 + 0.08 * n2 + 0.16 * (n3 - 0.5);`;
   DETAIL.terrain_normandy = DETAIL.terrain;
   DETAIL.terrain_med = DETAIL.terrain;
+  DETAIL.terrain_tropical = DETAIL.terrain;
   DETAIL.terrain_desert = common + `
     float rip = sin(p.x * 1.4 + p.z * 0.6 + vnoise(p * 0.25) * 8.0);
     g += rip * 0.05 + (n2 - 0.5) * 0.1;
@@ -436,7 +470,7 @@ function buildWorld(scene) {
   tg.computeVertexNormals();
   const terrain = new THREE.Mesh(tg, addDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'terrain_' + bio, true));
   terrain.receiveShadow = true; root.add(terrain);
-  const farCol = { normandy: 0x55643a, med: 0x5d6a40, desert: 0xbfa77c, winter: 0xdfe4e8 }[bio];
+  const farCol = { normandy: 0x55643a, med: 0x5d6a40, desert: 0xbfa77c, winter: 0xdfe4e8, tropical: 0x3f6a2c }[bio];
   const farMat = addDetail(new THREE.MeshLambertMaterial({ color: farCol }), 'terrain_' + bio, true);
   const far = new THREE.Mesh(new THREE.PlaneGeometry(6000, 3000), farMat);
   far.rotation.x = -Math.PI / 2; far.position.set(0, 14, -2490); root.add(far);
@@ -483,7 +517,7 @@ function buildWorld(scene) {
   }
 
   /* estradas */
-  const roadCol = { normandy: [0x8b7d5e, 0x857759], med: [0x9a8a6a, 0x928262], desert: [0xa58c64, 0x9c845d], winter: [0x7a7268, 0x857d72] }[bio];
+  const roadCol = { normandy: [0x8b7d5e, 0x857759], med: [0x9a8a6a, 0x928262], desert: [0xa58c64, 0x9c845d], winter: [0x7a7268, 0x857d72], tropical: [0x9a7a5a, 0x8f7052] }[bio];
   for (const r of MAP.roads) R.ribbon(r, 5.5, 0.14, roadCol[0], roadCol[1]);
 
   /* trincheiras */
@@ -548,7 +582,7 @@ function buildWorld(scene) {
 
   /* bordas de campo: sebes (Normandia), muros de pedra (Itália), cercas (Ardenas) */
   const bush = [], walls = [], posts = [], rails = [], trees = [];
-  const edgeKind = { normandy: 'hedge', med: 'wall', winter: 'fence', desert: null }[bio];
+  const edgeKind = { normandy: 'hedge', med: 'wall', winter: 'fence', desert: null, tropical: 'hedge' }[bio];
   if (edgeKind) for (let i = -9; i <= 9; i++) for (let j = -16; j <= 1; j++) {
     for (const vert of [true, false]) {
       if (wr() > (edgeKind === 'hedge' ? 0.55 : 0.4)) continue;
@@ -560,21 +594,21 @@ function buildWorld(scene) {
       for (let s = 2; s < len; s += step) {
         const x = vert ? ax + wrr(-0.4, 0.4) : ax + s, z = vert ? az + s : az + wrr(-0.4, 0.4);
         if (nearRoad(x, z, 6) || inTrench(x, z)) continue;
-        if (edgeKind === 'hedge') { bush.push([x, z, wrr(2.3, 3.4), wrr(1.9, 2.9)]); if (wr() < 0.11) trees.push([x + wrr(-1, 1), z + wrr(-1, 1), wrr(0.9, 1.35), wr() < 0.3 ? 'tall' : 'round']); }
+        if (edgeKind === 'hedge') { bush.push([x, z, wrr(2.3, 3.4), wrr(1.9, 2.9)]); if (wr() < 0.11) trees.push([x + wrr(-1, 1), z + wrr(-1, 1), wrr(0.9, 1.35), bio === 'tropical' ? 'palm' : wr() < 0.3 ? 'tall' : 'round']); }
         else if (edgeKind === 'wall') { walls.push([x, z, vert ? 0 : Math.PI / 2, wrr(0.9, 1.3)]); if (wr() < 0.06) trees.push([x + wrr(-2, 2), z + wrr(-2, 2), wrr(0.9, 1.2), 'cypress']); }
         else { posts.push([x, z]); rails.push([x + (vert ? 0 : step / 2), z + (vert ? step / 2 : 0), vert ? 0 : Math.PI / 2]); if (wr() < 0.05) trees.push([x + wrr(-2, 2), z + wrr(-2, 2), wrr(1, 1.4), 'pine']); }
       }
     }
   }
-  const forestCount = { normandy: 9, med: 7, desert: 0, winter: 24 }[bio];
-  const forestTree = { normandy: 'round', med: 'umbrella', winter: 'pine' }[bio];
+  const forestCount = { normandy: 9, med: 7, desert: 0, winter: 24, tropical: 20 }[bio];
+  const forestTree = { normandy: 'round', med: 'umbrella', winter: 'pine', tropical: 'round' }[bio];
   for (let f = 0; f < forestCount; f++) {
     const cx = wrr(-640, 640), cz = wrr(-960, SC.coast ? 60 : 160);
     if (nearTown(cx, cz, 40)) continue;
     const n = bio === 'winter' ? 48 : 32, rad = bio === 'winter' ? 46 : 38;
     for (let k = 0; k < n; k++) {
       const a = wrr(0, 6.28), d = Math.sqrt(wr()) * rad, x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d;
-      if (!nearRoad(x, z, 5) && !inTrench(x, z)) trees.push([x, z, wrr(0.9, 1.5), bio === 'winter' && wr() < 0.18 ? 'bare' : forestTree]);
+      if (!nearRoad(x, z, 5) && !inTrench(x, z)) trees.push([x, z, wrr(0.9, 1.5), bio === 'winter' && wr() < 0.18 ? 'bare' : bio === 'tropical' && wr() < 0.4 ? 'palm' : forestTree]);
     }
   }
   if (bio === 'winter') for (let k = 0; k < 220; k++) {
@@ -584,13 +618,14 @@ function buildWorld(scene) {
   }
   for (const t of MAP.towns) {
     const ox = t.x - t.r - 30, oz = t.z + t.r * 0.35;
-    const kind = { normandy: 'apple', med: 'olive', desert: 'palm', winter: 'bare' }[bio];
+    const kind = { normandy: 'apple', med: 'olive', desert: 'palm', winter: 'bare', tropical: 'palm' }[bio];
     for (let a = 0; a < 5; a++) for (let b = 0; b < 4; b++) {
       const x = ox + a * 7 + wrr(-1, 1), z = oz + b * 7 + wrr(-1, 1);
       if (!nearRoad(x, z, 5)) trees.push([x, z, kind === 'palm' ? wrr(0.9, 1.2) : wrr(0.55, 0.7), kind]);
     }
     if (bio === 'desert') for (let k = 0; k < 14; k++) { const a = wrr(0, 6.28), d = t.r + wrr(4, 30); trees.push([t.x + Math.cos(a) * d, t.z + Math.sin(a) * d, wrr(0.9, 1.3), 'palm']); }
   }
+  if (bio === 'tropical') for (let k = 0; k < 120; k++) { const x = wrr(-660, 660), z = wrr(150, 228); if (!nearRoad(x, z, 6) && !inTrench(x, z)) trees.push([x, z, wrr(0.9, 1.3), 'palm']); }
   if (bio === 'desert') for (let k = 0; k < 160; k++) { const x = wrr(-680, 680), z = wrr(-980, 600); if (!nearRoad(x, z, 6) && !nearTown(x, z, 4)) bush.push([x, z, wrr(0.6, 1.2), wrr(0.4, 0.8)]); }
   if (bio === 'med') for (let g2 = 0; g2 < 10; g2++) {
     const cx = wrr(-620, 620), cz = wrr(-950, 80);
@@ -598,7 +633,7 @@ function buildWorld(scene) {
     for (let a = 0; a < 6; a++) for (let b = 0; b < 5; b++) { const x = cx + a * 8, z = cz + b * 8; if (!nearRoad(x, z, 5)) trees.push([x + wrr(-1, 1), z + wrr(-1, 1), wrr(0.6, 0.8), 'olive']); }
   }
 
-  const bushCols = { normandy: [0x2f4a22, 0x37532a, 0x2a4220, 0x3e5a2c], med: [0x4a5a30, 0x56643a], desert: [0x6b6a3e, 0x7a7448, 0x5e5d36], winter: [0xd6dadc, 0xc4c9cc] }[bio];
+  const bushCols = { normandy: [0x2f4a22, 0x37532a, 0x2a4220, 0x3e5a2c], med: [0x4a5a30, 0x56643a], desert: [0x6b6a3e, 0x7a7448, 0x5e5d36], winter: [0xd6dadc, 0xc4c9cc], tropical: [0x2c5a22, 0x37682a, 0x24501c, 0x3f7030] }[bio];
   inst(G.ico, bush, bushCols, (b, d) => { d.position.set(b[0], groundH(b[0], b[1]) + b[3] * 0.45, b[1]); d.rotation.set(0, (b[0] * 13) % 6, 0); d.scale.set(b[2], b[3], b[2]); });
   inst(G.box, walls, [0x9a948a, 0x8c867c, 0xa49e92], (w, d) => { d.position.set(w[0], groundH(w[0], w[1]) + 0.5 * w[3], w[1]); d.rotation.set(0, w[2], 0); d.scale.set(0.7, 1.0 * w[3], 2.5); });
   inst(G.box, posts, 0x5a4632, (p, d) => { d.position.set(p[0], groundH(p[0], p[1]) + 0.7, p[1]); d.rotation.set(0, 0, 0); d.scale.set(0.16, 1.4, 0.16); });
@@ -650,7 +685,7 @@ function buildWorld(scene) {
 
   /* objetos de cobertura: pedras grandes e pilhas de toras de madeira */
   const rocks = [], logs = [];
-  const nRocks = { normandy: 70, med: 110, desert: 260, winter: 80 }[bio], nLogs = { normandy: 60, med: 30, desert: 10, winter: 130 }[bio];
+  const nRocks = { normandy: 70, med: 110, desert: 260, winter: 80, tropical: 120 }[bio], nLogs = { normandy: 60, med: 30, desert: 10, winter: 130, tropical: 70 }[bio];
   const freeSpot = (zmin, zmax) => {
     for (let k = 0; k < 8; k++) {
       const x = wrr(-660, 660), z = wrr(zmin, zmax);
@@ -662,7 +697,7 @@ function buildWorld(scene) {
   for (let i = 0; i < nRocks; i++) { const p = freeSpot(-980, SC.coast ? 228 : 600); if (p) rocks.push([p[0], p[1], wrr(1.0, 2.2), wrr(0.7, 1.4)]); }
   for (let i = 0; i < nLogs; i++) { const p = freeSpot(-980, SC.coast ? 228 : 600); if (p) logs.push([p[0], p[1], wrr(0, 3)]); }
   if (!SC.coast) for (let i = 0; i < 70; i++) { const x = wrr(-520, 520), z = wrr(232, 330); if (!nearRoad(x, z, 5)) { if (i % 2) rocks.push([x, z, wrr(1.2, 2.2), wrr(0.8, 1.3)]); else logs.push([x, z, wrr(0, 3)]); } }
-  const rockCols = { normandy: [0x77736b, 0x6b675f, 0x837e74], med: [0x9a958a, 0x8c877c], desert: [0x9a7f5c, 0x8a6f4f, 0xa88b66], winter: [0x6f6e6a, 0x7d7c78] }[bio];
+  const rockCols = { normandy: [0x77736b, 0x6b675f, 0x837e74], med: [0x9a958a, 0x8c877c], desert: [0x9a7f5c, 0x8a6f4f, 0xa88b66], winter: [0x6f6e6a, 0x7d7c78], tropical: [0xb8b0a0, 0x9a9488, 0x6d6a60] }[bio];
   inst(G.ico, rocks, rockCols, (r, d) => { d.position.set(r[0], groundH(r[0], r[1]) + r[3] * 0.35, r[1]); d.rotation.set(r[2], r[0] % 6, 0); d.scale.set(r[2], r[3], r[2] * 0.9); });
   for (const r of rocks) { MAP.coverPts.add({ x: r[0], z: r[1], r: r[2] + 1.3, q: 1.3 }); if (r[2] > 1.4) MAP.obstacles.add({ x: r[0], z: r[1], r: r[2] * 0.8 }); }
   const logList = [];
@@ -723,8 +758,8 @@ function makeWaterMaterial() {
   return new THREE.ShaderMaterial({
     uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
       uTime: { value: 0 }, uSun: { value: new THREE.Vector3(150, 260, 110).normalize() },
-      uDeep: { value: new THREE.Color(0x1d3a44) }, uShallow: { value: new THREE.Color(0x4d7f7c) },
-      uSand: { value: new THREE.Color(0x8d8064) }, uFoam: { value: new THREE.Color(0xf0f4f1) }, uSky: { value: new THREE.Color(0xb3bcbe) },
+      uDeep: { value: new THREE.Color(SC.water ? SC.water.deep : 0x1d3a44) }, uShallow: { value: new THREE.Color(SC.water ? SC.water.shallow : 0x4d7f7c) },
+      uSand: { value: new THREE.Color(SC.water ? SC.water.sand : 0x8d8064) }, uFoam: { value: new THREE.Color(0xf0f4f1) }, uSky: { value: new THREE.Color(0xb3bcbe) },
     }]),
     vertexShader: depthFn + `
       uniform float uTime; varying vec3 vW; varying vec3 vN; varying float vDepth;
