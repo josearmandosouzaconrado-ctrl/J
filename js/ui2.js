@@ -178,6 +178,118 @@ Object.assign(UI, {
       <h3>Filhos</h3><div class="spells">${kids || '<div class="dim pad">Nenhum filho ainda. Casado(a) e com casa, converse com seu cônjuge — ou adote no templo.</div>'}</div>
       <h3>Animal de estimação</h3>${P.pet ? `<div class="spell">${this.portrait(ENEMIES[P.pet.kind].look)}<div><b>${esc(P.pet.name)}</b><br><small>${PETS[P.pet.kind].name}${P.pet.downDay !== undefined ? ' • se recuperando' : ''}</small></div></div>` : '<div class="dim pad">Compre um animal no estábulo de uma capital.</div>'}
       <h3>Relacionamentos</h3><div class="spells">${rels || '<div class="dim pad">Ninguém ainda.</div>'}</div>
-      <h3>Casas</h3><div class="dim">${P.houses.length ? P.houses.map(id => esc((W.settlements.find(s => s.id === id) || {}).name || id)).join(', ') : 'Nenhuma. Compre uma casa nas capitais.'}</div>`;
+      <h3>Casas</h3><div class="dim">${P.houses.length ? P.houses.map(id => esc((W.settlements.find(s => s.id === id) || W.homes.find(h => h.id === id) || {}).name || id)).join(', ') : 'Nenhuma. Compre uma casa nas capitais ou construa a sua.'}</div>
+      ${W.homes.filter(h => !h.done).map(h => `<div class="good">🔨 Em obra: ${esc(h.name)} (${Math.round(h.progress * 100)}%)</div>`).join('')}
+      <div class="row"><button class="sbtn gold" ${f(() => this.buildMenu())}>🔨 Construir uma casa aqui</button></div>
+      <h3>Montaria e carroça</h3><div class="dim">${P.mount ? MOUNTS[P.mount].name : 'Nenhuma montaria'}${P.cart ? ` • Carroça com ${(P.cart.load || []).length}/${CART_CAP} caças` : ''}</div>`;
+  }
+});
+Object.assign(UI, {
+  carcassMenu(c) {
+    const P = Game.player, d = ENEMIES[c.eid];
+    const opts = [
+      { label: 'Carregar no ombro', cls: 'gold', fn: () => { Game.carcasses = Game.carcasses.filter(x => x !== c); P.carrying = { eid: c.eid, lvl: c.lvl }; P.mounted = false; Sfx.play('roll'); this.close(); Game.toast(P.cart ? 'Leve até a carroça para guardar.' : 'Leve até uma cidade para vender ou esfole.', '#ffd080'); } },
+      { label: 'Esfolar aqui (carne e couro)', fn: () => { Game.carcasses = Game.carcasses.filter(x => x !== c); Game.skin(c); this.close(); } },
+      { label: 'Deixar' }
+    ];
+    this.dialog(`Carcaça de ${d.name}`, null, `Uma carcaça grande. Vale cerca de <span class="gold">${Game.carcassValue(c)} ouro</span> inteira no açougue (armazém ou taverna).<br><span class="dim">Esfolando aqui você só pega carne e couro.</span>`, opts);
+  },
+  cartMenu() {
+    const P = Game.player, c = P.cart;
+    const load = c.load || (c.load = []);
+    const opts = [];
+    if (P.carrying) opts.push({ label: 'Colocar carcaça na carroça', cls: 'gold', fn: () => { if (load.length >= CART_CAP) return Game.toast('A carroça está cheia!', '#ffa0a0'); load.push(P.carrying); P.carrying = null; Sfx.play('roll'); this.cartMenu(); } });
+    if (!P.carrying && load.length) opts.push({ label: 'Pegar uma carcaça', fn: () => { P.carrying = load.pop(); this.close(); } });
+    if (load.length) opts.push({ label: `Esfolar toda a carga (${load.length})`, fn: () => { for (const it of load) Game.skin(it); c.load = []; this.close(); } });
+    const horseNear = P.mounted || (P.horse && dist(P.horse.x, P.horse.y, c.x, c.y) < 70);
+    if (!c.hitched) {
+      if (horseNear) opts.push({ label: 'Atrelar ao cavalo', cls: 'gold', fn: () => { c.hitched = true; Sfx.play('horse'); Game.toast('Carroça atrelada! Monte e o cavalo vai puxá-la.', '#ffd080'); this.close(); } });
+      else opts.push({ label: P.mount ? 'Traga seu cavalo para perto (assobie com o botão de montaria)' : 'Você precisa de um cavalo para puxar a carroça', fn: () => this.close() });
+    } else opts.push({ label: 'Desatrelar', fn: () => { c.hitched = false; this.close(); } });
+    opts.push({ label: 'Fechar' });
+    const list = load.map(l => ENEMIES[l.eid].name).join(', ') || 'vazia';
+    this.dialog('Sua Carroça', null, `Carga (${load.length}/${CART_CAP}): ${esc(list)}${load.length ? `<br>Valor estimado: <span class="gold">${load.reduce((a, l) => a + Game.carcassValue(l), 0)} ouro</span>. Venda no armazém ou na taverna de qualquer cidade.` : ''}`, opts);
+  },
+  sellCart(b) {
+    const P = Game.player, c = P.cart;
+    let total = c.load.reduce((a, l) => a + Game.carcassValue(l), 0);
+    if (P.job && P.job.id === 'cacador') total = Math.round(total * 1.5);
+    total = Math.round(total * (1 + P.skill('eloquencia') / 200));
+    const n = c.load.length;
+    c.load = []; P.gold += total; P.train('eloquencia', 4); Sfx.play('coin');
+    Game.chron(`Vendi uma carroça com ${n} caças em ${b.settlement.name} por ${total} ouro.`);
+    Game.toast(`Carga vendida: +${total} ouro`, '#ffd040');
+    this.building(b);
+  },
+  jobOptions(b, opts) {
+    const P = Game.player, s = b.settlement;
+    const here = Object.entries(JOBS).filter(([id, J]) => J.role === b.role && (!J.village || s.type === 'village' || s.type === 'town'));
+    for (const [id, J] of here) {
+      if (P.job && P.job.id === id && P.job.sid === s.id) {
+        const rank = JOB_RANKS[Game.jobRank(P.job)][0];
+        opts.push({ label: `💼 Trabalhar um turno: ${J.name} (4h, ~${Game.jobPay(id)} ouro)`, cls: 'gold', fn: () => { if (Game.workShift(b)) this.building(b); } });
+        opts.push({ label: `Pedir demissão (${rank}, ${P.job.shifts} turnos)`, cls: 'danger', fn: () => this.confirm(`Pedir demissão do cargo de ${J.name}?`, () => { Game.chron(`Deixei o emprego de ${J.name} em ${s.name}.`); P.job = null; this.building(b); }, () => this.building(b)) });
+      } else {
+        opts.push({ label: `💼 Pedir emprego: ${J.name} <span class="dim">(${J.desc} ~${Game.jobPay(id)} ouro/turno)</span>`, fn: () => {
+          const go = () => { P.job = { id, sid: s.id, sname: s.name, shifts: 0, lastDay: -1, today: 0 }; Sfx.play('quest'); Game.chron(`Consegui um emprego de ${J.name} em ${s.name}.`); Game.toast(`Contratado(a): ${J.name}! Trabalhe turnos aqui.`, '#ffd040'); this.building(b); };
+          if (P.job) this.confirm(`Largar o emprego atual (${JOBS[P.job.id].name}) para ser ${J.name}?`, go, () => this.building(b)); else go();
+        } });
+      }
+    }
+  },
+  mountsShop(b) {
+    const P = Game.player, R = b.settlement.region;
+    const f = this.reg();
+    const list = Object.entries(MOUNTS).filter(([k, M]) => !M.where || M.where === R.id);
+    const el = this.show('mounts', `<div class="panel"><div class="ptitle">Estábulo <span class="gold right">${fmt(P.gold)} ouro</span></div>
+      <p class="dim">Montarias especiais só são vendidas em seus reinos: Corcel Élfico (Sylvaris), Alce (Nordheim), Camelo (Zahrim), Lobo Gigante (Gor'Thak), Cavalo de Guerra (Valdoria).</p>
+      ${list.map(([k, M]) => `<div class="crow"><img class="portrait" style="width:52px;height:44px" src="${Sprites.horse(k).right[0].toDataURL()}"><div class="cinfo"><b>${M.name}</b> ${P.mount === k ? '<span class="good">(sua)</span>' : ''}<br><small>Velocidade ${Math.round(M.speed * 100)}% • ${M.desc}</small></div>${P.mount === k ? '' : `<button class="sbtn gold" ${f(() => {
+        if (P.gold < M.price) return Game.toast('Ouro insuficiente.', '#ff8080');
+        P.gold -= M.price; P.mount = k; P.hasHorse = true; P.mounted = false; P.horse = { x: (b.door.x) * 16 + 8, y: (b.door.y + 2) * 16 + 8, dir: 'right' };
+        Sfx.play('horse'); Game.chron(`Comprei ${M.name === 'Burro' ? 'um' : 'um(a)'} ${M.name.toLowerCase()} em ${b.settlement.name}.`); Game.centerMsg(M.name.toUpperCase() + ' ADQUIRIDO!', 'Está esperando na frente do estábulo. Use o botão de montaria.'); this.close();
+      })}>${M.price}o</button>`}</div>`).join('')}
+      <div class="crow"><img class="portrait" style="width:56px;height:36px" src="${Sprites.cart().right[0].toDataURL()}"><div class="cinfo"><b>Carroça</b> ${P.cart ? '<span class="good">(você tem)</span>' : ''}<br><small>Atrele ao cavalo para transportar até ${CART_CAP} carcaças de animais grandes.</small></div>${P.cart ? `<button class="sbtn" ${f(() => { P.cart.x = b.door.x * 16 + 40; P.cart.y = (b.door.y + 2) * 16 + 8; P.cart.hitched = false; Game.toast('Carroça trazida para cá.', '#ffd080'); this.close(); })}>Buscar (50o)</button>` : `<button class="sbtn gold" ${f(() => {
+        if (P.gold < CART_PRICE) return Game.toast('Ouro insuficiente.', '#ff8080');
+        P.gold -= CART_PRICE; P.cart = { x: b.door.x * 16 + 40, y: (b.door.y + 2) * 16 + 8, hitched: false, load: [], dir: 'right' };
+        Sfx.play('coin'); Game.chron(`Comprei uma carroça em ${b.settlement.name}.`); Game.centerMsg('CARROÇA COMPRADA!', 'Está na frente do estábulo. Traga o cavalo e atrele.'); this.close();
+      })}>${CART_PRICE}o</button>`}</div>
+      <button class="mbtn small" ${f(() => this.building(b))}>Voltar</button></div>`, { onBack: () => this.building(b) });
+    this.bind(el, f);
+  },
+  construction(h) {
+    const P = Game.player, T_ = HOME_TIERS[h.tier];
+    const opts = [];
+    if (h.mode === 'self') {
+      opts.push({ label: `🔨 Trabalhar na obra (2h) — Construção ${P.skill('construcao')}`, cls: 'gold', fn: () => { if (P.st < 25) return Game.toast('Você está cansado demais. Descanse um pouco.', '#80ff80'); this.close(); Game.workOnHome(h); } });
+      opts.push({ label: 'Usar bancada de carpintaria', fn: () => this.craft('carpentry') });
+    }
+    opts.push({ label: 'Fechar' });
+    const q = h.mode === 'self' ? `Qualidade prevista: <b>${HOME_QUALITY[clamp(Math.floor((h.skillSum + P.skill('construcao')) / Math.max(1, h.sessions + 1) / 20), 0, 4)]}</b> (depende da sua habilidade de Construção)` : `Construtores trabalhando. Pronta no dia ${h.finishDay}. Qualidade: <b>${HOME_QUALITY[h.quality]}</b>`;
+    this.dialog(h.name, null, `Progresso: <b>${Math.round(h.progress * 100)}%</b><br>${q}`, opts);
+  },
+  buildMenu() {
+    const P = Game.player;
+    const f = this.reg();
+    const matTxt = mats => Object.entries(mats).map(([id, n]) => `<span class="${P.count(id) >= n ? 'good' : 'bad'}">${ITEMS[id].name} ${P.count(id)}/${n}</span>`).join(', ');
+    const rows = Object.entries(HOME_TIERS).map(([k, T_]) => {
+      const can = Game.canBuildHere(k);
+      return `<div class="quest"><b class="gold">${T_.name}</b> <small class="dim">(${T_.w}×${T_.h})</small><br><small>Materiais: ${matTxt(T_.mats)}</small><br>
+        ${typeof can === 'string' ? `<small class="bad">${esc(can)}</small>` : `<div class="row">
+          <button class="sbtn" ${f(() => { if (Game.startHome(k, 'hire', false)) this.close(); })}>Contratar construtores: ${T_.hire}o</button>
+          <button class="sbtn" ${f(() => { if (Game.startHome(k, 'hire', true)) this.close(); })}>Mestre de obras: ${Math.round(T_.hire * 1.5)}o (Excelente)</button>
+          <button class="sbtn" ${f(() => { if (Game.startHome(k, 'labor', false)) this.close(); })}>Meus materiais + mão de obra: ${T_.labor}o</button>
+          <button class="sbtn gold" ${f(() => { if (Game.startHome(k, 'self', false)) this.close(); })}>Construir sozinho(a) (grátis)</button></div>`}</div>`;
+    }).join('');
+    const el = this.show('build', `<div class="panel"><div class="ptitle">Construir uma Casa</div>
+      <p class="dim">A casa será construída logo acima de onde você está. Escolha um terreno plano, longe das cidades.<br>
+      Materiais: <b>Tábuas</b> (serre lenha na bancada de carpintaria), <b>Pedras</b> (quebre rochas com uma picareta), <b>Pregos</b> (feitos de lingote de ferro) e <b>Blocos de pedra</b>. Tudo também é vendido nos armazéns.<br>
+      Construindo sozinho a qualidade depende da sua habilidade de <b>Construção</b> (${P.skill('construcao')}); você pode reformar depois para melhorar.</p>
+      ${rows}<button class="mbtn small" ${f(() => this.close())}>Fechar</button></div>`, { cls: 'scroll' });
+    this.bind(el, f);
+  },
+  chronicleHTML() {
+    const P = Game.player;
+    const list = (P.chronicle || []).slice().reverse();
+    return `<h3>📜 Sua História</h3><div class="chron">${list.map(e => `<div><span class="gold">Dia ${e.day}</span> — ${esc(e.text)}</div>`).join('') || '<div class="dim">Sua história ainda está para ser escrita...</div>'}</div>`;
   }
 });

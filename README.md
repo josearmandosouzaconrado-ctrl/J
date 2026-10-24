@@ -29,7 +29,11 @@ WASD/setas andar • Shift correr • J/Espaço atacar • K magia • Q trocar 
 - **Romance, casamento e filhos**: converse, dê presentes, flerte, namore e case (Amuleto da Aurora). Seu cônjuge mora com você, cozinha, dá presentes e pode lutar ao seu lado. Tenha filhos ou adote no orfanato do templo.
 - **Animais de estimação** (cachorro, gato selvagem, lobo domado) e **pesca**.
 - **9 guildas** — incluindo a **Guilda dos Heróis** com ranks F → S, Companhia do Aço, Academia Arcana, Irmandade das Sombras, Ordem da Aurora, Liga dos Caçadores, Círculo Druídico, Irmandade da Forja e Clã do Punho Sangrento — com missões geradas e recompensas por posto.
-- **História principal** em 9 capítulos contra o Lich Morvath e o dragão ancião Vorthax.
+- **Sem história obrigatória**: você acorda caído numa vila e a prefeitura te ajuda a recomeçar. Daí em diante, um **diário** registra a história que você criar com suas ações (empregos, casamento, casas, conquistas...). Lendas como o Lich Morvath e o dragão Vorthax continuam escondidas no mundo para quem quiser enfrentá-las.
+- **Empregos** para quem não quer ser herói: taverneiro, ferreiro, alquimista, balconista, escriba, acólito, estribeiro, guarda, lenhador, fazendeiro, minerador e caçador, com promoções.
+- **Montarias** (burro, cavalo, cavalo de guerra, corcel élfico, alce, camelo, lobo gigante) que ficam paradas onde você desce e atendem ao assobio.
+- **Carroça**: atrele ao cavalo, carregue no ombro os animais grandes que caçar, coloque na carroça e venda inteiros ou esfole para carne e couro.
+- **Construa sua casa** (cabana, casa ou casarão): contrate construtores, forneça seus materiais ou construa sozinho cortando árvores e quebrando pedras. A qualidade depende da sua habilidade de Construção, e dá para reformar depois.
 - **140+ masmorras** procedurais (cavernas, criptas, ruínas élficas, minas anãs, túmulos nórdicos, tumbas do deserto, cavernas de lava e gelo, arena) com chefes e baús de tesouro, além de acampamentos de bandidos.
 - **50+ tipos de inimigos e chefes**: lobos, ursos, aranhas, goblins, bandidos, esqueletos, draugrs, espectros, trolls, ogros, golems, elementais, múmias, hidra, Rainha Aranha, Lich e **dragões que atacam pelo mundo**.
 - **Combate**: armas corpo a corpo, arcos, cajados, críticos, esquiva, bloqueio, efeitos de fogo/gelo/veneno/atordoamento.

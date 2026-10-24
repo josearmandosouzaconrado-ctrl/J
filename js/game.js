@@ -61,7 +61,7 @@ const Game = {
 
   // ---------- Novo jogo / carregar ----------
   newMods() {
-    return { opened: new Set(), harvested: {}, cleared: {}, dopened: {}, camps: {}, runes: new Set(), shrines: {}, discovered: new Set(), explored: new Uint8Array(256 * 256), uniques: new Set(), treasures: [], day: 1 };
+    return { opened: new Set(), harvested: {}, cleared: {}, dopened: {}, camps: {}, runes: new Set(), shrines: {}, discovered: new Set(), explored: new Uint8Array(256 * 256), uniques: new Set(), treasures: [], homes: [], day: 1 };
   },
   buildWorld(seed, cb) {
     UI.showLoading('Forjando o mundo de Eldoria...');
@@ -85,24 +85,19 @@ const Game = {
       const W = this.world;
       const cap = W.settlements.find(s => s.region.id === 'valdoria' && s.type === 'capital') || W.settlements[0];
       const vill = W.settlements.filter(s => s.region.id === 'valdoria' && s.type === 'village').sort((a, b) => dist(a.x, a.y, cap.x, cap.y) - dist(b.x, b.y, cap.x, cap.y))[0] || cap;
-      const g = vill.gates.find(g => g.dir === 's') || vill.gates[0];
-      P.x = g.x * 16 + 8; P.y = (g.y + 3) * 16 + 8;
+      P.x = vill.mid.x * 16 + 8 + 24; P.y = (vill.mid.y + 4) * 16 + 8;
       this.findFree(P);
-      P.lastTown = vill.id;
+      P.lastTown = vill.id; P.freeMode = true;
       this.mods.discovered.add(vill.id); this.mods.discovered.add(cap.id);
       P.quests = [];
-      this.track = 'main';
+      this.track = null;
       this.startPlay();
       UI.story([
-        'O ano é 1247 da Era das Coroas. Os nove reinos de Eldoria vivem em paz frágil...',
-        'Até que, numa manhã cinzenta, um DRAGÃO negro rasga o céu e destrói a caravana em que você viajava.',
-        'Você é o único sobrevivente. Ao tocar uma escama caída, sente uma chama ardendo em seu peito.',
-        `Seu nome é ${P.name}. E sua lenda começa agora.`
-      ], () => {
-        this.centerMsg(MAIN_QUEST[0].title, MAIN_QUEST[0].desc); this.saveGame(0, true);
-        const tips = ['Dica: arraste o lado esquerdo da tela para andar. Empurre até o fim para correr.', 'Dica: o botão ⚔ ataca o inimigo mais próximo automaticamente.', 'Dica: siga a seta dourada no topo da tela até o objetivo.', 'Dica: entre na Guilda dos Heróis de qualquer cidade para pegar missões.', 'Dica: pessoas com "!" amarelo oferecem pedidos. Barracas vendem itens.', 'Dica: o botão dourado de ação aparece para falar, abrir baús, entrar e coletar.'];
-        tips.forEach((t, i) => this.later(6 + i * 9, () => this.toast(t, '#a0e0ff')));
-      });
+        'Eldoria. Nove reinos, milhares de estradas, incontáveis histórias.',
+        'Você viajava sozinho(a) pelas estradas de Valdoria... até que tudo ficou escuro.',
+        `Quando desperta, está caído(a) no chão de uma pequena vila chamada ${vill.name}.`,
+        'Ninguém espera nada de você. Não há profecia, nem destino escrito. Herói, ferreiro, fazendeiro, mercador ou viajante — a história será a que você escrever.'
+      ], () => this.startIntro(vill));
     });
   },
   startPlay() {
@@ -114,6 +109,7 @@ const Game = {
     this.curRegion = -1; this.curTown = null;
     this.player.dead = false;
     this.camX = this.player.x - this.vw / 2; this.camY = this.player.y - this.vh / 2;
+    this.carcasses = []; this.intro = null;
     if (this.player.follower) this.spawnFollower();
     this.spawnPet();
     UI.showHUD(true);
@@ -140,7 +136,7 @@ const Game = {
     const pj = P.toJSON(); pj.x = px; pj.y = py;
     const s = {
       v: 1, seed: this.world.seed, time: this.time, day: this.day, track: this.track, player: pj,
-      mods: { opened: [...M.opened], harvested: M.harvested, cleared: M.cleared, dopened: M.dopened, camps: M.camps, runes: [...M.runes], shrines: M.shrines, discovered: [...M.discovered], explored: btoa(bin), uniques: [...M.uniques], treasures: M.treasures },
+      mods: { opened: [...M.opened], harvested: M.harvested, cleared: M.cleared, dopened: M.dopened, camps: M.camps, runes: [...M.runes], shrines: M.shrines, discovered: [...M.discovered], explored: btoa(bin), uniques: [...M.uniques], treasures: M.treasures, homes: M.homes.map(h => { const o = Object.assign({}, h); delete o._b; delete o._s; return o; }) },
       summary: { name: P.name, level: P.level, race: RACES[P.race].name, cls: P.style || 'Aventureiro', loc: this.locationName(), date: Date.now(), time: Math.floor(P.stats.playTime) }
     };
     try {
@@ -157,9 +153,14 @@ const Game = {
       const M = this.newMods();
       const m = s.mods;
       M.opened = new Set(m.opened); M.harvested = m.harvested || {}; M.cleared = m.cleared || {}; M.dopened = m.dopened || {}; M.camps = m.camps || {};
-      M.runes = new Set(m.runes || []); M.shrines = m.shrines || {}; M.discovered = new Set(m.discovered || []); M.uniques = new Set(m.uniques || []); M.treasures = m.treasures || [];
+      M.runes = new Set(m.runes || []); M.shrines = m.shrines || {}; M.discovered = new Set(m.discovered || []); M.uniques = new Set(m.uniques || []); M.treasures = m.treasures || []; M.homes = m.homes || [];
       try { const bin = atob(m.explored); for (let i = 0; i < bin.length && i < M.explored.length; i++) M.explored[i] = bin.charCodeAt(i); } catch (e) { }
-      this.mods = M; this.world.mods = M; this.world.chunks.clear(); this.world.canvases.clear();
+      this.mods = M; this.world.mods = M;
+      for (const [k, list] of this.world.stampIndex) this.world.stampIndex.set(k, list.filter(st => !st.homeId));
+      for (const [k, d] of this.world.doors) if (d.home) this.world.doors.delete(k);
+      this.world.homes = [];
+      for (const h of M.homes) this.world.addHome(h);
+      this.world.chunks.clear(); this.world.canvases.clear();
       this.time = s.time; this.day = s.day; M.day = s.day; this.track = s.track || 'main';
       this.player = Player.fromJSON(s.player);
       this.level = this.world;
@@ -290,6 +291,8 @@ const Game = {
     if (this.time >= 1440) { this.time -= 1440; this.day++; this.mods.day = this.day; this.dayTick(); }
     if (this.slowTime > 0) this.slowTime -= dt;
     W.tick++;
+    if (this.intro) { this.updateIntro(dt); Input.queue.clear(); }
+    this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();
     if (Input.consume('spell') || (Input.held.spell && P.castT <= 0 && SPELLS[P.spells[P.spellIdx]] && SPELLS[P.spells[P.spellIdx]].kind === 'proj')) P.castSpell();
@@ -308,6 +311,8 @@ const Game = {
     // campo de fluxo
     this.flowT -= dt;
     const ptx = Math.floor(P.x / 16), pty = Math.floor(P.y / 16);
+    for (const c of this.carcasses) c.t += dt;
+    this.carcasses = this.carcasses.filter(c => c.t < 900);
     if (this.flowT <= 0 || !this.flow || this.flow.ptx !== ptx || this.flow.pty !== pty) { this.computeFlow(); this.flow.ptx = ptx; this.flow.pty = pty; this.flowT = 0.5; }
     // atores
     for (const a of this.actors) { if (a.hidden) continue; a.update(dt); }
@@ -659,6 +664,12 @@ const Game = {
       });
     }
   },
+  dropCarried() {
+    const P = this.player;
+    if (!P.carrying) return;
+    this.carcasses.push({ eid: P.carrying.eid, lvl: P.carrying.lvl, x: P.x + (P.lastH === 'right' ? 10 : -10), y: P.y + 4, level: this.level, t: 0 });
+    P.carrying = null; Sfx.play('roll');
+  },
   startFishing(tx, ty) {
     const P = this.player;
     if (this.fishing) return;
@@ -690,6 +701,7 @@ const Game = {
   },
   dayTick() {
     const P = this.player;
+    this.checkHomes();
     if (P.babyDue && this.day >= P.babyDue) {
       P.babyDue = null;
       const sp = P.rel[P.spouse];
@@ -711,7 +723,7 @@ const Game = {
     // névoa do mapa
     const ex = ptx >> 4, ey = pty >> 4;
     for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const x = ex + dx, y = ey + dy; if (x >= 0 && y >= 0 && x < 256 && y < 256 && dx * dx + dy * dy <= 5) M.explored[y * 256 + x] = 1; }
-    for (const s of W.settlements) if (!M.discovered.has(s.id) && Math.abs(s.mid.x - ptx) < 30 && Math.abs(s.mid.y - pty) < 30) { M.discovered.add(s.id); this.toast('Local descoberto: ' + s.name, '#ffe080'); P.addXP(15); }
+    for (const s of W.settlements) if (!M.discovered.has(s.id) && Math.abs(s.mid.x - ptx) < 30 && Math.abs(s.mid.y - pty) < 30) { M.discovered.add(s.id); this.toast('Local descoberto: ' + s.name, '#ffe080'); P.addXP(15); if (s.type === 'capital') this.chron(`Cheguei pela primeira vez a ${s.name}, capital de ${s.region.name}.`); }
     for (const d of W.dungeons) if (!M.discovered.has(d.id) && Math.abs(d.x - ptx) < 14 && Math.abs(d.y - pty) < 14) { M.discovered.add(d.id); this.toast('Masmorra descoberta: ' + d.name, '#ff9080'); P.addXP(10); }
     for (const p of W.pois) if (!M.discovered.has(p.id) && Math.abs(p.x - ptx) < 14 && Math.abs(p.y - pty) < 14) { M.discovered.add(p.id); this.toast('Descoberto: ' + p.name, '#c0e0ff'); }
     // região
@@ -771,14 +783,15 @@ const Game = {
       Quests.onKill(m);
       // saque
       const d = m.def, rng = new RNG(Math.floor(Math.random() * 1e9));
-      if (d.gold) this.dropGold(m.x, m.y, Math.round(rng.int(d.gold[0], d.gold[1]) * (1 + m.lvl * 0.15) * P.stat.gold));
-      if (d.drops) for (const [id, ch] of d.drops) if (rng.chance(ch)) this.dropItem(m.x, m.y, Items.make(id, id === 'flecha' ? rng.int(2, 6) : 1));
+      if (CARCASS[m.eid]) { this.spawnCarcass(m); }
+      else if (d.gold) this.dropGold(m.x, m.y, Math.round(rng.int(d.gold[0], d.gold[1]) * (1 + m.lvl * 0.15) * P.stat.gold));
+      if (d.drops && !CARCASS[m.eid]) for (const [id, ch] of d.drops) if (rng.chance(ch)) this.dropItem(m.x, m.y, Items.make(id, id === 'flecha' ? rng.int(2, 6) : 1));
       if (d.dropGear && rng.chance(d.dropGear)) { const n = d.boss ? 2 : 1; for (let i = 0; i < n; i++) this.dropItem(m.x, m.y, Items.randomGear(m.lvl, rng, d.boss ? 0.15 : 0.02)); }
       if (rng.chance(0.06) && !d.animal) this.dropItem(m.x, m.y, Items.make(Items.potionFor(m.lvl, rng)));
       if (d.dragon) {
         P.stats.dragons++;
         this.later(0.6, () => {
-          P.souls++;
+          P.souls++; this.chron(`Derrotei um ${m.name} e absorvi sua alma.`);
           this.centerMsg('ALMA DE DRAGÃO ABSORVIDA!', 'Use-a numa Pedra Rúnica para aprender um Grito.');
           Sfx.play('dragon');
           for (let i = 0; i < 40; i++) this.particle(m.x + (Math.random() - 0.5) * 40, m.y - 10 + (Math.random() - 0.5) * 30, (P.x - m.x) * 1.5, (P.y - m.y) * 1.5, '#ffb040', 0.8, 2);
@@ -804,6 +817,8 @@ const Game = {
         Sfx.play('levelup');
         P.addXP(50 + d.lvl * 15);
         Quests.onClear(d.id);
+        this.chron(`Conquistei ${d.name}${d.unique ? ', derrotando ' + m.name : ''}.`);
+        if (d.id === 'covil_vorthax' && P.freeMode) this.centerMsg('LENDA VIVA!', 'Você derrotou Vorthax, o Devorador!');
       }
     }
   },
@@ -873,6 +888,25 @@ const Game = {
       if (od.interact === 'dungeon' && L.isWorld) { const dd = this.world.entrances.get(tkey(tx, ty)); if (dd) name = `${dd.name} (Nv ${dd.lvl})`; }
       bd = d; best = { kind: od.interact, tx, ty, o, label: labels[od.interact] || 'Usar', name };
     }
+    // carcaças, carroça, cavalo, obras, árvores e rochas
+    for (const c of this.carcasses) { if (c.level !== L) continue; const d = dist(fx, fy, c.x, c.y - 4); if (d < bd + 4) { bd = d; best = { kind: 'carcass', c, label: P.carrying ? 'Soltar' : 'Carcaça', name: ENEMIES[c.eid].name }; } }
+    if (L.isWorld && P.cart) { const d = dist(P.x, P.y, P.cart.x, P.cart.y) - 4; if (d < 30 && d < bd + 10) { bd = d; best = { kind: 'cart', label: 'Carroça', name: `Carroça (${(P.cart.load || []).length}/${CART_CAP})` }; } }
+    if (L.isWorld && P.horse && !P.mounted) { const d = dist(fx, fy, P.horse.x, P.horse.y - 6); if (d < bd) { bd = d; best = { kind: 'horse', label: 'Montar', name: MOUNTS[P.mount].name }; } }
+    if (L.isWorld) for (const h of this.world.homes) {
+      if (h.done) continue;
+      const T_ = HOME_TIERS[h.tier];
+      if (P.x / 16 > h.x - 2 && P.x / 16 < h.x + T_.w + 2 && P.y / 16 > h.y && P.y / 16 < h.y + T_.h + 3) { bd = 0; best = { kind: 'site', h, label: 'Obra', name: `${h.name} (${Math.round(h.progress * 100)}%)` }; }
+    }
+    if (!best) {
+      const axe = P.count('machado_lenha'), pick = P.count('picareta');
+      for (let dy = -1; dy <= 1 && !best; dy++) for (let dx = -1; dx <= 1 && !best; dx++) {
+        const tx = ptx + dx, ty = Math.floor(P.y / 16) + dy, o = L.objAt(tx, ty);
+        if (axe && TREE_OBJS.has(o)) best = { kind: 'chop', tx, ty, o, label: 'Cortar', name: OBJ_DEFS[o].name };
+        else if (pick && QUARRY_OBJS.has(o)) best = { kind: 'quarry', tx, ty, o, label: 'Quebrar', name: OBJ_DEFS[o].name };
+        else if (o === O.CROP && L.isWorld) best = { kind: 'reap', tx, ty, o, label: 'Colher', name: 'Trigo' };
+      }
+    }
+    if (!best && P.carrying) best = { kind: 'drop', label: 'Soltar', name: ENEMIES[P.carrying.eid].name };
     if (!best && L.isWorld && P.count('vara_pesca')) {
       for (const d of [10, 20]) {
         const tx = Math.floor((P.x + Math.cos(P.face) * d) / 16), ty = Math.floor((P.y - 4 + Math.sin(P.face) * d) / 16);
@@ -890,6 +924,26 @@ const Game = {
       case 'npc': UI.talkNPC(it.a); break;
       case 'door': if (it.b.kind === 'house' || it.b.kind === 'house2' || it.b.kind === 'house3' || it.b.role !== 'tower') this.enterInterior(it.b); else UI.building(it.b); break;
       case 'fish': this.startFishing(it.tx, it.ty); break;
+      case 'carcass': if (P.carrying) { this.dropCarried(); } else UI.carcassMenu(it.c); break;
+      case 'drop': this.dropCarried(); break;
+      case 'cart': UI.cartMenu(); break;
+      case 'horse': P.toggleMount(); break;
+      case 'site': UI.construction(it.h); break;
+      case 'carpentry': UI.craft('carpentry'); break;
+      case 'chop': case 'quarry': case 'reap': {
+        const chop = it.kind === 'chop', reap = it.kind === 'reap';
+        if (!reap && P.st < 10) { this.toast('Você está cansado demais.', '#80ff80'); break; }
+        if (!reap) P.st -= 10;
+        const n = reap ? 1 + (Math.random() < 0.5 ? 1 : 0) : chop ? 2 + Math.floor(Math.random() * 3) + Math.floor(P.skill('construcao') / 40) : 2 + Math.floor(Math.random() * 3);
+        P.addItem(Items.make(reap ? 'trigo' : chop ? 'lenha' : 'pedra', n));
+        if (!reap && !chop && Math.random() < 0.2) P.addItem(Items.make('minerio_ferro'));
+        if (!reap) P.train('construcao', 2.5);
+        L.setObj(it.tx, it.ty, chop ? O.STUMP : 0);
+        if (L.isWorld) this.mods.harvested[tkey(it.tx, it.ty)] = this.day;
+        Sfx.play(chop ? 'hit' : reap ? 'harvest' : 'mine'); this.shake = chop ? 2 : 1;
+        this.burst(it.tx * 16 + 8, it.ty * 16 + 4, chop ? '#8a5a2e' : reap ? '#e0c050' : '#a09890', 12, 50);
+        break;
+      }
       case 'destiny': UI.destiny(it.o); break;
       case 'wardrobe': if (this.level.isInterior && this.level.b.role === 'playerhouse' && this.player.houses.includes(this.level.s.id)) UI.storage(this.level.s); else this.toast('Isso não é seu.', '#ffa0a0'); break;
       case 'crib': UI.babyCrib(); break;
@@ -1096,7 +1150,9 @@ const Game = {
     }
     if (L.isWorld) {
       for (const b of this.world.buildingsInView(camX, camY, camX + vw, camY + vh)) {
-        const img = Sprites.building(b.spec);
+        let img;
+        if (b.site) { const pk = Math.floor(b.home.progress * 4); if (!b._scaf || b._scafK !== pk) { b._scaf = Sprites.scaffold(b.w, b.h, b.home.progress); b._scafK = pk; } img = b._scaf; }
+        else img = Sprites.building(b.spec);
         const H = img.height - 1;
         D.push({ y: (b.ty + b.h) * 16, img, x: b.tx * 16 - 1, yy: (b.ty + b.h) * 16 - H });
       }
@@ -1109,10 +1165,12 @@ const Game = {
     }
     if (!P.dead || true) D.push({ y: P.y, a: P });
     for (const k of this.pickups) D.push({ y: k.y, pk: k });
+    this.drawMountsCart(D); this.drawCarcasses(D);
     D.sort((a, b) => a.y - b.y);
     for (const d of D) {
       if (d.a) d.a.draw(ctx, camX, camY);
       else if (d.pk) this.drawPickup(ctx, d.pk, camX, camY);
+      else if (d.fn) d.fn(ctx, camX, camY);
       else ctx.drawImage(d.img, d.x - camX, d.yy - camY);
     }
     // marcadores de missão em masmorra/ mundo (alvo próximo)
@@ -1146,8 +1204,8 @@ const Game = {
   trackedQuest() {
     const P = this.player; if (!P) return null;
     if (this.track === 'treasure') return this.mods.treasures.length ? 'treasure' : null;
-    if (this.track === 'main') return MAIN_QUEST[P.main] ? 'main' : null;
-    return P.quests.find(q => q.id === this.track) || (MAIN_QUEST[P.main] ? 'main' : null);
+    if (this.track === 'main') return Quests.mainStep() ? 'main' : null;
+    return P.quests.find(q => q.id === this.track) || (Quests.mainStep() ? 'main' : null);
   },
   treasureTarget() { const t = this.mods.treasures[this.mods.treasures.length - 1]; return t ? { x: t.x, y: t.y, name: 'Tesouro' } : null; },
   drawPickup(ctx, k, camX, camY) {

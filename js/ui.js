@@ -315,6 +315,8 @@ const UI = {
     if (deliveries.length) opts.push({ label: `📦 Entregar encomenda (${deliveries.length})`, cls: 'gold', fn: () => { Quests.deliverHere(s); this.building(b); } });
     let text = '';
     const own = this._ownerNpc && this._ownerNpc.building === b && Game.level.isInterior ? this._ownerNpc : null;
+    if ((b.role === 'general' || b.role === 'inn') && P.cart && P.cart.load && P.cart.load.length && dist(P.cart.x / 16, P.cart.y / 16, b.door ? b.door.x : b.tx, b.door ? b.door.y : b.ty) < 40) opts.push({ label: `🛒 Vender carga da carroça (${P.cart.load.length} caças)`, cls: 'gold', fn: () => this.sellCart(b) });
+    if (b.role !== 'playerhouse' && b.role !== 'house' && b.role !== 'guild') this.jobOptions(b, opts);
     if (own && b.role !== 'ruler' && b.role !== 'guild') opts.push({ label: 'Conversa pessoal 💬', fn: () => this.personal(own, () => this.building(b)) });
     switch (b.role) {
       case 'ruler': return this.ruler(b);
@@ -330,6 +332,7 @@ const UI = {
         text = `<b>${esc(b.name)}</b>. Aço bom não sai barato!`;
         opts.push({ label: 'Comprar / Vender', fn: () => this.shop(b, 'smith') });
         opts.push({ label: 'Usar a forja', fn: () => this.craft('forge', b) });
+        opts.push({ label: 'Usar a bancada de carpintaria', fn: () => this.craft('carpentry', b) });
         break;
       case 'general': text = `<b>${esc(b.name)}</b>. Tenho de tudo um pouco!`; opts.push({ label: 'Comprar / Vender', fn: () => this.shop(b, 'general') }); opts.push({ label: 'Cozinhar no fogão', fn: () => this.craft('cook', b) }); break;
       case 'alchemist': text = `<b>${esc(b.name)}</b>. Poções, ervas e elixires.`; opts.push({ label: 'Comprar / Vender', fn: () => this.shop(b, 'alchemist') }); opts.push({ label: 'Usar bancada de alquimia', fn: () => this.craft('alchemy', b) }); break;
@@ -343,8 +346,8 @@ const UI = {
         break;
       case 'stable':
         text = P.hasHorse ? 'Seu cavalo está bem cuidado! Use o botão do cavalo para montar.' : 'Um bom cavalo deixa qualquer viagem mais curta. 800 de ouro.';
+        opts.push({ label: 'Montarias e carroça', cls: 'gold', fn: () => this.mountsShop(b) });
         opts.push({ label: 'Animais de estimação', fn: () => this.pets(b) });
-        if (!P.hasHorse) opts.push({ label: 'Comprar cavalo (800 ouro)', cls: 'gold', fn: () => { if (P.gold < 800) return Game.toast('Ouro insuficiente.', '#ff8080'); P.gold -= 800; P.hasHorse = true; Sfx.play('horse'); Game.centerMsg('CAVALO ADQUIRIDO!', 'Use o botão de montaria (ou H) para cavalgar.'); this.close(); } });
         break;
       case 'playerhouse': {
         const owned = P.houses.includes(s.id);
@@ -353,11 +356,12 @@ const UI = {
           text = `Sua casa em ${esc(s.name)}. Lar, doce lar.`;
           opts.push({ label: 'Dormir (grátis)', fn: () => this.rest(b, 0) });
           opts.push({ label: 'Baú de armazenamento', fn: () => this.storage(s) });
+          if (b.home) { opts.push({ label: `Reformar eu mesmo(a) (qualidade: ${HOME_QUALITY[b.home.quality]})`, fn: () => { this.close(); Game.reformHome(b.home, false); } }); opts.push({ label: `Contratar reforma (${Math.round(HOME_TIERS[b.home.tier].hire * 0.35)}o)`, fn: () => { this.close(); Game.reformHome(b.home, true); } }); }
           opts.push({ label: 'Usar forja doméstica', fn: () => this.craft('forge', b) });
           opts.push({ label: 'Usar bancada de alquimia', fn: () => this.craft('alchemy', b) });
         } else {
           text = `Esta casa está à venda por <span class="gold">${price} ouro</span>. Com ela você terá cama, baú e bancadas.`;
-          opts.push({ label: `Comprar casa (${price})`, cls: 'gold', fn: () => { if (P.gold < price) return Game.toast('Ouro insuficiente.', '#ff8080'); P.gold -= price; P.houses.push(s.id); P.storage[s.id] = P.storage[s.id] || []; Sfx.play('coin'); Game.centerMsg('CASA COMPRADA!', s.name); this.building(b); } });
+          opts.push({ label: `Comprar casa (${price})`, cls: 'gold', fn: () => { if (P.gold < price) return Game.toast('Ouro insuficiente.', '#ff8080'); P.gold -= price; P.houses.push(s.id); P.storage[s.id] = P.storage[s.id] || []; Sfx.play('coin'); Game.centerMsg('CASA COMPRADA!', s.name); Game.chron(`Comprei uma casa em ${s.name}.`); this.building(b); } });
         }
         break;
       }
@@ -547,7 +551,7 @@ const UI = {
   craft(kind, b) {
     const P = Game.player;
     let tab = kind === 'forge' ? 'smelt' : kind;
-    const skillK = kind === 'alchemy' ? 'alquimia' : kind === 'cook' ? null : 'ferraria';
+    const skillK = kind === 'alchemy' ? 'alquimia' : kind === 'cook' ? null : kind === 'carpentry' ? 'construcao' : 'ferraria';
     const render = () => {
       const f = this.reg();
       const red = (skillK === 'ferraria' && P.perks.has('ferreiro')) ? 20 : 0;
@@ -562,7 +566,7 @@ const UI = {
         return `<div class="crow ${ok ? '' : 'off'}">${this.icon(ITEMS[oid].icon || Items.icon({ id: oid }))}<div class="cinfo"><b>${ITEMS[oid].name}${on > 1 ? ' x' + on : ''}</b>${sk}<br><small>${req}</small></div>${ok ? `<button class="sbtn gold" ${f(() => { this.doCraft(r, skillK); render(); })}>Criar</button>` : ''}</div>`;
       }).join('') || '<div class="dim pad">Nenhuma receita disponível. Treine sua habilidade.</div>';
       const tabs = kind === 'forge' ? `<div class="tabs"><button class="tab ${tab === 'smelt' ? 'on' : ''}" ${f(() => { tab = 'smelt'; render(); })}>Fundir</button><button class="tab ${tab === 'forge' ? 'on' : ''}" ${f(() => { tab = 'forge'; render(); })}>Forjar</button></div>` : '';
-      const title = { forge: 'Forja', alchemy: 'Bancada de Alquimia', cook: 'Cozinhar' }[kind];
+      const title = { forge: 'Forja', alchemy: 'Bancada de Alquimia', cook: 'Cozinhar', carpentry: 'Bancada de Carpintaria' }[kind];
       const backFn = () => b ? this.building(b) : this.close();
       const el = this.show('craft', `<div class="panel wide"><div class="ptitle">${title}${skillK ? ` <span class="dim right">${SKILLS[skillK]}: ${P.skill(skillK)}</span>` : ''}</div>${tabs}<div class="clist">${rows}</div><button class="mbtn small" ${f(backFn)}>Voltar</button></div>`, { onBack: backFn });
       this.bind(el, f);
@@ -685,7 +689,7 @@ const UI = {
       <b>${esc(q.title)}</b> ${q.guild ? `<small style="color:${GUILDS[q.guild].color}">${GUILDS[q.guild].name}</small>` : `<small class="dim">${esc(q.giver.name)}</small>`}<br>
       <small>${esc(q.desc)}</small><br><small class="${q.status === 'ready' ? 'good' : 'gold'}">${esc(Quests.progressText(q))}</small> <small class="dim">• ${q.reward.gold}o ${q.reward.xp}xp</small>
       <button class="sbtn small danger right" ${f(() => this.confirm('Abandonar esta missão?', () => { P.quests = P.quests.filter(x => x !== q); if (q.kind === 'deliver') P.removeItem(q.t.item, 1); this.openMenu('quests'); }, () => this.openMenu('quests')))}>Abandonar</button></div>`).join('');
-    return `<div class="dim small">Toque numa missão para rastreá-la na bússola.</div>${main}${tre}${list || '<div class="dim pad">Sem outras missões. Visite guildas e pessoas com <span class="gold">!</span> nas cidades.</div>'}`;
+    return `${P.freeMode ? this.chronicleHTML() + (P.job ? `<div class="quest"><b>💼 ${JOBS[P.job.id].name}</b> em ${esc(P.job.sname || '')} — ${JOB_RANKS[Game.jobRank(P.job)][0]} (${P.job.shifts} turnos)</div>` : '') + '<h3>Missões</h3>' : ''}<div class="dim small">Toque numa missão para rastreá-la na bússola.</div>${P.freeMode ? '' : main}${tre}${list || '<div class="dim pad">Sem outras missões. Visite guildas e pessoas com <span class="gold">!</span> nas cidades.</div>'}`;
   },
   guildTab(f) {
     const P = Game.player, W = Game.world;
@@ -889,7 +893,7 @@ const UI = {
     this.setClass('b-shout', 'hidden', !P.shouts.length);
     if (P.shouts.length) this.setClass('b-shout', 'cool', !!P.cds['sh_' + P.shouts[P.shoutIdx]]);
     this.setClass('b-racial', 'cool', !!P.cds.racial);
-    this.setClass('b-mount', 'hidden', !P.hasHorse);
+    this.setClass('b-mount', 'hidden', !P.mount);
     this.setClass('b-mana', 'hidden', !(P.count('pocao_magia_p') || P.count('pocao_magia_m') || P.count('pocao_magia_g')));
     const pots = P.count('pocao_vida_p') + P.count('pocao_vida_m') + P.count('pocao_vida_g');
     this.setText('pot-n', pots ? String(pots) : '');

@@ -7,6 +7,8 @@ for (let i = 0; i < OBJ_DEFS.length; i++) if (OBJ_DEFS[i]) OSOLID[i] = OBJ_DEFS[
 const OBJ_BAKED = new Uint8Array(128);
 [O.FLOWERS, O.TALLGRASS, O.BONES, O.LILY, O.ROCK, O.SKULLS, O.CROP].forEach(o => OBJ_BAKED[o] = 1);
 const OBJ_VARIANTS = { [O.COUNTER]: 2, [O.BEDSMALL]: 2, [O.PAINTING]: 4, [O.OAK]: 3, [O.AUTUMN]: 3, [O.PINE]: 3, [O.SNOWPINE]: 3, [O.PALM]: 2, [O.BIGSHROOM]: 3, [O.BUSH]: 3, [O.FLOWERS]: 4, [O.STALL]: 4, [O.TENT]: 3, [O.CRYSTAL]: 4, [O.BANNER]: 5, [O.LILY]: 2, [O.CACTUS]: 2, [O.LAMP]: 2, [O.BROKEN_PILLAR]: 3 };
+const TREE_OBJS = new Set([O.OAK, O.PINE, O.SNOWPINE, O.PALM, O.DEADTREE, O.WILLOW, O.AUTUMN]);
+const QUARRY_OBJS = new Set([O.BOULDER, O.ICEROCK, O.SANDROCK]);
 const OBJ_ANIM = new Uint8Array(128);
 [O.CAMPFIRE, O.TORCH, O.RUNESTONE, O.FOUNTAIN, O.PORTAL, O.ALTAR, O.SHRINE, O.FORGE, O.FIREPLACE, O.CANDLE, O.CAULDRON, O.DESTINY, O.DESTINY2, O.DESTINY3].forEach(o => OBJ_ANIM[o] = 1);
 
@@ -29,7 +31,7 @@ class World {
     this.tick = 0;
     this.settlements = []; this.dungeons = []; this.pois = [];
     this.doors = new Map(); this.entrances = new Map(); this.signs = new Map(); this.poiAt = new Map();
-    this.roadTiles = new Map(); this.stampIndex = new Map();
+    this.roadTiles = new Map(); this.stampIndex = new Map(); this.homes = [];
     this.mods = null; // estado de modificações (baús abertos etc.), injetado pelo jogo
     const t0 = performance.now();
     this.generateSites();
@@ -252,6 +254,8 @@ class World {
         const def = OBJ_DEFS[o];
         if (o === O.CHEST || o === O.CHEST_BOSS) { if (this.mods.opened.has(tkey(x0 + lx, y0 + ly))) objs[i] = O.CHEST_OPEN; }
         else if (def.harvest) { const d = this.mods.harvested[tkey(x0 + lx, y0 + ly)]; if (d !== undefined && this.mods.day - d < 3) objs[i] = 0; }
+        else if (TREE_OBJS.has(o)) { const d = this.mods.harvested[tkey(x0 + lx, y0 + ly)]; if (d !== undefined && this.mods.day - d < 5) objs[i] = O.STUMP; }
+        else if (QUARRY_OBJS.has(o) || o === O.CROP) { const d = this.mods.harvested[tkey(x0 + lx, y0 + ly)]; if (d !== undefined && this.mods.day - d < (o === O.CROP ? 2 : 7)) objs[i] = 0; }
       }
     }
     return { cx, cy, tiles, objs, reg, t: 0 };
@@ -821,7 +825,39 @@ class World {
       if (s.x0 * 16 > x1 + 64 || (s.x0 + s.w) * 16 < x0 - 64 || s.y0 * 16 > y1 + 160 || (s.y0 + s.h) * 16 < y0 - 64) continue;
       for (const b of s.buildings) out.push(b);
     }
+    for (const h of this.homes) { const b = h._b; if (!b || b.tx * 16 > x1 + 64 || (b.tx + b.w) * 16 < x0 - 64 || b.ty * 16 > y1 + 160 || (b.ty + b.h) * 16 < y0 - 64) continue; out.push(b); }
     return out;
+  }
+  // ---------- Casas construídas pelo jogador ----------
+  homeSize(h) { const T_ = HOME_TIERS[h.tier]; return { w: T_.w, h: T_.h }; }
+  addHome(h) {
+    const { w, h: hh } = this.homeSize(h);
+    const reg = this.regions[this.regAt(h.x, h.y)];
+    const mid = { x: h.x + Math.floor(w / 2), y: h.y + hh + 1 };
+    const pseudo = { id: h.id, name: h.name, type: 'home', region: reg, x: mid.x, y: mid.y, cx: mid.x, cy: mid.y, mid, gates: [{ x: mid.x, y: mid.y, dir: 's' }], x0: h.x, y0: h.y, w, h: hh, buildings: [], npcSpots: [], lamps: [] };
+    const q = h.quality || 0;
+    const roofs = ['#6a5a4a', '#8a4a2a', '#a03a2a', '#3a5a8a', '#6a2a6a'];
+    const spec = { type: 'house', w, h: hh, style: q >= 3 ? 'stone' : 'timber', roof: roofs[q], wall: q === 0 ? '#b8a888' : q >= 3 ? '#a8a4a0' : '#e8dcc0', seed: hashStr(h.id), chimney: q >= 1, quality: q };
+    const b = { kind: 'playerhouse', role: 'playerhouse', guild: null, tx: h.x, ty: h.y, w, h: hh, spec, name: h.name, owner: { name: 'Você', race: 'humano', sex: 'm', seed: 1 }, settlement: pseudo, home: h, site: !h.done, decorative: false };
+    if (h.done) { b.door = { x: h.x + Math.floor(w / 2), y: h.y + hh - 1 }; }
+    pseudo.buildings = [b];
+    h._b = b; h._s = pseudo;
+    // remove carimbo antigo
+    for (const [k, list] of this.stampIndex) this.stampIndex.set(k, list.filter(st => st.homeId !== h.id));
+    for (const [k, d] of this.doors) if (d.home && d.home.id === h.id) this.doors.delete(k);
+    if (b.door) this.doors.set(tkey(b.door.x, b.door.y), b);
+    const W2 = w + 2, H2 = hh + 3;
+    const tiles = new Uint8Array(W2 * H2).fill(255), objs = new Uint8Array(W2 * H2).fill(0);
+    for (let y = 0; y < H2; y++) for (let x = 0; x < W2; x++) {
+      const inFoot = x >= 1 && x <= w && y >= 0 && y < hh;
+      if (inFoot) objs[y * W2 + x] = O.BLOCK;
+      if (y >= hh && x >= 1 && x <= w) tiles[y * W2 + x] = x === Math.floor(w / 2) + 1 ? T.ROAD : 255;
+    }
+    if (!h.done) objs[(hh) * W2 + 0] = O.WORKBENCH;
+    this.addStamp({ x0: h.x - 1, y0: h.y, w: W2, h: H2, tiles, objs, homeId: h.id });
+    for (let cy = (h.y >> 5) - 1; cy <= ((h.y + H2) >> 5) + 1; cy++) for (let cx = ((h.x - 1) >> 5) - 1; cx <= ((h.x + W2) >> 5) + 1; cx++) { this.chunks.delete(this.ckey(cx, cy)); this.canvases.delete(this.ckey(cx, cy)); }
+    if (!this.homes.includes(h)) this.homes.push(h);
+    return b;
   }
   // Imagem do mapa-múndi gerada aos poucos
   startMapImage() {

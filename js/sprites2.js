@@ -661,6 +661,14 @@
       }
       if (sp.chimney) { p(ox + W - 12, 0, '#7a6a6a', 5, 8); p(ox + W - 12, 0, '#9a8a8a', 5, 1); }
     }
+    // qualidade (casas construídas pelo jogador)
+    if (sp.quality !== undefined) {
+      const q = sp.quality;
+      if (q === 0) { for (let i = 0; i < 6; i++) p(ox + r.int(2, W - 6), r.int(2, wallTop - 4), '#2a1a10', r.int(2, 4), 2); for (let i = 0; i < 4; i++) p(ox + r.int(2, W - 4), wallTop + r.int(2, wallH - 4), shade(wallC, -0.35), 3, 1); p(ox + 3, wallTop + 4, '#2a1a10', 5, 5); }
+      if (q === 1) { for (let i = 0; i < 2; i++) p(ox + r.int(2, W - 6), r.int(2, wallTop - 4), '#3a2a1a', 3, 1); }
+      if (q >= 3) { p(ox, wallTop, '#e0c060', W, 1); for (let x = 6; x < W - 6; x += 14) { p(ox + x, wallTop + 11, '#6a4a2a', 6, 2); p(ox + x, wallTop + 9, '#e04070', 2, 2); p(ox + x + 3, wallTop + 9, '#f0e040', 2, 2); } }
+      if (q >= 4) { p(ox + W / 2 - 2, 0, '#ffd040', 4, 3); p(ox, H - 1, '#e0c060', W, 1); }
+    }
     // placa
     if (sp.sign) {
       const sx = doorX + doorW + 3, sy = H - doorH - 2;
@@ -686,23 +694,77 @@
     }
   }
 
-  // Cavalo (montaria)
-  let horseC = null;
-  S.horse = function () {
-    if (horseC) return horseC;
+  // Montarias
+  const mountC = {};
+  S.horse = function (kind = 'cavalo') {
+    if (mountC[kind]) return mountC[kind];
+    const M = MOUNTS[kind] || MOUNTS.cavalo;
+    if (M.wolf) {
+      const right = [0, 1, 2].map(f => { let c = quad({ k: 'wolf', c: M.c }, f); c = S.scale(c, 1.25); const o = cv(28, 22), x = o.getContext('2d'); x.drawImage(c, 0, 0); P(x)(10, 6, '#7a2a1a', 6, 3); return o; });
+      return (mountC[kind] = { right, left: right.map(flip) });
+    }
     const mk = (f) => {
-      const c = cv(24, 20), p = P(c.getContext('2d'));
-      const col = '#7a4a2a', dk = '#4a2a1a', hi = '#9a6a3a';
+      const c = cv(26, 22), p = P(c.getContext('2d'));
+      const col = M.c, dk = shade(col, -0.4), hi = shade(col, 0.22), mane = kind === 'corcel' ? '#c0d0ff' : kind === 'camelo' ? shade(col, -0.2) : shade(col, -0.55);
+      const small = kind === 'burro';
       const legsOff = f === 1 ? [-1, 1, 1, -1] : f === 2 ? [1, -1, -1, 1] : [0, 0, 0, 0];
-      [5, 7, 16, 18].forEach((x, i) => { for (let y = 0; y < 7; y++) p(x + (y > 3 ? legsOff[i] : 0), 12 + y, i % 2 ? col : dk, 2, 1); p(x + legsOff[i], 19, '#1a1a1a', 2, 1); });
-      S.ellipse(p, 12, 10, 9, 4, col); p(5, 7, hi, 14, 1);
-      p(18, 3, col, 4, 8); p(20, 1, col, 4, 4); p(23, 3, dk, 1, 2); p(21, 2, '#1a1010');
-      p(17, 2, '#2a1a10', 2, 8); p(1, 8, '#2a1a10', 3, 7);
-      p(9, 5, '#6a2a1a', 6, 3); p(10, 5, '#d0a030', 1, 1);
+      const lh = small ? 5 : 7, by = small ? 14 : 12;
+      [5, 7, 16, 18].forEach((x, i) => { for (let y = 0; y < lh; y++) p(x + (y > lh / 2 ? legsOff[i] : 0), by + y, i % 2 ? col : dk, 2, 1); p(x + legsOff[i], by + lh, '#1a1a1a', 2, 1); });
+      S.ellipse(p, 12, by - 2, small ? 8 : 9, 4, col); p(5, by - 5, hi, 14, 1); p(6, by, shade(col, -0.15), 12, 1);
+      if (kind === 'camelo') { S.ellipse(p, 9, by - 6, 3, 3, col); S.ellipse(p, 15, by - 6, 3, 3, col); }
+      const hx = small ? 17 : 18;
+      p(hx, by - 9, col, 4, 8); p(hx + 2, by - 11, col, 4, 4); p(hx + 5, by - 9, dk, 1, 2); p(hx + 3, by - 10, '#1a1010');
+      if (small) { p(hx + 1, by - 15, col, 1, 4); p(hx + 3, by - 15, col, 1, 4); }
+      p(hx - 1, by - 10, mane, 2, 8); p(1, by - 4, mane, 3, 7);
+      if (M.antlers) { p(hx + 1, by - 15, '#d8c8a0', 1, 4); p(hx, by - 15, '#d8c8a0', 3, 1); p(hx + 4, by - 15, '#d8c8a0', 1, 4); p(hx + 4, by - 15, '#d8c8a0', 3, 1); }
+      p(9, by - 7, '#6a2a1a', 6, 3); p(10, by - 7, '#d0a030', 1, 1);
+      if (kind === 'cavalo_guerra') { p(6, by - 5, '#8a8a94', 12, 3); p(hx + 1, by - 11, '#8a8a94', 4, 2); }
+      if (kind === 'corcel') { p(9, by - 7, '#3a5aa0', 6, 3); p(10, by - 7, '#e0e0ff', 1, 1); }
       S.outline(c); return c;
     };
     const right = [0, 1, 2].map(mk);
-    horseC = { right, left: right.map(flip) };
-    return horseC;
+    return (mountC[kind] = { right, left: right.map(flip) });
+  };
+  // Carroça (vista lateral, voltada à direita)
+  let cartC = null;
+  S.cart = function () {
+    if (cartC) return cartC;
+    const mk = (f) => {
+      const c = cv(34, 22), p = P(c.getContext('2d'));
+      p(2, 6, '#8a5a2e', 26, 9); p(2, 6, '#a87440', 26, 1); for (let x = 2; x < 28; x += 5) p(x, 6, '#6a4020', 1, 9); p(2, 14, '#5a3418', 26, 1);
+      p(0, 5, '#6a4020', 2, 10); p(28, 5, '#6a4020', 2, 10);
+      p(29, 11, '#5a3418', 5, 2);
+      for (const wx of [8, 22]) { S.ellipse(p, wx, 16.5, 4.5, 4.5, '#4a2e14'); S.ellipse(p, wx, 16.5, 2.5, 2.5, '#8a5a2e'); const a = f * 0.8; p(wx + Math.round(Math.cos(a) * 3), 16 + Math.round(Math.sin(a) * 3), '#3a2410'); p(wx - Math.round(Math.cos(a) * 3), 16 - Math.round(Math.sin(a) * 3), '#3a2410'); p(wx, 16, '#c0a060'); }
+      S.outline(c); return c;
+    };
+    const right = [0, 1, 2].map(mk);
+    return (cartC = { right, left: right.map(flip) });
+  };
+  // Carcaça (sprite do animal deitado)
+  const carcC = new Map();
+  S.carcass = function (eid) {
+    if (carcC.has(eid)) return carcC.get(eid);
+    const look = ENEMIES[eid].look;
+    const sp = S.actor(look);
+    const img = (sp.right || sp.down)[0];
+    const c = cv(img.width, img.height), x = c.getContext('2d');
+    x.translate(0, img.height); x.scale(1, -1); x.drawImage(img, 0, 0);
+    x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(60,20,20,0.25)'; x.fillRect(0, 0, c.width, c.height);
+    carcC.set(eid, c);
+    return c;
+  };
+  // Obra (andaimes) por progresso
+  S.scaffold = function (w, h, prog) {
+    const W = w * 16, H = h * 16 + 14;
+    const c = cv(W + 2, H + 1), p = P(c.getContext('2d'));
+    const lvl = Math.floor(prog * 4);
+    p(1, H - 4, '#8a8580', W, 4);
+    if (lvl >= 1) { for (let x = 1; x < W; x += 6) p(x, H - 4 - Math.min(16, H * 0.3), '#8a5a2e', 4, Math.min(16, H * 0.3)); }
+    if (lvl >= 2) { p(1, H - 26, '#a87440', W, 22); for (let x = 1; x < W; x += 8) p(x, H - 26, '#6a4020', 1, 22); }
+    if (lvl >= 3) { for (let y = 0; y < 12; y++) p(1 + (12 - y), H - 38 + y, '#8a3a2a', W - (12 - y) * 2, 1); }
+    for (let x = 0; x < W; x += 12) p(x, 4, '#c09050', 2, H - 4);
+    for (let y = 10; y < H; y += 12) p(0, y, '#c09050', W + 2, 2);
+    S.outline(c);
+    return c;
   };
 })(Sprites);

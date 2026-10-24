@@ -25,7 +25,7 @@ const Shops = {
         ['body_couro', 'head_couro', 'feet_couro', 'shield_couro'].forEach(id => { if (rng.chance(0.6)) add(id); });
         add('couro', rng.int(2, 6)); add('lingote_ferro', rng.int(2, 6));
         if (rng.chance(0.4)) add('mapa_tesouro');
-        add('vara_pesca'); add('buque', rng.int(2, 6)); add('boneca', rng.int(1, 3)); add('espada_madeira', rng.int(1, 3));
+        add('vara_pesca'); add('machado_lenha'); add('picareta'); add('lenha', rng.int(10, 30)); add('tabua', rng.int(20, 60)); add('pedra', rng.int(20, 60)); add('prego', rng.int(40, 120)); add('bloco_pedra', rng.int(5, 20)); add('trigo', rng.int(3, 10)); add('buque', rng.int(2, 6)); add('boneca', rng.int(1, 3)); add('espada_madeira', rng.int(1, 3));
         if (R.id === 'zahrim' || R.id === 'sylvaris') add('vinho', rng.int(1, 4));
         if (role === 'stall') for (let i = 0; i < 2; i++) out.push(Items.randomGear(lvl, rng, 0.05));
         break;

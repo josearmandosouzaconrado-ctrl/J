@@ -23,6 +23,7 @@ class Player extends Actor {
     this.hurtAcc = 0; this.h = 22;
     this.lastTown = null;
     this.rel = {}; this.spouse = null; this.spouseHome = null; this.children = []; this.babyDue = null; this.pet = null; this.sign = null; this.style = 'Aventureiro';
+    this.mount = null; this.horse = null; this.cart = null; this.carrying = null; this.job = null; this.chronicle = []; this.freeMode = true; this.sleeping = false;
     if (!o.noItems) {
       for (const spec of C.items) {
         const [id, n] = Items.parse(spec);
@@ -40,7 +41,7 @@ class Player extends Actor {
   // ---------- Serialização ----------
   toJSON() {
     const o = {};
-    for (const k of ['name', 'race', 'cls', 'app', 'level', 'xp', 'base', 'perkPts', 'gold', 'inv', 'equip', 'spells', 'spellIdx', 'shouts', 'shoutLvl', 'shoutIdx', 'souls', 'skills', 'quests', 'guilds', 'main', 'doneQuests', 'hasHorse', 'houses', 'storage', 'follower', 'stats', 'hp', 'mp', 'st', 'x', 'y', 'lastTown', 'pendingLevels', 'cds', 'rel', 'spouse', 'spouseHome', 'children', 'babyDue', 'pet', 'sign', 'style']) o[k] = this[k];
+    for (const k of ['name', 'race', 'cls', 'app', 'level', 'xp', 'base', 'perkPts', 'gold', 'inv', 'equip', 'spells', 'spellIdx', 'shouts', 'shoutLvl', 'shoutIdx', 'souls', 'skills', 'quests', 'guilds', 'main', 'doneQuests', 'hasHorse', 'houses', 'storage', 'follower', 'stats', 'hp', 'mp', 'st', 'x', 'y', 'lastTown', 'pendingLevels', 'cds', 'rel', 'spouse', 'spouseHome', 'children', 'babyDue', 'pet', 'sign', 'style', 'mount', 'horse', 'cart', 'carrying', 'job', 'chronicle', 'freeMode']) o[k] = this[k];
     o.perks = [...this.perks];
     o.buffs = this.buffs.filter(b => b.t < 1e6);
     return o;
@@ -51,7 +52,10 @@ class Player extends Actor {
     p.perks = new Set(o.perks || []);
     p.buffs = o.buffs || [];
     p.cds = o.cds || {};
-    p.rel = o.rel || {}; p.children = o.children || [];
+    p.rel = o.rel || {}; p.children = o.children || []; p.chronicle = o.chronicle || [];
+    if (o.freeMode === undefined) p.freeMode = false;
+    if (p.hasHorse && !p.mount) p.mount = 'cavalo';
+    for (const k in SKILLS) if (!p.skills[k]) p.skills[k] = { lvl: 5, xp: 0 };
     for (const sl of EQUIP_SLOTS) if (p.equip[sl]) { const inst = p.inv.find(i => i.u === p.equip[sl].u); if (inst) p.equip[sl] = inst; else p.inv.push(p.equip[sl]); }
     p.recalc();
     return p;
@@ -65,7 +69,7 @@ class Player extends Actor {
     this.xp += n;
     let ups = 0;
     while (this.xp >= this.needXP()) { this.xp -= this.needXP(); this.level++; this.perkPts++; this.pendingLevels++; ups++; }
-    if (ups) { Game.onLevelUp(); }
+    if (ups) { Game.onLevelUp(); if (this.level % 5 === 0) Game.chron(`Alcancei o nível ${this.level}.`); }
     return n;
   }
   train(k, amt) {
@@ -125,11 +129,11 @@ class Player extends Actor {
     if (arr[0][1] >= 8) {
       const [k1, g1] = arr[0], [k2, g2] = arr[1];
       const pair = [k1, k2].sort().join('+');
-      st = (g2 >= 6 && STYLE_PAIRS[pair]) ? STYLE_PAIRS[pair] : STYLE_SINGLE[k1];
+      st = (g2 >= 6 && STYLE_PAIRS[pair]) ? STYLE_PAIRS[pair] : (STYLE_SINGLE[k1] || 'Aventureiro');
     }
     if (st !== this.style) {
       const old = this.style; this.style = st;
-      if (typeof Game !== 'undefined' && Game.started && old) { Game.centerMsg('NOVO ESTILO: ' + st.toUpperCase(), STYLE_BONUS[st] ? STYLE_BONUS[st].d : ''); }
+      if (typeof Game !== 'undefined' && Game.started && old) { Game.centerMsg('NOVO ESTILO: ' + st.toUpperCase(), STYLE_BONUS[st] ? STYLE_BONUS[st].d : ''); Game.chron(`Passei a ser conhecido(a) como ${st}.`); }
     }
   }
   res(elem) {
@@ -312,7 +316,8 @@ class Player extends Actor {
     return tgt;
   }
   attack() {
-    if (this.atkT > 0 || this.rolling > 0 || this.dead) return;
+    if (this.atkT > 0 || this.rolling > 0 || this.dead || this.sleeping) return;
+    if (this.carrying) { Game.toast('Você está carregando uma carcaça. Toque em AÇÃO para soltá-la.', '#ffd080'); this.atkT = 0.6; return; }
     const w = this.equip.weapon, d = w ? ITEMS[w.id] : null;
     const wc = d ? d.wclass : 'fist';
     let cd = d ? d.cd : 0.33;
@@ -549,10 +554,20 @@ class Player extends Actor {
     Sfx.play('roll');
   }
   toggleMount() {
-    if (!this.hasHorse) { Game.toast('Você não tem um cavalo. Compre um no estábulo de uma capital.', '#ffd080'); return; }
+    if (!this.mount) { Game.toast('Você não tem montaria. Compre uma no estábulo de uma cidade.', '#ffd080'); return; }
     if (!Game.level.isWorld) { Game.toast('Não é possível montar aqui.', '#ffa0a0'); return; }
-    this.mounted = !this.mounted;
-    Sfx.play('horse');
+    if (this.carrying) { Game.toast('Solte a carcaça ou coloque-a na carroça antes de montar.', '#ffa0a0'); return; }
+    if (this.mounted) {
+      this.mounted = false;
+      this.horse = { x: this.x + (this.lastH === 'right' ? -14 : 14), y: this.y + 2, dir: this.lastH };
+      this.x += this.lastH === 'right' ? 8 : -8;
+      Game.findFree(this);
+      Sfx.play('horse');
+      return;
+    }
+    const h = this.horse;
+    if (!h || dist(h.x, h.y, this.x, this.y) < 44) { this.mounted = true; this.horse = null; Sfx.play('horse'); return; }
+    Game.whistle();
   }
   // ---------- Atualização ----------
   update(dt) {
@@ -581,10 +596,12 @@ class Player extends Actor {
     } else {
       const m = Input.move;
       let spd = this.stat.speed * (this.mounted ? 1 : tdef.slow) * this.speedFactor * (1 + this.buffVal('speed'));
-      if (this.mounted) spd *= 1.85 * (this.perks.has('cavaleiro') ? 1.25 : 1);
+      if (this.mounted) spd *= ((MOUNTS[this.mount] || MOUNTS.cavalo).speed) * (this.perks.has('cavaleiro') ? 1.25 : 1) * (this.cart && this.cart.hitched ? 0.85 : 1);
+      if (this.carrying) spd *= 0.62;
+      if (this.sleeping || Game.intro) spd = 0;
       if (this.castT > 0 || (this.atkT > 0 && this.swing)) spd *= 0.6;
       if (m.mag > 0.12) {
-        if ((Input.sprint || m.mag > 0.94) && this.st > 1) { spd *= 1.45; this.st -= (this.mounted ? 7 : 15) * dt; this.sprinting = true; }
+        if ((Input.sprint || m.mag > 0.94) && this.st > 1 && !this.carrying) { spd *= 1.45; this.st -= (this.mounted ? 7 : 15) * dt; this.sprinting = true; }
         const a = Math.atan2(m.y, m.x);
         const mm = Math.min(1, m.mag * 1.3);
         const ox = this.x, oy = this.y;
@@ -615,12 +632,12 @@ class Player extends Actor {
   draw(ctx, camX, camY) {
     const blink = this.invuln > 0 && this.rolling <= 0 && Math.floor(Game.t * 20) % 2;
     if (this.mounted) {
-      const H = Sprites.horse();
+      const H = Sprites.horse(this.mount || 'cavalo');
       const hk = this.dir === 'left' || this.dir === 'right' ? this.dir : this.lastH;
       const f = this.moving ? 1 + (Math.floor(this.anim * 6) % 2) : 0;
       this.drawShadow(ctx, camX, camY, 20);
       const img = H[hk][f];
-      ctx.drawImage(img, Math.round(this.x - 12 - camX), Math.round(this.y - 19 - camY));
+      ctx.drawImage(img, Math.round(this.x - img.width / 2 - camX), Math.round(this.y - img.height + 3 - camY));
       this.z = 9;
       const sd = this.dir; this.dir = hk;
       if (blink) ctx.globalAlpha = 0.5;
@@ -628,6 +645,13 @@ class Player extends Actor {
       ctx.globalAlpha = 1;
       this.drawWeapon(ctx, camX, camY, this.wimg, this.wclass, this.swingAngle());
       this.dir = sd; this.z = 0;
+      return;
+    }
+    if (this.sleeping) {
+      const img = this.S.right[0];
+      ctx.save(); ctx.translate(Math.round(this.x - camX), Math.round(this.y - 4 - camY)); ctx.rotate(-Math.PI / 2);
+      ctx.drawImage(img, -img.width + 4, -img.height / 2); ctx.restore();
+      if (Math.floor(Game.t * 2) % 2) { ctx.fillStyle = '#ffffff'; ctx.fillRect(Math.round(this.x + 8 - camX), Math.round(this.y - 18 - camY - (Game.t * 6 % 6)), 3, 1); }
       return;
     }
     this.drawShadow(ctx, camX, camY);
@@ -638,6 +662,11 @@ class Player extends Actor {
     this.drawBody(ctx, camX, camY, this.S);
     ctx.globalAlpha = 1;
     if (this.dir !== 'up') this.drawWeapon(ctx, camX, camY, this.wimg, this.wclass, sa);
+    if (this.carrying) {
+      const ci = Sprites.carcass(this.carrying.eid);
+      const sc = Math.min(1, 26 / ci.width);
+      ctx.drawImage(ci, Math.round(this.x - ci.width * sc / 2 - camX), Math.round(this.y - this.h - ci.height * sc * 0.55 + 4 - camY), Math.round(ci.width * sc), Math.round(ci.height * sc));
+    }
     if (this.castT > 0) {
       const sp = SPELLS[this.spells[this.spellIdx]];
       ctx.fillStyle = sp ? sp.color : '#fff';

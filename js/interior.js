@@ -9,7 +9,7 @@ class Interior {
     const s = b.settlement; this.s = s; this.regIndex = s.region.index;
     const cul = s.region.culture;
     const r = this.rng = new RNG(hashStr(b.name) + b.tx * 31 + b.ty * 17);
-    const [W, H] = INTERIOR_SIZES[b.kind] || [11, 9];
+    const [W, H] = b.home ? ({ cabana: [10, 8], casa: [14, 11], casarao: [19, 13] })[b.home.tier] : (INTERIOR_SIZES[b.kind] || [11, 9]);
     this.w = W; this.h = H;
     const grand = b.kind === 'castle' || b.kind === 'palace' || b.kind === 'temple';
     this.wallT = (cul === 'nordic' || cul === 'orc' || cul === 'swamp') ? T.LOGWALL : cul === 'desert' ? T.TWALL : (cul === 'dwarf' || cul === 'fort' || (grand && cul !== 'elf' && cul !== 'halfling')) ? T.WALL : T.HWALL;
@@ -51,7 +51,13 @@ class Interior {
         this.table(dx, Math.floor(H / 2) - 1);
         this.put(1, H - 2, r.pick([O.BARREL, O.CRATE, O.PLANT]));
         this.put(W - 2, H - 2, r.pick([O.PLANT, O.BARREL, O.CANDLE]));
-        if (ph) { this.put(1, H - 3, O.CAULDRON); this.put(W - 2, Math.floor(H / 2), O.ANVIL); this.put(W - 2, H - 3, O.CANDLE); this.put(3, 2, O.BEDSMALL); }
+        if (ph) {
+          this.put(1, H - 3, O.CAULDRON); this.put(W - 2, Math.floor(H / 2), O.ANVIL); this.put(W - 2, H - 3, O.WORKBENCH); this.put(3, 2, O.BEDSMALL);
+          const q = this.b.home ? this.b.home.quality || 0 : 3;
+          if (q <= 0) { for (let x = 1; x < W - 1; x++) if (this.objs[this.idx(x, 1)] === O.PAINTING) this.objs[this.idx(x, 1)] = 0; for (let i = 0; i < this.tiles.length; i++) if (this.tiles[i] === T.CARPET) this.tiles[i] = this.floorT; for (let i = 0; i < 4; i++) this.put(r.int(1, W - 2), r.int(3, H - 3), O.BONES === 0 ? 0 : O.CRATE); }
+          if (q >= 3) { this.put(1, Math.floor(H / 2), O.PLANT); this.put(W - 3, H - 2, O.CANDLE); this.put(4, 2, O.BOOKSHELF); }
+          if (q >= 4) { this.put(5, 2, O.STATUE); this.put(2, H - 2, O.PLANT); }
+        }
         else {
           const res = Game.residentsOf(this.b);
           res.forEach((rs, i) => { if (Game.player && Game.player.spouse === rs.id && Game.player.spouseHome) return; this.spot(rs.child ? 'child' : 'resident', 2 + (i * 2) % (W - 4), Math.floor(H / 2) + 1, { res: rs }); });

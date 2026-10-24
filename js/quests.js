@@ -185,6 +185,7 @@ const Quests = {
     while (m.rank < g.ranks.length - 1 && m.rep >= g.th[m.rank + 1]) {
       m.rank++;
       Game.toast(`${g.name}: promovido a ${g.ranks[m.rank]}!`, g.color);
+      Game.chron(`Fui promovido(a) a ${g.ranks[m.rank]} na ${g.name}.`);
       Sfx.play('levelup');
       const rw = g.rewards[m.rank];
       if (rw) this.giveReward(rw);
@@ -201,10 +202,11 @@ const Quests = {
     if (P.guilds[gid]) return;
     P.guilds[gid] = { rank: 0, rep: 0 };
     Game.toast(`Você entrou na ${GUILDS[gid].name}!`, GUILDS[gid].color);
+    Game.chron(`Entrei para a ${GUILDS[gid].name}.`);
     Sfx.play('levelup');
   },
   // ---------- História ----------
-  mainStep() { return MAIN_QUEST[this.P.main] || null; },
+  mainStep() { return this.P.freeMode ? null : (MAIN_QUEST[this.P.main] || null); },
   advanceMain() {
     const P = this.P;
     const step = MAIN_QUEST[P.main];

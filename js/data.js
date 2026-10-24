@@ -72,7 +72,7 @@ const O = {
   FOUNTAIN: 62, BANNER: 63, CHEST_BOSS: 64, ENT_LAVA: 65, ENT_ICE: 66, ENT_ARENA: 67, BED: 68, TABLE: 69, LILY: 70,
   HUT_TOTEM: 71, ICEROCK: 72, SANDROCK: 73, ALTAR: 74, PORTAL: 75,
   COUNTER: 76, SHELF: 77, BOOKSHELF: 78, CHAIR: 79, FIREPLACE: 80, THRONE: 81, PLANT: 82, WARDROBE: 83, CRIB: 84, WEAPONRACK: 85,
-  DOOR_IN: 86, CANDLE: 87, BENCH: 88, POTSHELF: 89, KEG: 90, CAULDRON: 91, DESTINY: 92, ANVIL: 93, WINDOW: 94, PAINTING: 95, QUESTBOARD: 96, BEDSMALL: 97, DESTINY2: 98, DESTINY3: 99
+  DOOR_IN: 86, CANDLE: 87, BENCH: 88, POTSHELF: 89, KEG: 90, CAULDRON: 91, DESTINY: 92, ANVIL: 93, WINDOW: 94, PAINTING: 95, QUESTBOARD: 96, BEDSMALL: 97, DESTINY2: 98, DESTINY3: 99, STUMP: 100, WORKBENCH: 101
 };
 // solid; tall=altura do sprite (px); harvest; light (raio px); kind de interação
 const OBJ_DEFS = [];
@@ -168,6 +168,8 @@ odef(O.WINDOW, { name: 'Janela', solid: true, light: 20 });
 odef(O.PAINTING, { name: 'Quadro', solid: true });
 odef(O.QUESTBOARD, { name: 'Quadro de Missões', solid: true });
 odef(O.BEDSMALL, { name: 'Cama', solid: true });
+odef(O.STUMP, { name: 'Toco' });
+odef(O.WORKBENCH, { name: 'Bancada de Carpintaria', solid: true, interact: 'carpentry' });
 for (const id of [O.ENT_CAVE, O.ENT_CRYPT, O.ENT_RUIN, O.ENT_MINE, O.ENT_TOMB, O.ENT_BARROW, O.ENT_LAVA, O.ENT_ICE, O.ENT_ARENA])
   odef(id, { name: 'Entrada', solid: true, interact: 'dungeon', light: 24 });
 
@@ -272,9 +274,9 @@ const CLASSES = {
 const STYLE_PAIRS = {
   'combate+armadura': 'Guerreiro', 'combate+restauracao': 'Paladino', 'combate+destruicao': 'Cavaleiro Arcano', 'combate+arquearia': 'Batedor', 'combate+conjuracao': 'Cavaleiro Sombrio',
   'destruicao+restauracao': 'Mago', 'destruicao+conjuracao': 'Feiticeiro', 'arquearia+destruicao': 'Arqueiro Arcano', 'arquearia+eloquencia': 'Ladino',
-  'conjuracao+restauracao': 'Druida', 'arquearia+armadura': 'Patrulheiro', 'armadura+restauracao': 'Templário', 'alquimia+eloquencia': 'Mercador', 'alquimia+conjuracao': 'Bruxo'
+  'conjuracao+restauracao': 'Druida', 'arquearia+armadura': 'Patrulheiro', 'armadura+restauracao': 'Templário', 'alquimia+eloquencia': 'Mercador', 'alquimia+conjuracao': 'Bruxo', 'construcao+ferraria': 'Artesão', 'construcao+eloquencia': 'Mestre de Obras'
 };
-const STYLE_SINGLE = { combate: 'Guerreiro', armadura: 'Guardião', destruicao: 'Mago', restauracao: 'Clérigo', conjuracao: 'Conjurador', arquearia: 'Arqueiro', ferraria: 'Ferreiro', alquimia: 'Alquimista', eloquencia: 'Mercador' };
+const STYLE_SINGLE = { construcao: 'Construtor', combate: 'Guerreiro', armadura: 'Guardião', destruicao: 'Mago', restauracao: 'Clérigo', conjuracao: 'Conjurador', arquearia: 'Arqueiro', ferraria: 'Ferreiro', alquimia: 'Alquimista', eloquencia: 'Mercador' };
 const STYLE_BONUS = {
   Guerreiro: { melee: 0.1, hp: 20, d: '+10% dano corpo a corpo, +20 vida' }, Guardião: { armor: 25, hp: 20, d: '+25 armadura, +20 vida' }, Mago: { magic: 0.12, mp: 25, d: '+12% dano mágico, +25 magia' },
   Clérigo: { heal: 0.25, mp: 20, d: '+25% cura, +20 magia' }, Conjurador: { summon: 0.25, mp: 20, d: 'Invocações 25% mais fortes, +20 magia' }, Arqueiro: { bow: 0.12, st: 20, d: '+12% dano com arco, +20 vigor' },
@@ -283,7 +285,8 @@ const STYLE_BONUS = {
   Batedor: { melee: 0.06, bow: 0.06, st: 20, d: '+6% corpo a corpo e arco, +20 vigor' }, 'Cavaleiro Sombrio': { melee: 0.08, summon: 0.15, d: '+8% corpo a corpo, invocações mais fortes' },
   Feiticeiro: { magic: 0.1, summon: 0.15, d: '+10% mágico, invocações mais fortes' }, 'Arqueiro Arcano': { bow: 0.08, magic: 0.08, d: '+8% arco e mágico' }, Ladino: { bow: 0.06, crit: 0.06, gold: 0.15, d: '+6% crítico, +15% ouro' },
   Druida: { summon: 0.2, heal: 0.15, d: 'Invocações e cura mais fortes' }, Patrulheiro: { bow: 0.1, armor: 10, d: '+10% arco, +10 armadura' }, Templário: { armor: 20, heal: 0.15, d: '+20 armadura, +15% cura' },
-  Bruxo: { potion: 0.15, summon: 0.15, d: 'Poções e invocações mais fortes' }, Aventureiro: { d: 'Use suas habilidades para definir seu estilo.' }
+  Bruxo: { potion: 0.15, summon: 0.15, d: 'Poções e invocações mais fortes' },
+  Construtor: { st: 30, hp: 15, d: '+30 vigor, +15 vida' }, Artesão: { armor: 15, st: 20, d: '+15 armadura, +20 vigor' }, 'Mestre de Obras': { price: 0.08, st: 20, d: 'Preços 8% melhores, +20 vigor' }, Aventureiro: { d: 'Use suas habilidades para definir seu estilo.' }
 };
 const DESTINY = {
   guerreiro: { name: 'Pedra do Guerreiro', skills: ['combate', 'armadura', 'ferraria', 'arquearia'], desc: 'Combate, Armadura, Arquearia e Ferraria evoluem 25% mais rápido.', c: '#e05040' },
@@ -292,7 +295,7 @@ const DESTINY = {
 };
 const SKILLS = {
   combate: 'Combate', arquearia: 'Arquearia', destruicao: 'Destruição', restauracao: 'Restauração', conjuracao: 'Conjuração',
-  armadura: 'Armadura', ferraria: 'Ferraria', alquimia: 'Alquimia', eloquencia: 'Eloquência'
+  armadura: 'Armadura', ferraria: 'Ferraria', alquimia: 'Alquimia', eloquencia: 'Eloquência', construcao: 'Construção'
 };
 
 // ---------- Materiais e itens gerados ----------
@@ -796,7 +799,15 @@ const RECIPES = {
     { out: 'peixe_assado', in: { peixe: 1 }, skill: 0 },
     { out: 'peixe_assado', in: { salmao: 1 }, skill: 0 },
     { out: 'peixe_assado', in: { enguia: 1 }, skill: 0 },
-    { out: 'bolo', in: { pao: 2, maca: 2, queijo: 1 }, skill: 0 }
+    { out: 'bolo', in: { pao: 2, maca: 2, queijo: 1 }, skill: 0 },
+    { out: 'pao:2', in: { trigo: 3 }, skill: 0 }
+  ],
+  carpentry: [
+    { out: 'tabua:2', in: { lenha: 3 }, skill: 0 },
+    { out: 'prego:12', in: { lingote_ferro: 1 }, skill: 0 },
+    { out: 'bloco_pedra:2', in: { pedra: 3 }, skill: 0 },
+    { out: 'espada_madeira', in: { tabua: 1 }, skill: 0 },
+    { out: 'boneca', in: { couro: 1, seda_aranha: 1 }, skill: 0 }
   ],
   smelt: [
     { out: 'lingote_ferro', in: { minerio_ferro: 2 }, skill: 0 },
@@ -896,3 +907,52 @@ const ROMANCE_LINES = {
   spouse: ['Bem-vindo(a) de volta, meu amor!', 'Preparei algo para você comer.', 'Senti sua falta.', 'As crianças perguntaram por você.', 'Tome cuidado lá fora, está bem?'],
   child: ['Me conta uma história de dragão!', 'Quando eu crescer quero ser igual a você!', 'Fiz um desenho pra você!', 'Posso ir na aventura também?', 'Hoje eu vi um coelho enorme!', 'Brinca comigo?']
 };
+
+// ---------- Materiais de construção e ferramentas ----------
+idef('lenha', { name: 'Lenha', type: 'material', value: 3, stack: true, icon: { k: 'log', c: '#8a5a2e' } });
+idef('tabua', { name: 'Tábua', type: 'material', value: 7, stack: true, icon: { k: 'plank', c: '#c0904e' } });
+idef('pedra', { name: 'Pedra', type: 'material', value: 2, stack: true, icon: { k: 'stone', c: '#8a8580' } });
+idef('bloco_pedra', { name: 'Bloco de Pedra', type: 'material', value: 6, stack: true, icon: { k: 'block', c: '#a8a49c' } });
+idef('prego', { name: 'Prego', type: 'material', value: 1, stack: true, icon: { k: 'nail', c: '#9aa0a8' } });
+idef('trigo', { name: 'Trigo', type: 'material', value: 3, stack: true, icon: { k: 'wheat', c: '#e0c050' } });
+idef('machado_lenha', { name: 'Machado de Lenhador', type: 'misc', value: 30, icon: { k: 'axe', c: '#9a9a9a' }, desc: 'Permite cortar árvores (fique perto de uma árvore e toque em AÇÃO).' });
+idef('picareta', { name: 'Picareta', type: 'misc', value: 30, icon: { k: 'pick', c: '#9a9a9a' }, desc: 'Permite quebrar rochas grandes para conseguir pedra.' });
+
+// ---------- Montarias ----------
+const MOUNTS = {
+  burro: { name: 'Burro', price: 300, speed: 1.45, c: '#8a8580', where: null, desc: 'Lento, mas barato e teimoso.' },
+  cavalo: { name: 'Cavalo', price: 800, speed: 1.85, c: '#7a4a2a', where: null, desc: 'O companheiro de todo viajante.' },
+  cavalo_guerra: { name: 'Cavalo de Guerra', price: 2000, speed: 1.95, c: '#2a2a30', where: 'valdoria', desc: 'Treinado para batalhas. +10% dano montado.' },
+  corcel: { name: 'Corcel Élfico', price: 3000, speed: 2.25, c: '#e8e8f0', where: 'sylvaris', desc: 'Branco como a lua e veloz como o vento.' },
+  alce: { name: 'Alce Nórdico', price: 1800, speed: 1.9, c: '#6a4a30', where: 'nordheim', desc: 'Não escorrega na neve.', antlers: true },
+  camelo: { name: 'Camelo', price: 1500, speed: 1.8, c: '#c89a5a', where: 'zahrim', desc: 'Atravessa o deserto sem cansar.' },
+  lobo_gigante: { name: 'Lobo Gigante', price: 4500, speed: 2.1, c: '#4a4a52', where: 'gorthak', desc: 'Montaria dos orcs. Morde quem chegar perto.', wolf: true }
+};
+const CART_PRICE = 700, CART_CAP = 6;
+// Carcaças de animais grandes (podem ser carregadas e vendidas)
+const CARCASS = { lobo: 1, lobo_gelo: 1, urso: 2, urso_polar: 2, javali: 1, cervo: 1, lagarto: 1, yeti: 3, troll: 2, troll_gelo: 2, escorpiao: 1 };
+
+// ---------- Empregos ----------
+const JOBS = {
+  taverneiro: { name: 'Taverneiro', role: 'inn', skill: 'eloquencia', pay: 18, desc: 'Servir bebidas e ouvir histórias.', yield: ['hidromel', 'pao'] },
+  ferreiro: { name: 'Ajudante de Ferreiro', role: 'smith', skill: 'ferraria', pay: 24, desc: 'Martelar aço o dia todo.', yield: ['lingote_ferro', 'prego'] },
+  alquimista: { name: 'Ajudante de Alquimista', role: 'alchemist', skill: 'alquimia', pay: 22, desc: 'Moer ervas e vigiar o caldeirão.', yield: ['pocao_vida_p', 'erva_vermelha'] },
+  comerciante: { name: 'Balconista', role: 'general', skill: 'eloquencia', pay: 16, desc: 'Atender clientes e organizar o estoque.', yield: ['pao', 'maca'] },
+  escriba: { name: 'Escriba Arcano', role: 'magic', skill: 'destruicao', pay: 26, desc: 'Copiar pergaminhos mágicos.', yield: ['pocao_magia_p'] },
+  acolito: { name: 'Acólito do Templo', role: 'temple', skill: 'restauracao', pay: 15, desc: 'Cuidar dos feridos e acender velas.', yield: ['pocao_vida_p'] },
+  estribeiro: { name: 'Estribeiro', role: 'stable', skill: 'combate', pay: 17, desc: 'Cuidar dos cavalos e limpar as baias.', yield: ['maca'] },
+  guarda: { name: 'Guarda da Cidade', role: 'ruler', skill: 'combate', pay: 32, desc: 'Patrulhar as ruas e proteger os cidadãos.', yield: [], combat: true },
+  lenhador: { name: 'Lenhador', role: 'general', village: true, skill: 'construcao', pay: 14, desc: 'Cortar árvores para a vila.', yield: ['lenha', 'lenha', 'lenha'] },
+  fazendeiro: { name: 'Fazendeiro', role: 'inn', village: true, skill: 'alquimia', pay: 13, desc: 'Plantar e colher na fazenda.', yield: ['trigo', 'trigo', 'batata', 'maca'] },
+  cacador: { name: 'Caçador', role: 'general', skill: 'arquearia', pay: 15, desc: 'Caçar para o armazém. Caças da carroça valem +50%.', yield: ['carne_crua', 'couro', 'pele_lobo'] },
+  minerador: { name: 'Minerador', role: 'smith', village: true, skill: 'ferraria', pay: 20, desc: 'Trabalhar na pedreira e na mina.', yield: ['pedra', 'pedra', 'minerio_ferro'] }
+};
+const JOB_RANKS = [['Aprendiz', 0], ['Ajudante', 5], ['Profissional', 15], ['Mestre', 30], ['Lenda do Ofício', 60]];
+
+// ---------- Construção de casas ----------
+const HOME_TIERS = {
+  cabana: { name: 'Cabana', w: 4, h: 3, mats: { tabua: 20, pedra: 12, prego: 24 }, labor: 400, hire: 1600, days: 2, work: 8 },
+  casa: { name: 'Casa', w: 5, h: 4, mats: { tabua: 45, pedra: 30, prego: 50, bloco_pedra: 10 }, labor: 1000, hire: 4200, days: 3, work: 14 },
+  casarao: { name: 'Casarão', w: 7, h: 5, mats: { tabua: 90, pedra: 60, prego: 100, bloco_pedra: 30 }, labor: 2400, hire: 9800, days: 5, work: 24 }
+};
+const HOME_QUALITY = ['Precária', 'Simples', 'Boa', 'Excelente', 'Obra-prima'];
