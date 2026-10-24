@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#140c1c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Crônicas de Eldoria — RPG medieval de fantasia em mundo aberto, pixel art, para celular.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Crônicas de Eldoria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="game">
+  <canvas id="cv"></canvas>
+  <div id="hud" class="hidden">
+    <div id="hud-tl">
+      <div class="bars">
+        <div class="bar hp"><div class="fill" id="hp-fill"></div><span id="hp-txt"></span></div>
+        <div class="bar mp"><div class="fill" id="mp-fill"></div><span id="mp-txt"></span></div>
+        <div class="bar st"><div class="fill" id="st-fill"></div><span id="st-txt"></span></div>
+        <div class="bar xp"><div class="fill" id="xp-fill"></div></div>
+      </div>
+      <div id="hud-info"><span id="hud-lvl"></span> <span id="hud-gold" class="gold"></span></div>
+      <div id="buffs"></div>
+      <div id="tracker"></div>
+    </div>
+    <div id="hud-tr">
+      <canvas id="minimap" width="96" height="96"></canvas>
+      <div id="hud-loc"></div>
+      <div id="hud-time"></div>
+    </div>
+    <div id="compass" class="hidden"><div id="compass-arrow"></div><span id="compass-dist"></span></div>
+    <div id="bossbar" class="hidden"><div id="boss-name"></div><div class="bbar"><div id="boss-fill"></div></div></div>
+    <div id="toasts"></div>
+    <div id="center-msg"></div>
+    <div id="prompt" class="hidden"></div>
+  </div>
+  <div id="controls" class="hidden">
+    <div id="stick-zone"></div>
+    <div id="stick-base"><div id="stick-knob"></div></div>
+    <div id="btns">
+      <button class="btn big" id="b-attack" data-act="attack"></button>
+      <button class="btn" id="b-spell" data-act="spell"></button>
+      <button class="btn tiny" id="b-spellnext" data-act="spellnext">⟳</button>
+      <button class="btn" id="b-roll" data-act="roll"></button>
+      <button class="btn act" id="b-interact" data-act="interact"></button>
+      <button class="btn small" id="b-potion" data-act="potion"><span id="pot-n" class="bnum"></span></button>
+      <button class="btn tiny" id="b-mana" data-act="mana"></button>
+      <button class="btn small hidden" id="b-shout" data-act="shout"></button>
+      <button class="btn small" id="b-racial" data-act="racial">★</button>
+      <button class="btn small hidden" id="b-mount" data-act="mount"></button>
+    </div>
+    <div id="topbtns">
+      <button class="tbtn" id="b-menu" data-act="menu"></button>
+      <button class="tbtn" id="b-map" data-act="map"></button>
+    </div>
+  </div>
+  <div id="fade"></div>
+  <div id="screens"></div>
+  <div id="rotate-hint">Gire o celular para jogar na horizontal ↻</div>
+</div>
+<script src="js/util.js"></script>
+<script src="js/data.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/sprites2.js"></script>
+<script src="js/items.js"></script>
+<script src="js/world.js"></script>
+<script src="js/dungeon.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/player.js"></script>
+<script src="js/quests.js"></script>
+<script src="js/shops.js"></script>
+<script src="js/input.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
