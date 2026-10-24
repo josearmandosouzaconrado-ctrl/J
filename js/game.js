@@ -98,7 +98,11 @@ const Game = {
         'Até que, numa manhã cinzenta, um DRAGÃO negro rasga o céu e destrói a caravana em que você viajava.',
         'Você é o único sobrevivente. Ao tocar uma escama caída, sente uma chama ardendo em seu peito.',
         `Seu nome é ${P.name}. E sua lenda começa agora.`
-      ], () => { this.centerMsg(MAIN_QUEST[0].title, MAIN_QUEST[0].desc); this.saveGame(0, true); });
+      ], () => {
+        this.centerMsg(MAIN_QUEST[0].title, MAIN_QUEST[0].desc); this.saveGame(0, true);
+        const tips = ['Dica: arraste o lado esquerdo da tela para andar. Empurre até o fim para correr.', 'Dica: o botão ⚔ ataca o inimigo mais próximo automaticamente.', 'Dica: siga a seta dourada no topo da tela até o objetivo.', 'Dica: entre na Guilda dos Heróis de qualquer cidade para pegar missões.', 'Dica: pessoas com "!" amarelo oferecem pedidos. Barracas vendem itens.', 'Dica: o botão dourado de ação aparece para falar, abrir baús, entrar e coletar.'];
+        tips.forEach((t, i) => this.later(6 + i * 9, () => this.toast(t, '#a0e0ff')));
+      });
     });
   },
   startPlay() {

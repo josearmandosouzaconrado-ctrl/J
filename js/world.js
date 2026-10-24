@@ -297,7 +297,7 @@ class World {
       ctx.drawImage(s.c, lx * 16 + 8 - (s.w >> 1), ly * 16 + 16 - s.h + s.oy);
     }
     this.canvases.set(k, c);
-    if (this.canvases.size > 40) { const first = this.canvases.keys().next().value; this.canvases.delete(first); }
+    if (this.canvases.size > 28) { const first = this.canvases.keys().next().value; this.canvases.delete(first); }
     return c;
   }
   drawGround(ctx, camX, camY, vw, vh) {
