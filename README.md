@@ -24,7 +24,10 @@ WASD/setas andar • Shift correr • J/Espaço atacar • K magia • Q trocar 
 - **65+ cidades, vilas e capitais** com muralhas, castelos, palácios, tavernas, ferrarias, armazéns, alquimistas, lojas de magia, templos, estábulos, casas à venda, guardas e moradores que andam pelas ruas.
 - **Estradas, pontes e placas** conectando todo o reino; viagem rápida para cidades descobertas.
 - **8 raças jogáveis** (Humano, Elfo, Anão, Orc, Pequenino, Draconato, Felino, Nórdico), cada uma com bônus e habilidade especial.
-- **6 classes** (Guerreiro, Mago, Arqueiro, Ladino, Paladino, Druida) e criação de personagem com aparência personalizada.
+- **Sem classe fixa**: você começa como Aventureiro e seu estilo (Guerreiro, Mago, Arqueiro, Paladino, Druida, Ladino e mais de 20 outros) surge das habilidades que você mais usa, com bônus próprios. As **Pedras do Destino** perto de Valdoria dão bênçãos que aceleram seu caminho.
+- **Interiores exploráveis em todos os 800 prédios**: casas com moradores, tavernas, ferrarias, lojas, templos, guildas, castelos com sala do trono.
+- **Romance, casamento e filhos**: converse, dê presentes, flerte, namore e case (Amuleto da Aurora). Seu cônjuge mora com você, cozinha, dá presentes e pode lutar ao seu lado. Tenha filhos ou adote no orfanato do templo.
+- **Animais de estimação** (cachorro, gato selvagem, lobo domado) e **pesca**.
 - **9 guildas** — incluindo a **Guilda dos Heróis** com ranks F → S, Companhia do Aço, Academia Arcana, Irmandade das Sombras, Ordem da Aurora, Liga dos Caçadores, Círculo Druídico, Irmandade da Forja e Clã do Punho Sangrento — com missões geradas e recompensas por posto.
 - **História principal** em 9 capítulos contra o Lich Morvath e o dragão ancião Vorthax.
 - **140+ masmorras** procedurais (cavernas, criptas, ruínas élficas, minas anãs, túmulos nórdicos, tumbas do deserto, cavernas de lava e gelo, arena) com chefes e baús de tesouro, além de acampamentos de bandidos.

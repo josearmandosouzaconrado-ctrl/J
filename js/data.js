@@ -7,7 +7,7 @@ const T = {
   ROCK: 10, SNOWROCK: 11, LAVA: 12, ASH: 13, ROAD: 14, COBBLE: 15, WOOD: 16, WALL: 17, BRIDGE: 18, TUNDRA: 19,
   FARM: 20, DFLOOR: 21, DWALL: 22, CFLOOR: 23, CWALL: 24, DEADGRASS: 25, BADLAND: 26, ELFGRASS: 27, MUD: 28, SANDSTONE: 29,
   IFLOOR: 30, IWALL: 31, TFLOOR: 32, TWALL: 33, VFLOOR: 34, VWALL: 35, RFLOOR: 36, RWALL: 37, MFLOOR: 38, MWALL: 39,
-  CARPET: 40, PALISADE: 41, DCOBBLE: 42
+  CARPET: 40, PALISADE: 41, DCOBBLE: 42, HWALL: 43, LOGWALL: 44, HFLOOR: 45
 };
 // solid: bloqueia; slow: multiplicador de velocidade; hurt: dano/s; c: cor do mapa; wall: renderizado como parede 3D
 const TILE_DEFS = [];
@@ -55,6 +55,9 @@ tdef(T.MWALL, { name: 'Parede anã', solid: true, c: '#3a2e24', wall: true });
 tdef(T.CARPET, { name: 'Tapete', c: '#8a2030' });
 tdef(T.PALISADE, { name: 'Paliçada', solid: true, c: '#5a3a1e', wall: true });
 tdef(T.DCOBBLE, { name: 'Calçada escura', slow: 1.15, c: '#5a5660' });
+tdef(T.HWALL, { name: 'Parede', solid: true, c: '#c8b898', wall: true });
+tdef(T.LOGWALL, { name: 'Parede de troncos', solid: true, c: '#6a4a2a', wall: true });
+tdef(T.HFLOOR, { name: 'Assoalho', c: '#8a6038' });
 
 // ---------- Objetos ----------
 const O = {
@@ -67,7 +70,9 @@ const O = {
   FORGE: 45, ALCHEMY: 46, CRYSTAL: 47, PILLAR: 48, BROKEN_PILLAR: 49, GRAVE: 50, HAY: 51, CROP: 52, STATUE: 53,
   ENT_CAVE: 54, ENT_CRYPT: 55, ENT_RUIN: 56, ENT_MINE: 57, ENT_TOMB: 58, ENT_BARROW: 59, COBWEB: 60, SKULLS: 61,
   FOUNTAIN: 62, BANNER: 63, CHEST_BOSS: 64, ENT_LAVA: 65, ENT_ICE: 66, ENT_ARENA: 67, BED: 68, TABLE: 69, LILY: 70,
-  HUT_TOTEM: 71, ICEROCK: 72, SANDROCK: 73, ALTAR: 74, PORTAL: 75
+  HUT_TOTEM: 71, ICEROCK: 72, SANDROCK: 73, ALTAR: 74, PORTAL: 75,
+  COUNTER: 76, SHELF: 77, BOOKSHELF: 78, CHAIR: 79, FIREPLACE: 80, THRONE: 81, PLANT: 82, WARDROBE: 83, CRIB: 84, WEAPONRACK: 85,
+  DOOR_IN: 86, CANDLE: 87, BENCH: 88, POTSHELF: 89, KEG: 90, CAULDRON: 91, DESTINY: 92, ANVIL: 93, WINDOW: 94, PAINTING: 95, QUESTBOARD: 96, BEDSMALL: 97, DESTINY2: 98, DESTINY3: 99
 };
 // solid; tall=altura do sprite (px); harvest; light (raio px); kind de interação
 const OBJ_DEFS = [];
@@ -139,6 +144,30 @@ odef(O.TABLE, { name: 'Mesa', solid: true });
 odef(O.HUT_TOTEM, { name: 'Totem', solid: true });
 odef(O.ALTAR, { name: 'Altar', solid: true, light: 40 });
 odef(O.PORTAL, { name: 'Portal', solid: true, interact: 'exit', light: 60 });
+odef(O.COUNTER, { name: 'Balcão', solid: true });
+odef(O.SHELF, { name: 'Prateleira', solid: true });
+odef(O.BOOKSHELF, { name: 'Estante', solid: true });
+odef(O.CHAIR, { name: 'Cadeira' });
+odef(O.FIREPLACE, { name: 'Lareira', solid: true, light: 80, interact: 'cook' });
+odef(O.THRONE, { name: 'Trono', solid: true });
+odef(O.PLANT, { name: 'Vaso', solid: true });
+odef(O.WARDROBE, { name: 'Baú da casa', solid: true, interact: 'wardrobe' });
+odef(O.CRIB, { name: 'Berço', solid: true, interact: 'crib' });
+odef(O.WEAPONRACK, { name: 'Armeiro', solid: true });
+odef(O.DOOR_IN, { name: 'Porta', solid: true, interact: 'exit' });
+odef(O.CANDLE, { name: 'Candelabro', solid: true, light: 46 });
+odef(O.BENCH, { name: 'Banco' });
+odef(O.POTSHELF, { name: 'Prateleira de poções', solid: true, light: 14 });
+odef(O.KEG, { name: 'Barris de cerveja', solid: true });
+odef(O.CAULDRON, { name: 'Caldeirão', solid: true, light: 24, interact: 'alchemy' });
+odef(O.DESTINY, { name: 'Pedra do Guerreiro', solid: true, interact: 'destiny', light: 34 });
+odef(O.DESTINY2, { name: 'Pedra do Mago', solid: true, interact: 'destiny', light: 34 });
+odef(O.DESTINY3, { name: 'Pedra do Ladrão', solid: true, interact: 'destiny', light: 34 });
+odef(O.ANVIL, { name: 'Bigorna', solid: true, interact: 'forge' });
+odef(O.WINDOW, { name: 'Janela', solid: true, light: 20 });
+odef(O.PAINTING, { name: 'Quadro', solid: true });
+odef(O.QUESTBOARD, { name: 'Quadro de Missões', solid: true });
+odef(O.BEDSMALL, { name: 'Cama', solid: true });
 for (const id of [O.ENT_CAVE, O.ENT_CRYPT, O.ENT_RUIN, O.ENT_MINE, O.ENT_TOMB, O.ENT_BARROW, O.ENT_LAVA, O.ENT_ICE, O.ENT_ARENA])
   odef(id, { name: 'Entrada', solid: true, interact: 'dungeon', light: 24 });
 
@@ -215,6 +244,9 @@ const RACE_ABILITIES = {
 
 // ---------- Classes ----------
 const CLASSES = {
+  aventureiro: { name: 'Aventureiro', desc: 'Você decide quem será jogando: use espadas, arcos ou magias e seu estilo surgirá naturalmente.', mods: {},
+    items: ['sword_ferro', 'body_couro', 'feet_couro', 'bow_ferro', 'flecha:25', 'pocao_vida_p', 'pocao_vida_p', 'pocao_vida_p', 'pocao_magia_p'], spells: ['bola_fogo', 'cura'],
+    skills: {}, color: '#7a5a3a' },
   guerreiro: { name: 'Guerreiro', desc: 'Mestre das armas e armaduras pesadas.', mods: { hp: 30, st: 20 },
     items: ['sword_ferro', 'shield_ferro', 'body_ferro', 'head_ferro', 'pocao_vida_p', 'pocao_vida_p', 'pocao_vida_p'], spells: [],
     skills: { combate: 20, armadura: 15 }, color: '#a03030' },
@@ -236,6 +268,28 @@ const CLASSES = {
 };
 
 // ---------- Habilidades ----------
+// Estilos de jogo: surgem das habilidades mais usadas
+const STYLE_PAIRS = {
+  'combate+armadura': 'Guerreiro', 'combate+restauracao': 'Paladino', 'combate+destruicao': 'Cavaleiro Arcano', 'combate+arquearia': 'Batedor', 'combate+conjuracao': 'Cavaleiro Sombrio',
+  'destruicao+restauracao': 'Mago', 'destruicao+conjuracao': 'Feiticeiro', 'arquearia+destruicao': 'Arqueiro Arcano', 'arquearia+eloquencia': 'Ladino',
+  'conjuracao+restauracao': 'Druida', 'arquearia+armadura': 'Patrulheiro', 'armadura+restauracao': 'Templário', 'alquimia+eloquencia': 'Mercador', 'alquimia+conjuracao': 'Bruxo'
+};
+const STYLE_SINGLE = { combate: 'Guerreiro', armadura: 'Guardião', destruicao: 'Mago', restauracao: 'Clérigo', conjuracao: 'Conjurador', arquearia: 'Arqueiro', ferraria: 'Ferreiro', alquimia: 'Alquimista', eloquencia: 'Mercador' };
+const STYLE_BONUS = {
+  Guerreiro: { melee: 0.1, hp: 20, d: '+10% dano corpo a corpo, +20 vida' }, Guardião: { armor: 25, hp: 20, d: '+25 armadura, +20 vida' }, Mago: { magic: 0.12, mp: 25, d: '+12% dano mágico, +25 magia' },
+  Clérigo: { heal: 0.25, mp: 20, d: '+25% cura, +20 magia' }, Conjurador: { summon: 0.25, mp: 20, d: 'Invocações 25% mais fortes, +20 magia' }, Arqueiro: { bow: 0.12, st: 20, d: '+12% dano com arco, +20 vigor' },
+  Ferreiro: { armor: 15, craft: 1, d: '+15 armadura, forja melhor' }, Alquimista: { potion: 0.25, d: 'Poções 25% mais fortes' }, Mercador: { price: 0.1, gold: 0.15, d: 'Preços 10% melhores, +15% ouro' },
+  Paladino: { melee: 0.08, heal: 0.15, armor: 10, d: '+8% corpo a corpo, +15% cura, +10 armadura' }, 'Cavaleiro Arcano': { melee: 0.08, magic: 0.08, d: '+8% corpo a corpo e mágico' },
+  Batedor: { melee: 0.06, bow: 0.06, st: 20, d: '+6% corpo a corpo e arco, +20 vigor' }, 'Cavaleiro Sombrio': { melee: 0.08, summon: 0.15, d: '+8% corpo a corpo, invocações mais fortes' },
+  Feiticeiro: { magic: 0.1, summon: 0.15, d: '+10% mágico, invocações mais fortes' }, 'Arqueiro Arcano': { bow: 0.08, magic: 0.08, d: '+8% arco e mágico' }, Ladino: { bow: 0.06, crit: 0.06, gold: 0.15, d: '+6% crítico, +15% ouro' },
+  Druida: { summon: 0.2, heal: 0.15, d: 'Invocações e cura mais fortes' }, Patrulheiro: { bow: 0.1, armor: 10, d: '+10% arco, +10 armadura' }, Templário: { armor: 20, heal: 0.15, d: '+20 armadura, +15% cura' },
+  Bruxo: { potion: 0.15, summon: 0.15, d: 'Poções e invocações mais fortes' }, Aventureiro: { d: 'Use suas habilidades para definir seu estilo.' }
+};
+const DESTINY = {
+  guerreiro: { name: 'Pedra do Guerreiro', skills: ['combate', 'armadura', 'ferraria', 'arquearia'], desc: 'Combate, Armadura, Arquearia e Ferraria evoluem 25% mais rápido.', c: '#e05040' },
+  mago: { name: 'Pedra do Mago', skills: ['destruicao', 'restauracao', 'conjuracao', 'alquimia'], desc: 'Destruição, Restauração, Conjuração e Alquimia evoluem 25% mais rápido.', c: '#5080ff' },
+  ladrao: { name: 'Pedra do Ladrão', skills: ['arquearia', 'eloquencia', 'alquimia', 'combate'], desc: 'Arquearia, Eloquência, Alquimia e Combate evoluem 20% mais rápido e +10% ouro.', c: '#50d070' }
+};
 const SKILLS = {
   combate: 'Combate', arquearia: 'Arquearia', destruicao: 'Destruição', restauracao: 'Restauração', conjuracao: 'Conjuração',
   armadura: 'Armadura', ferraria: 'Ferraria', alquimia: 'Alquimia', eloquencia: 'Eloquência'
@@ -363,7 +417,14 @@ const FOODS = [
   ['ensopado', 'Ensopado', { heal: 60, stam: 60, buff: { k: 'regen', v: 2, t: 60 } }, 25, { k: 'stew', c: '#a06030' }],
   ['torta_maca', 'Torta de Maçã', { heal: 40, buff: { k: 'regen', v: 1, t: 60 } }, 20, { k: 'pie', c: '#d09040' }],
   ['hidromel', 'Hidromel', { stam: 80, buff: { k: 'resFrost', v: 0.2, t: 120 } }, 15, { k: 'bottle', c: '#d0a030' }],
-  ['vinho', 'Vinho Élfico', { mana: 50 }, 30, { k: 'bottle', c: '#802040' }]
+  ['vinho', 'Vinho Élfico', { mana: 50 }, 30, { k: 'bottle', c: '#802040' }],
+  ['peixe', 'Peixe', { heal: 10 }, 6, { k: 'fish', c: '#8aa0b0' }],
+  ['salmao', 'Salmão', { heal: 18 }, 14, { k: 'fish', c: '#e08070' }],
+  ['peixe_gelo', 'Peixe do Gelo', { heal: 15, buff: { k: 'resFire', v: 0.2, t: 60 } }, 20, { k: 'fish', c: '#c0e8ff' }],
+  ['enguia', 'Enguia do Pântano', { heal: 14, mana: 15 }, 18, { k: 'fish', c: '#4a6a3a' }],
+  ['peixe_dourado', 'Peixe Dourado', { heal: 40 }, 90, { k: 'fish', c: '#ffd040' }],
+  ['peixe_assado', 'Peixe Assado', { heal: 35, stam: 40 }, 18, { k: 'fish', c: '#b07040' }],
+  ['bolo', 'Bolo de Festa', { heal: 50, buff: { k: 'regen', v: 2, t: 120 } }, 40, { k: 'pie', c: '#f0a0c0' }]
 ];
 for (const [id, name, eff, value, icon] of FOODS) idef(id, { name, type: 'food', use: eff, value, stack: true, icon });
 
@@ -570,6 +631,9 @@ const ENEMIES = {
   lobo_espiritual: { name: 'Lobo Espiritual', look: { k: 'wolf', c: '#80c0ff', ghostly: true }, hp: 70, dmg: 12, spd: 80, ai: 'melee', xp: 0, ally: true },
   esqueleto_aliado: { name: 'Esqueleto Servo', look: { k: 'hum', skin: '#e8e0c8', skeleton: true, weapon: 'sword', wc: '#a0a0c0' }, hp: 90, dmg: 14, spd: 60, ai: 'melee', xp: 0, ally: true },
   elemental_aliado: { name: 'Elemental de Fogo', look: { k: 'elemental', c: '#ff9030' }, hp: 200, dmg: 22, spd: 62, ai: 'caster', proj: 'fireball', xp: 0, ally: true, fly: true },
+  cachorro: { name: 'Cachorro', look: { k: 'wolf', c: '#a07040' }, hp: 120, dmg: 10, spd: 82, ai: 'melee', xp: 0, ally: true },
+  gato_selvagem: { name: 'Gato Selvagem', look: { k: 'wolf', c: '#d0a050' }, hp: 90, dmg: 12, spd: 90, ai: 'melee', xp: 0, ally: true },
+  lobo_domado: { name: 'Lobo Domado', look: { k: 'wolf', c: '#5a5a62' }, hp: 150, dmg: 14, spd: 84, ai: 'melee', xp: 0, ally: true },
   mercenario: { name: 'Mercenário', look: { k: 'hum', skin: '#d8a070', body: '#5a6a8a', legs: '#3a3a4a', hair: '#3a2a1a', helm: '#9aa0a8', weapon: 'sword', wc: '#c0c0c0', shield: true }, hp: 160, dmg: 14, spd: 68, ai: 'melee', xp: 0, ally: true },
   guarda: { name: 'Guarda', look: { k: 'hum', skin: '#d8a070', body: '#9aa0a8', legs: '#3a3a4a', hair: '#3a2a1a', helm: '#9aa0a8', weapon: 'sword', wc: '#c0c0c0', shield: true }, hp: 300, dmg: 18, spd: 64, ai: 'melee', xp: 0, ally: true, guard: true }
 };
@@ -728,7 +792,11 @@ const RECIPES = {
     { out: 'carne_assada', in: { carne_crua: 1 }, skill: 0 },
     { out: 'ensopado', in: { carne_crua: 2, cogumelo: 1, batata: 1 }, skill: 0 },
     { out: 'torta_maca', in: { maca: 3, pao: 1 }, skill: 0 },
-    { out: 'pao', in: { batata: 2 }, skill: 0 }
+    { out: 'pao', in: { batata: 2 }, skill: 0 },
+    { out: 'peixe_assado', in: { peixe: 1 }, skill: 0 },
+    { out: 'peixe_assado', in: { salmao: 1 }, skill: 0 },
+    { out: 'peixe_assado', in: { enguia: 1 }, skill: 0 },
+    { out: 'bolo', in: { pao: 2, maca: 2, queijo: 1 }, skill: 0 }
   ],
   smelt: [
     { out: 'lingote_ferro', in: { minerio_ferro: 2 }, skill: 0 },
@@ -811,4 +879,20 @@ const SHOP_NAMES = {
   general: ['Armazém do', 'Mercado do', 'Bazar do'],
   alchemist: ['Poções do', 'Ervas do', 'Elixires do'],
   magic: ['Arcanos do', 'Tomos do', 'Mistérios do']
+};
+
+// ---------- Itens extras (romance, família, pesca) ----------
+idef('amuleto_aurora', { name: 'Amuleto da Aurora', type: 'armor', slot: 'neck', armor: 0, value: 300, icon: { k: 'amulet', c: '#f0c040', g: '#ff80b0' }, ench: [{ k: 'regen', v: 1 }], desc: 'Usado por quem procura um amor. Necessário para pedir alguém em casamento.' });
+idef('vara_pesca', { name: 'Vara de Pesca', type: 'misc', value: 40, icon: { k: 'rod', c: '#8a6a3a' }, desc: 'Fique de frente para a água e toque em AÇÃO para pescar.' });
+idef('buque', { name: 'Buquê de Flores', type: 'misc', value: 15, stack: true, icon: { k: 'herb', c: '#ff70a0' }, desc: 'Um ótimo presente.' });
+idef('boneca', { name: 'Boneca de Pano', type: 'misc', value: 12, stack: true, icon: { k: 'doll', c: '#e0a070' }, desc: 'Brinquedo. Crianças adoram.' });
+idef('espada_madeira', { name: 'Espada de Madeira', type: 'misc', value: 10, stack: true, icon: { k: 'sword', c: '#a07040' }, desc: 'Brinquedo. Crianças adoram.' });
+idef('desenho', { name: 'Desenho do seu Filho', type: 'misc', value: 0, stack: true, icon: { k: 'scroll', c: '#f0f0ff' }, desc: 'Um desenho seu lutando contra um dragão. Que fofo!' });
+const PETS = { cachorro: { name: 'Cachorro', price: 250, names: ['Bolinha', 'Rex', 'Trovão', 'Pipoca', 'Lobo', 'Faísca', 'Biscoito', 'Thor'] }, gato_selvagem: { name: 'Gato Selvagem', price: 400, names: ['Mingau', 'Garra', 'Sombra', 'Pantera', 'Nina'] }, lobo_domado: { name: 'Lobo Domado', price: 900, names: ['Fenrir', 'Uivo', 'Nevasca', 'Presa'] } };
+const ROMANCE_LINES = {
+  talk: ['Que bom te ver de novo!', 'O dia está lindo, não acha?', 'Ouvi histórias sobre suas aventuras...', 'Você sempre aparece quando preciso de um sorriso.', 'Já pensou em sossegar um pouco?', 'Me conte sobre o lugar mais bonito que você já viu.', 'Fico preocupado(a) quando você vai às masmorras.'],
+  flirtOk: ['*sorri e cora*', 'Você é cheio(a) de charme, hein?', 'Hm... continue falando assim.', 'Talvez eu goste de você também...'],
+  flirtBad: ['Acho que você está indo rápido demais.', 'Haha... não.', 'Melhor sermos só amigos por enquanto.'],
+  spouse: ['Bem-vindo(a) de volta, meu amor!', 'Preparei algo para você comer.', 'Senti sua falta.', 'As crianças perguntaram por você.', 'Tome cuidado lá fora, está bem?'],
+  child: ['Me conta uma história de dragão!', 'Quando eu crescer quero ser igual a você!', 'Fiz um desenho pra você!', 'Posso ir na aventura também?', 'Hoje eu vi um coelho enorme!', 'Brinca comigo?']
 };

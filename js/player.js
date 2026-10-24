@@ -22,6 +22,7 @@ class Player extends Actor {
     this.rolling = 0; this.atkT = 0; this.castT = 0; this.swing = null; this.lastHurt = 99; this.invuln = 0; this.invisible = 0;
     this.hurtAcc = 0; this.h = 22;
     this.lastTown = null;
+    this.rel = {}; this.spouse = null; this.spouseHome = null; this.children = []; this.babyDue = null; this.pet = null; this.sign = null; this.style = 'Aventureiro';
     if (!o.noItems) {
       for (const spec of C.items) {
         const [id, n] = Items.parse(spec);
@@ -39,7 +40,7 @@ class Player extends Actor {
   // ---------- Serialização ----------
   toJSON() {
     const o = {};
-    for (const k of ['name', 'race', 'cls', 'app', 'level', 'xp', 'base', 'perkPts', 'gold', 'inv', 'equip', 'spells', 'spellIdx', 'shouts', 'shoutLvl', 'shoutIdx', 'souls', 'skills', 'quests', 'guilds', 'main', 'doneQuests', 'hasHorse', 'houses', 'storage', 'follower', 'stats', 'hp', 'mp', 'st', 'x', 'y', 'lastTown', 'pendingLevels', 'cds']) o[k] = this[k];
+    for (const k of ['name', 'race', 'cls', 'app', 'level', 'xp', 'base', 'perkPts', 'gold', 'inv', 'equip', 'spells', 'spellIdx', 'shouts', 'shoutLvl', 'shoutIdx', 'souls', 'skills', 'quests', 'guilds', 'main', 'doneQuests', 'hasHorse', 'houses', 'storage', 'follower', 'stats', 'hp', 'mp', 'st', 'x', 'y', 'lastTown', 'pendingLevels', 'cds', 'rel', 'spouse', 'spouseHome', 'children', 'babyDue', 'pet', 'sign', 'style']) o[k] = this[k];
     o.perks = [...this.perks];
     o.buffs = this.buffs.filter(b => b.t < 1e6);
     return o;
@@ -50,6 +51,7 @@ class Player extends Actor {
     p.perks = new Set(o.perks || []);
     p.buffs = o.buffs || [];
     p.cds = o.cds || {};
+    p.rel = o.rel || {}; p.children = o.children || [];
     for (const sl of EQUIP_SLOTS) if (p.equip[sl]) { const inst = p.inv.find(i => i.u === p.equip[sl].u); if (inst) p.equip[sl] = inst; else p.inv.push(p.equip[sl]); }
     p.recalc();
     return p;
@@ -68,6 +70,7 @@ class Player extends Actor {
   }
   train(k, amt) {
     const s = this.skills[k]; if (!s || s.lvl >= 100) return;
+    if (this.sign && DESTINY[this.sign].skills.includes(k)) amt *= this.sign === 'ladrao' ? 1.2 : 1.25;
     s.xp += amt;
     const need = 8 + s.lvl * 2.2;
     if (s.xp >= need) {
@@ -98,6 +101,9 @@ class Player extends Actor {
       if (d.magicBonus) magic += d.magicBonus;
       if (d.crit && d.type !== 'weapon') crit += d.crit;
     }
+    this.computeStyle();
+    const SB = this.sb = STYLE_BONUS[this.style] || {};
+    maxHp += SB.hp || 0; maxMp += SB.mp || 0; maxSt += SB.st || 0; armor += SB.armor || 0; crit += SB.crit || 0; magic += SB.magic || 0;
     armor *= 1 + this.skill('armadura') * 0.006;
     if (this.perks.has('colosso')) maxHp *= 1.2;
     if (this.perks.has('critico')) crit += 0.1;
@@ -106,10 +112,25 @@ class Player extends Actor {
       maxHp: Math.round(maxHp), maxMp: Math.round(maxMp), maxSt: Math.round(maxSt), armor: Math.round(armor), crit, magic, speed,
       regenHp: (E.regen || 0), regenMp: (2 + maxMp * 0.012) * (1 + mpRegenB) * (this.perks.has('mana') ? 1.6 : 1),
       regenSt: (16 + maxSt * 0.06) * (this.perks.has('atleta') ? 1.5 : 1),
-      lifesteal: (this.perks.has('vampiro') ? 0.05 : 0), gold: 1 + (R.mods.gold || 0) + (E.luck || 0) / 100 + (this.perks.has('saqueador') ? 0.5 : 0)
+      lifesteal: (this.perks.has('vampiro') ? 0.05 : 0), gold: 1 + (R.mods.gold || 0) + (E.luck || 0) / 100 + (this.perks.has('saqueador') ? 0.5 : 0) + (SB.gold || 0) + (this.sign === 'ladrao' ? 0.1 : 0)
     };
     if (this.hp !== undefined) { this.hp = Math.min(this.hp, this.stat.maxHp); this.mp = Math.min(this.mp, this.stat.maxMp); this.st = Math.min(this.st, this.stat.maxSt); }
     this.buildLook();
+  }
+  computeStyle() {
+    const C = CLASSES[this.cls] || {};
+    const base = k => 5 + ((C.skills && C.skills[k]) || 0);
+    const arr = Object.keys(SKILLS).map(k => [k, this.skill(k) - base(k)]).sort((a, b) => b[1] - a[1]);
+    let st = 'Aventureiro';
+    if (arr[0][1] >= 8) {
+      const [k1, g1] = arr[0], [k2, g2] = arr[1];
+      const pair = [k1, k2].sort().join('+');
+      st = (g2 >= 6 && STYLE_PAIRS[pair]) ? STYLE_PAIRS[pair] : STYLE_SINGLE[k1];
+    }
+    if (st !== this.style) {
+      const old = this.style; this.style = st;
+      if (typeof Game !== 'undefined' && Game.started && old) { Game.centerMsg('NOVO ESTILO: ' + st.toUpperCase(), STYLE_BONUS[st] ? STYLE_BONUS[st].d : ''); }
+    }
   }
   res(elem) {
     const R = RACES[this.race];
@@ -215,7 +236,7 @@ class Player extends Actor {
       return;
     }
     const u = d.use; if (!u) return;
-    const mul = this.perks.has('alquimista') ? 1.5 : 1;
+    const mul = (this.perks.has('alquimista') ? 1.5 : 1) * (1 + ((this.sb && this.sb.potion) || 0));
     if (u.treasure) { this.removeInst(it); Game.revealTreasure(); return; }
     if (u.heal) this.heal(u.heal >= 9999 ? 99999 : u.heal * mul);
     if (u.mana) this.mp = Math.min(this.stat.maxMp, this.mp + (u.mana >= 9999 ? 99999 : u.mana * mul));
@@ -258,11 +279,13 @@ class Player extends Actor {
       if (this.perks.has('lamina')) mul *= 1.2;
       mul *= 1 + (R.mods.melee || 0);
       if (this.buffVal('furia')) mul *= 1.5;
+      mul *= 1 + ((this.sb && this.sb.melee) || 0);
       if (this.buffVal('garras')) mul *= 1.25;
       if (!w && this.race === 'felino') base += 6;
     } else if (kind === 'bow') {
       mul *= 1 + this.skill('arquearia') * 0.012;
       if (this.perks.has('aguia')) mul *= 1.25;
+      mul *= 1 + ((this.sb && this.sb.bow) || 0);
     } else if (kind === 'staff') mul *= this.spellMul('destruicao') * 0.8;
     if (this.buffVal('dmg')) mul *= 1 + this.buffVal('dmg');
     if (this.buffVal('coragem')) mul *= 1.3;
@@ -370,7 +393,7 @@ class Player extends Actor {
         break;
       }
       case 'heal': {
-        const hm = (1 + this.skill('restauracao') * 0.01) * (this.perks.has('curandeiro') ? 1.5 : 1) * (1 + (this.level - 1) * 0.05);
+        const hm = (1 + this.skill('restauracao') * 0.01) * (this.perks.has('curandeiro') ? 1.5 : 1) * (1 + (this.level - 1) * 0.05) * (1 + ((this.sb && this.sb.heal) || 0));
         this.heal(sp.heal * hm);
         if (sp.regen) this.addBuff('regen', sp.regen * hm, 10, sp.name);
         Game.fx.push({ kind: 'ring', x: this.x, y: this.y - 6, r0: 18, r1: 4, t: 0, dur: 0.4, color: sp.color });
@@ -388,7 +411,7 @@ class Player extends Actor {
       case 'summon': {
         const mine = Game.actors.filter(a => a.summoner === this && !a.dead);
         if (mine.length >= 2) mine[0].vanish();
-        const cm = this.perks.has('conjurador') ? 1.5 : 1;
+        const cm = (this.perks.has('conjurador') ? 1.5 : 1) * (1 + ((this.sb && this.sb.summon) || 0));
         const sm = (1 + this.skill('conjuracao') * 0.01) * cm;
         const m = new Monster(sp.ent, this.x + Math.cos(ang) * 20, this.y + Math.sin(ang) * 20, this.level, { follow: true, t: sp.t * cm, hpMul: sm, dmgMul: sm });
         m.summoner = this; m.levelRef = Game.level;

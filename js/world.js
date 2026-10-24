@@ -6,9 +6,9 @@ for (let i = 0; i < OBJ_DEFS.length; i++) if (OBJ_DEFS[i]) OSOLID[i] = OBJ_DEFS[
 // objetos "chatos" pintados direto no chão do chunk
 const OBJ_BAKED = new Uint8Array(128);
 [O.FLOWERS, O.TALLGRASS, O.BONES, O.LILY, O.ROCK, O.SKULLS, O.CROP].forEach(o => OBJ_BAKED[o] = 1);
-const OBJ_VARIANTS = { [O.OAK]: 3, [O.AUTUMN]: 3, [O.PINE]: 3, [O.SNOWPINE]: 3, [O.PALM]: 2, [O.BIGSHROOM]: 3, [O.BUSH]: 3, [O.FLOWERS]: 4, [O.STALL]: 4, [O.TENT]: 3, [O.CRYSTAL]: 4, [O.BANNER]: 5, [O.LILY]: 2, [O.CACTUS]: 2, [O.LAMP]: 2, [O.BROKEN_PILLAR]: 3 };
+const OBJ_VARIANTS = { [O.COUNTER]: 2, [O.BEDSMALL]: 2, [O.PAINTING]: 4, [O.OAK]: 3, [O.AUTUMN]: 3, [O.PINE]: 3, [O.SNOWPINE]: 3, [O.PALM]: 2, [O.BIGSHROOM]: 3, [O.BUSH]: 3, [O.FLOWERS]: 4, [O.STALL]: 4, [O.TENT]: 3, [O.CRYSTAL]: 4, [O.BANNER]: 5, [O.LILY]: 2, [O.CACTUS]: 2, [O.LAMP]: 2, [O.BROKEN_PILLAR]: 3 };
 const OBJ_ANIM = new Uint8Array(128);
-[O.CAMPFIRE, O.TORCH, O.RUNESTONE, O.FOUNTAIN, O.PORTAL, O.ALTAR, O.SHRINE, O.FORGE].forEach(o => OBJ_ANIM[o] = 1);
+[O.CAMPFIRE, O.TORCH, O.RUNESTONE, O.FOUNTAIN, O.PORTAL, O.ALTAR, O.SHRINE, O.FORGE, O.FIREPLACE, O.CANDLE, O.CAULDRON, O.DESTINY, O.DESTINY2, O.DESTINY3].forEach(o => OBJ_ANIM[o] = 1);
 
 const ORE_BY_REGION = {
   valdoria: [O.ORE_FERRO, O.ORE_FERRO, O.ORE_PRATA], colinas: [O.ORE_FERRO, O.ORE_PRATA], sylvaris: [O.ORE_PRATA, O.ORE_FERRO],
@@ -433,6 +433,7 @@ class World {
     });
     // ---- Estradas
     this.buildRoads(rng);
+    this.placeDestiny();
     // placas
     for (const s of this.settlements) {
       for (const g of s.gates) {
@@ -444,6 +445,22 @@ class World {
     }
   }
 
+  placeDestiny() {
+    const rng = new RNG(this.seed * 13 + 5);
+    const cap = this.settlements.find(s => s.region.id === 'valdoria' && s.type === 'capital');
+    if (!cap) return;
+    const ok = (x, y) => { for (let dy = -2; dy <= 2; dy++) for (let dx = -5; dx <= 5; dx++) { const t = this.baseTile(x + dx, y + dy); if (TSOLID[t] || TWATER[t]) return false; } return !this.settlements.some(s => Math.abs(s.mid.x - x) < s.w / 2 + 8 && Math.abs(s.mid.y - y) < s.h / 2 + 8); };
+    let pos = null;
+    for (let i = 0; i < 300 && !pos; i++) { const a = rng.range(0, Math.PI * 2), r = rng.range(36, 70); const x = Math.round(cap.mid.x + Math.cos(a) * r), y = Math.round(cap.mid.y + Math.sin(a) * r); if (ok(x, y)) pos = { x, y }; }
+    if (!pos) return;
+    const w = 11, h = 5, x0 = pos.x - 5, y0 = pos.y - 2;
+    const tiles = new Uint8Array(w * h).fill(255), objs = new Uint8Array(w * h).fill(0);
+    for (let yy = 0; yy < h; yy++) for (let xx = 1; xx < w - 1; xx++) tiles[yy * w + xx] = T.COBBLE;
+    objs[1 * w + 2] = O.DESTINY; objs[1 * w + 5] = O.DESTINY2; objs[1 * w + 8] = O.DESTINY3;
+    this.addStamp({ x0, y0, w, h, tiles, objs });
+    const p = { id: 'destiny', kind: 'destiny', x: pos.x, y: pos.y, region: cap.region, name: 'Pedras do Destino' };
+    this.pois.push(p); this.destiny = p;
+  }
   layoutSettlement(s) {
     const reg = s.region, cul = CULTURES[reg.culture];
     const size = s.type === 'capital' ? 50 : s.type === 'town' ? 34 : 24;

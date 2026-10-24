@@ -124,6 +124,7 @@ const Sprites = {};
   TP[T.VFLOOR] = (p, r) => { fill(p, '#3a2a2a'); speck(p, r, ['#302222', '#443030'], 30); if (r.chance(0.4)) { let x = r.int(0, 15), y = r.int(0, 15); for (let i = 0; i < 6; i++) { p(x, y, '#c03a10'); x += r.int(-1, 1); y += 1; } } };
   TP[T.RFLOOR] = (p, r) => { slabs(p, r, '#56705a', '#3e5442'); speck(p, r, ['#4a8a4a', '#3a7a3a'], 8); };
   TP[T.MFLOOR] = (p, r) => { slabs(p, r, '#6a5844', '#4a3c2c', 8); speck(p, r, ['#7a6852'], 6); };
+  TP[T.HFLOOR] = (p, r) => { fill(p, '#8a6038'); for (let y = 0; y < 16; y += 4) { const c = shade('#8a6038', r.range(-0.07, 0.07)); p(0, y, c, 16, 4); p(0, y + 3, '#5e3e20', 16, 1); const j = r.int(2, 13); p(j, y, '#5e3e20', 1, 3); p(r.int(0, 15), y + 1, shade(c, 0.1), 3, 1); } };
   TP[T.CARPET] = (p, r) => { fill(p, '#8a2030'); p(0, 0, '#c09030', 16, 1); p(0, 15, '#c09030', 16, 1); speck(p, r, ['#7a1828', '#9a2838'], 20); p(7, 7, '#c09030', 2, 2); };
   // paredes: topo e face
   const WALLS = {
@@ -137,16 +138,29 @@ const Sprites = {};
     [T.VWALL]: { top: '#2a1c1c', face: '#1c1212', dark: '#100808', hi: '#ff5020', kind: 'rock', glow: true },
     [T.RWALL]: { top: '#3a4a3c', face: '#2a3a2c', dark: '#1a2a1c', hi: '#4a7a4a', kind: 'brick', moss: true },
     [T.MWALL]: { top: '#4a3e32', face: '#3a2e24', dark: '#2a2018', hi: '#c08a4a', kind: 'brick' },
-    [T.PALISADE]: { top: '#6a4a26', face: '#5a3a1e', dark: '#3a2410', hi: '#8a6a3a', kind: 'log' }
+    [T.PALISADE]: { top: '#6a4a26', face: '#5a3a1e', dark: '#3a2410', hi: '#8a6a3a', kind: 'log' },
+    [T.HWALL]: { top: '#5a3a22', face: '#d8c8a4', dark: '#6a4a2a', hi: '#efe2c4', kind: 'plaster' },
+    [T.LOGWALL]: { top: '#4a3018', face: '#7a5230', dark: '#4a2e18', hi: '#9a7048', kind: 'logh' }
   };
   function paintWall(p, r, w, face) {
     if (!face) {
       fill(p, w.top);
       if (w.kind === 'rock') { speck(p, r, [w.hi, shade(w.top, -0.1)], 20); speck(p, r, [shade(w.top, -0.18)], 8, 2); }
       else if (w.kind === 'log') { for (let x = 0; x < 16; x += 4) { ellipseTop(p, x + 2, 8, w.hi, w.dark); } }
+      else if (w.kind === 'plaster' || w.kind === 'logh') { p(0, 0, w.top, 16, 16); speck(p, r, [shade(w.top, 0.1), shade(w.top, -0.1)], 14); }
       else { bricks(p, r, w.top, shade(w.top, -0.2), 8, 4, 0.05); }
       if (w.snow) speck(p, r, ['#ffffff', '#f0f4f8'], 30);
       if (w.moss) speck(p, r, ['#4a7a3a', '#5a8a40'], 10);
+      return;
+    }
+    if (w.kind === 'plaster') {
+      fill(p, w.face); speck(p, r, [shade(w.face, -0.05), shade(w.face, 0.05)], 20);
+      p(0, 0, w.dark, 16, 2); p(0, 2, shade(w.dark, 0.2), 16, 1); p(0, 12, w.dark, 16, 4); p(0, 12, shade(w.dark, 0.25), 16, 1);
+      p(0, 0, w.dark, 2, 16); p(1, 2, shade(w.dark, 0.2), 1, 10);
+      return;
+    }
+    if (w.kind === 'logh') {
+      for (let y = 0; y < 16; y += 4) { p(0, y, w.face, 16, 4); p(0, y, w.hi, 16, 1); p(0, y + 3, w.dark, 16, 1); if (r.chance(0.5)) p(r.int(1, 13), y + 1, w.dark, 2, 1); }
       return;
     }
     if (w.kind === 'rock') {
@@ -592,6 +606,63 @@ const Sprites = {};
         });
         oy = 4; break;
       }
+      case O.COUNTER: { c = mk(16, 16, p => { p(0, 3, '#9a6a3a', 16, 4); p(0, 3, '#c08a50', 16, 1); p(0, 7, '#6a4422', 16, 9); for (let x = 2; x < 16; x += 5) p(x, 8, '#58381c', 1, 7); p(0, 15, '#3a2410', 16, 1); if (v % 2) { p(3, 0, '#e0c060', 3, 3); p(10, 1, '#c03030', 2, 2); } }); break; }
+      case O.SHELF: case O.POTSHELF: {
+        const pot = id === O.POTSHELF;
+        c = mk(16, 26, p => {
+          p(1, 2, '#6a4422', 14, 24); p(2, 3, '#4a2e16', 12, 22); for (let y = 9; y < 26; y += 7) p(1, y, '#8a5a30', 14, 2);
+          for (let row = 0; row < 3; row++) for (let i = 0; i < 4; i++) {
+            const x = 3 + i * 3, y = 4 + row * 7;
+            if (pot) { const col = r.pick(['#e03030', '#3070f0', '#30c040', '#f0c040', '#a040e0']); p(x, y + 1, col, 2, 4); p(x, y, '#c0c0d0', 2, 1); }
+            else { const col = r.pick(['#a07040', '#d0b080', '#6a8a3a', '#a03030', '#8a8a90']); p(x, y + 2, col, 2, 3); }
+          }
+        });
+        oy = 2; break;
+      }
+      case O.BOOKSHELF: {
+        c = mk(16, 26, p => {
+          p(1, 2, '#5a3a1e', 14, 24); p(2, 3, '#3a2410', 12, 22);
+          for (let y = 9; y < 26; y += 7) p(1, y, '#7a5028', 14, 2);
+          for (let row = 0; row < 3; row++) { let x = 3; while (x < 13) { const w = r.int(1, 2); p(x, 4 + row * 7 + r.int(0, 1), r.pick(['#8a2030', '#20408a', '#2a6a30', '#8a6a20', '#5a2a6a', '#c0a060']), w, 5); x += w; } }
+        });
+        oy = 2; break;
+      }
+      case O.CHAIR: { c = mk(10, 14, p => { p(2, 0, '#7a4a24', 2, 9); p(2, 0, '#9a6a3a', 6, 2); p(2, 7, '#9a6a3a', 6, 2); p(2, 9, '#5a3418', 1, 5); p(7, 9, '#5a3418', 1, 5); }); break; }
+      case O.BENCH: { c = mk(16, 10, p => { p(0, 2, '#9a6a3a', 16, 3); p(0, 2, '#b88050', 16, 1); p(1, 5, '#5a3418', 2, 5); p(13, 5, '#5a3418', 2, 5); }); break; }
+      case O.FIREPLACE: {
+        c = mk(20, 28, p => {
+          p(0, 6, '#7a7378', 20, 22); bricksSmall(p, r, 0, 6, 20, 22); p(0, 4, '#8a5a30', 20, 3); p(0, 4, '#a87a48', 20, 1);
+          p(4, 14, '#1a1010', 12, 14); p(5, 24, '#5a3a1e', 10, 2);
+          const fy = f ? 16 : 17; p(6, fy + 2, '#ff8020', 8, 6); p(8, fy, '#ffb030', 4, 6); p(9, fy + 3, '#fff0a0', 2, 3);
+        });
+        oy = 2; break;
+      }
+      case O.THRONE: { c = mk(18, 28, p => { p(3, 0, '#d0a030', 12, 4); p(5, 0, '#e02848', 2, 2); p(11, 0, '#3050e0', 2, 2); p(3, 4, '#a02030', 12, 14); p(4, 5, '#c03040', 10, 12); p(0, 14, '#d0a030', 4, 10); p(14, 14, '#d0a030', 4, 10); p(3, 18, '#d0a030', 12, 4); p(3, 22, '#8a6020', 12, 6); }); oy = 2; break; }
+      case O.PLANT: { c = mk(12, 18, p => { p(3, 12, '#a05a30', 6, 6); p(2, 11, '#c07040', 8, 2); blob(p, r, 6, 7, 5, '#3a8a3a'); }); break; }
+      case O.WARDROBE: { c = mk(16, 26, p => { p(1, 2, '#7a4a24', 14, 24); p(1, 2, '#9a6a3a', 14, 2); p(2, 5, '#6a3e1c', 6, 19); p(8, 5, '#6a3e1c', 6, 19); p(7, 12, '#e0c060', 1, 3); p(8, 12, '#e0c060', 1, 3); }); oy = 2; break; }
+      case O.CRIB: { c = mk(16, 14, p => { p(1, 3, '#b08050', 14, 10); p(2, 5, '#f0e8f0', 12, 6); p(3, 6, '#f0a0c0', 6, 4); for (let x = 1; x < 16; x += 3) p(x, 1, '#c09060', 1, 12); p(1, 1, '#c09060', 15, 1); }); break; }
+      case O.BEDSMALL: { c = mk(16, 16, p => { p(1, 1, '#7a4a24', 14, 15); p(2, 2, '#f0ece0', 12, 4); p(2, 6, v % 2 ? '#3a6aa0' : '#a03a5a', 12, 9); p(2, 6, shade(v % 2 ? '#3a6aa0' : '#a03a5a', 0.2), 12, 1); }); break; }
+      case O.WEAPONRACK: { c = mk(16, 24, p => { p(1, 4, '#6a4422', 14, 2); p(1, 18, '#6a4422', 14, 2); p(1, 4, '#6a4422', 2, 20); p(13, 4, '#6a4422', 2, 20); for (let i = 0; i < 3; i++) { const x = 4 + i * 3; p(x, 0, '#c0c8d0', 1, 16); p(x - 1, 14, '#d0a030', 3, 1); p(x, 15, '#5a3418', 1, 5); } }); oy = 2; break; }
+      case O.DOOR_IN: { c = mk(16, 18, p => { p(2, 0, '#3a2410', 12, 18); p(3, 1, '#8a5a2e', 10, 17); for (let x = 5; x < 13; x += 3) p(x, 1, '#6a4020', 1, 17); p(11, 9, '#e0c060', 1, 2); p(0, 16, '#5a3a1e', 16, 2); }, true); oy = 2; break; }
+      case O.CANDLE: { c = mk(10, 18, p => { p(4, 6, '#c0a040', 2, 10); p(2, 15, '#c0a040', 6, 2); p(1, 6, '#c0a040', 8, 1); p(1, 3, '#f0e8d0', 1, 3); p(4, 3, '#f0e8d0', 2, 3); p(8, 3, '#f0e8d0', 1, 3); const fy = f ? 0 : 1; p(1, fy, '#ffc040', 1, 2); p(4, fy, '#ffe070', 2, 2); p(8, fy, '#ffc040', 1, 2); }); break; }
+      case O.KEG: { c = mk(16, 18, p => { for (const [x, y] of [[0, 8], [8, 8], [4, 0]]) { p(x + 1, y + 1, '#8a5a2a', 7, 9); p(x + 1, y + 3, '#4a4a50', 7, 1); p(x + 1, y + 7, '#4a4a50', 7, 1); S.ellipse(p, x + 4.5, y + 5, 2, 2, '#a07040'); p(x + 4, y + 5, '#2a1a10'); } }); break; }
+      case O.CAULDRON: { c = mk(16, 16, p => { S.ellipse(p, 8, 10, 7, 5, '#2a2a30'); S.ellipse(p, 8, 7, 6, 2, f ? '#60e060' : '#40c040'); p(4, 14, '#2a2a30', 2, 2); p(10, 14, '#2a2a30', 2, 2); p(6, 2 + (f ? 0 : 1), '#a0ffa0', 2, 2); }); break; }
+      case O.DESTINY: case O.DESTINY2: case O.DESTINY3: {
+        v = id === O.DESTINY ? 0 : id === O.DESTINY2 ? 1 : 2;
+        const dc = ['#e05040', '#5080ff', '#50d070'][v % 3];
+        c = mk(16, 30, p => {
+          p(3, 4, '#7a7680', 10, 26); p(4, 2, '#7a7680', 8, 2); p(5, 0, '#7a7680', 6, 2); p(3, 4, '#9a96a0', 2, 26); p(11, 4, '#5a5660', 2, 26);
+          const g = f ? shade(dc, 0.3) : dc;
+          if (v % 3 === 0) { p(7, 8, g, 2, 12); p(5, 10, g, 6, 2); }
+          else if (v % 3 === 1) { p(6, 8, g, 4, 4); p(7, 12, g, 2, 8); p(5, 18, g, 6, 2); }
+          else { p(5, 9, g, 6, 2); p(6, 12, g, 4, 2); p(5, 15, g, 6, 2); p(7, 18, g, 2, 4); }
+        });
+        oy = 2; break;
+      }
+      case O.ANVIL: { c = mk(16, 12, p => { p(1, 1, '#5a5a62', 14, 3); p(0, 1, '#4a4a52', 3, 2); p(5, 4, '#4a4a52', 6, 4); p(3, 8, '#3a3a42', 10, 4); p(1, 1, '#8a8a94', 14, 1); }); break; }
+      case O.WINDOW: { c = mk(16, 14, p => { p(3, 1, '#5a3a1e', 10, 11); p(4, 2, '#a0d0f0', 8, 9); p(7, 2, '#5a3a1e', 2, 9); p(4, 6, '#5a3a1e', 8, 1); p(4, 2, '#e0f0ff', 2, 2); p(2, 11, '#8a6a40', 12, 2); }, true); oy = -1; break; }
+      case O.PAINTING: { const pc = ['#3a6aa0', '#a04030', '#3a8a40', '#a08030'][v % 4]; c = mk(16, 12, p => { p(2, 1, '#c09030', 12, 10); p(3, 2, pc, 10, 8); p(3, 6, shade(pc, -0.3), 10, 4); S.ellipse(p, 10, 4, 1.5, 1.5, '#f0e070'); p(4, 7, '#2a5a20', 4, 3); }, true); oy = -2; break; }
+      case O.QUESTBOARD: { c = mk(18, 22, p => { p(2, 10, '#5a3418', 2, 12); p(14, 10, '#5a3418', 2, 12); p(0, 0, '#8a5a2e', 18, 14); p(1, 1, '#a87a48', 16, 12); for (let i = 0; i < 5; i++) { const x = 2 + (i % 3) * 5, y = 2 + Math.floor(i / 3) * 5; p(x, y, '#f0e8d0', 4, 4); p(x + 1, y + 1, '#6a5040', 2, 1); p(x + 1, y, '#c03030'); } }); oy = 2; break; }
       default: c = mk(8, 8, p => p(0, 0, '#ff00ff', 8, 8));
     }
     return { c, oy, w: c.width, h: c.height };
@@ -672,6 +743,10 @@ const Sprites = {};
       case 'crate': p(2, 3, col, 12, 11); p(2, 3, hi, 12, 1); p(7, 3, sh, 2, 11); p(2, 8, sh, 12, 1); break;
       case 'gold': for (let i = 0; i < 5; i++) { ellipse(p, 5 + (i % 3) * 3, 11 - Math.floor(i / 3) * 3, 3, 2, gold); p(4 + (i % 3) * 3, 10 - Math.floor(i / 3) * 3, '#fff080'); } break;
       case 'tome': p(3, 2, col, 10, 12); p(3, 2, hi, 10, 1); p(3, 13, sh, 10, 1); p(12, 3, '#f0e8d0', 1, 10); p(6, 5, gold, 4, 4); p(7, 6, '#ffffff', 2, 2); break;
+      case 'fish': ellipse(p, 7, 8, 6, 3.5, col); p(12, 5, col, 3, 7); p(13, 4, sh, 2, 2); p(13, 11, sh, 2, 2); p(3, 7, '#1a1a1a'); p(4, 6, hi, 5, 1); for (let x = 5; x < 11; x += 2) p(x, 9, sh); break;
+      case 'rod': diag(1, 15, 14, ic.c || '#8a6a3a', 1); p(14, 1, '#c0c0c0', 1, 9); p(13, 10, '#e03030', 2, 2); p(2, 12, '#5a3a1e', 3, 3); break;
+      case 'doll': ellipse(p, 8, 4, 3, 3, '#f0c8a0'); p(5, 1, '#a05a20', 6, 2); p(5, 7, col, 6, 6); p(3, 8, col, 2, 4); p(11, 8, col, 2, 4); p(5, 13, '#5a3a1e', 2, 3); p(9, 13, '#5a3a1e', 2, 3); p(7, 4, '#1a1a1a'); p(9, 4, '#1a1a1a'); break;
+      case 'heart': for (let y = 0; y < 10; y++) { const w = y < 3 ? 0 : 0; void w; } ellipse(p, 5.5, 6, 3.5, 3.5, col); ellipse(p, 10.5, 6, 3.5, 3.5, col); for (let y = 6; y < 14; y++) p(2 + (y - 6), y, col, 12 - (y - 6) * 2, 1); p(4, 4, hi, 2, 2); break;
       case 'spell': {
         ellipse(p, 8, 8, 7, 7, shade(col, -0.5)); ellipse(p, 8, 8, 5, 5, col); ellipse(p, 8, 8, 2.5, 2.5, hi); p(7, 6, '#ffffff', 2, 2);
         break;

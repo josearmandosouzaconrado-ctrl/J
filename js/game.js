@@ -115,6 +115,7 @@ const Game = {
     this.player.dead = false;
     this.camX = this.player.x - this.vw / 2; this.camY = this.player.y - this.vh / 2;
     if (this.player.follower) this.spawnFollower();
+    this.spawnPet();
     UI.showHUD(true);
     UI.closeAll();
     Quests.onInventory();
@@ -140,7 +141,7 @@ const Game = {
     const s = {
       v: 1, seed: this.world.seed, time: this.time, day: this.day, track: this.track, player: pj,
       mods: { opened: [...M.opened], harvested: M.harvested, cleared: M.cleared, dopened: M.dopened, camps: M.camps, runes: [...M.runes], shrines: M.shrines, discovered: [...M.discovered], explored: btoa(bin), uniques: [...M.uniques], treasures: M.treasures },
-      summary: { name: P.name, level: P.level, race: RACES[P.race].name, cls: CLASSES[P.cls].name, loc: this.locationName(), date: Date.now(), time: Math.floor(P.stats.playTime) }
+      summary: { name: P.name, level: P.level, race: RACES[P.race].name, cls: P.style || 'Aventureiro', loc: this.locationName(), date: Date.now(), time: Math.floor(P.stats.playTime) }
     };
     try {
       localStorage.setItem(SAVE_PREFIX + slot, JSON.stringify(s));
@@ -186,6 +187,7 @@ const Game = {
   isNight() { return this.time < 5 * 60 || this.time >= 20 * 60; },
   timeStr() { const h = Math.floor(this.time / 60), m = Math.floor(this.time % 60); return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`; },
   darkness() {
+    if (this.level.isInterior) return this.isNight() ? 0.5 : 0.12;
     if (!this.level.isWorld) return this.level.dark ? 0.9 : 0;
     const h = this.time / 60;
     let d;
@@ -285,7 +287,7 @@ const Game = {
     const W = this.world;
     // tempo
     this.time += dt * 2;
-    if (this.time >= 1440) { this.time -= 1440; this.day++; this.mods.day = this.day; }
+    if (this.time >= 1440) { this.time -= 1440; this.day++; this.mods.day = this.day; this.dayTick(); }
     if (this.slowTime > 0) this.slowTime -= dt;
     W.tick++;
     // ações do jogador
@@ -300,7 +302,8 @@ const Game = {
     if (Input.consume('shoutnext')) { if (P.shouts.length) { P.shoutIdx = (P.shoutIdx + 1) % P.shouts.length; this.toast('Grito: ' + SHOUTS[P.shouts[P.shoutIdx]].name, '#ffd080'); } }
     if (Input.consume('racial')) P.racial();
     if (Input.consume('mount')) P.toggleMount();
-    if (Input.consume('interact')) this.doInteract();
+    if (this.fishing) this.updateFishing(dt);
+    else if (Input.consume('interact')) this.doInteract();
     P.update(dt);
     // campo de fluxo
     this.flowT -= dt;
@@ -331,8 +334,9 @@ const Game = {
     this.camX = lerp(this.camX, lookX - this.vw / 2, Math.min(1, dt * 6));
     this.camY = lerp(this.camY, lookY - this.vh / 2, Math.min(1, dt * 6));
     if (!this.level.isWorld) {
-      this.camX = clamp(this.camX, -16, this.level.w * 16 - this.vw + 16);
-      this.camY = clamp(this.camY, -16, this.level.h * 16 - this.vh + 16);
+      const LW = this.level.w * 16, LH = this.level.h * 16;
+      this.camX = LW + 32 < this.vw ? (LW - this.vw) / 2 : clamp(this.camX, -16, LW - this.vw + 16);
+      this.camY = LH + 32 < this.vh ? (LH - this.vh) / 2 : clamp(this.camY, -16, LH - this.vh + 16);
     }
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 20);
   },
@@ -562,9 +566,144 @@ const Game = {
   spawnFollower() {
     const P = this.player;
     const f = P.follower;
-    const m = new Monster('mercenario', P.x + 12, P.y + 6, Math.max(P.level, 3), { follow: true, name: f.name });
-    m.isFollower = true;
+    const m = new Monster('mercenario', P.x + 12, P.y + 6, Math.max(P.level, 3), { follow: true, name: f.name, look: f.look ? Object.assign({}, f.look, { weapon: 'sword', wc: '#c0c0c0' }) : undefined });
+    m.isFollower = true; m.spouse = !!f.spouse;
     this.actors.push(m);
+  },
+  spawnPet() {
+    const P = this.player;
+    if (!P.pet || (P.pet.downDay !== undefined && P.pet.downDay === this.day)) return;
+    if (this.actors.some(a => a.isPet && !a.dead)) return;
+    const m = new Monster(P.pet.kind, P.x - 12, P.y + 6, Math.max(P.level, 3), { follow: true, name: P.pet.name });
+    m.isPet = true;
+    this.actors.push(m);
+  },
+  residentsOf(b) {
+    if (b._res) return b._res;
+    const s = b.settlement;
+    const rng = new RNG(hashStr(s.id + ':' + b.tx + ',' + b.ty) + this.world.seed);
+    const cul = CULTURES[s.region.culture];
+    const n = b.kind === 'house3' ? rng.int(1, 2) : rng.int(1, 4);
+    const races = Object.keys(RACES);
+    const baseRace = rng.chance(0.85) ? cul.race : rng.pick(races);
+    const fam = rng.pick(NAMES[baseRace].s);
+    const res = [];
+    for (let i = 0; i < n; i++) {
+      const child = i >= 2 && rng.chance(0.7);
+      const race = child ? baseRace : (i === 0 ? baseRace : (rng.chance(0.8) ? baseRace : rng.pick(races)));
+      const sex = rng.chance(0.5) ? 'm' : 'f';
+      const look = npcLook(race, sex, rng, 'resident');
+      if (child) { look.short = 3; look.blush = true; delete look.beard; look.tall = 0; }
+      res.push({ id: 'r:' + s.id + ':' + b.tx + ',' + b.ty + ':' + i, name: rng.pick(NAMES[race][sex]) + ' ' + fam, race, sex, child, look, home: s.name });
+    }
+    b._res = res;
+    return res;
+  },
+  ownerId(b) { return 'o:' + b.settlement.id + ':' + b.tx + ',' + b.ty; },
+  enterInterior(b) {
+    const P = this.player;
+    if (!b.door) return;
+    this.worldPos = { x: b.door.x * 16 + 8, y: (b.door.y + 1) * 16 + 10 };
+    const L = new Interior(b);
+    this.level = L;
+    P.mounted = false;
+    const keep = this.actors.filter(a => a.team === 'ally' && a.follow && !a.dead);
+    this.actors = keep;
+    for (const s of this.world.settlements) { if (s.active) { s.active = false; s.npcs = null; } }
+    for (const p of this.world.pois) p.spawned = false;
+    P.x = L.entry.x * 16 + 8; P.y = L.entry.y * 16 + 10;
+    for (const a of keep) { a.x = P.x + (Math.random() - 0.5) * 20; a.y = P.y - 4; this.findFree(a); }
+    this.spawnInteriorNPCs(L);
+    this.projectiles = []; this.clouds = []; this.pickups = []; this.timers = this.timers.filter(t => t.keep);
+    this.camX = P.x - this.vw / 2; this.camY = P.y - this.vh / 2;
+    this.flow = null;
+    Sfx.play('door'); UI.fade();
+    this.toast(b.name, '#ffe8a0');
+  },
+  spawnInteriorNPCs(L) {
+    const b = L.b, s = b.settlement, P = this.player;
+    const rng = new RNG(hashStr(b.name) + this.day);
+    for (const sp of L.spots) {
+      let a;
+      if (sp.role === 'guard') {
+        const look = Object.assign({}, ENEMIES.guarda.look, { body: shade(s.region.color, -0.25), shield: s.region.color });
+        a = new Monster('guarda', sp.x * 16 + 8, sp.y * 16 + 12, Math.max(10, P.level + 5), { look, name: 'Guarda Real' });
+        a.guardOf = s;
+      } else {
+        a = new NPC({ role: sp.role, x: sp.x, y: sp.y }, s, rng);
+        if (sp.role === 'owner') {
+          const o = b.owner; a.name = o.name; a.race = o.race; a.sex = o.sex || 'm'; a.look = UI.ownerLook(b); a.S = Sprites.actor(a.look); a.h = a.S.h;
+          a.building = b; a.rid = this.ownerId(b);
+        } else if (sp.res) {
+          const r = sp.res; a.name = r.name; a.race = r.race; a.sex = r.sex; a.look = r.look; a.S = Sprites.actor(r.look); a.h = a.S.h; a.rid = r.id; a.child = r.child; a.res = r;
+        }
+        a.indoor = true;
+      }
+      this.findFree(a); a.home = { x: a.x, y: a.y };
+      this.actors.push(a);
+    }
+    // família na casa do jogador
+    if (b.role === 'playerhouse' && P.houses.includes(s.id)) {
+      const fam = [];
+      if (P.spouse && P.rel[P.spouse] && P.spouseHome === s.id && !(P.follower && P.follower.spouse)) fam.push({ kind: 'spouse', r: P.rel[P.spouse] });
+      for (const c of P.children || []) fam.push({ kind: 'kid', r: c });
+      fam.forEach((f, i) => {
+        if (f.kind === 'kid' && this.day - f.r.born < 3) { const cx = L.w - 3, cy = L.h - 4; L.objs[L.idx(cx, cy)] = O.CRIB; L.canvas = null; return; }
+        const a = new NPC({ role: f.kind === 'spouse' ? 'spouse' : 'kid', x: 3 + i * 2, y: Math.floor(L.h / 2) + 1 }, s, rng);
+        a.name = f.r.name; a.race = f.r.race; a.sex = f.r.sex;
+        const look = Object.assign({}, f.r.look);
+        if (f.kind === 'kid') { const age = this.day - f.r.born; look.short = age < 15 ? 3 : 2; look.blush = true; delete look.beard; }
+        a.look = look; a.S = Sprites.actor(look); a.h = a.S.h; a.rid = f.kind === 'spouse' ? P.spouse : f.r.id; a.family = f.kind; a.kid = f.kind === 'kid' ? f.r : null; a.indoor = true;
+        this.findFree(a); a.home = { x: a.x, y: a.y };
+        this.actors.push(a);
+      });
+    }
+  },
+  startFishing(tx, ty) {
+    const P = this.player;
+    if (this.fishing) return;
+    this.fishing = { tx, ty, t: 1.5 + Math.random() * 3.5, state: 'wait', win: 0 };
+    P.setDir(angleTo(P.x, P.y, tx * 16 + 8, ty * 16 + 8));
+    this.toast('Esperando o peixe morder... (toque AÇÃO quando aparecer "!")', '#a0e0ff');
+    Sfx.play('roll');
+  },
+  updateFishing(dt) {
+    const f = this.fishing; if (!f) return;
+    const P = this.player;
+    if (Input.move.mag > 0.3 || P.lastHurt < 0.1) { this.fishing = null; return; }
+    if (Input.consume('interact')) {
+      if (f.state === 'bite') {
+        const R = this.world.regions[this.world.regAt(f.tx, f.ty)] || { id: 'valdoria' };
+        const r = Math.random();
+        let id = R.id === 'nordheim' ? 'peixe_gelo' : R.id === 'ssarak' ? 'enguia' : (r < 0.35 ? 'salmao' : 'peixe');
+        if (r > 0.96) id = 'peixe_dourado';
+        if (r < 0.03) id = Math.random() < 0.5 ? 'mapa_tesouro' : 'rubi';
+        P.addItem(Items.make(id));
+        Sfx.play('coin');
+        this.burst(f.tx * 16 + 8, f.ty * 16 + 8, '#a0d0ff', 12, 60);
+      } else this.toast('Puxou cedo demais!', '#ffb080');
+      this.fishing = null; return;
+    }
+    f.t -= dt;
+    if (f.state === 'wait' && f.t <= 0) { f.state = 'bite'; f.win = 0.95; Sfx.play('pickup'); this.floatText(P.x, P.y - 30, '!', '#ffe040', 2); }
+    else if (f.state === 'bite') { f.win -= dt; if (f.win <= 0) { this.toast('O peixe escapou...', '#c0c0c0'); this.fishing = null; } }
+  },
+  dayTick() {
+    const P = this.player;
+    if (P.babyDue && this.day >= P.babyDue) {
+      P.babyDue = null;
+      const sp = P.rel[P.spouse];
+      const race = sp && Math.random() < 0.5 ? sp.race : P.race;
+      const sex = Math.random() < 0.5 ? 'm' : 'f';
+      const rng = new RNG(Date.now() & 0xffffff);
+      const look = npcLook(race, sex, rng, 'kid'); look.short = 3; look.blush = true; delete look.beard;
+      const kid = { id: 'k' + Date.now(), name: rng.pick(NAMES[race][sex]), race, sex, born: this.day, look };
+      P.children.push(kid);
+      this.centerMsg('SEU BEBÊ NASCEU!', `Visite sua casa para conhecer ${sex === 'm' ? 'o pequeno' : 'a pequena'} ${kid.name}.`);
+      Sfx.play('levelup');
+      setTimeout(() => UI.nameChild(kid), 1500);
+    }
+    if (P.pet && P.pet.downDay !== undefined && P.pet.downDay !== this.day) { delete P.pet.downDay; if (this.level.isWorld) this.spawnPet(); }
   },
   discoveryTick() {
     const P = this.player, W = this.world, M = this.mods;
@@ -651,9 +790,13 @@ const Game = {
       const p = m.camp; p.alive--;
       if (p.alive <= 0) { this.mods.camps[p.id] = this.day; Quests.onCamp(p.id); this.toast(`${p.name} eliminado!`, '#80ff80'); P.addXP(40 + p.lvl * 8); }
     }
-    if (m.isFollower) { P.follower = null; this.toast('Seu mercenário caiu em combate.', '#ff8080'); }
+    if (m.isFollower) {
+      if (m.spouse) { P.follower = null; this.toast(`${m.name} desmaiou e voltou para casa para se recuperar.`, '#ffb080'); }
+      else { P.follower = null; this.toast('Seu mercenário caiu em combate.', '#ff8080'); }
+    }
+    if (m.isPet && P.pet) { P.pet.downDay = this.day; this.toast(`${P.pet.name} se feriu e voltou para casa. Volta amanhã.`, '#ffb080'); }
     // chefe de masmorra
-    if (!this.level.isWorld && m.boss && m.eid === this.level.def.boss && !m.master) {
+    if (this.level.def && m.boss && m.eid === this.level.def.boss && !m.master) {
       const d = this.level.def;
       if (!this.mods.cleared[d.id]) {
         this.mods.cleared[d.id] = this.day;
@@ -725,10 +868,16 @@ const Game = {
       const o = L.objAt(tx, ty);
       const od = OBJ_DEFS[o];
       if (!o || !od.interact) continue;
-      const labels = { chest: 'Abrir', harvest: o >= O.ORE_FERRO && o <= O.ORE_EBANO ? 'Minerar' : 'Coletar', cook: 'Cozinhar', forge: 'Forjar', alchemy: 'Alquimia', runestone: 'Ler', shrine: 'Orar', dungeon: 'Entrar', exit: 'Sair', sign: 'Ler' };
+      const labels = { destiny: 'Tocar', wardrobe: 'Baú', crib: 'Ver bebê', chest: 'Abrir', harvest: o >= O.ORE_FERRO && o <= O.ORE_EBANO ? 'Minerar' : 'Coletar', cook: 'Cozinhar', forge: 'Forjar', alchemy: 'Alquimia', runestone: 'Ler', shrine: 'Orar', dungeon: 'Entrar', exit: 'Sair', sign: 'Ler' };
       let name = od.name;
       if (od.interact === 'dungeon' && L.isWorld) { const dd = this.world.entrances.get(tkey(tx, ty)); if (dd) name = `${dd.name} (Nv ${dd.lvl})`; }
       bd = d; best = { kind: od.interact, tx, ty, o, label: labels[od.interact] || 'Usar', name };
+    }
+    if (!best && L.isWorld && P.count('vara_pesca')) {
+      for (const d of [10, 20]) {
+        const tx = Math.floor((P.x + Math.cos(P.face) * d) / 16), ty = Math.floor((P.y - 4 + Math.sin(P.face) * d) / 16);
+        if (TWATER[L.tileAt(tx, ty)]) { best = { kind: 'fish', tx, ty, label: 'Pescar', name: 'Água' }; break; }
+      }
     }
     this.interact = best;
   },
@@ -739,7 +888,11 @@ const Game = {
     const L = this.level;
     switch (it.kind) {
       case 'npc': UI.talkNPC(it.a); break;
-      case 'door': Sfx.play('door'); UI.building(it.b); break;
+      case 'door': if (it.b.kind === 'house' || it.b.kind === 'house2' || it.b.kind === 'house3' || it.b.role !== 'tower') this.enterInterior(it.b); else UI.building(it.b); break;
+      case 'fish': this.startFishing(it.tx, it.ty); break;
+      case 'destiny': UI.destiny(it.o); break;
+      case 'wardrobe': if (this.level.isInterior && this.level.b.role === 'playerhouse' && this.player.houses.includes(this.level.s.id)) UI.storage(this.level.s); else this.toast('Isso não é seu.', '#ffa0a0'); break;
+      case 'crib': UI.babyCrib(); break;
       case 'sign': UI.sign(it.s); break;
       case 'chest': this.openChest(it.tx, it.ty, it.o); break;
       case 'harvest': {

@@ -3,212 +3,279 @@
 (function (S) {
   const cv = S.cv, P = S.P, outline = S.outline, flip = S.flip, ellipse = S.ellipse, blob = S.blob;
 
-  // ---------- HUMANOIDES ----------
+  // ---------- HUMANOIDES (20x28) ----------
   // L: aparência. dir: 'down'|'up'|'side'. frame 0..2
   function humanoid(L, dir, frame) {
-    const c = cv(16, 22), ctx = c.getContext('2d'), p = P(ctx);
-    const sk = L.skin || '#e0ac69', skD = shade(sk, -0.22), skL = shade(sk, 0.14);
+    const W = 20, H = 28;
+    const c = cv(W, H), ctx = c.getContext('2d'), p = P(ctx);
     const skel = !!L.skeleton, mum = !!L.mummy;
+    const sk = skel ? '#e8e0c8' : (L.skin || '#e0ac69');
+    const skS = shade(sk, -0.16), skD = shade(sk, -0.32), skH = shade(sk, 0.14);
+    const hair = L.hair || '#3a2a1a', hS = shade(hair, -0.28), hH = shade(hair, 0.28);
     const body = L.body !== undefined && L.body !== null ? L.body : (skel ? null : '#6a5a4a');
-    const legsC = L.legs || (body ? shade(body, -0.35) : null);
-    const boots = L.boots || '#3a2a1a';
-    const hair = L.hair || '#3a2a1a';
-    const short = L.short || 0, tall = L.tall || 0, bulky = L.bulky ? 1 : 0;
-    const legH = short >= 3 ? 2 : short >= 2 ? 3 : tall ? 5 : 4;
-    const torsoH = short >= 2 ? 4 : 5;
-    const footY = 21;
-    const legTop = footY - legH + 1;
+    const bH = body ? shade(body, 0.16) : null, bS = body ? shade(body, -0.2) : null, bD = body ? shade(body, -0.38) : null;
+    const legs = L.legs || (body ? shade(body, -0.4) : '#3a3028'), lS = shade(legs, -0.25);
+    const boots = L.boots || '#3a2618', btH = shade(boots, 0.25), btS = shade(boots, -0.3);
+    const bone = '#ece4cc', boneS = '#b8ae94';
+    const eyeC = L.eyes || (skel || L.zombie ? '#ff3020' : mum ? '#ffd040' : '#20142a');
+    const short = L.short || 0, tall = L.tall ? 1 : 0, bulky = L.bulky ? 1 : 0;
+    const legH = short >= 3 ? 2 : short >= 2 ? 3 : 4 + tall;
+    const torsoH = short >= 2 ? 5 : 6;
+    const footY = 27;
+    const legTop = footY - legH;
     const tB = legTop - 1, tT = tB - torsoH + 1;
-    const hB = tT - 1, hT = hB - 5;
-    const eyes = L.eyes || (skel || L.zombie ? '#ff3020' : mum ? '#ffd040' : '#1a1420');
-    const tx0 = 5 - bulky, tx1 = 10 + bulky;
-    const bone = '#e8e0c8', boneD = '#a8a088';
+    const hB = tT - 1, hT = hB - 7;
     const robe = !!L.robe;
-    const bandage = (x, y) => { if (mum && ((x + y) % 3 === 0)) p(x, y, '#9a8a6a'); };
-
-    const drawTail = (side) => {
-      if (!L.tail) return;
-      const tc = L.tailC || sk;
-      if (side) { p(tx0 - 1, tB, tc); p(tx0 - 2, tB + 1, tc); p(tx0 - 3, tB + 1, tc); p(tx0 - 4, tB + (frame === 1 ? 0 : 2), tc); }
-      else { p(7, tB + 1, tc, 2, 1); p(8 - (frame === 1 ? 1 : 0), tB + 2, tc, 2, 1); p(9 - (frame === 2 ? 2 : 0), tB + 3, tc, 1, 1); }
-    };
+    const tx0 = 6 - bulky, tx1 = 13 + bulky;
+    const band = (x, y) => { if (mum && ((x * 2 + y) % 4 === 0)) p(x, y, '#8a7a5a'); };
+    const hs = L.hairStyle || 0;
+    const covered = !!(L.helm || L.hood);
+    const noHair = skel || mum || hs === 2;
+    const ey = L.snout ? hT + 3 : hT + 4;
 
     if (dir === 'down' || dir === 'up') {
       const front = dir === 'down';
-      if (!front) drawTail(false);
-      // escudo atrás (vista de costas)
-      if (L.shield && !front) { p(tx1 + 1, tT, L.shield, 3, torsoH + 1); p(tx1 + 2, tT + 1, shade(L.shield, 0.3), 1, torsoH - 1); }
+      // cabelo longo atrás do corpo
+      if (!noHair && !covered && (hs === 1) && front) { for (let y = hT + 2; y <= hB + 4; y++) p(5, y, hS, 10, 1); }
+      // cauda (atrás, vista frontal escondida)
+      if (!front && L.tail) {
+        const tc = L.tailC || sk, sw = frame === 1 ? -1 : frame === 2 ? 1 : 0;
+        p(9, tB, tc, 2, 1); p(9 + sw, tB + 1, tc, 2, 1); p(9 + sw * 2, tB + 2, tc, 2, 1); p(10 + sw * 2, tB + 3, shade(tc, -0.2), 1, 1);
+      }
+      if (L.shield && !front) { p(tx1 + 1, tT + 1, shade(L.shield, -0.2), 3, torsoH); p(tx1 + 2, tT + 2, L.shield, 1, torsoH - 2); }
       // pernas
-      const lx = [tx0 + 1, tx0 + 2 + bulky], rx = [tx1 - 1 - bulky, tx1 - 1];
-      const legs = (xs, up) => {
-        for (let y = legTop; y <= footY - up; y++) {
-          const isFoot = y === footY - up;
-          let col = isFoot ? boots : legsC;
-          if (skel && !L.legs) col = isFoot ? bone : bone;
-          for (let x = xs[0]; x <= xs[1]; x++) {
-            if (skel && !L.legs && x !== xs[0]) continue;
-            p(x, y, col); bandage(x, y);
+      const leg = (x0, x1, raise, inner) => {
+        const bottom = footY - raise;
+        for (let y = legTop; y <= bottom; y++) {
+          for (let x = x0; x <= x1; x++) {
+            let col;
+            if (skel && !L.legs) { if (x !== x0 + 1) continue; col = y >= bottom - 1 ? boneS : bone; }
+            else if (y >= bottom - 1) col = (y === bottom - 1 && x !== inner) ? btH : boots;
+            else col = x === inner ? lS : legs;
+            p(x, y, col); band(x, y);
           }
         }
+        if (!(skel && !L.legs)) p(x0, bottom, btS, x1 - x0 + 1, 1);
       };
-      if (!robe) { legs(lx, frame === 1 ? 1 : 0); legs(rx, frame === 2 ? 1 : 0); }
+      if (!robe) {
+        const lx0 = bulky ? 6 : 7, rx1 = bulky ? 13 : 12;
+        leg(lx0, 9, frame === 1 ? 1 : 0, 9);
+        leg(10, rx1, frame === 2 ? 1 : 0, 10);
+      }
       // torso
       if (skel && !L.body) {
-        for (let y = tT; y <= tB; y++) { p(7, y, bone, 2, 1); if ((y - tT) % 2 === 0) p(tx0 + 1, y, bone, tx1 - tx0 - 1, 1); }
-        p(tx0 + 1, tB, boneD, tx1 - tx0 - 1, 1);
+        for (let y = tT; y <= tB; y++) { p(9, y, bone, 2, 1); if ((y - tT) % 2 === 0 && y < tB) p(tx0 + 1, y, bone, tx1 - tx0 - 1, 1); }
+        p(tx0 + 2, tB, boneS, tx1 - tx0 - 3, 1);
       } else {
         const bot = robe ? footY - 1 : tB;
         for (let y = tT; y <= bot; y++) {
-          const ext = robe && y > tB ? Math.min(2, Math.floor((y - tB) / 2)) : 0;
-          for (let x = tx0 - ext; x <= tx1 + ext; x++) {
+          const ext = robe && y > tB ? Math.min(2, Math.floor((y - tB + 1) / 2)) : 0;
+          const a = tx0 - ext, b = tx1 + ext;
+          for (let x = a; x <= b; x++) {
             let col = body;
-            if (x <= tx0 - ext) col = shade(body, 0.15); else if (x >= tx1 + ext) col = shade(body, -0.22);
-            if (L.fur && (x === tx0 - ext || x === tx1 + ext) && (y % 2)) col = shade(body, 0.25);
-            if (L.zombie && ((x * 7 + y * 3) % 11 === 0)) col = shade(body, -0.4);
-            p(x, y, col); bandage(x, y);
+            if (x === a) col = bH; else if (x >= b - 1) col = x === b ? bD : bS;
+            if (y === tT && (x === a || x === b)) continue;
+            if (L.fur && (x === a || x === b) && (y % 2)) col = bH;
+            if (L.zombie && ((x * 7 + y * 3) % 9 === 0)) col = bD;
+            p(x, y, col); band(x, y);
           }
         }
-        if (robe) { p(7, tT, shade(body, 0.3), 2, footY - tT); if (front) { p(tx0, footY, boots, 2, 1); p(tx1 - 1, footY, boots, 2, 1); } }
-        else if (!mum && !L.fur && !L.nobelt) { p(tx0, tB, '#3a2818', tx1 - tx0 + 1, 1); if (front) p(7, tB, '#c8a040', 2, 1); }
-        if (L.cape && !front) { for (let y = tT; y <= Math.min(footY - 1, tB + 3); y++) p(tx0, y, L.cape, tx1 - tx0 + 1, 1); p(tx0, tT, shade(L.cape, 0.2), tx1 - tx0 + 1, 1); }
-        if (L.cape && front) { p(tx0 - 1, tT, L.cape, 1, torsoH + 1); p(tx1 + 1, tT, L.cape, 1, torsoH + 1); }
-        if (L.chestplate && front) { p(tx0 + 1, tT + 1, shade(body, 0.25), tx1 - tx0 - 1, 1); p(7, tT + 1, shade(body, 0.4), 2, torsoH - 2); }
+        if (robe) {
+          const tr = L.trim || shade(body, 0.4);
+          for (let y = tT + 1; y < footY; y++) p(9, y, tr, 2, 1);
+          p(tx0 - 2, footY - 1, bD, tx1 - tx0 + 5, 1);
+          if (front) { p(7, footY, boots, 2, 1); p(11, footY, boots, 2, 1); }
+        } else if (!mum && !L.fur && !L.nobelt) {
+          p(tx0, tB - 1, '#3a2416', tx1 - tx0 + 1, 1);
+          if (front) { p(9, tB - 1, '#e0b848', 2, 1); }
+          p(tx0, tB, bS, tx1 - tx0 + 1, 1);
+        }
+        if (front && !robe && !mum) {
+          // gola e detalhes
+          if (L.chestplate) {
+            p(tx0 + 1, tT + 1, bH, tx1 - tx0 - 1, 1); p(9, tT + 1, shade(body, 0.4), 2, torsoH - 3);
+            p(tx0 + 1, tT + 3, bS, tx1 - tx0 - 1, 1);
+          } else {
+            p(8, tT, bD, 4, 1); p(9, tT, skS, 2, 1);
+            if (torsoH > 5) p(9, tT + 2, bS, 1, torsoH - 4);
+          }
+        }
+        if (L.cape) {
+          if (front) { p(tx0 - 1, tT, L.cape, 1, torsoH + 2); p(tx1 + 1, tT, L.cape, 1, torsoH + 2); p(8, tT, shade(L.cape, 0.2), 4, 1); }
+          else { for (let y = tT; y <= Math.min(footY - 1, tB + 3); y++) p(tx0, y, y % 3 === 0 ? shade(L.cape, -0.15) : L.cape, tx1 - tx0 + 1, 1); p(tx0, tT, shade(L.cape, 0.2), tx1 - tx0 + 1, 1); }
+        }
       }
       // braços
-      const armC = skel && !L.body ? bone : (L.sleeve || body);
-      const arm = (x, sw) => {
-        for (let y = tT + sw; y < tB + sw; y++) p(x, y, armC);
-        p(x, tB + sw, skel ? bone : sk);
+      const armC = skel && !L.body ? bone : (L.sleeve || body), armS = skel && !L.body ? boneS : shade(armC, -0.22);
+      const arm = (x, sw, outer) => {
+        for (let y = tT + sw; y < tB + sw; y++) { if (skel && !L.body) p(x + (outer === x ? 1 : 0), y, bone); else { p(x, y, x === outer ? armS : armC); p(x + 1, y, x + 1 === outer ? armS : armC); } }
+        const hc = skel ? bone : sk;
+        p(x, tB + sw, hc, 2, 1); p(x, tB + sw + 1, skel ? boneS : skS, 2, 1);
       };
-      arm(tx0 - 1, frame === 1 ? 1 : 0); arm(tx1 + 1, frame === 2 ? 1 : 0);
-      if (L.shield && front) { p(tx0 - 3, tT, L.shield, 3, torsoH + 1); p(tx0 - 2, tT + 1, shade(L.shield, 0.35), 1, torsoH - 1); p(tx0 - 3, tT, shade(L.shield, -0.3), 3, 1); }
+      const ax0 = tx0 - 2, ax1 = tx1 + 1;
+      arm(ax0, frame === 1 ? 1 : 0, ax0); arm(ax1, frame === 2 ? 1 : 0, ax1 + 1);
+      if (L.shield && front) {
+        const sc = L.shield;
+        for (let y = tT + 1; y <= tB + 2; y++) { const w = y > tB ? 2 : 4; p(ax0 - 2 + (4 - w) / 2, y, sc, w, 1); }
+        p(ax0 - 2, tT + 1, shade(sc, 0.3), 4, 1); p(ax0 - 1, tT + 2, '#e0c060', 2, 3);
+      }
       // cabeça
-      for (let y = hT; y <= hB; y++) for (let x = 5; x <= 10; x++) {
-        if ((y === hT || y === hB) && (x === 5 || x === 10)) continue;
-        let col = skel ? bone : sk;
-        if (x === 5) col = skel ? bone : skL; if (y === hB) col = skel ? boneD : skD;
-        p(x, y, col); bandage(x, y);
+      for (let y = hT; y <= hB; y++) for (let x = 6; x <= 13; x++) {
+        if ((y === hT || y === hB) && (x === 6 || x === 13)) continue;
+        let col = sk;
+        if (x === 13 || y === hB) col = skS;
+        if (x === 6 && y > hT && y < hB) col = skH;
+        if (skel) col = (x === 13 || y === hB) ? boneS : bone;
+        p(x, y, col); band(x, y);
       }
       // orelhas
-      if (L.ears === 'elf') { p(4, hT + 2, sk); p(3, hT + 1, sk); p(11, hT + 2, sk); p(12, hT + 1, sk); }
-      if (L.ears === 'goblin') { p(3, hT + 2, sk, 2, 1); p(2, hT + 1, sk); p(11, hT + 2, sk, 2, 1); p(13, hT + 1, sk); }
-      if (L.catears) { const ec = L.hair || sk; p(5, hT - 1, sk, 2, 1); p(5, hT - 2, sk); p(9, hT - 1, sk, 2, 1); p(10, hT - 2, sk); p(6, hT - 1, '#e8a0a0'); p(9, hT - 1, '#e8a0a0'); }
+      if (L.ears === 'elf') { p(5, hT + 5, sk); p(4, hT + 4, sk); p(3, hT + 3, skH); p(14, hT + 5, skS); p(15, hT + 4, sk); p(16, hT + 3, skH); }
+      else if (L.ears === 'goblin') { p(3, hT + 3, sk, 3, 1); p(2, hT + 2, sk, 2, 1); p(14, hT + 3, sk, 3, 1); p(16, hT + 2, sk, 2, 1); }
+      else if (!covered && (noHair || hs === 0 || hs === 3 || hs === 4) && !L.catears) { p(5, hT + 4, skS, 1, 2); p(14, hT + 4, skS, 1, 2); }
+      if (L.catears) { const fc = hair; p(6, hT - 1, fc, 2, 1); p(6, hT - 2, fc); p(7, hT - 1, '#f0a0b0'); p(12, hT - 1, fc, 2, 1); p(13, hT - 2, fc); p(12, hT - 1, '#f0a0b0'); }
       if (front) {
-        if (skel) { p(6, hT + 2, '#1a1010', 2, 2); p(9, hT + 2, '#1a1010', 1, 2); p(8, hT + 2, '#1a1010'); p(6, hT + 2, eyes); p(9, hT + 2, eyes); p(7, hB - 1, '#5a5040', 2, 1); }
-        else {
-          const ey = L.snout ? hT + 2 : hT + 3;
-          p(6, ey, eyes); p(9, ey, eyes);
-          if (L.snout) { p(6, hT + 4, skL, 4, 2); p(7, hT + 4, skD); p(8, hT + 4, skD); }
-          if (L.muzzle) { p(7, hT + 4, '#e08080', 2, 1); p(6, hT + 5, skL, 4, 1); }
-          if (L.tusks) { p(6, hB, '#f0f0e0'); p(9, hB, '#f0f0e0'); }
-          if (L.beard) { const bc = L.beardC || hair; p(6, hT + 4, bc, 4, 2); p(5, hT + 4, bc, 1, 2); p(10, hT + 4, bc, 1, 2); p(6, hB + 1, bc, 4, 1); p(7, hB + 2, bc, 2, 1); }
-        }
-      }
-      if (L.horns) { p(5, hT - 1, '#e8dcc0'); p(4, hT - 2, '#e8dcc0'); p(10, hT - 1, '#e8dcc0'); p(11, hT - 2, '#e8dcc0'); }
-      // cabelo
-      if (!skel && !mum && !L.helm && !L.hood && L.hairStyle !== 2) {
-        const hs = L.hairStyle || 0;
-        if (front) {
-          p(6, hT, hair, 4, 1); p(5, hT + 1, hair, 6, 1); p(5, hT + 2, hair); p(10, hT + 2, hair);
-          if (hs === 1 || hs === 4) { p(5, hT + 3, hair, 1, 4); p(10, hT + 3, hair, 1, 4); p(4, hT + 3, hair, 1, 3); p(11, hT + 3, hair, 1, 3); }
-          if (hs === 3) { p(7, hT - 2, hair, 2, 2); }
-          if (hs === 4) { p(7, hT - 1, hair, 2, 1); }
-          p(6, hT, shade(hair, 0.25), 2, 1);
+        if (skel) {
+          p(7, ey, '#1a1010', 2, 2); p(11, ey, '#1a1010', 2, 2); p(8, ey, eyeC); p(11, ey, eyeC); p(9, ey + 2, '#3a3028', 2, 1);
+          for (let x = 7; x <= 12; x += 2) p(x, hB - 1, '#4a4034');
         } else {
-          for (let y = hT; y < hB; y++) p(5, y, hair, 6, 1);
-          p(6, hT, shade(hair, 0.25), 3, 1);
-          if (hs === 1) { p(5, hB, hair, 6, 3); }
-          if (hs === 4) { p(7, hB, hair, 2, 4); }
-          if (hs === 3) p(7, hT - 2, hair, 2, 2);
+          p(8, ey, eyeC, 1, 2); p(11, ey, eyeC, 1, 2);
+          if (!mum) { p(7, ey, '#f4f0ec'); p(12, ey, '#f4f0ec'); }
+          if (!L.snout && !L.muzzle && !L.beard) p(9, hB - 1, skD, 2, 1);
+          if ((L.blush || L.child) && !L.snout) { p(7, ey + 2, mix(sk, '#ff6070', 0.35)); p(12, ey + 2, mix(sk, '#ff6070', 0.35)); }
+          if (L.snout) { p(7, hT + 5, skH, 6, 3); p(8, hT + 5, skD); p(11, hT + 5, skD); p(7, hB, skS, 6, 1); }
+          if (L.muzzle) { p(9, ey + 2, '#e07888', 2, 1); p(8, ey + 3, skH, 4, 1); p(9, ey + 3, skD); p(10, ey + 3, skD); }
+          if (L.tusks) { p(8, hB - 1, '#f4f0e0'); p(11, hB - 1, '#f4f0e0'); p(8, hB, '#f4f0e0'); p(11, hB, '#f4f0e0'); }
+          if (L.beard) {
+            const bc = L.beardC || hair, bcS = shade(bc, -0.25), long = L.short >= 2;
+            p(6, hB - 3, bc, 1, 3); p(13, hB - 3, bcS, 1, 3);
+            p(7, hB - 1, bc, 6, 1); p(7, hB, bc, 6, 1); p(9, hB - 1, skD, 2, 1);
+            p(7, hB + 1, bc, 6, 1); p(8, hB + 2, bcS, 4, 1);
+            if (long) { p(8, hB + 3, bc, 4, 1); p(9, hB + 4, bcS, 2, 1); }
+            p(8, hB, hH, 1, 1);
+          }
         }
       }
-      if (!front && (skel || mum) && !L.hood && !L.helm) { /* cabeça careca já pintada */ }
+      if (L.horns) { const hc = '#ece0c4'; p(6, hT - 1, hc); p(5, hT - 2, hc); p(5, hT - 3, '#c8b898'); p(13, hT - 1, hc); p(14, hT - 2, hc); p(14, hT - 3, '#c8b898'); }
+      // cabelo
+      if (!noHair && !covered) {
+        if (front) {
+          p(7, hT - 1, hair, 6, 1); p(6, hT, hair, 8, 1); p(5, hT + 1, hair, 10, 1);
+          p(5, hT + 2, hair, 3, 1); p(10, hT + 2, hair, 5, 1); p(12, hT + 3, hS, 2, 1); p(6, hT + 3, hS, 1, 1);
+          p(5, hT + 3, hS, 1, 2); p(14, hT + 3, hS, 1, 2);
+          p(8, hT, hH, 3, 1); p(9, hT - 1, hH, 2, 1); p(7, hT + 1, hH, 2, 1);
+          if (hs === 1) { p(5, hT + 3, hair, 1, 8); p(6, hT + 4, hS, 1, 6); p(14, hT + 3, hS, 1, 8); p(13, hT + 4, hS, 1, 6); }
+          if (hs === 3) { for (let y = hT - 3; y <= hT + 1; y++) p(9, y, y < hT - 1 ? hH : hair, 2, 1); p(5, hT + 1, skS, 2, 2); p(13, hT + 1, skS, 2, 2); }
+          if (hs === 4) { p(8, hT - 3, hair, 4, 2); p(9, hT - 3, hH, 2, 1); }
+        } else {
+          for (let y = hT - 1; y <= hB - 1; y++) { const a = y === hT - 1 ? 7 : 5, w = y === hT - 1 ? 6 : 10; p(a, y, y % 3 === 0 ? hS : hair, w, 1); }
+          p(8, hT, hH, 4, 1); p(9, hT - 1, hH, 2, 1);
+          if (hs === 1) { p(5, hB, hair, 10, 4); p(6, hB + 3, hS, 8, 1); }
+          if (hs === 4) { p(8, hT - 3, hair, 4, 2); }
+          if (hs === 3) { p(9, hT - 3, hair, 2, 3); }
+        }
+      } else if (noHair && !covered && !skel && !mum && !front) {
+        p(6, hT, skH, 8, 1);
+      }
       if (L.hood) {
-        const hc = L.hood;
-        p(6, hT - 1, hc, 4, 1); p(5, hT, hc, 6, 2); p(4, hT + 1, hc, 1, 6); p(11, hT + 1, hc, 1, 6);
-        if (front) { p(5, hT + 2, hc); p(10, hT + 2, hc); p(6, hT + 2, shade(hc, -0.4), 4, 1); }
-        else for (let y = hT; y <= hB + 1; y++) p(5, y, hc, 6, 1);
+        const hc = L.hood, hcS = shade(hc, -0.3), hcH = shade(hc, 0.2);
+        p(7, hT - 2, hc, 6, 1); p(6, hT - 1, hc, 8, 1); p(5, hT, hc, 10, 2); p(5, hT + 2, hc, 2, 6); p(13, hT + 2, hcS, 2, 6); p(4, hT + 3, hcS, 1, 5); p(15, hT + 3, hcS, 1, 5);
+        p(7, hT - 2, hcH, 4, 1);
+        if (front) p(7, hT + 2, shade(hc, -0.45), 6, 1);
+        else for (let y = hT; y <= hB + 1; y++) p(5, y, y % 3 ? hc : hcS, 10, 1);
       }
       if (L.helm) {
-        const h = L.helm, hh = shade(h, 0.3);
-        p(6, hT - 1, h, 4, 1); p(5, hT, h, 6, 2); p(5, hT + 2, h); p(10, hT + 2, h); p(4, hT + 1, h, 1, 3); p(11, hT + 1, h, 1, 3);
-        p(6, hT - 1, hh, 2, 1);
-        if (front) p(7, hT + 2, h, 2, 2);
-        else for (let y = hT; y < hB; y++) p(5, y, h, 6, 1);
-        if (L.helmHorns) { p(3, hT - 1, '#e8dcc0'); p(3, hT - 2, '#e8dcc0'); p(12, hT - 1, '#e8dcc0'); p(12, hT - 2, '#e8dcc0'); }
+        const h = L.helm, hh = shade(h, 0.35), hsd = shade(h, -0.3);
+        p(7, hT - 2, h, 6, 1); p(6, hT - 1, h, 8, 1); p(5, hT, h, 10, 3); p(5, hT + 3, h, 2, 3); p(13, hT + 3, hsd, 2, 3);
+        p(7, hT - 2, hh, 3, 1); p(6, hT - 1, hh, 2, 1); p(5, hT + 2, hsd, 10, 1);
+        if (front) { p(9, hT + 3, h, 2, 2); p(6, hT + 1, '#ffffff'); p(13, hT + 1, '#ffffff'); }
+        else for (let y = hT + 3; y < hB; y++) p(6, y, y % 2 ? h : hsd, 8, 1);
+        if (L.helmHorns) { const hc = '#ece0c4'; p(4, hT, hc); p(3, hT - 1, hc); p(3, hT - 2, hc); p(15, hT, hc); p(16, hT - 1, hc); p(16, hT - 2, hc); }
       }
-      if (L.crown) { const g = '#f0c030'; p(5, hT - 1, g, 6, 1); p(5, hT - 2, g); p(7, hT - 2, g); p(8, hT - 2, g); p(10, hT - 2, g); p(7, hT - 1, '#e02040'); }
+      if (L.crown) { const g = '#f4c838', gS = '#b08820'; p(6, hT - 1, gS, 8, 1); p(6, hT - 2, g, 8, 1); p(6, hT - 3, g); p(9, hT - 3, g, 2, 1); p(13, hT - 3, g); p(9, hT - 2, '#e02848', 2, 1); }
     } else {
       // ---------- PERFIL (direita) ----------
-      const sx0 = 6 - bulky, sx1 = 9 + bulky;
-      drawTail(true);
-      if (L.shield) { p(sx0 - 1, tT, shade(L.shield, -0.15), 2, torsoH); }
+      const sx0 = 7 - bulky, sx1 = 12 + bulky;
+      if (L.tail) { const tc = L.tailC || sk, sw = frame === 1 ? -1 : frame === 2 ? 1 : 0; p(sx0 - 1, tB - 1, tc); p(sx0 - 2, tB, tc); p(sx0 - 3, tB + sw, tc); p(sx0 - 4, tB - 1 + sw, shade(tc, -0.2)); }
+      if (!noHair && !covered && hs === 1) for (let y = hT + 2; y <= hB + 3; y++) p(6, y, hS, 3, 1);
+      if (L.shield) { p(sx0 - 1, tT + 1, shade(L.shield, -0.25), 2, torsoH); }
+      // braço de trás
+      const armC = skel && !L.body ? bone : (L.sleeve || body);
+      const bax = 9 + (frame === 1 ? -1 : frame === 2 ? 1 : 0);
+      if (!(skel && !L.body)) { for (let y = tT + 1; y < tB; y++) p(bax, y, shade(armC, -0.35)); p(bax, tB, skD); }
       // pernas
-      const legCol = (back) => skel && !L.legs ? (back ? boneD : bone) : back ? shade(legsC, -0.2) : legsC;
       if (!robe) {
-        const off = frame === 0 ? [0, 0] : frame === 1 ? [-1, 1] : [1, -1];
+        const off = frame === 0 ? [0, 0] : frame === 1 ? [-2, 2] : [2, -2];
         for (let k = 0; k < 2; k++) {
-          const lx = 7 + (k === 0 ? 0 : 1) + off[k];
+          const back = k === 0;
           for (let y = legTop; y <= footY; y++) {
-            const foot = y === footY;
-            p(lx, y, foot ? boots : legCol(k === 0));
-            if (foot) p(lx + 1, y, boots);
+            const t = (y - legTop) / Math.max(1, legH);
+            const lx = 9 + Math.round(off[k] * t) + (back ? -1 : 0);
+            const foot = y >= footY - 1;
+            let col = foot ? (back ? btS : boots) : (back ? lS : legs);
+            if (skel && !L.legs) col = back ? boneS : bone;
+            p(lx, y, col, 2, 1);
+            if (y === footY && !(skel && !L.legs)) p(lx + 2, y, back ? btS : boots);
+            if (y === footY - 1 && !back && !(skel && !L.legs)) p(lx, y, btH);
           }
         }
       }
       // torso
       if (skel && !L.body) {
-        for (let y = tT; y <= tB; y++) { p(7, y, bone); if ((y - tT) % 2 === 0) p(sx0, y, bone, sx1 - sx0 + 1, 1); }
+        for (let y = tT; y <= tB; y++) { p(9, y, bone); if ((y - tT) % 2 === 0) p(sx0 + 1, y, bone, sx1 - sx0, 1); }
       } else {
         const bot = robe ? footY - 1 : tB;
         for (let y = tT; y <= bot; y++) {
-          const ext = robe && y > tB ? Math.min(1, Math.floor((y - tB) / 2)) : 0;
+          const ext = robe && y > tB ? Math.min(2, Math.floor((y - tB + 1) / 2)) : 0;
           for (let x = sx0 - ext; x <= sx1 + ext; x++) {
             let col = body;
-            if (x === sx1 + ext) col = shade(body, 0.12); else if (x === sx0 - ext) col = shade(body, -0.25);
-            if (L.zombie && ((x * 7 + y * 3) % 11 === 0)) col = shade(body, -0.4);
-            p(x, y, col); bandage(x, y);
+            if (x >= sx1 + ext - 1) col = bH; else if (x === sx0 - ext) col = bD; else if (x === sx0 - ext + 1) col = bS;
+            if (L.zombie && ((x * 7 + y * 3) % 9 === 0)) col = bD;
+            p(x, y, col); band(x, y);
           }
         }
-        if (robe) { p(sx0 + 1, footY, boots, 3, 1); }
-        else if (!mum && !L.fur && !L.nobelt) p(sx0, tB, '#3a2818', sx1 - sx0 + 1, 1);
-        if (L.cape) { p(sx0 - 1, tT, L.cape, 1, torsoH + 3); p(sx0 - 2, tT + 3, L.cape, 1, torsoH); }
+        if (robe) { p(sx0 + 1, footY, boots, 4, 1); p(sx1 - 1, tT + 1, L.trim || shade(body, 0.4), 1, footY - tT - 1); }
+        else if (!mum && !L.fur && !L.nobelt) { p(sx0, tB - 1, '#3a2416', sx1 - sx0 + 1, 1); p(sx1, tB - 1, '#e0b848'); }
+        if (L.cape) { p(sx0 - 1, tT, L.cape, 2, torsoH + 3); p(sx0 - 2, tT + 3, shade(L.cape, -0.15), 1, torsoH); }
       }
       // cabeça
-      for (let y = hT; y <= hB; y++) for (let x = 6; x <= 10; x++) {
-        if ((y === hT || y === hB) && (x === 6 || x === 10)) continue;
-        let col = skel ? bone : sk; if (y === hB) col = skel ? boneD : skD;
-        p(x, y, col); bandage(x, y);
+      for (let y = hT; y <= hB; y++) for (let x = 7; x <= 13; x++) {
+        if ((y === hT || y === hB) && (x === 7 || x === 13)) continue;
+        let col = skel ? bone : sk; if (y === hB || x === 7) col = skel ? boneS : skS;
+        p(x, y, col); band(x, y);
       }
-      const ey = L.snout ? hT + 2 : hT + 3;
-      if (skel) { p(9, hT + 2, '#1a1010', 1, 2); p(9, hT + 2, eyes); p(10, hB - 1, '#5a5040'); }
-      else p(9, ey, eyes);
-      if (L.snout) { p(11, hT + 3, sk, 2, 2); p(12, hT + 3, skD); p(11, hT + 4, skD, 2, 1); }
-      if (L.muzzle) { p(11, hT + 4, skL); p(11, hT + 3, '#e08080'); }
-      if (L.tusks) p(10, hB + 0, '#f0f0e0');
-      if (L.ears === 'elf') { p(6, hT + 2, sk); p(5, hT + 1, sk); p(4, hT, sk); }
-      if (L.ears === 'goblin') { p(5, hT + 2, sk); p(4, hT + 2, sk); p(3, hT + 1, sk); }
-      if (L.catears) { p(7, hT - 1, sk, 2, 1); p(7, hT - 2, sk); }
-      if (L.horns) { p(7, hT - 1, '#e8dcc0'); p(6, hT - 2, '#e8dcc0'); p(5, hT - 2, '#e8dcc0'); }
-      if (L.beard && !skel) { const bc = L.beardC || hair; p(9, hT + 4, bc, 2, 2); p(8, hB, bc, 3, 1); p(8, hB + 1, bc, 2, 1); }
-      if (!skel && !mum && !L.helm && !L.hood && L.hairStyle !== 2) {
-        const hs = L.hairStyle || 0;
-        p(6, hT, hair, 4, 1); p(6, hT + 1, hair, 4, 1); p(6, hT + 2, hair, 2, 1); p(6, hT + 3, hair);
-        if (hs === 1) { p(5, hT + 1, hair, 1, 6); p(6, hT + 4, hair, 1, 3); }
-        if (hs === 4) { p(5, hT + 2, hair, 1, 4); p(4, hT + 4, hair, 1, 2); }
-        if (hs === 3) p(7, hT - 2, hair, 2, 2);
-        p(7, hT, shade(hair, 0.25), 2, 1);
+      if (!skel && !L.snout) p(14, ey + 1, skS);
+      if (skel) { p(11, ey, '#1a1010', 2, 2); p(12, ey, eyeC); p(12, hB - 1, '#4a4034'); }
+      else {
+        p(12, ey, eyeC, 1, 2); if (!mum) p(11, ey, '#f4f0ec');
+        if (!L.snout && !L.muzzle && !L.beard) p(12, hB - 1, skD);
+        if (L.blush || L.child) p(11, ey + 2, mix(sk, '#ff6070', 0.35));
       }
-      if (L.hood) { const hc = L.hood; p(6, hT - 1, hc, 4, 1); p(5, hT, hc, 5, 2); p(5, hT + 2, hc, 2, 5); p(10, hT, hc, 1, 2); }
-      if (L.helm) { const h = L.helm; p(6, hT - 1, h, 4, 1); p(5, hT, h, 6, 2); p(5, hT + 2, h, 2, 3); p(10, hT + 2, h); p(7, hT - 1, shade(h, 0.3), 2, 1); if (L.helmHorns) { p(5, hT - 2, '#e8dcc0'); p(4, hT - 3, '#e8dcc0'); } }
-      if (L.crown) { const g = '#f0c030'; p(6, hT - 1, g, 5, 1); p(6, hT - 2, g); p(8, hT - 2, g); p(10, hT - 2, g); }
-      // braço frontal
-      const armC = skel && !L.body ? bone : (L.sleeve || body);
-      const ax = 8 + (frame === 1 ? 1 : frame === 2 ? -1 : 0);
-      for (let y = tT; y < tB; y++) p(ax, y, armC);
-      p(ax, tB, skel ? bone : sk);
+      if (L.snout) { p(13, hT + 4, sk, 3, 3); p(15, hT + 4, skD); p(13, hT + 6, skS, 3, 1); }
+      if (L.muzzle) { p(14, ey + 2, '#e07888'); p(13, ey + 3, skH, 2, 1); }
+      if (L.tusks) { p(13, hB - 1, '#f4f0e0'); p(13, hB, '#f4f0e0'); }
+      if (L.ears === 'elf') { p(8, hT + 3, sk); p(7, hT + 2, sk); p(6, hT + 1, skH); p(5, hT, skH); }
+      else if (L.ears === 'goblin') { p(7, hT + 3, sk); p(5, hT + 3, sk, 2, 1); p(4, hT + 2, sk); }
+      else if (!covered && !L.catears) p(9, hT + 4, skS, 1, 2);
+      if (L.catears) { p(9, hT - 1, hair, 2, 1); p(9, hT - 2, hair); p(10, hT - 1, '#f0a0b0'); }
+      if (L.horns) { p(9, hT - 1, '#ece0c4'); p(8, hT - 2, '#ece0c4'); p(7, hT - 3, '#c8b898'); }
+      if (L.beard && !skel) { const bc = L.beardC || hair; p(10, hB - 2, bc, 4, 3); p(10, hB + 1, bc, 3, 1); if (L.short >= 2) p(10, hB + 2, shade(bc, -0.25), 2, 2); }
+      if (!noHair && !covered) {
+        p(8, hT - 1, hair, 5, 1); p(7, hT, hair, 7, 1); p(7, hT + 1, hair, 7, 1); p(6, hT + 1, hair, 1, 4); p(7, hT + 2, hair, 3, 2); p(7, hT + 4, hS, 2, 2);
+        p(12, hT + 2, hair, 2, 1); p(9, hT - 1, hH, 3, 1); p(8, hT, hH, 2, 1);
+        if (hs === 1) { p(6, hT + 1, hair, 2, 8); p(7, hT + 6, hS, 1, 3); }
+        if (hs === 3) { p(9, hT - 3, hair, 3, 2); p(10, hT - 3, hH); }
+        if (hs === 4) { p(6, hT - 1, hair, 3, 3); }
+      }
+      if (L.hood) { const hc = L.hood; p(8, hT - 2, hc, 5, 1); p(6, hT - 1, hc, 8, 2); p(6, hT + 1, hc, 3, 7); p(13, hT + 1, shade(hc, -0.3), 1, 2); p(5, hT + 2, shade(hc, -0.3), 1, 6); }
+      if (L.helm) { const h = L.helm; p(8, hT - 2, h, 5, 1); p(6, hT - 1, h, 8, 3); p(6, hT + 2, h, 3, 4); p(13, hT + 2, h, 1, 2); p(8, hT - 2, shade(h, 0.35), 3, 1); p(6, hT + 1, shade(h, -0.3), 8, 1); if (L.helmHorns) { p(7, hT - 2, '#ece0c4'); p(6, hT - 3, '#ece0c4'); } }
+      if (L.crown) { const g = '#f4c838'; p(7, hT - 2, g, 7, 1); p(7, hT - 3, g); p(10, hT - 3, g); p(13, hT - 3, g); p(10, hT - 2, '#e02848'); }
+      // braço da frente
+      const ax = 10 + (frame === 1 ? 1 : frame === 2 ? -1 : 0);
+      for (let y = tT + 1; y < tB; y++) p(ax, y, skel && !L.body ? bone : armC, 2, 1);
+      p(ax, tT + 1, skel && !L.body ? bone : shade(armC, 0.15), 2, 1);
+      p(ax, tB, skel ? bone : sk, 2, 1); p(ax, tB + 1, skel ? boneS : skS, 2, 1);
     }
-    outline(c);
+    outline(c, '#1a1018');
     return c;
   }
   S.humanoid = humanoid;

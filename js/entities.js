@@ -134,7 +134,7 @@ class Actor {
   }
   drawWeapon(ctx, camX, camY, wimg, wclass, swing) {
     if (!wimg) return;
-    let hx = this.x - camX, hy = this.y - camY - 7 - this.z;
+    let hx = this.x - camX, hy = this.y - camY - 6 - this.z;
     const d = this.dir;
     const sc = this.sizeScale || 1;
     if (d === 'down') hx += 5 * sc; else if (d === 'up') hx -= 5 * sc; else if (d === 'right') hx += 2 * sc; else hx -= 2 * sc;
@@ -597,7 +597,8 @@ class NPC extends Actor {
   update(dt) {
     this.moving = false;
     if (this.talkT > 0) { this.talkT -= dt; const P = Game.player; this.setDir(angleTo(this.x, this.y, P.x, P.y)); return; }
-    if (this.role !== 'citizen') {
+    const wander = this.role === 'citizen' || this.role === 'resident' || this.role === 'patron' || this.role === 'child' || this.role === 'kid' || this.role === 'spouse';
+    if (!wander) {
       const P = Game.player;
       if (P && dist(this.x, this.y, P.x, P.y) < 40) this.setDir(angleTo(this.x, this.y, P.x, P.y));
       return;
@@ -605,7 +606,7 @@ class NPC extends Actor {
     this.wT -= dt;
     if (this.wT <= 0) {
       this.wT = 2 + Math.random() * 5;
-      if (Math.random() < 0.6) { const a = Math.random() * Math.PI * 2, r = 16 + Math.random() * 90; this.wp = { x: this.home.x + Math.cos(a) * r, y: this.home.y + Math.sin(a) * r, t: 4 }; }
+      if (Math.random() < (this.indoor ? 0.4 : 0.6)) { const a = Math.random() * Math.PI * 2, r = this.indoor ? 8 + Math.random() * 30 : 16 + Math.random() * 90; this.wp = { x: this.home.x + Math.cos(a) * r, y: this.home.y + Math.sin(a) * r, t: 4 }; }
     }
     if (this.wp) {
       this.wp.t -= dt;
@@ -619,7 +620,7 @@ class NPC extends Actor {
     }
   }
   die() { }
-  get hidden() { return this.sleeper && Game.isNight(); }
+  get hidden() { return this.sleeper && !this.indoor && Game.isNight(); }
   draw(ctx, camX, camY) {
     this.drawShadow(ctx, camX, camY);
     const r = this.drawBody(ctx, camX, camY, this.S);

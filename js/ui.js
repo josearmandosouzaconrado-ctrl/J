@@ -114,8 +114,9 @@ const UI = {
   },
   // ---------- Criação de personagem ----------
   showCreate() {
-    const c = this.cc = this.cc || { race: 'humano', cls: 'guerreiro', sex: 'm', skin: 0, hair: 0, hairStyle: 0, name: '', seed: '' };
+    const c = this.cc = this.cc || { race: 'humano', cls: 'aventureiro', sex: 'm', skin: 0, hair: 0, hairStyle: 0, name: '', seed: '' };
     const render = () => {
+      c.cls = 'aventureiro';
       const R = RACES[c.race], C = CLASSES[c.cls];
       c.skin = Math.min(c.skin, R.skins.length - 1); c.hair = Math.min(c.hair, R.hairs.length - 1);
       if (!c.name) { const N = NAMES[c.race]; c.name = N[c.sex][Math.floor(Math.random() * N[c.sex].length)]; }
@@ -143,9 +144,7 @@ const UI = {
               <label>Raça</label>
               <div class="choice-grid">${Object.entries(RACES).map(([k, r]) => `<button class="choice ${c.race === k ? 'on' : ''}" ${f(() => { c.race = k; c.name = ''; render(); })}>${this.portrait(this.previewLook(Object.assign({}, c, { race: k, skin: 0, hair: 0 })))}<span>${r.name}</span></button>`).join('')}</div>
               <div class="desc"><b>${R.name}:</b> ${R.desc}<br><span class="dim">Habilidade: ${RACE_ABILITIES[R.ability].name} — ${RACE_ABILITIES[R.ability].desc}</span></div>
-              <label>Classe</label>
-              <div class="choice-grid cls">${Object.entries(CLASSES).map(([k, cl]) => `<button class="choice ${c.cls === k ? 'on' : ''}" ${f(() => { c.cls = k; render(); })}><span style="color:${cl.color === '#404040' ? '#a0a0a0' : shade(cl.color, 0.3)}">${cl.name}</span></button>`).join('')}</div>
-              <div class="desc"><b>${C.name}:</b> ${C.desc}<br><span class="dim">Início: ${C.items.map(s => { const [id, n] = Items.parse(s); return ITEMS[id].name + (n > 1 ? ' x' + n : ''); }).join(', ')}${C.spells.length ? '<br>Magias: ' + C.spells.map(s => SPELLS[s].name).join(', ') : ''}</span></div>
+              <div class="desc"><b>Sem classe fixa.</b> Você começa como Aventureiro e decide jogando: quem usa espadas vira Guerreiro, quem lança magias vira Mago, quem atira flechas vira Arqueiro... Você também pode escolher uma bênção nas <b>Pedras do Destino</b> perto da capital.</div>
             </div>
           </div>
           <div class="row end">
@@ -169,7 +168,6 @@ const UI = {
     if (R.ears) L.ears = R.ears; if (R.tall) L.tall = 1; if (R.short) L.short = R.short; if (R.bulky) L.bulky = true;
     if (R.beard && c.sex === 'm') L.beard = true; if (R.tusks) L.tusks = true; if (R.snout) L.snout = true; if (R.horns) L.horns = true;
     if (R.tail) { L.tail = true; L.tailC = L.skin; } if (R.catears) L.catears = true; if (R.muzzle) L.muzzle = true;
-    if (c.cls === 'mago') L.robe = true;
     return L;
   },
   story(lines, cb) {
@@ -255,6 +253,13 @@ const UI = {
       this.dialog(a.name, a.look, esc(lines[Math.floor(Math.random() * lines.length)]), [{ label: 'Tchau' }]);
       return;
     }
+    if (a.isFollower && a.spouse) {
+      this.dialog(a.name, a.look, 'Estou com você, meu amor. Para onde vamos?', [
+        { label: 'Continue comigo' },
+        { label: 'Volte para casa', fn: () => { P.follower = null; a.isFollower = false; a.vanish(); this.close(); Game.toast(`${a.name} voltou para casa.`, '#ff90c0'); } }
+      ]);
+      return;
+    }
     if (a.isFollower) {
       this.dialog(a.name, a.look, 'Às suas ordens, chefe. Para onde vamos?', [
         { label: 'Continue me seguindo' },
@@ -264,6 +269,9 @@ const UI = {
     }
     a.talkT = 3;
     const s = a.s;
+    if (a.role === 'owner' && a.building) { this._ownerNpc = a; this.building(a.building); return; }
+    if (a.role === 'resident' || a.role === 'spouse') { this.personal(a); return; }
+    if (a.role === 'child' || a.role === 'kid') { this.childNPC(a); return; }
     if (a.role === 'merchant') { this.shop({ settlement: s, tx: Math.round(a.home.x), ty: Math.round(a.home.y), role: 'stall', name: 'Barraca de ' + a.name.split(' ')[0], owner: { name: a.name } }, 'stall'); return; }
     if (a.role === 'quest') { this.questGiver(a); return; }
     const greet = GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
@@ -306,6 +314,8 @@ const UI = {
     const deliveries = P.quests.filter(q => q.kind === 'deliver' && q.t.dest === s.id);
     if (deliveries.length) opts.push({ label: `📦 Entregar encomenda (${deliveries.length})`, cls: 'gold', fn: () => { Quests.deliverHere(s); this.building(b); } });
     let text = '';
+    const own = this._ownerNpc && this._ownerNpc.building === b && Game.level.isInterior ? this._ownerNpc : null;
+    if (own && b.role !== 'ruler' && b.role !== 'guild') opts.push({ label: 'Conversa pessoal 💬', fn: () => this.personal(own, () => this.building(b)) });
     switch (b.role) {
       case 'ruler': return this.ruler(b);
       case 'guild': return this.guild(b);
@@ -329,9 +339,11 @@ const UI = {
         opts.push({ label: 'Pedir cura (grátis)', fn: () => { P.hp = P.stat.maxHp; P.fx = []; Sfx.play('learn'); Game.toast('Você foi curado.', '#80ff80'); this.building(b); } });
         opts.push({ label: 'Bênção divina (50 ouro)', fn: () => { if (P.gold < 50) return Game.toast('Ouro insuficiente.', '#ff8080'); P.gold -= 50; P.addBuff('dmg', 0.1, 900, 'Bênção'); P.addBuff('regen', 2, 900, 'Bênção'); P.addBuff('resFire', 0.15, 900); P.addBuff('resFrost', 0.15, 900); Sfx.play('learn'); Game.toast('Abençoado! +10% dano e regeneração.', '#fff0a0'); this.building(b); } });
         opts.push({ label: 'Comprar itens sagrados', fn: () => this.shop(b, 'temple') });
+        opts.push({ label: 'Orfanato: adotar uma criança', fn: () => this.adopt(b) });
         break;
       case 'stable':
         text = P.hasHorse ? 'Seu cavalo está bem cuidado! Use o botão do cavalo para montar.' : 'Um bom cavalo deixa qualquer viagem mais curta. 800 de ouro.';
+        opts.push({ label: 'Animais de estimação', fn: () => this.pets(b) });
         if (!P.hasHorse) opts.push({ label: 'Comprar cavalo (800 ouro)', cls: 'gold', fn: () => { if (P.gold < 800) return Game.toast('Ouro insuficiente.', '#ff8080'); P.gold -= 800; P.hasHorse = true; Sfx.play('horse'); Game.centerMsg('CAVALO ADQUIRIDO!', 'Use o botão de montaria (ou H) para cavalgar.'); this.close(); } });
         break;
       case 'playerhouse': {
@@ -579,7 +591,7 @@ const UI = {
     this.menuTab = tab || this.menuTab || 'inv';
     const P = Game.player;
     if (P.pendingLevels > 0 && !tab) { this.levelUp(); return; }
-    const tabs = [['inv', 'Mochila'], ['char', 'Herói'], ['magic', 'Magias'], ['quests', 'Missões'], ['guilds', 'Guildas'], ['map', 'Mapa'], ['system', 'Sistema']];
+    const tabs = [['inv', 'Mochila'], ['char', 'Herói'], ['magic', 'Magias'], ['quests', 'Missões'], ['family', 'Família'], ['guilds', 'Guildas'], ['map', 'Mapa'], ['system', 'Sistema']];
     const f = this.reg();
     const head = `<div class="tabs top">${tabs.map(([k, n]) => `<button class="tab ${this.menuTab === k ? 'on' : ''}" ${f(() => k === 'map' ? this.openMap() : this.openMenu(k))}>${n}</button>`).join('')}<button class="tab close" ${f(() => this.close())}>✕</button></div>`;
     let body = '';
@@ -589,6 +601,7 @@ const UI = {
       case 'magic': body = this.magicTab(f); break;
       case 'quests': body = this.questTab(f); break;
       case 'guilds': body = this.guildTab(f); break;
+      case 'family': body = this.familyTab(f); break;
       case 'system': body = this.systemTab(f); break;
     }
     const el = this.show('menu', `<div class="panel menu">${head}<div class="menu-body">${body}</div></div>`);
@@ -641,13 +654,14 @@ const UI = {
     const res = ['fire', 'frost', 'poison'].map(e => `${({ fire: 'Fogo', frost: 'Gelo', poison: 'Veneno' })[e]} ${Math.round(P.res(e) * 100)}%`).join(' • ');
     return `<div class="char">
       <div class="char-left">
-        <div class="row">${this.portrait(P.look)}<div><b class="big">${esc(P.name)}</b><br>${R.name} ${C.name}<br>Nível <b>${P.level}</b> • XP ${P.xp}/${P.needXP()}</div></div>
+        <div class="row">${this.portrait(P.look)}<div><b class="big">${esc(P.name)}</b><br>${R.name} • <span class="gold">${esc(P.style)}</span><br>Nível <b>${P.level}</b> • XP ${P.xp}/${P.needXP()}</div></div>
         <div class="stats">
           <div>Vida <b>${Math.round(P.hp)}/${S.maxHp}</b></div><div>Magia <b>${Math.round(P.mp)}/${S.maxMp}</b></div><div>Vigor <b>${Math.round(P.st)}/${S.maxSt}</b></div>
           <div>Armadura <b>${S.armor}</b></div><div>Crítico <b>${Math.round((0.05 + S.crit) * 100)}%</b></div><div>Poder mágico <b>+${Math.round(S.magic * 100)}%</b></div>
           <div>Velocidade <b>${Math.round(S.speed / 70 * 100)}%</b></div><div>Almas de dragão <b>${P.souls}</b></div><div>Ouro <b class="gold">${fmt(P.gold)}</b></div>
         </div>
         <div class="dim">Resistências: ${res}</div>
+        <div class="desc"><b>Estilo: ${esc(P.style)}</b> — ${(STYLE_BONUS[P.style] || {}).d || ''}<br><span class="dim">Seu estilo muda conforme as habilidades que você mais usa.</span><br><b>Bênção:</b> ${P.sign ? DESTINY[P.sign].name + ' — ' + DESTINY[P.sign].desc : '<span class="dim">nenhuma (visite as Pedras do Destino perto de Valdoria)</span>'}</div>
         <div class="desc"><b>${A.name}</b> (racial): ${A.desc}</div>
         <h3>Habilidades</h3><div class="skills">${skills}</div>
         <h3>Estatísticas</h3><div class="dim small">Inimigos: ${P.stats.kills} • Chefes: ${P.stats.bosses} • Dragões: ${P.stats.dragons} • Missões: ${P.stats.quests} • Baús: ${P.stats.chests} • Mortes: ${P.stats.deaths} • Distância: ${(P.stats.dist / 16 * 2 / 1000).toFixed(1)} km • Tempo: ${Math.floor(P.stats.playTime / 3600)}h${Math.floor(P.stats.playTime / 60) % 60}m</div>
@@ -706,7 +720,8 @@ const UI = {
     cv.width = window.innerWidth; cv.height = window.innerHeight;
     this.mcv = cv; this.mctx = cv.getContext('2d');
     if (!this.mz) this.mz = Math.max(2, Math.min(cv.width, cv.height) / 256 * 1.1);
-    this.mox = P.x / 256; this.moy = P.y / 256;
+    const wp0 = Game.level.isWorld ? P : (Game.worldPos || P);
+    this.mox = wp0.x / 256; this.moy = wp0.y / 256;
     // névoa
     const fog = Sprites.cv(256, 256), fx = fog.getContext('2d'), img = fx.createImageData(256, 256);
     for (let i = 0; i < 65536; i++) { img.data[i * 4 + 3] = M.explored[i] ? 0 : 205; img.data[i * 4] = 20; img.data[i * 4 + 1] = 16; img.data[i * 4 + 2] = 28; }
@@ -760,7 +775,7 @@ const UI = {
         if (z > 5 || this.mapSel === m) { ctx.fillStyle = '#000'; ctx.fillText(m.name, x + 1, y - 6); ctx.fillStyle = '#ffc0c0'; ctx.fillText(m.name, x, y - 7); }
       } else {
         ctx.fillStyle = '#1a1010'; ctx.fillRect(x - 3, y - 3, 7, 7);
-        ctx.fillStyle = m.p.kind === 'runestone' ? '#60e0ff' : m.p.kind === 'shrine' ? '#fff0a0' : (Game.campCleared(m.p) ? '#808080' : '#ff9030'); ctx.fillRect(x - 2, y - 2, 5, 5);
+        ctx.fillStyle = m.p.kind === 'destiny' ? '#ff80ff' : m.p.kind === 'runestone' ? '#60e0ff' : m.p.kind === 'shrine' ? '#fff0a0' : (Game.campCleared(m.p) ? '#808080' : '#ff9030'); ctx.fillRect(x - 2, y - 2, 5, 5);
         if (z > 5 || this.mapSel === m) { ctx.fillStyle = '#000'; ctx.fillText(m.name, x + 1, y - 5); ctx.fillStyle = '#e0f0ff'; ctx.fillText(m.name, x, y - 6); }
       }
     }
@@ -770,7 +785,8 @@ const UI = {
     if (tgt) { const [x, y] = toS(tgt.x, tgt.y); const r = 6 + Math.sin(Game.t * 6) * 2; ctx.strokeStyle = '#ffd040'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r + (tgt.region ? 20 : 0), 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = '#ffd040'; ctx.fillText('★', x, y + 5); }
     for (const t of M.treasures) { const [x, y] = toS(t.x, t.y); ctx.fillStyle = '#ff3030'; ctx.font = 'bold 18px VT323, monospace'; ctx.fillText('X', x, y + 5); }
     // jogador
-    const [px, py] = toS(P.x / 16, P.y / 16);
+    const wp = Game.level.isWorld ? P : (Game.worldPos || P);
+    const [px, py] = toS(wp.x / 16, wp.y / 16);
     ctx.save(); ctx.translate(px, py); ctx.rotate(P.face + Math.PI / 2);
     ctx.fillStyle = '#000'; ctx.beginPath(); ctx.moveTo(0, -9); ctx.lineTo(7, 7); ctx.lineTo(-7, 7); ctx.fill();
     ctx.fillStyle = '#ff3030'; ctx.beginPath(); ctx.moveTo(0, -7); ctx.lineTo(5, 5); ctx.lineTo(-5, 5); ctx.fill();
@@ -897,7 +913,7 @@ const UI = {
       this.setStyle('compass-arrow', 'transform', `rotate(${(a * 180 / Math.PI + 90).toFixed(0)}deg)`);
       this.setText('compass-dist', d < 12 ? 'Aqui!' : (d * 2 >= 1000 ? (d * 2 / 1000).toFixed(1) + ' km' : Math.round(d * 2) + ' m'));
       this.setClass('compass', 'hidden', false);
-    } else if (tgt && !Game.level.isWorld && tgt.dungeon === Game.level.def.id) {
+    } else if (tgt && Game.level.def && tgt.dungeon === Game.level.def.id) {
       this.setText('compass-dist', 'Nesta masmorra'); this.setClass('compass', 'hidden', false); this.setStyle('compass-arrow', 'transform', 'rotate(0deg)');
     } else this.setClass('compass', 'hidden', true);
     // barra de chefe
