@@ -99,7 +99,7 @@ const _niCache = new Map();
 function nonIndexed(geo) { let g = _niCache.get(geo); if (!g) { g = geo.index ? geo.toNonIndexed() : geo; _niCache.set(geo, g); } return g; }
 const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _v = new THREE.Vector3(), _s = new THREE.Vector3(), _n3 = new THREE.Matrix3(), _col = new THREE.Color();
 class GeoBuilder {
-  constructor() { this.p = []; this.n = []; this.c = []; }
+  constructor() { this.p = []; this.n = []; this.c = []; this.cf = null; }
   add(geo, color, sx, sy, sz, x, y, z, rx, ry, rz, parent) {
     _e.set(rx || 0, ry || 0, rz || 0); _q.setFromEuler(_e);
     _m4.compose(_v.set(x, y, z), _q, _s.set(sx, sy, sz));
@@ -109,8 +109,8 @@ class GeoBuilder {
     const t = new THREE.Vector3();
     for (let i = 0; i < pa.count; i++) {
       t.fromBufferAttribute(pa, i).applyMatrix4(_m4); this.p.push(t.x, t.y, t.z);
+      const cc = this.cf ? this.cf(t.x, t.y, t.z, _col) : _col; this.c.push(cc.r, cc.g, cc.b);
       t.fromBufferAttribute(na, i).applyMatrix3(_n3).normalize(); this.n.push(t.x, t.y, t.z);
-      this.c.push(_col.r, _col.g, _col.b);
     }
   }
   tri(a, b, c, color) {

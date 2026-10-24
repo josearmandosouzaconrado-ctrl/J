@@ -523,7 +523,7 @@ function updateUnit(u, dt) {
     m.position.set(u.x, Math.max(gh, (hf + hb) / 2) + 0.02, u.z);
     m.rotation.y = u.heading; m.rotation.x = Math.atan2(hb - hf, L * 2); m.rotation.z = Math.atan2(hr - hl, 3) * 0.6;
     const ud = m.userData;
-    if (ud.trackMat) ud.trackMat.map.offset.y -= u.speedNow * dt * 0.12;
+    if (ud.trackMat) ud.trackMat.map.offset.x -= u.speedNow * dt * 1.15;
     for (const w of ud.wheels) w.rotation.x += u.speedNow * dt * 2.4;
     if (ud.gun) { u.recoil = Math.max(0, u.recoil - dt * 3); ud.gun.position.z = ud.gun.userData.z0 === undefined ? (ud.gun.userData.z0 = ud.gun.position.z) : ud.gun.userData.z0 - u.recoil * 0.6; }
     if (u.speedNow > 1 && rand() < dt * 4) emit(u.x - sx * L, u.y + 1.6, u.z - cz * L, { c: 0x5a5852, life: 1.2, vy: 1.5, s0: 0.4, s1: 1.4, a: 0.35 });
@@ -545,21 +545,30 @@ function tryFire(u, t, dist, dt) {
   fireWeapon(u, t, d, dist);
 }
 function animSoldier(u, dt, moving, aiming) {
-  const ud = u.mesh.userData;
+  const ud = u.mesh.userData, k = Math.min(1, dt * 12);
   u.crouch = !moving && u.cover === 1;
+  const aim = (aiming && !moving) || S.time - u.fireT < 1.0;
+  let tL = 0, tR = 0, sL = 0.08, sR = 0.08;
   if (moving) {
     u.ph += dt * Math.max(2, u.speedNow) * 1.45;
     const s = Math.sin(u.ph);
-    ud.legL.rotation.x = s * 0.75; ud.legR.rotation.x = -s * 0.75;
-  } else if (u.crouch) { ud.legL.rotation.x = -1.35; ud.legR.rotation.x = 0.5; }
-  else { ud.legL.rotation.x *= 0.8; ud.legR.rotation.x *= 0.8; }
-  const aim = aiming && !moving || S.time - u.fireT < 1.0;
-  ud.armL.rotation.x = aim ? -1.45 : moving ? -0.75 + Math.sin(u.ph) * 0.15 : -0.5;
-  ud.armR.rotation.x = aim ? -1.25 : -0.45;
-  ud.armL.rotation.z = aim ? -0.35 : 0; ud.armR.rotation.z = aim ? 0.25 : 0;
+    tL = s * 0.8; tR = -s * 0.8;
+    sL = 0.15 + Math.max(0, Math.sin(u.ph + 1.6)) * 1.1; sR = 0.15 + Math.max(0, -Math.sin(u.ph + 1.6)) * 1.1;
+  } else if (u.crouch) { tL = -1.45; sL = 1.45; tR = 0.15; sR = 1.65; }
+  ud.legL.rotation.x += (tL - ud.legL.rotation.x) * k; ud.legR.rotation.x += (tR - ud.legR.rotation.x) * k;
+  ud.shinL.rotation.x += (sL - ud.shinL.rotation.x) * k; ud.shinR.rotation.x += (sR - ud.shinR.rotation.x) * k;
+  let aL, aR, fL, fR, zL, zR;
+  if (aim) { aL = -1.3; fL = -0.3; zL = 0.38; aR = -0.85; fR = -1.35; zR = -0.3; }
+  else if (moving) { aL = -0.7; fL = -1.0; zL = 0.3; aR = -0.35; fR = -1.15; zR = -0.1; }
+  else { aL = -0.55; fL = -0.75; zL = 0.25; aR = -0.25; fR = -0.95; zR = -0.05; }
+  if (ud.tube) { aR = -0.3; fR = -1.9; zR = 0; if (!aim) { aL = -0.9; fL = -0.6; } }
+  ud.armL.rotation.x += (aL - ud.armL.rotation.x) * k; ud.armR.rotation.x += (aR - ud.armR.rotation.x) * k;
+  ud.foreL.rotation.x += (fL - ud.foreL.rotation.x) * k; ud.foreR.rotation.x += (fR - ud.foreR.rotation.x) * k;
+  ud.armL.rotation.z = zL; ud.armR.rotation.z = zR;
   if (ud.rifle && !ud.tube) {
-    if (aim) { ud.rifle.position.set(0.12, 1.72, 0.45); ud.rifle.rotation.set(0, 0, 0); }
-    else { ud.rifle.position.set(0.2, 1.4, 0.3); ud.rifle.rotation.set(-0.95, 0, 0.2); }
+    if (aim) { ud.rifle.position.set(0.12, 1.6, 0.42); ud.rifle.rotation.set(0, 0, 0); }
+    else if (moving) { ud.rifle.position.set(0.04, 1.38, 0.3); ud.rifle.rotation.set(-0.95, 0.45, 0); }
+    else { ud.rifle.position.set(0.1, 1.28, 0.36); ud.rifle.rotation.set(-0.5, 0, 0); }
   }
 }
 function updateCorpse(u, dt) {
