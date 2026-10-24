@@ -14,6 +14,7 @@ Abra `index.html` num navegador (de preferência com o celular deitado), ou publ
 
 - **Aliados:** Fuzileiro, Bazuqueiro, Meia-lagarta M3, M8 Greyhound, Sherman M4, M10 Wolverine e o Veículo de Construção (trator D7 blindado).
 - **Alemães:** Granadeiro, Panzerschreck, Sd.Kfz. 251, StuG III, Panzer IV e Tiger I.
+- **Aviação:** no botão APOIO você chama destróieres, caças P-47 Thunderbolt (metralham e disparam foguetes) ou bombardeiros B-26 Marauder (tapete de bombas). Caças Fw 190 da Luftwaffe atacam a sua base; construa Canhões Antiaéreos de 40 mm para derrubá-los. Os alemães têm Flak 38 de 20 mm.
 
 ### Controles
 

@@ -35,8 +35,10 @@ const BT = {
   bunker: { name: 'Casamata alemã', team: 'de', hp: 450, w: 9, d: 8, weapon: { range: 150, dmg: 4, rof: 0.1, acc: 0.3, burst: true, tracer: true } },
   nest_de: { name: 'Ninho de MG42', team: 'de', hp: 420, w: 7, d: 7, weapon: { range: 55, dmg: 5, rof: 0.09, acc: 0.26, burst: true, tracer: true } },
   dehq: { name: 'Quartel-General Alemão', team: 'de', hp: 4000, w: 26, d: 20 },
+  aa: { name: 'Canhão Antiaéreo 40mm', short: 'Antiaéreo', hp: 500, w: 7, d: 7, cost: 300, time: 12, buildR: 35, aa: { range: 175, dmg: 30, rof: 0.55, acc: 0.34 } },
+  flak_de: { name: 'Flak 38 de 20 mm', team: 'de', hp: 380, w: 6, d: 6, aa: { range: 150, dmg: 16, rof: 0.32, acc: 0.28 } },
 };
-const BUILD_ORDER = ['depot', 'barracks', 'factory', 'mgnest', 'atgun', 'hospital'];
+const BUILD_ORDER = ['depot', 'barracks', 'factory', 'mgnest', 'atgun', 'aa', 'hospital'];
 
 /* ---------- renderizador e cena ---------- */
 const $ = (id) => document.getElementById(id);
@@ -81,7 +83,8 @@ window.addEventListener('resize', resize);
 /* ---------- estado ---------- */
 const S = {
   phase: 'menu', time: 0, t: 0, supplies: 0, kills: 0, lost: 0, naval: 0,
-  boats: [], timers: [], wave: 0, waveT: 0, placing: null, navalMode: false, boxMode: false,
+  boats: [], timers: [], wave: 0, waveT: 0, placing: null, strike: null, supportOpen: false, boxMode: false,
+  cd: { naval: 0, p47: 0, b26: 0 }, planes: [], bombs: [], flybyT: 3, airT: 180, prillerDone: false,
   lst: null, cps: [], bunkers: [], deHQ: null, usHQ: null, dozer: null,
   reinf: [], artT: 4, splashT: 1, cine: false, menuFx: 1, startedAt: 0,
 };
@@ -608,6 +611,7 @@ function updateBuilding(b, dt) {
     }
     return;
   }
+  if (d.aa) updateAA(b, dt);
   if (b.queue.length) {
     const k = b.queue[0]; b.prodT += dt;
     if (b.prodT >= UT[k].time) {
@@ -808,7 +812,7 @@ function startLanding() {
   cam.x = -40; cam.z = 440; cam.dist = 90; cam.pitch = 0.42; cam.yaw = 0; cam.tDist = 125; cam.tPitch = 0.55;
   setPhaseText('FASE 1 · DESEMBARQUE', 'Destrua as 4 casamatas alemãs na falésia (0/4).');
   toast('06:30 — As barcaças Higgins se aproximam da praia de Omaha.');
-  later(7, () => toast('Dica: toque em NAVAL e depois numa casamata para chamar os destróieres.'));
+  later(7, () => toast('Dica: toque em APOIO para chamar destróieres ou caças P-47 contra as casamatas.'));
 }
 function updateLanding(dt) {
   updateBoats(dt);
@@ -852,7 +856,7 @@ function startLST() {
   $('letterbox').hidden = false; $('skip').hidden = false;
   const m = makeLST(); m.rotation.y = Math.PI; scene.add(m);
   S.lst = { mesh: m, x: 20, z: 820, tz: SHORE_Z + 47, state: 'in', t: 0, step: 0 };
-  setSel([]); cancelPlacing(); S.navalMode = false;
+  setSel([]); cancelPlacing(); S.strike = null; S.supportOpen = false;
   cam.follow = () => S.lst && S.lst.state === 'in' ? { x: S.lst.x + 30, z: S.lst.z - 75 } : null;
   cam.tDist = 160; cam.tPitch = 0.42; cam.yaw = -0.35;
   setPhaseText('FASE 2 · CABEÇA DE PRAIA', 'Um LST está chegando com o Veículo de Construção.');
@@ -1023,6 +1027,7 @@ function spawnWrecks() {
 }
 function spawnGermans() {
   spawnWrecks();
+  spawnBuilding('flak_de', 20, 138, { complete: true });
   for (const [x, z] of MAP.bunkerSpots) { const b = spawnBuilding('bunker', x, z, { complete: true }); b.alwaysSeen = true; S.bunkers.push(b); }
   const bluff = MAP.trenchSpots.filter(p => p[1] > 150).sort(() => rand() - 0.5).slice(0, 18);
   for (const p of bluff) spawnUnit('gren', p[0], p[1], { order: 'hold' });
@@ -1039,10 +1044,13 @@ function spawnGermans() {
     for (let i = 0; i < tig; i++) at('tiger');
     for (const k of (GAR_EXTRA[t.name] || [])) at(k);
     if (nest) spawnBuilding('nest_de', t.x + 8, t.z + 9, { complete: true });
+    if (t.name === 'Formigny' || t.name === 'Saint-Laurent-sur-Mer') spawnBuilding('flak_de', t.x - 14, t.z + 13, { complete: true });
     if (t.cp) S.cps.push(makeCP(t));
     if (t.hq) {
       S.deHQ = spawnBuilding('dehq', t.x, t.z - 6, { complete: true });
       spawnBuilding('bunker', t.x - 45, t.z + 70, { complete: true });
+      spawnBuilding('flak_de', t.x + 32, t.z + 30, { complete: true });
+      spawnBuilding('flak_de', t.x - 34, t.z - 30, { complete: true });
       spawnBuilding('bunker', t.x + 45, t.z + 70, { complete: true });
       MAP.trenchSpots.filter(p => Math.hypot(p[0] - t.x, p[1] - t.z) > 90 && Math.hypot(p[0] - t.x, p[1] - t.z) < 140).sort(() => rand() - 0.5).slice(0, 10)
         .forEach(p => spawnUnit('gren', p[0], p[1], { order: 'hold' }));
@@ -1079,10 +1087,226 @@ function updCivs(dt) {
   }
 }
 
+/* ---------- aviação: caças, bombardeiros e antiaérea ---------- */
+const AIR = {
+  p47: { name: 'P-47 Thunderbolt', team: 'us', hp: 130, speed: 95, alt: 70 },
+  b26: { name: 'B-26 Marauder', team: 'us', hp: 320, speed: 72, alt: 85 },
+  fw190: { name: 'Fw 190', team: 'de', hp: 110, speed: 100, alt: 62 },
+};
+const STRIKES = {
+  naval: { name: 'Destróieres', desc: 'bombardeio naval', cd: 60, phases: ['landing', 'deploy', 'base'], tip: 'Toque no alvo do bombardeio naval.' },
+  p47: { name: 'Caças P-47', desc: 'metralhar e foguetes', cd: 50, phases: ['landing', 'deploy', 'base'], tip: 'Toque no alvo: os P-47 vêm de trás da câmera.' },
+  b26: { name: 'Bombardeiros B-26', desc: 'tapete de bombas', cd: 100, phases: ['deploy', 'base'], tip: 'Toque no alvo: as bombas caem numa faixa na direção da câmera.' },
+};
+const AIR_GUN = { dmg: 9, splash: 2.4 };
+const AIR_ROCKET = { dmg: 170, splash: 5, at: true };
+const AIR_BOMB = { dmg: 230, splash: 11, at: true };
+
+function spawnPlane(kind, tx, tz, dx, dz, role, side, lead) {
+  const a = AIR[kind], mesh = makePlane(kind); scene.add(mesh);
+  side = side || 0; lead = lead || 750;
+  const ox = -dz * side, oz = dx * side;
+  const base = Math.max(22, groundH(tx, tz));
+  const p = {
+    kind, def: a, team: a.team, role, mesh, dx, dz, tx: tx + ox, tz: tz + oz, base,
+    x: tx + ox - dx * lead, z: tz + oz - dz * lead, y: base + a.alt + (role === 'flyby' ? 60 : 0), vy: 0,
+    hp: a.hp, state: 'fly', gunT: 0, rockets: role === 'strafe' && kind === 'p47' ? 2 : 0,
+    bombs: role === 'bomb' ? 6 : kind === 'fw190' && role === 'strafe' ? 1 : 0, bombT: 0, spin: 0, snd: null,
+  };
+  S.planes.push(p); planeSound(p);
+  return p;
+}
+function planeSound(p) {
+  if (!AU.ctx || S.planes.length > 8) return;
+  try {
+    const o = AU.ctx.createOscillator(), f = AU.ctx.createBiquadFilter(), g = AU.ctx.createGain();
+    o.type = 'sawtooth'; o.frequency.value = p.kind === 'b26' ? 48 : 62 + rand() * 8;
+    f.type = 'lowpass'; f.frequency.value = 320; g.gain.value = 0;
+    o.connect(f); f.connect(g); g.connect(AU.master); o.start();
+    p.snd = { o, g };
+  } catch (e) { p.snd = null; }
+}
+function removePlane(p) {
+  scene.remove(p.mesh);
+  if (p.snd) { try { p.snd.o.stop(); } catch (e) { /* já parado */ } p.snd = null; }
+  const i = S.planes.indexOf(p); if (i >= 0) S.planes.splice(i, 1);
+}
+function shootDown(p) {
+  if (p.state === 'down') return;
+  p.state = 'down'; p.vy = -4;
+  if (p.team === 'de') { S.kills++; toast(p.def.name + ' abatido!', 'good'); }
+  else { S.lost++; toast(p.def.name + ' abatido pela antiaérea!', 'bad'); }
+}
+function dropBomb(p) {
+  const m = makeBomb(); scene.add(m);
+  S.bombs.push({ mesh: m, x: p.x, y: p.y - 1.2, z: p.z, vx: p.dx * p.def.speed * 0.85, vz: p.dz * p.def.speed * 0.85, vy: -2, team: p.team });
+}
+function updBombs(dt) {
+  for (let i = S.bombs.length - 1; i >= 0; i--) {
+    const b = S.bombs[i];
+    b.vy -= 30 * dt; b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt;
+    b.mesh.position.set(b.x, b.y, b.z); b.mesh.lookAt(b.x + b.vx, b.y + b.vy, b.z + b.vz);
+    if (!b.whistled && b.vy < -12) { b.whistled = true; whistle(b.x, b.z); }
+    const h = surfaceH(b.x, b.z);
+    if (b.y <= h) {
+      scene.remove(b.mesh); S.bombs.splice(i, 1);
+      explosion(b.x, h, b.z, 1.8);
+      if (groundH(b.x, b.z) > -0.3) areaDamage(b.x, b.z, AIR_BOMB.splash, AIR_BOMB.dmg, null, AIR_BOMB, null);
+    }
+  }
+}
+// distância à frente do alvo em que a bomba precisa ser solta (ela segue voando enquanto cai)
+function bombLead(p) {
+  const h = Math.max(1, p.y - surfaceH(p.tx, p.tz)), tFall = (2 + Math.sqrt(4 + 60 * h)) / 30;
+  return p.def.speed * 0.85 * tFall;
+}
+function airTarget(p) {
+  let best = null, bd = 24;
+  for (const e of ents) {
+    if (!e.alive || e.team === p.team || !e.armored) continue;
+    const d = Math.hypot(e.x - p.tx, e.z - p.tz); if (d < bd) { bd = d; best = e; }
+  }
+  return best;
+}
+function updatePlane(p, dt) {
+  const a = p.def, m = p.mesh;
+  if (p.state === 'down') {
+    p.vy -= 22 * dt; p.spin += dt * 3;
+    p.x += p.dx * a.speed * 0.75 * dt; p.z += p.dz * a.speed * 0.75 * dt; p.y += p.vy * dt;
+    emit(p.x, p.y, p.z, { c: 0x2a2826, c1: 0x6a665e, life: 2.5, vy: 1, s0: 1.2, s1: 4.5, a: 0.7 });
+    if (rand() < 0.7) emit(p.x, p.y, p.z, { c: 0xffa040, c1: 0x7a3010, life: 0.4, s0: 1.0, s1: 1.8, a: 0.9 });
+    const h = surfaceH(p.x, p.z);
+    if (p.y <= h + 0.5) {
+      explosion(p.x, h, p.z, 1.9);
+      if (groundH(p.x, p.z) > -0.3) areaDamage(p.x, p.z, 7, 80, null, { at: true, splash: 7 }, null);
+      removePlane(p); return;
+    }
+  } else {
+    const s = (p.tx - p.x) * p.dx + (p.tz - p.z) * p.dz;
+    let yt = p.base + a.alt;
+    if (p.role === 'strafe') {
+      const low = p.base + 15;
+      if (s < 320 && s > 40) yt = lerp(low, p.base + a.alt, (s - 40) / 280);
+      else if (s <= 40) yt = low + (40 - s) * 0.5;
+    } else if (p.role === 'flyby') yt = p.base + a.alt + 60;
+    p.vy = clamp((yt - p.y) * 1.6, -32, 30);
+    p.y += p.vy * dt; p.x += p.dx * a.speed * dt; p.z += p.dz * a.speed * dt;
+    if (p.role === 'strafe') {
+      if (s < 210 && s > 20) {
+        p.gunT -= dt;
+        while (p.gunT <= 0) {
+          p.gunT += 0.06;
+          const gy = surfaceH(p.x, p.z), along = Math.max(10, (p.y - gy) * 1.7);
+          const ix = p.x + p.dx * along + rr(-2.5, 2.5), iz = p.z + p.dz * along + rr(-2.5, 2.5), ih = surfaceH(ix, iz);
+          const side = rand() < 0.5 ? -1 : 1;
+          tracer(TV2.set(p.x - p.dz * side * 3, p.y - 0.5, p.z + p.dx * side * 3).clone(), TV.set(ix, ih, iz));
+          if (groundH(ix, iz) < 0) emit(ix, 0.2, iz, { c: 0xe6ecee, life: 0.6, vy: 7, grav: 14, s0: 0.35, s1: 0.6, sy: 2, a: 0.8 });
+          else emit(ix, ih + 0.3, iz, { c: 0x8a7a5a, life: 0.7, vy: 2.5, s0: 0.4, s1: 1.4, a: 0.7 });
+          areaDamage(ix, iz, AIR_GUN.splash, AIR_GUN.dmg, p.team, AIR_GUN, null);
+          sfx('mg', p.x, p.z);
+        }
+      }
+      if (p.rockets > 0 && s < 150) {
+        const tg = airTarget(p);
+        for (const side of [-1, 1]) {
+          const hit = tg && rand() < 0.65, tx = hit ? tg.x : p.tx + rr(-4, 4), tz = hit ? tg.z : p.tz + rr(-4, 4);
+          launch({ kind: 'rocket', p0: new THREE.Vector3(p.x - p.dz * side * 4, p.y - 0.9, p.z + p.dx * side * 4), tx, ty: surfaceH(tx, tz) + (hit ? 1.2 : 0), tz, speed: 170, arc: 0, target: hit ? tg : null, w: AIR_ROCKET, src: null, team: p.team });
+        }
+        p.rockets = 0; sfx('rocket', p.x, p.z);
+      }
+      if (p.bombs > 0 && s < bombLead(p)) { dropBomb(p); p.bombs = 0; }
+    } else if (p.role === 'bomb' && p.bombs > 0 && s < bombLead(p) + 45) {
+      p.bombT -= dt; if (p.bombT <= 0) { p.bombT = 0.28; dropBomb(p); p.bombs--; }
+    }
+    if (s < -950) { removePlane(p); return; }
+    p.s = s;
+  }
+  m.position.set(p.x, p.y, p.z);
+  m.lookAt(p.x + p.dx * 10, p.y + p.vy * 10 / a.speed, p.z + p.dz * 10);
+  m.rotateZ(p.state === 'down' ? p.spin : Math.sin(S.time * 0.8 + p.tx) * 0.06);
+  for (const pr of m.userData.props) pr.rotation.z += dt * 45;
+  if (p.snd) {
+    const d = Math.hypot(p.x - camera.position.x, p.y - camera.position.y, p.z - camera.position.z);
+    const v = AU.on ? Math.pow(clamp(1 - d / 650, 0, 1), 2) * (p.kind === 'b26' ? 0.16 : 0.12) : 0;
+    p.snd.g.gain.setTargetAtTime(v, AU.ctx.currentTime, 0.1);
+    p.snd.o.frequency.setTargetAtTime((p.kind === 'b26' ? 48 : 64) + clamp(-p.vy, 0, 30) * 1.5, AU.ctx.currentTime, 0.2);
+  }
+}
+function updateAA(b, dt) {
+  const w = b.def.aa, ud = b.mesh.userData;
+  b.wcool -= dt;
+  let best = null, bd = w.range;
+  for (const p of S.planes) {
+    if (p.state === 'down' || p.team === b.team) continue;
+    const d = Math.hypot(p.x - b.x, p.y - b.y, p.z - b.z); if (d < bd) { bd = d; best = p; }
+  }
+  if (!best) return;
+  const lead = bd / 260 * best.def.speed;
+  const ax = best.x + best.dx * lead, az = best.z + best.dz * lead, ay = best.y;
+  b.turretYaw = turnTo(b.turretYaw, angDiff(Math.atan2(ax - b.x, az - b.z), b.heading), 3.5 * dt);
+  ud.turret.rotation.y = b.turretYaw;
+  if (ud.barrel) ud.barrel.rotation.x = -Math.atan2(ay - b.y - 2, Math.hypot(ax - b.x, az - b.z));
+  if (b.wcool > 0) return;
+  b.wcool = w.rof * (0.9 + rand() * 0.2);
+  b.mesh.updateMatrixWorld(true); ud.muzzle.getWorldPosition(TV2);
+  const mp = TV2.clone(); muzzleFlash(mp, 1.3);
+  const hit = rand() < w.acc * (1 - 0.5 * bd / w.range);
+  tracer(mp, TV.set(ax + rr(-3, 3), ay + rr(-2, 2), az + rr(-3, 3)));
+  later(bd / 380, () => emit(best.x + rr(-6, 6), best.y + rr(-3, 4), best.z + rr(-6, 6), { c: 0x2b2a28, c1: 0x55524c, life: 2.4, s0: 1.2, s1: 3.8, a: 0.75 }));
+  sfx('cannon', b.x, b.z);
+  b.revealT = S.time;
+  if (hit) { best.hp -= w.dmg; if (best.hp <= 0) shootDown(best); }
+}
+function callStrike(kind, x, z) {
+  S.cd[kind] = STRIKES[kind].cd;
+  const dx = -Math.sin(cam.yaw), dz = -Math.cos(cam.yaw);
+  if (kind === 'naval') navalStrike(x, z);
+  else if (kind === 'p47') {
+    spawnPlane('p47', x, z, dx, dz, 'strafe', -5, 700);
+    spawnPlane('p47', x, z, dx, dz, 'strafe', 6, 880);
+    toast('P-47 Thunderbolts a caminho!', 'good');
+  } else if (kind === 'b26') {
+    for (const [side, lead] of [[-16, 760], [0, 720], [16, 780]]) spawnPlane('b26', x, z, dx, dz, 'bomb', side, lead);
+    toast('B-26 Marauders a caminho! Afaste suas tropas do alvo.', 'good');
+  }
+  marker(x, z, 0xe3a33c);
+  updSide();
+}
+function germanRaid(tx, tz, dx, dz) {
+  spawnPlane('fw190', tx, tz, dx, dz, 'strafe', -5, 650);
+  spawnPlane('fw190', tx, tz, dx, dz, 'strafe', 5, 760);
+  toast('Caças Fw 190 da Luftwaffe atacando!', 'bad');
+}
+function raidTarget() {
+  const list = ents.filter(e => e.alive && e.team === 'us' && (e.building || e.armored));
+  const units = ents.filter(e => e.alive && e.team === 'us' && e.unit);
+  const pool = list.length && rand() < 0.6 ? list : units;
+  return pool.length ? pool[(rand() * pool.length) | 0] : null;
+}
+function updAir(dt) {
+  for (const k in S.cd) if (S.cd[k] > 0) S.cd[k] -= dt;
+  for (let i = S.planes.length - 1; i >= 0; i--) { const p = S.planes[i]; if (p) updatePlane(p, dt); }
+  updBombs(dt);
+  if (S.phase === 'landing') {
+    S.flybyT -= dt;
+    if (S.flybyT <= 0) { S.flybyT = 38 + rand() * 15; const x = rr(-300, 300); for (const [side, lead] of [[-18, 900], [0, 860], [18, 920]]) spawnPlane('b26', x, 0, 0, -1, 'flyby', side, lead); }
+    if (!S.prillerDone && S.t > 70) {
+      const beach = ents.filter(e => e.alive && e.team === 'us' && e.z > 200);
+      if (beach.length) { S.prillerDone = true; const v = beach[(rand() * beach.length) | 0]; germanRaid(v.x, v.z, rand() < 0.5 ? 1 : -1, 0.15); }
+    }
+  } else if (S.phase === 'base') {
+    S.airT -= dt;
+    if (S.airT <= 0) {
+      S.airT = 110 + rand() * 50;
+      const t = raidTarget();
+      if (t) { const a = rr(-0.6, 0.6); germanRaid(t.x, t.z, Math.sin(a), Math.cos(a)); }
+    }
+  }
+}
+function supportReady(k) { return S.cd[k] <= 0 && STRIKES[k].phases.includes(S.phase); }
+
 /* ---------- apoio naval ---------- */
 function navalStrike(x, z) {
-  if (S.naval > 0) return;
-  S.naval = 60;
   toast('Destróieres abrindo fogo! Cuidado com fogo amigo.', 'good');
   for (let i = 0; i < 6; i++) {
     later(0.5 + i * 0.45, () => {
@@ -1173,7 +1397,7 @@ function handleTap(sx, sy, right) {
   if (S.phase === 'menu' || S.cine || S.phase === 'won' || S.phase === 'lost') return;
   const g = screenToGround(sx, sy);
   if (S.placing) { if (g) { S.placing.x = g.x; S.placing.z = g.z; updGhost(); } return; }
-  if (S.navalMode) { S.navalMode = false; if (g) { navalStrike(g.x, g.z); marker(g.x, g.z, 0xe3a33c); } updSide(); return; }
+  if (S.strike) { const k = S.strike; S.strike = null; if (g) callStrike(k, g.x, g.z); refreshPanel(true); updSide(); return; }
   const hit = pickEntity(sx, sy);
   const movers = selected.filter(e => e.unit);
   if (right) {
@@ -1253,7 +1477,7 @@ canvas.addEventListener('pointercancel', (e) => { ptrs.delete(e.pointerId); if (
 canvas.addEventListener('wheel', (e) => { e.preventDefault(); cam.tDist = null; cam.dist = clamp(cam.dist * (e.deltaY > 0 ? 1.12 : 0.89), 22, 420); }, { passive: false });
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase(); cam.keys[k] = true;
-  if (k === 'escape') { if (S.placing) cancelPlacing(); else { S.navalMode = false; setSel([]); updSide(); } }
+  if (k === 'escape') { if (S.placing) cancelPlacing(); else { S.strike = null; S.supportOpen = false; setSel([]); updSide(); } }
   if (k === '=' || k === '+') cam.dist *= 0.85; if (k === '-') cam.dist *= 1.15;
 });
 window.addEventListener('keyup', (e) => { cam.keys[e.key.toLowerCase()] = false; });
@@ -1330,8 +1554,24 @@ function setPhaseText(name, text) {
 let panelSig = '';
 function refreshPanel(force) {
   const panel = $('panel');
-  if (S.placing || !selected.length) { panel.hidden = true; panelSig = ''; return; }
   let title = '', info = '', btns = '';
+  if (!S.placing && (S.supportOpen || S.strike)) {
+    if (S.strike) {
+      title = STRIKES[S.strike].name; info = 'Toque no mapa para escolher o alvo.';
+      btns = '<button class="pb warn" data-act="strikecancel">CANCELAR<small>voltar</small></button>';
+    } else {
+      title = 'Apoio de fogo'; info = 'Escolha o tipo de ataque e depois toque no alvo.';
+      for (const k of Object.keys(STRIKES)) {
+        const st = STRIKES[k], ok = supportReady(k), avail = st.phases.includes(S.phase);
+        btns += '<button class="pb' + (ok ? ' go' : '') + '" data-act="strike:' + k + '"' + (ok ? '' : ' disabled') + '>' + st.name + '<small>' + (!avail ? 'após montar a base' : ok ? st.desc : 'recarga ' + Math.ceil(S.cd[k]) + 's') + '</small></button>';
+      }
+      btns += '<button class="pb" data-act="supclose">FECHAR<small>&nbsp;</small></button>';
+    }
+    const sig = title + '|' + info + '|' + btns;
+    if (force || sig !== panelSig) { panelSig = sig; $('pTitle').textContent = title; $('pInfo').textContent = info; $('pBtns').innerHTML = btns; }
+    panel.hidden = false; return;
+  }
+  if (S.placing || !selected.length) { panel.hidden = true; panelSig = ''; return; }
   const sel = selected;
   if (sel.length === 1 && sel[0].building) {
     const b = sel[0], d = b.def;
@@ -1382,7 +1622,10 @@ $('pBtns').addEventListener('click', (e) => {
   const btn = e.target.closest('button'); if (!btn || btn.disabled) return;
   initAudio();
   const [act, arg] = btn.dataset.act.split(':');
-  if (act === 'desel') setSel([]);
+  if (act === 'strike') { if (supportReady(arg)) { S.strike = arg; S.supportOpen = false; toast(STRIKES[arg].tip); } updSide(); }
+  else if (act === 'strikecancel') { S.strike = null; updSide(); }
+  else if (act === 'supclose') { S.supportOpen = false; updSide(); }
+  else if (act === 'desel') setSel([]);
   else if (act === 'stop') { for (const u of selected) if (u.unit) { u.order = 'idle'; u.dest = null; u.forced = null; u.home = { x: u.x, z: u.z }; } }
   else if (act === 'deploy') deployHQ();
   else if (act === 'build') startPlacing(arg);
@@ -1393,11 +1636,11 @@ $('pBtns').addEventListener('click', (e) => {
   refreshPanel(true);
 });
 function updSide() {
-  const nb = $('bNaval');
-  const ready = S.naval <= 0 && (S.phase === 'landing' || S.phase === 'deploy' || S.phase === 'base');
-  nb.disabled = !ready && !S.navalMode;
-  nb.classList.toggle('on', S.navalMode);
-  nb.querySelector('small').textContent = S.navalMode ? 'escolha alvo' : S.naval > 0 ? Math.ceil(S.naval) + 's' : 'pronto';
+  const nb = $('bNaval'), keys = Object.keys(STRIKES), avail = keys.filter(k => STRIKES[k].phases.includes(S.phase));
+  const ready = avail.filter(supportReady).length;
+  nb.disabled = !avail.length;
+  nb.classList.toggle('on', !!S.strike || S.supportOpen);
+  nb.querySelector('small').textContent = S.strike ? 'alvo' : ready ? ready + ' pronto' + (ready > 1 ? 's' : '') : avail.length ? Math.ceil(Math.min(...avail.map(k => S.cd[k]))) + 's' : '—';
   $('bBox').classList.toggle('on', S.boxMode);
   $('bSound').querySelector('small').textContent = AU.on ? 'ligado' : 'mudo';
 }
@@ -1406,9 +1649,9 @@ $('bTanks').addEventListener('click', () => { initAudio(); const t = ents.filter
 $('bBox').addEventListener('click', () => { S.boxMode = !S.boxMode; updSide(); if (S.boxMode) toast('Arraste na tela para selecionar um grupo.'); });
 $('bNaval').addEventListener('click', () => {
   initAudio();
-  if (S.navalMode) S.navalMode = false;
-  else if (S.naval <= 0) { S.navalMode = true; cancelPlacing(); toast('Toque no alvo do bombardeio naval.'); }
-  updSide();
+  if (S.strike) S.strike = null; else S.supportOpen = !S.supportOpen;
+  if (S.supportOpen) cancelPlacing();
+  refreshPanel(true); updSide();
 });
 $('bBuild').addEventListener('click', () => {
   if (S.usHQ && S.usHQ.alive) { setSel([S.usHQ]); cam.follow = null; cam.x = S.usHQ.x; cam.z = S.usHQ.z + 10; }
@@ -1433,6 +1676,7 @@ function drawMini() {
   mctx.fillStyle = '#d6dde0';
   for (const b of S.boats) { const q = MAP.toM(b.x, b.z); mctx.fillRect(q[0] - 1, q[1] - 2, 2, 4); }
   if (S.lst) { const q = MAP.toM(S.lst.x, S.lst.z); mctx.fillRect(q[0] - 2, q[1] - 6, 4, 12); }
+  for (const p of S.planes) { const q = MAP.toM(p.x, p.z); mctx.fillStyle = p.team === 'us' ? '#e8f0ff' : '#ff8a70'; mctx.beginPath(); mctx.moveTo(q[0] + p.dx * 4, q[1] + p.dz * 4); mctx.lineTo(q[0] - p.dx * 3 - p.dz * 3, q[1] - p.dz * 3 + p.dx * 3); mctx.lineTo(q[0] - p.dx * 3 + p.dz * 3, q[1] - p.dz * 3 - p.dx * 3); mctx.fill(); }
   const corners = [[0, 0], [window.innerWidth, 0], [window.innerWidth, window.innerHeight], [0, window.innerHeight]].map(([x, y]) => screenToGround(x, y));
   mctx.strokeStyle = 'rgba(255,255,255,0.85)'; mctx.lineWidth = 1; mctx.beginPath();
   let n = 0;
@@ -1448,7 +1692,7 @@ function updHUD() {
   for (const e of ents) if (e.alive && e.team === 'us' && e.unit) { if (e.inf) inf++; else if (e.tank) tk++; }
   $('count').textContent = inf + ' soldados · ' + tk + ' tanques';
   updSide();
-  if (selected.length) refreshPanel(false);
+  if (selected.length || S.supportOpen || S.strike) refreshPanel(false);
 }
 
 /* ---------- fim de jogo ---------- */
@@ -1474,7 +1718,6 @@ let visT = 0, cpT = 0, uiT = 0, miniT = 0;
 function update(dt) {
   S.t += dt;
   for (let i = S.timers.length - 1; i >= 0; i--) if (S.time >= S.timers[i].t) { const f = S.timers[i].fn; S.timers.splice(i, 1); f(); }
-  if (S.naval > 0) S.naval -= dt;
   if (S.phase === 'menu') {
     S.menuFx -= dt;
     if (S.menuFx <= 0) {
@@ -1490,6 +1733,7 @@ function update(dt) {
     if (e.unit) updateUnit(e, dt); else if (e.building) updateBuilding(e, dt);
   }
   separate();
+  updAir(dt);
   updProj(dt); updParts(dt); updTracers(dt); updEmitters(dt); updMarkers(dt); updCivs(dt);
   visT -= dt; if (visT <= 0) { visT = 0.3; updVisibility(); }
   cpT -= dt; if (cpT <= 0) { cpT = 0.5; updCPs(); }
