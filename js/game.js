@@ -31,6 +31,23 @@ const UT = {
   sdkfz251: { name: 'Sd.Kfz. 251', plural: 'Sd.Kfz. 251', team: 'de', tank: true, light: true, hp: 320, speed: 11, range: 50, dmg: 6, rof: 0.11, acc: 0.3, tracer: true, vision: 80, r: 3.0, turn: 1.5, armor: 1 },
   stug: { name: 'StuG III', plural: 'StuG III', team: 'de', tank: true, casemate: true, hp: 580, speed: 8, range: 66, dmg: 115, rof: 4.2, acc: 0.75, at: true, proj: 'shell', splash: 5, vision: 80, r: 3.4, turn: 1.1, armor: 1.1 },
   tiger: { name: 'Tiger I', plural: 'Tigers', team: 'de', tank: true, hp: 1100, speed: 6.5, range: 72, dmg: 150, rof: 5, acc: 0.78, at: true, proj: 'shell', splash: 7, vision: 90, r: 4.1, turn: 0.8, armor: 1.5, coax: true },
+  // veículos novos (1944–1945)
+  jeep: { name: 'Jeep Willys', plural: 'Jeeps', team: 'us', tank: true, light: true, hp: 130, speed: 18, range: 42, dmg: 4, rof: 0.13, acc: 0.28, tracer: true, vision: 115, cost: 120, time: 6, r: 1.8, turn: 2.4, armor: 0.5 },
+  m24: { name: 'M24 Chaffee', plural: 'M24 Chaffees', team: 'us', tank: true, hp: 380, speed: 13, range: 58, dmg: 80, rof: 3.3, acc: 0.7, at: true, proj: 'shell', splash: 4, vision: 92, cost: 380, time: 14, r: 3.0, turn: 1.7, armor: 0.8, coax: true },
+  m18: { name: 'M18 Hellcat', plural: 'M18 Hellcats', team: 'us', tank: true, hp: 330, speed: 16, range: 70, dmg: 130, rof: 4.0, acc: 0.78, at: true, proj: 'shell', splash: 3.5, vision: 88, cost: 450, time: 15, r: 3.0, turn: 1.9, armor: 0.7 },
+  m36: { name: 'M36 Jackson', plural: 'M36 Jacksons', team: 'us', tank: true, hp: 470, speed: 9.5, range: 78, dmg: 175, rof: 5, acc: 0.8, at: true, proj: 'shell', splash: 4.5, vision: 86, cost: 620, time: 20, r: 3.4, turn: 1.2, armor: 0.9 },
+  m26: { name: 'M26 Pershing', plural: 'M26 Pershings', team: 'us', tank: true, hp: 900, speed: 8.2, range: 72, dmg: 165, rof: 4.6, acc: 0.78, at: true, proj: 'shell', splash: 6, vision: 88, cost: 950, time: 28, r: 3.8, turn: 1.0, armor: 1.4, coax: true },
+  m7: { name: 'M7 Priest (obus 105 mm)', plural: 'M7 Priests', team: 'us', tank: true, casemate: true, hp: 420, speed: 9, range: 150, dmg: 110, rof: 7, acc: 0.35, proj: 'shell', lob: 34, splash: 8, vision: 70, cost: 550, time: 18, r: 3.4, turn: 1.2, armor: 0.8 },
+  m16: { name: 'M16 quádrupla .50', plural: 'M16 quádruplas', team: 'us', tank: true, light: true, hp: 320, speed: 12, range: 54, dmg: 7, rof: 0.06, acc: 0.3, tracer: true, vision: 85, cost: 350, time: 12, r: 3.0, turn: 1.6, armor: 1, aa: { range: 165, dmg: 16, rof: 0.12, acc: 0.3 } },
+  calliope: { name: 'Sherman Calliope', plural: 'Shermans Calliope', team: 'us', tank: true, hp: 520, speed: 9.2, range: 115, dmg: 65, rof: 16, acc: 0.4, at: true, proj: 'rocket', salvo: 12, lob: 22, splash: 6, vision: 85, cost: 650, time: 22, r: 3.4, turn: 1.3, armor: 1 },
+  panther: { name: 'Panther', plural: 'Panthers', team: 'de', tank: true, hp: 820, speed: 9.5, range: 76, dmg: 150, rof: 4.2, acc: 0.8, at: true, proj: 'shell', splash: 6, vision: 88, r: 3.8, turn: 1.2, armor: 1.35, coax: true },
+  kingtiger: { name: 'Tiger II (King Tiger)', plural: 'Tigers II', team: 'de', tank: true, hp: 1500, speed: 6, range: 80, dmg: 190, rof: 5.6, acc: 0.8, at: true, proj: 'shell', splash: 7, vision: 90, r: 4.3, turn: 0.7, armor: 1.8, coax: true },
+  jagdpanther: { name: 'Jagdpanther', plural: 'Jagdpanthers', team: 'de', tank: true, casemate: true, hp: 900, speed: 9, range: 82, dmg: 185, rof: 5, acc: 0.82, at: true, proj: 'shell', splash: 6, vision: 86, r: 3.9, turn: 1.0, armor: 1.45 },
+  hetzer: { name: 'Hetzer', plural: 'Hetzers', team: 'de', tank: true, casemate: true, hp: 420, speed: 9, range: 66, dmg: 110, rof: 4.2, acc: 0.75, at: true, proj: 'shell', splash: 4, vision: 78, r: 2.8, turn: 1.3, armor: 1.0 },
+  puma: { name: 'Puma Sd.Kfz. 234/2', plural: 'Pumas', team: 'de', tank: true, light: true, hp: 300, speed: 15, range: 56, dmg: 60, rof: 2.6, acc: 0.7, at: true, proj: 'shell', splash: 2.5, vision: 95, r: 3.0, turn: 1.7, armor: 0.75, coax: true },
+  wirbelwind: { name: 'Flakpanzer Wirbelwind', plural: 'Wirbelwinds', team: 'de', tank: true, hp: 500, speed: 8.5, range: 60, dmg: 9, rof: 0.08, acc: 0.3, tracer: true, vision: 82, r: 3.5, turn: 1.2, armor: 1, aa: { range: 160, dmg: 18, rof: 0.15, acc: 0.3 } },
+  kubel: { name: 'Kübelwagen', plural: 'Kübelwagens', team: 'de', tank: true, light: true, hp: 110, speed: 17, range: 40, dmg: 4, rof: 0.12, acc: 0.28, tracer: true, vision: 105, r: 1.8, turn: 2.3, armor: 0.5 },
+  maultier: { name: 'Panzerwerfer 42', plural: 'Panzerwerfers 42', team: 'de', tank: true, light: true, hp: 300, speed: 10, range: 120, dmg: 60, rof: 15, acc: 0.38, proj: 'rocket', salvo: 10, lob: 22, splash: 5.5, vision: 80, r: 3.0, turn: 1.4, armor: 0.8 },
 };
 const COAX = { range: 45, dmg: 5, rof: 0.16, acc: 0.25, tracer: true };
 const GRENADE = { dmg: 60, splash: 4.5, grenade: true };
@@ -41,7 +58,8 @@ const BT = {
   hq: { name: 'Centro de Comando', hp: 2200, w: 16, d: 14, income: 5, buildR: 90, time: 3, weapon: { range: 50, dmg: 5, rof: 0.15, acc: 0.3, burst: true, tracer: true } },
   depot: { name: 'Depósito de Suprimentos', short: 'Depósito', hp: 700, w: 12, d: 10, cost: 300, time: 14, income: 7, buildR: 50 },
   barracks: { name: 'Quartel', short: 'Quartel', hp: 950, w: 15, d: 10, cost: 400, time: 18, trains: ['rifle', 'bazooka', 'medic'], buildR: 50 },
-  factory: { name: 'Fábrica de Tanques', short: 'Fábrica', hp: 1500, w: 20, d: 16, cost: 850, time: 26, trains: ['halftrack', 'greyhound', 'sherman', 'm10'], buildR: 50, req: 'barracks' },
+  factory: { name: 'Fábrica de Tanques', short: 'Fábrica', hp: 1500, w: 20, d: 16, cost: 850, time: 26, trains: ['m24', 'sherman', 'calliope', 'm10', 'm18', 'm36', 'm26'], buildR: 50, req: 'barracks' },
+  motorpool: { name: 'Garagem de Veículos', short: 'Garagem', hp: 900, w: 18, d: 14, cost: 450, time: 16, trains: ['jeep', 'halftrack', 'm16', 'greyhound', 'm7'], buildR: 50 },
   mgnest: { name: 'Ninho de Metralhadora', short: 'Ninho MG', hp: 600, w: 7, d: 7, cost: 250, time: 10, buildR: 35, weapon: { range: 48, dmg: 5, rof: 0.13, acc: 0.3, burst: true, tracer: true } },
   atgun: { name: 'Canhão AT 57mm', short: 'Canhão AT', hp: 550, w: 7, d: 7, cost: 350, time: 12, buildR: 35, weapon: { range: 65, dmg: 110, rof: 4, acc: 0.7, at: true, proj: 'shell', splash: 3 } },
   hospital: { name: 'Hospital de Campanha', short: 'Hospital', hp: 650, w: 14, d: 12, cost: 350, time: 15, buildR: 45, heal: 4, healR: 32 },
@@ -53,13 +71,15 @@ const BT = {
   aa: { name: 'Canhão Antiaéreo 40mm', short: 'Antiaéreo', hp: 500, w: 7, d: 7, cost: 300, time: 12, buildR: 35, aa: { range: 175, dmg: 30, rof: 0.55, acc: 0.34 } },
   flak_de: { name: 'Flak 38 de 20 mm', team: 'de', hp: 380, w: 6, d: 6, aa: { range: 150, dmg: 16, rof: 0.32, acc: 0.28 } },
 };
-const BUILD_ORDER = ['depot', 'barracks', 'factory', 'mgnest', 'atgun', 'aa', 'hospital', 'naval', 'coastgun'];
+const BUILD_ORDER = ['depot', 'barracks', 'factory', 'motorpool', 'mgnest', 'atgun', 'aa', 'hospital', 'naval', 'coastgun'];
 
 function foe() { return SC.foe || { adj: 'alemão', adjF: 'alemã', pl: 'alemães', air: 'fw190' }; }
 function dispName(e) { return (SC.names && SC.names[e.kind]) || e.def.name; }
 function strikeName(k) { return (SC.strikeNames && SC.strikeNames[k]) || STRIKES[k].name; }
 function airName(p) { return (SC.airNames && SC.airNames[p.kind]) || p.def.name; }
-function hqTown() { return MAP.towns[4].name; }
+function hqTown() { return S.hqPlace ? S.hqPlace.name : MAP.towns[4].name; }
+function seaCoast() { return SC.coast && !SC.river; }
+Object.assign(SCENARIOS.pacifico.unitMap, { panther: 'chiha', kingtiger: 'chiha', jagdpanther: 'chiha', hetzer: 'chiha', puma: 'hago', wirbelwind: 'hago', kubel: 'hago', maultier: 'chiha' });
 /* ---------- renderizador e cena ---------- */
 const $ = (id) => document.getElementById(id);
 const canvas = $('c');
@@ -79,7 +99,8 @@ sun.shadow.camera.near = 10; sun.shadow.camera.far = 700; sun.shadow.bias = -0.0
 scene.add(sun, sun.target);
 const skyGeo = new THREE.SphereGeometry(2600, 24, 12);
 skyGeo.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(skyGeo.attributes.position.count * 3), 3));
-scene.add(new THREE.Mesh(skyGeo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false })));
+const skyMesh = new THREE.Mesh(skyGeo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false }));
+skyMesh.frustumCulled = false; scene.add(skyMesh);
 // neve caindo (Ardenas)
 const SNOW_N = 2200, snowGeo = new THREE.BufferGeometry(), snowPos = new Float32Array(SNOW_N * 3);
 for (let i = 0; i < SNOW_N; i++) { snowPos[i * 3] = (Math.random() - 0.5) * 300; snowPos[i * 3 + 1] = Math.random() * 120; snowPos[i * 3 + 2] = (Math.random() - 0.5) * 300; }
@@ -97,7 +118,11 @@ function updSnow(dt) {
   snow.position.set(cam.x, ty, cam.z);
 }
 function applyScenarioLook() {
-  scene.background.setHex(SC.sky); scene.fog.color.setHex(SC.sky); scene.fog.near = SC.fog[0]; scene.fog.far = SC.fog[1];
+  // modo livre "sem névoa": a neblina de distância vai bem mais longe
+  const clear = S.free.fog, fogN = SC.fog[0] * (clear ? 2.6 : 1), fogF = SC.fog[1] * (clear ? 2.1 : 1);
+  scene.background.setHex(SC.sky); scene.fog.color.setHex(SC.sky); scene.fog.near = fogN; scene.fog.far = fogF;
+  camera.far = SC.big || clear ? fogF + 80 : 3200; camera.updateProjectionMatrix();
+  skyMesh.scale.setScalar(Math.min(1, (camera.far * 0.9) / 2600));
   hemi.color.setHex(SC.hemi[0]); hemi.groundColor.setHex(SC.hemi[1]); hemi.intensity = SC.hemi[2];
   sun.color.setHex(SC.sun); sun.intensity = SC.sunI;
   const top = new THREE.Color(SC.skyTop), hor = new THREE.Color(SC.skyHor), cc = new THREE.Color(), pa = skyGeo.attributes.position, ca = skyGeo.attributes.color;
@@ -106,8 +131,9 @@ function applyScenarioLook() {
   snow.visible = !!SC.snow;
 }
 try { const sv = localStorage.getItem('diad-scenario'); if (sv && SCENARIOS[sv]) SC = SCENARIOS[sv]; } catch (e) { /* sem armazenamento */ }
+const FREE0 = { res: false, fog: false, nowaves: false };
+try { Object.assign(FREE0, JSON.parse(localStorage.getItem('diad-free') || '{}')); } catch (e) { /* sem armazenamento */ }
 buildWorld(scene);
-applyScenarioLook();
 
 function applyGfx() {
   const hi = GFX === 'high';
@@ -128,10 +154,11 @@ const S = {
   phase: 'menu', time: 0, t: 0, supplies: 0, kills: 0, lost: 0, naval: 0,
   boats: [], wrecks: [], timers: [], wave: 0, waveT: 0, placing: null, strike: null, supportOpen: false, boxMode: false,
   cd: { naval: 0, p47: 0, b26: 0, para: 0 }, planes: [], bombs: [], chutes: [], flybyT: 3, airT: 180, prillerDone: false,
-  lst: null, cps: [], bunkers: [], deHQ: null, usHQ: null, dozer: null,
+  lst: null, cps: [], bunkers: [], deHQ: null, usHQ: null, dozer: null, places: [], hqPlace: null, pings: [], free: FREE0,
   reinf: [], artT: 4, splashT: 1, cine: false, menuFx: 1, startedAt: 0,
 };
 const ents = [];
+applyScenarioLook();
 let selected = [];
 let eid = 0;
 const civs = [];
@@ -450,12 +477,23 @@ function fireWeapon(src, tgt, w, dist, fromPos) {
   const hit = rand() < acc;
   const ty = tgt.y + (tgt.inf ? 1.2 : tgt.building ? 2.5 : 1.5);
   src.revealT = S.time;
+  if (w.salvo) {
+    // salva de foguetes: espalha pela área do alvo
+    for (let i = 0; i < w.salvo; i++) later(i * 0.12, () => {
+      if (!src.alive) return;
+      const a = rand() * 6.28, m = rand() * 10, ax = tgt.x + Math.cos(a) * m, az = tgt.z + Math.sin(a) * m, p0 = muzzlePos(src, new THREE.Vector3());
+      p0.x += rr(-0.8, 0.8); p0.y += rr(-0.3, 0.5);
+      launch({ kind: 'rocket', p0, tx: ax, ty: surfaceH(ax, az), tz: az, speed: 75, arc: w.lob, target: null, w, src, team: src.team });
+      muzzleFlash(p0, 1.2); sfx('rocket', src.x, src.z);
+    });
+    src.recoil = 1; return;
+  }
   if (w.proj) {
     let ax = tgt.x, az = tgt.z, ay = ty;
-    if (!hit) { const a = rand() * 6.28, m = 2.5 + rand() * 6; ax += Math.cos(a) * m; az += Math.sin(a) * m; ay = surfaceH(ax, az); }
+    if (!hit) { const a = rand() * 6.28, m = (w.lob ? 4 : 2.5) + rand() * (w.lob ? 10 : 6); ax += Math.cos(a) * m; az += Math.sin(a) * m; ay = surfaceH(ax, az); }
     else if (tgt.building) { ax += rr(-1, 1) * tgt.r * 0.4; az += rr(-1, 1) * tgt.r * 0.4; }
     if (w.proj === 'torpedo') { p.y = 0.2; ay = 0.2; }
-    launch({ kind: w.proj, p0: p, tx: ax, ty: ay, tz: az, speed: w.proj === 'shell' ? 240 : w.proj === 'torpedo' ? 32 : 75, arc: w.proj === 'rocket' ? 0.6 : 0, target: hit ? tgt : null, w, src, team: src.team });
+    launch({ kind: w.proj, p0: p, tx: ax, ty: ay, tz: az, speed: w.lob ? 95 : w.proj === 'shell' ? 240 : w.proj === 'torpedo' ? 32 : 75, arc: w.lob || (w.proj === 'rocket' ? 0.6 : 0), target: hit ? tgt : null, w, src, team: src.team });
     muzzleFlash(p, w.proj === 'shell' ? 2.4 : 1.2);
     sfx(w.proj === 'shell' ? 'cannon' : 'rocket', src.x, src.z);
     src.recoil = 1;
@@ -524,7 +562,8 @@ function separate() {
       const dx = a.x - o.x, dz = a.z - o.z, md = o.r + a.r, d2 = dx * dx + dz * dz;
       if (d2 < md * md && d2 > 1e-6) { const d = Math.sqrt(d2); a.x = o.x + dx / d * md; a.z = o.z + dz / d * md; }
     }
-    a.x = clamp(a.x, WORLD.minX + 5, WORLD.maxX - 5); a.z = clamp(a.z, WORLD.minZ + 5, SC.coast ? SHORE_Z + 12 : WORLD.maxZ - 5);
+    a.x = clamp(a.x, WORLD.minX + 5, WORLD.maxX - 5); a.z = clamp(a.z, WORLD.minZ + 5, seaCoast() ? SHORE_Z + 12 : WORLD.maxZ - 5);
+    if (SC.river) { if (groundH(a.x, a.z) < -0.4) { if (a.lx !== undefined) { a.x = a.lx; a.z = a.lz; } } else { a.lx = a.x; a.lz = a.z; } }
   }
 }
 
@@ -775,6 +814,7 @@ function updateUnit(u, dt) {
     }
     return;
   }
+  if (d.aa) updateAA(u, dt);
   const gh = groundH(u.x, u.z);
   u.y = gh;
   if (u.inf) {
@@ -959,14 +999,15 @@ function updateBuilding(b, dt) {
 function canPlace(kind, x, z) {
   const d = BT[kind], r = Math.max(d.w, d.d) * 0.55;
   if (kind === 'naval') {
-    if (!SC.coast) return 'Sem litoral neste cenário.';
+    if (!seaCoast()) return 'Sem mar neste cenário.';
     if (z < 282 || z > 326) return 'A Base Naval precisa ficar na praia, perto da água.';
   } else if (groundH(x, z) < 1.4 || (SC.coast && z > 300)) return 'Terreno inválido: muito perto da água.';
   let inR = false;
+  for (const c of S.cps) if (c.owner === 'us' && Math.hypot(c.x - x, c.z - z) < 80) { inR = true; break; }
   for (const e of ents) if (e.building && e.alive && e.team === 'us' && e.complete) {
     const R = (e.def.buildR || 40) * (kind === 'naval' || kind === 'coastgun' ? 2.4 : 1); if (Math.hypot(e.x - x, e.z - z) < R) { inR = true; break; }
   }
-  if (!inR) return 'Fora da área da base: construa perto das suas construções.';
+  if (!inR) return 'Fora da área da base: construa perto das suas construções ou de um lugar conquistado.';
   for (const e of ents) if (e.building && e.alive && Math.hypot(e.x - x, e.z - z) < e.r + r + 1.5) return 'Espaço ocupado por outra construção.';
   MAP.obstacles.near(x, z, _obs);
   for (const o of _obs) if (Math.hypot(o.x - x, o.z - z) < o.r + r) return 'Espaço ocupado: há edifícios aqui.';
@@ -1063,7 +1104,7 @@ function updVisibility() {
   for (const e of ents) if (e.alive && e.team === 'us') viewers.push(e);
   for (const e of ents) {
     if (e.team !== 'de' || !e.alive) continue;
-    let vis = e.alwaysSeen || S.time - e.revealT < 2.5;
+    let vis = S.free.fog || e.alwaysSeen || S.time - e.revealT < 2.5;
     if (!vis) for (const v of viewers) {
       const r = (v.def.vision || 60) + e.r, dx = v.x - e.x, dz = v.z - e.z;
       if (dx * dx + dz * dz < r * r) { vis = true; break; }
@@ -1113,7 +1154,7 @@ function updateBoats(dt) {
     } else if (b.state === 'out') {
       b.t += dt; if (ud.ramp) ud.ramp.rotation.x = Math.max(0, 1.45 - b.t);
       b.z += Math.min(10, b.t * 3) * dt;
-      if (b.z > (b.road ? 640 : 760)) { scene.remove(b.mesh); S.boats.splice(i, 1); continue; }
+      if (b.z > (b.road ? 640 : SC.river ? SC.river - 40 : 760)) { scene.remove(b.mesh); S.boats.splice(i, 1); continue; }
     }
     if (b.road) {
       b.mesh.position.set(b.x, groundH(b.x, b.z) + Math.abs(Math.sin(S.time * 9 + b.x)) * 0.05 * (b.state === 'in' ? 1 : 0), b.z);
@@ -1140,10 +1181,10 @@ function startLanding() {
   cam.follow = () => { let x = 0, z = 0, n = 0; for (const b of S.boats) if (b.state !== 'out') { x += b.x; z += b.z; n++; } return n ? { x: x / n, z: z / n - 30 } : null; };
   cam.x = -40; cam.z = road ? 520 : 440; cam.dist = 90; cam.pitch = 0.42; cam.yaw = 0; cam.tDist = 125; cam.tPitch = 0.55;
   setPhaseText(road ? 'FASE 1 · CHEGADA DO COMBOIO' : 'FASE 1 · DESEMBARQUE', objective1(0));
-  toast(road ? 'O comboio chega pela estrada. Preparem-se para desembarcar!' : 'Hora H — as barcaças Higgins se aproximam da praia.');
-  later(7, () => toast('Dica: toque em APOIO para chamar ' + (SC.coast ? 'destróieres, ' : '') + 'caças P-47 ou paraquedistas.'));
+  toast(road ? 'O comboio chega pela estrada. Preparem-se para desembarcar!' : SC.river ? 'Hora H — os botes de assalto atravessam o Reno.' : 'Hora H — as barcaças Higgins se aproximam da praia.');
+  later(7, () => toast('Dica: toque em APOIO para chamar ' + (SC.coast ? strikeName('naval').toLowerCase() + ', ' : '') + 'caças P-47 ou paraquedistas.'));
 }
-function objective1(done) { return 'Destrua as 4 ' + (SC.coast ? 'casamatas ' + foe().pl.replace('ses', 'sas').replace('ães', 'ãs') + ' na praia' : 'posições ' + foe().pl.replace('ães', 'ãs') + ' na colina') + ' (' + done + '/4).'; }
+function objective1(done) { return 'Destrua as 4 ' + (SC.coast ? 'casamatas ' + foe().pl.replace('ses', 'sas').replace('ães', 'ãs') + (SC.river ? ' na margem leste do Reno' : ' na praia') : 'posições ' + foe().pl.replace('ães', 'ãs') + ' na colina') + ' (' + done + '/4).'; }
 function updateLanding(dt) {
   updateBoats(dt);
   for (let i = S.reinf.length - 1; i >= 0; i--) {
@@ -1156,12 +1197,12 @@ function updateLanding(dt) {
       toast(SC.coast ? 'Nova onda de barcaças a caminho!' : 'Mais caminhões com reforços a caminho!', 'good');
     }
   }
-  if (SC.coast && !S.ddArrived && S.t > 45) {
+  if (seaCoast() && !S.ddArrived && S.t > 45) {
     S.ddArrived = true;
     for (const [x, z, tx] of [[-200, 760, -180], [170, 800, 150]]) { const u = spawnUnit('destroyer', x, z, { heading: Math.PI }); u.order = 'move'; u.dest = { x: tx, z: 392 }; }
     toast('Contratorpedeiros se aproximam da costa! Selecione-os e toque no mar para movê-los.', 'good');
   }
-  if (SC.coast && !S.sbootDone && S.t > 115) { S.sbootDone = true; sbootRaid(2); if (SC.biome === 'tropical') later(20, () => kamikazeRaid(2)); }
+  if (seaCoast() && !S.sbootDone && S.t > 115) { S.sbootDone = true; sbootRaid(2); if (SC.biome === 'tropical') later(20, () => kamikazeRaid(2)); }
   const alive = S.bunkers.filter(b => b.alive).length;
   S.artT -= dt;
   if (S.artT <= 0 && alive > 0) {
@@ -1179,7 +1220,7 @@ function updateLanding(dt) {
     if (bs.length) { const b = bs[(rand() * bs.length) | 0]; const x = b.x + rr(-25, 25), z = b.z + rr(-30, 20); explosion(x, surfaceH(x, z), z, rr(0.8, 1.3)); }
   }
   setPhaseText(null, objective1(4 - alive));
-  if (alive === 0) { toast(SC.coast ? 'PRAIA ASSEGURADA! As casamatas caíram.' : 'COLINA TOMADA! As posições inimigas caíram.', 'good'); startLST(); return; }
+  if (alive === 0) { toast(SC.river ? 'MARGEM LESTE ASSEGURADA! As casamatas caíram.' : SC.coast ? 'PRAIA ASSEGURADA! As casamatas caíram.' : 'COLINA TOMADA! As posições inimigas caíram.', 'good'); startLST(); return; }
   const usAlive = ents.some(e => e.alive && e.team === 'us' && !e.def.naval);
   const pending = S.reinf.length || S.boats.some(b => b.state !== 'out');
   if (!usAlive && !pending) endGame(false, 'A primeira onda foi aniquilada. As posições inimigas resistiram.');
@@ -1194,15 +1235,18 @@ function startLST() {
   S.phase = 'lst'; S.cine = true; S.lstT = 0;
   $('letterbox').hidden = false; $('skip').hidden = false;
   setSel([]); cancelPlacing(); S.strike = null; S.supportOpen = false;
-  if (!SC.coast) {
+  if (!SC.coast || SC.river) {
+    // no Reno: os engenheiros lançam uma ponte flutuante e o comboio atravessa
+    const rv = !!SC.river, z0 = rv ? SC.river + 40 : 600, fast = rv ? 2.2 : 1;
+    if (rv) { MAP.pontoon = 22; MAP.pontoonMesh.visible = true; }
     S.lst = { convoy: true, state: 'drive', t: 0 };
-    const dz = spawnUnit('dozer', 22, 600, { heading: Math.PI }); dz.order = 'move'; dz.dest = { x: 22, z: 268 }; S.dozer = dz;
-    later(2.5, () => { const s = spawnUnit('sherman', 22, 610, { heading: Math.PI }); s.order = 'move'; s.dest = { x: 6, z: 276 }; });
-    later(5, () => { const s = spawnUnit('sherman', 22, 610, { heading: Math.PI }); s.order = 'move'; s.dest = { x: 38, z: 276 }; });
+    const dz = spawnUnit('dozer', 22, z0, { heading: Math.PI }); dz.order = 'move'; dz.dest = { x: 22, z: 268 }; dz.speedMul = fast; S.dozer = dz;
+    later(2.5, () => { const s = spawnUnit('sherman', 22, z0 + 10, { heading: Math.PI }); s.order = 'move'; s.dest = rv ? { x: 22, z: 292 } : { x: 6, z: 276 }; s.speedMul = fast; });
+    later(5, () => { const s = spawnUnit('sherman', 22, z0 + 10, { heading: Math.PI }); s.order = 'move'; s.dest = rv ? { x: 22, z: 312 } : { x: 38, z: 276 }; s.speedMul = fast; });
     cam.follow = () => S.dozer && S.dozer.alive ? { x: S.dozer.x, z: S.dozer.z + 10 } : null;
     cam.tDist = 90; cam.tPitch = 0.5; cam.yaw = -0.35;
-    setPhaseText('FASE 2 · CABEÇA DE PONTE', 'Um comboio de engenharia traz o Veículo de Construção.');
-    toast('O comboio de engenharia chegou!', 'good');
+    setPhaseText('FASE 2 · CABEÇA DE PONTE', rv ? 'Os engenheiros lançaram uma ponte flutuante sobre o Reno.' : 'Um comboio de engenharia traz o Veículo de Construção.');
+    toast(rv ? 'Ponte flutuante pronta! O Veículo de Construção atravessa o Reno.' : 'O comboio de engenharia chegou!', 'good');
     return;
   }
   const m = makeLST(); m.rotation.y = Math.PI; scene.add(m);
@@ -1269,11 +1313,12 @@ function finishLST() {
   const L = S.lst; if (!L || L.state === 'leave') return;
   L.state = 'leave'; L.t = 0;
   S.phase = 'deploy'; S.cine = false; $('letterbox').hidden = true; $('skip').hidden = true;
+  for (const e of ents) if (e.unit && e.team === 'us') e.speedMul = 1;
   cam.follow = null; cam.tDist = 95; cam.tPitch = 0.85;
   if (S.dozer && S.dozer.alive) { cam.x = S.dozer.dest ? S.dozer.dest.x : S.dozer.x; cam.z = 250; }
   if (S.dozer && S.dozer.alive) setSel([S.dozer]);
-  setPhaseText(SC.coast ? 'FASE 2 · CABEÇA DE PRAIA' : 'FASE 2 · CABEÇA DE PONTE', 'Leve o Veículo de Construção para um local seguro e toque em MONTAR BASE.');
-  toast(SC.coast ? 'Escolha um local no alto da praia ou da falésia e monte a base.' : 'Escolha um local perto da estrada e monte a base.');
+  setPhaseText(seaCoast() ? 'FASE 2 · CABEÇA DE PRAIA' : 'FASE 2 · CABEÇA DE PONTE', 'Leve o Veículo de Construção para um local seguro e toque em MONTAR BASE.');
+  toast(SC.river ? 'Escolha um local na margem leste e monte a base.' : SC.coast ? 'Escolha um local no alto da praia ou da falésia e monte a base.' : 'Escolha um local perto da estrada e monte a base.');
 }
 function validHQ(x, z) {
   if (groundH(x, z) < 1.2 || (SC.coast && z > 300)) return 'Aqui não dá: leve o veículo para longe da água.';
@@ -1292,28 +1337,31 @@ function deployHQ() {
   $('bBuild').hidden = false;
   setSel([hq]);
   toast('Base montada! Construa um Depósito e um Quartel.', 'good');
-  setPhaseText('FASE 3 · AVANÇO', 'Capture as vilas e destrua o quartel-general ' + foe().adj + ' em ' + hqTown() + '.');
+  setPhaseText('FASE 3 · AVANÇO', 'Capture ' + (SC.big ? 'os lugares' : 'as vilas') + ' e destrua o quartel-general ' + foe().adj + ' em ' + hqTown() + '.');
+  if (SC.big) later(4, () => toast(S.cps.length + ' lugares para conquistar. Cada lugar conquistado dá suprimentos e permite construir perto dele.', 'good'));
 }
 
 /* ---------- fase 3: base, vilas e contra-ataques ---------- */
+const CP_RING = new THREE.RingGeometry(29, 30, 64);
 function makeCP(t) {
   const g = new THREE.Group(); g.position.set(t.x, groundH(t.x, t.z), t.z);
   P(G.cyl8, 0x8a8a84, 0.12, 12, 0.12, 0, 6, 0, g);
   P(G.box, 0x6e6658, 2.4, 0.6, 2.4, 0, 0.3, 0, g);
   const cloth = new THREE.Mesh(G.plane, decalMat(foeFlag())); cloth.scale.set(3.6, 2.4, 1); cloth.position.set(1.85, 10.6, 0); g.add(cloth);
   scene.add(g);
-  const ring = new THREE.Mesh(new THREE.RingGeometry(29, 30, 64), new THREE.MeshBasicMaterial({ color: 0xe0573f, transparent: true, opacity: 0.5, depthWrite: false }));
+  const ring = new THREE.Mesh(CP_RING, new THREE.MeshBasicMaterial({ color: 0xe0573f, transparent: true, opacity: 0.5, depthWrite: false }));
   ring.rotation.x = -Math.PI / 2; ring.position.set(t.x, groundH(t.x, t.z) + 0.6, t.z); scene.add(ring);
   return { town: t, x: t.x, z: t.z, owner: 'de', prog: -1, cloth, ring, g };
 }
 function updCPs() {
   if (S.phase !== 'base') return;
   for (const c of S.cps) {
+    if (SC.big) { const dx = c.x - cam.x, dz = c.z - cam.z, v = dx * dx + dz * dz < 1900 * 1900; c.g.visible = v; c.ring.visible = v; }
     let us = 0, de = 0;
     for (const e of ents) if (e.alive && e.unit && !e.downed && Math.abs(e.x - c.x) < 30 && Math.abs(e.z - c.z) < 30 && Math.hypot(e.x - c.x, e.z - c.z) < 30) { if (e.team === 'us') us++; else de++; }
     if (us && !de) c.prog = Math.min(1, c.prog + 0.5 / 7);
     else if (de && !us) c.prog = Math.max(-1, c.prog - 0.5 / 7);
-    if (c.prog >= 1 && c.owner !== 'us') { c.owner = 'us'; toast(c.town.name + ' libertada! +6 suprimentos/s', 'good'); }
+    if (c.prog >= 1 && c.owner !== 'us') { c.owner = 'us'; if (c.place) c.place.left = []; toast(c.town.name + (c.place ? ' conquistado(a)! +3 suprimentos/s' : ' libertada! +6 suprimentos/s'), 'good'); }
     if (c.prog <= -1 && c.owner !== 'de') { c.owner = 'de'; toast(c.town.name + ' foi retomada pelos ' + foe().pl + '!', 'bad'); }
     const k = Math.abs(c.prog);
     c.cloth.material = decalMat(c.prog >= 0 ? TEX.usflag : foeFlag());
@@ -1324,7 +1372,7 @@ function updCPs() {
 function income() {
   let inc = 0;
   for (const e of ents) if (e.alive && e.building && e.team === 'us' && e.complete && e.def.income) inc += e.def.income;
-  for (const c of S.cps) if (c.owner === 'us') inc += 6;
+  for (const c of S.cps) if (c.owner === 'us') inc += c.place ? 3 : 6;
   return inc;
 }
 function spawnWave(n) {
@@ -1344,6 +1392,9 @@ function spawnWave(n) {
   if (n >= 5) comp.push('sdkfz251');
   if (n >= 3) comp.push('stug');
   if (n >= 6) comp.push('stug');
+  if (n >= 3 && ['omaha', 'italia', 'ardenas'].includes(SC.id)) comp.push('puma');
+  if (n >= 5 && ['omaha', 'ardenas'].includes(SC.id)) comp.push('panther');
+  if (n >= 7 && SC.id === 'ardenas') comp.push('kingtiger');
   comp.forEach((k) => {
     const u = spawnUnit(k, src.x + rr(-22, 22), src.z + rr(10, 30), { heading: 0 });
     u.order = 'amove'; u.dest = { x: tgt.x + rr(-18, 18), z: tgt.z + rr(-18, 18) }; u.wave = true;
@@ -1364,17 +1415,22 @@ function waveRetarget() {
 function updateBase(dt) {
   S.supplies += income() * dt;
   S.waveT -= dt;
-  if (S.waveT <= 0 && S.deHQ && S.deHQ.alive) { S.wave++; spawnWave(S.wave); S.waveT = Math.max(55, 105 - S.wave * 6); }
+  if (S.waveT <= 0 && S.deHQ && S.deHQ.alive) {
+    S.wave++;
+    if (frontActive()) { frontOffensive(S.wave); S.waveT = Math.max(60, 105 - S.wave * 4) + rand() * 25; }
+    else { spawnWave(S.wave); S.waveT = Math.max(55, 105 - S.wave * 6); }
+  }
   S.retT = (S.retT || 0) - dt; if (S.retT <= 0) { S.retT = 5; waveRetarget(); }
   const freed = S.cps.filter(c => c.owner === 'us').length;
   const mm = Math.floor(Math.max(0, S.waveT) / 60), ss = Math.floor(Math.max(0, S.waveT) % 60);
-  setPhaseText(null, 'Destrua o QG ' + foe().adj + ' em ' + hqTown() + '. Vilas libertadas: ' + freed + '/4. Contra-ataque em ' + mm + ':' + String(ss).padStart(2, '0') + '.');
+  setPhaseText(null, 'Destrua o QG ' + foe().adj + ' em ' + hqTown() + '. ' + (SC.big ? 'Lugares conquistados: ' : 'Vilas libertadas: ') + freed + '/' + S.cps.length + '. ' + (frontActive() ? 'Próxima ofensiva inimiga' : 'Contra-ataque') + ' em ' + mm + ':' + String(ss).padStart(2, '0') + '.');
   if (S.deHQ && !S.deHQ.alive) endGame(true, 'O quartel-general ' + foe().adj + ' em ' + hqTown() + ' caiu. A operação foi um sucesso e o caminho para o interior está aberto.');
   else if (S.usHQ && !S.usHQ.alive) endGame(false, 'O Centro de Comando foi destruído. Sem comando, a cabeça de praia não resistiu ao contra-ataque.');
 }
 
 /* ---------- guarnições alemãs ---------- */
 const GAR_EXTRA = [['sdkfz251'], ['stug'], [], ['sdkfz251', 'stug'], ['stug', 'sdkfz251']];
+const GAR_EXTRA_RENO = [['kubel', 'sdkfz251'], ['hetzer', 'puma'], ['kubel'], ['sdkfz251', 'panther'], ['panther', 'wirbelwind']];
 function spawnWrecks() {
   const put = (mesh, x, z, ry, rx, rz, sink) => {
     const h = groundH(x, z); mesh.position.set(x, Math.max(h, -0.6) - sink, z); mesh.rotation.order = 'YXZ'; mesh.rotation.set(rx, ry, rz);
@@ -1417,11 +1473,11 @@ function spawnGermans() {
     at('sani');
     for (let i = 0; i < p4; i++) at('panzer4');
     for (let i = 0; i < tig; i++) at('tiger');
-    for (const k of GAR_EXTRA[ti]) at(k);
+    for (const k of (SC.big ? GAR_EXTRA_RENO : GAR_EXTRA)[ti]) at(k);
     if (nest) spawnBuilding('nest_de', t.x + 8, t.z + 9, { complete: true });
     if (ti === 3 || ti === 1) spawnBuilding('flak_de', t.x - 14, t.z + 13, { complete: true });
-    if (t.cp) S.cps.push(makeCP(t));
-    if (t.hq) {
+    if (t.cp || (SC.big && t.hq)) S.cps.push(makeCP(t));
+    if (t.hq && !SC.big) {
       S.deHQ = spawnBuilding('dehq', t.x, t.z - 6, { complete: true });
       spawnBuilding('bunker', t.x - 45, t.z + 70, { complete: true });
       spawnBuilding('flak_de', t.x + 32, t.z + 30, { complete: true });
@@ -1431,12 +1487,14 @@ function spawnGermans() {
       ringSpots.forEach(p => spawnUnit('gren', p[0], p[1], { order: 'hold' }));
       for (let i = ringSpots.length; i < 10; i++) { const a = rand() * Math.PI, x = t.x + Math.cos(a) * 110, z = t.z + Math.sin(a) * 95; spawnUnit('gren', x, z, { order: 'guard' }); }
     }
-    if (t.cp) for (let i = 0; i < 4; i++) {
+    if (t.cp || SC.big) for (let i = 0; i < 4; i++) {
       const c = { x: t.x + rr(-20, 20), z: t.z + rr(-20, 20), mesh: makeSoldier('civ'), ph: rand() * 6, dest: null, wait: rand() * 4, town: t, flee: null, heading: 0 };
       c.mesh.position.set(c.x, groundH(c.x, c.z), c.z); scene.add(c.mesh); civs.push(c);
     }
   });
+  spawnGermansBig();
 }
+function spawnGermansBig() { placesInit(); }
 function updCivs(dt) {
   for (const c of civs) {
     let goal = null, spd = 2.2;
@@ -1638,8 +1696,8 @@ function updateAA(b, dt) {
   if (!best) return;
   const lead = bd / 260 * best.def.speed;
   const ax = best.x + best.dx * lead, az = best.z + best.dz * lead, ay = best.y;
-  const ship = !b.building;
-  if (!ship) {
+  const ship = !b.building && !!b.def.naval, mob = !b.building && !b.def.naval;
+  if (b.building) {
     b.turretYaw = turnTo(b.turretYaw, angDiff(Math.atan2(ax - b.x, az - b.z), b.heading), 3.5 * dt);
     ud.turret.rotation.y = b.turretYaw;
     if (ud.barrel) ud.barrel.rotation.x = -Math.atan2(ay - b.y - 2, Math.hypot(ax - b.x, az - b.z));
@@ -1647,6 +1705,7 @@ function updateAA(b, dt) {
   if (b.wcool > 0) return;
   b.wcool = w.rof * (0.9 + rand() * 0.2);
   if (ship) TV2.set(b.x + rr(-3, 3), 5.5, b.z + rr(-8, 8));
+  else if (mob) muzzlePos(b, TV2);
   else { b.mesh.updateMatrixWorld(true); ud.muzzle.getWorldPosition(TV2); }
   const mp = TV2.clone(); muzzleFlash(mp, 1.3);
   const hit = rand() < w.acc * (1 - 0.5 * bd / w.range);
@@ -1711,7 +1770,7 @@ function updAir(dt) {
       if (beach.length) { S.prillerDone = true; const v = beach[(rand() * beach.length) | 0]; germanRaid(v.x, v.z, rand() < 0.5 ? 1 : -1, 0.15); }
     }
   } else if (S.phase === 'base') {
-    if (SC.coast) {
+    if (seaCoast()) {
       S.sbootT = (S.sbootT === undefined ? 200 : S.sbootT) - dt;
       if (S.sbootT <= 0) {
         S.navalWave = (S.navalWave || 0) + 1;
@@ -1734,7 +1793,7 @@ function supportReady(k) { return S.cd[k] <= 0 && strikeAvail(k); }
 
 /* ---------- apoio naval ---------- */
 function navalStrike(x, z) {
-  toast('Destróieres abrindo fogo! Cuidado com fogo amigo.', 'good');
+  toast(strikeName('naval') + ' abrindo fogo! Cuidado com fogo amigo.', 'good');
   for (let i = 0; i < 6; i++) {
     later(0.5 + i * 0.45, () => {
       const g = MAP.navalGuns[(rand() * MAP.navalGuns.length) | 0];
@@ -1765,13 +1824,14 @@ function updateCamera(dt) {
     if (K.a || K.arrowleft) panWorld(-sp, 0); if (K.d || K.arrowright) panWorld(sp, 0);
     if (K.q) cam.yaw += dt * 1.2; if (K.e) cam.yaw -= dt * 1.2;
   }
-  cam.x = clamp(cam.x, WORLD.minX + 30, WORLD.maxX - 30); cam.z = clamp(cam.z, WORLD.minZ + 30, 900);
+  cam.x = clamp(cam.x, WORLD.minX + 30, WORLD.maxX - 30); cam.z = clamp(cam.z, WORLD.minZ + 30, seaCoast() ? 900 : WORLD.maxZ - 30);
   cam.dist = clamp(cam.dist, 22, 420); cam.pitch = clamp(cam.pitch, 0.3, 1.38);
   const ty = surfaceH(cam.x, cam.z), cp = Math.cos(cam.pitch) * cam.dist;
   camera.position.set(cam.x + Math.sin(cam.yaw) * cp, ty + Math.sin(cam.pitch) * cam.dist, cam.z + Math.cos(cam.yaw) * cp);
   const gh = surfaceH(camera.position.x, camera.position.z); if (camera.position.y < gh + 5) camera.position.y = gh + 5;
   if (cam.shake > 0) { camera.position.x += (rand() - 0.5) * cam.shake; camera.position.y += (rand() - 0.5) * cam.shake; cam.shake = Math.max(0, cam.shake - dt * 2.5); }
   camera.lookAt(cam.x, ty + 1, cam.z);
+  skyMesh.position.set(camera.position.x, 0, camera.position.z);
   sun.position.set(cam.x + 150, ty + 260, cam.z + 110); sun.target.position.set(cam.x, ty, cam.z);
   const ext = clamp(cam.dist * 1.15, 70, 230);
   if (Math.abs(ext - shadowExt) > 10) { shadowExt = ext; const sc = sun.shadow.camera; sc.left = -ext; sc.right = ext; sc.top = ext; sc.bottom = -ext; sc.updateProjectionMatrix(); }
@@ -2008,7 +2068,7 @@ function refreshPanel(force) {
     if (!b.complete) btns += '<div style="flex-basis:100%" class="qbar"><i data-prog="build"></i></div>';
     else if (b.kind === 'hq') {
       for (const k of BUILD_ORDER) {
-        if (BT[k].coastOnly && !SC.coast) continue;
+        if (BT[k].coastOnly && !seaCoast()) continue;
         const bd = BT[k], ok = S.supplies >= bd.cost && (!bd.req || ents.some(e => e.alive && e.kind === bd.req && e.complete));
         btns += '<button class="pb" data-act="build:' + k + '"' + (ok ? '' : ' disabled') + '>' + bd.short + '<small>' + bd.cost + '</small></button>';
       }
@@ -2093,8 +2153,11 @@ function drawMini() {
   mctx.drawImage(MAP.miniBase, 0, 0);
   for (const c of S.cps) {
     const q = MAP.toM(c.x, c.z); mctx.fillStyle = c.owner === 'us' ? '#8fd16f' : '#e0573f';
-    mctx.fillRect(q[0] - 1, q[1] - 7, 1.5, 7); mctx.fillRect(q[0], q[1] - 7, 5, 3);
+    if (SC.big) mctx.fillRect(q[0] - 1.5, q[1] - 1.5, 3, 3);
+    else { mctx.fillRect(q[0] - 1, q[1] - 7, 1.5, 7); mctx.fillRect(q[0], q[1] - 7, 5, 3); }
   }
+  if (S.hqPlace) { const q = MAP.toM(S.hqPlace.x, S.hqPlace.z); mctx.strokeStyle = '#ffd36a'; mctx.lineWidth = 1.5; mctx.strokeRect(q[0] - 4, q[1] - 4, 8, 8); }
+  for (const p of S.pings) { const q = MAP.toM(p.x, p.z), r = 3 + (6 - p.t) % 1.5 * 6; mctx.strokeStyle = 'rgba(255,90,64,' + Math.min(1, p.t / 2) + ')'; mctx.lineWidth = 1.5; mctx.beginPath(); mctx.arc(q[0], q[1], r, 0, 6.29); mctx.stroke(); }
   for (const e of ents) {
     if (!e.alive || (e.team === 'de' && !e.seen)) continue;
     const q = MAP.toM(e.x, e.z);
@@ -2115,7 +2178,7 @@ function drawMini() {
   void W; void H;
 }
 function updHUD() {
-  $('sup').textContent = Math.floor(S.supplies);
+  $('sup').textContent = S.free.res ? '∞' : Math.floor(S.supplies);
   $('inc').textContent = S.phase === 'base' ? '+' + income() + '/s' : 'sem base';
   let inf = 0, tk = 0;
   for (const e of ents) if (e.alive && e.team === 'us' && e.unit) { if (e.inf) inf++; else if (e.tank) tk++; }
@@ -2130,13 +2193,13 @@ function endGame(win, text) {
   S.phase = win ? 'won' : 'lost'; S.cine = false; cancelPlacing();
   toast(win ? 'VITÓRIA!' : 'DERROTA', win ? 'good' : 'bad');
   setTimeout(() => {
-    $('endEyebrow').textContent = win ? 'OPERAÇÃO OVERLORD · MISSÃO CUMPRIDA' : 'OPERAÇÃO OVERLORD · MISSÃO FRACASSADA';
+    $('endEyebrow').textContent = (SC.op || 'OPERAÇÃO OVERLORD') + (win ? ' · MISSÃO CUMPRIDA' : ' · MISSÃO FRACASSADA');
     $('endTitle').textContent = win ? 'VITÓRIA' : 'DERROTA';
     $('endText').textContent = text;
     const secs = Math.floor(S.time - S.startedAt);
     $('stTime').textContent = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
     $('stKills').textContent = S.kills; $('stLost').textContent = S.lost;
-    $('stTowns').textContent = S.cps.filter(c => c.owner === 'us').length + '/4';
+    $('stTowns').textContent = S.cps.filter(c => c.owner === 'us').length + '/' + S.cps.length;
     $('end').hidden = false; $('hud').hidden = true;
   }, 2600);
 }
@@ -2156,6 +2219,9 @@ function update(dt) {
     }
   } else if (S.phase === 'landing') updateLanding(dt);
   else if (S.phase === 'base') updateBase(dt);
+  if (S.free.res && S.phase !== 'menu') S.supplies = Math.max(S.supplies, 99999);
+  updFront(dt);
+  for (let i = S.pings.length - 1; i >= 0; i--) { S.pings[i].t -= dt; if (S.pings[i].t <= 0) S.pings.splice(i, 1); }
   if (S.lst) updateLST(dt);
   for (let i = ents.length - 1; i >= 0; i--) {
     const e = ents[i]; if (!e) continue;
@@ -2194,6 +2260,7 @@ function renderIntro() {
   $('scEyebrow').textContent = SC.eyebrow; $('scTitle').textContent = SC.title; $('scSub').textContent = SC.subtitle;
   $('scB1').textContent = SC.brief[0]; $('scB2').textContent = SC.brief[1];
   $('start').textContent = SC.coast ? 'INICIAR DESEMBARQUE' : 'INICIAR OPERAÇÃO';
+  for (const b of document.querySelectorAll('#free button')) b.setAttribute('aria-pressed', String(!!S.free[b.dataset.free]));
   $('scen').innerHTML = Object.values(SCENARIOS).map(c => '<button type="button" role="radio" aria-checked="' + (c === SC) + '" data-sc="' + c.id + '"><b>' + c.card + '</b><span>' + c.when + '</span></button>').join('');
 }
 // troca de cenário no menu: refaz o mapa, as guarnições e a aparência
@@ -2206,14 +2273,23 @@ function selectScenario(id) {
   for (const c of civs) scene.remove(c.mesh); civs.length = 0;
   for (const c of S.cps) { scene.remove(c.g); scene.remove(c.ring); } S.cps = [];
   for (const w of S.wrecks) scene.remove(w); S.wrecks = [];
-  S.bunkers = []; S.deHQ = null; FX.emitters.length = 0;
+  S.bunkers = []; S.deHQ = null; S.places = []; S.hqPlace = null; FX.emitters.length = 0;
   for (const m of FX.craters) m.visible = false;
-  buildWorld(scene); applyScenarioLook(); spawnGermans(); updVisibility();
+  buildWorld(scene); applyScenarioLook(); syncMini(); spawnGermans(); updVisibility();
   scene.traverse(o => { if (o.material && o.material.needsUpdate !== undefined && GFX === 'low') o.material.needsUpdate = true; });
   renderIntro();
   $('loading').textContent = 'Terreno pronto. Boa sorte, soldado.';
 }
 $('scen').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { b.disabled = true; setTimeout(() => selectScenario(b.dataset.sc), 30); } });
+$('free').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b || S.phase !== 'menu') return;
+  const k = b.dataset.free; S.free[k] = !S.free[k];
+  try { localStorage.setItem('diad-free', JSON.stringify(S.free)); } catch (er) { /* sem armazenamento */ }
+  if (k === 'fog') { applyScenarioLook(); updVisibility(); }
+  renderIntro();
+});
+function syncMini() { mini.width = MAP.MMW; mini.height = MAP.MMH; mini.style.aspectRatio = MAP.MMW + ' / ' + MAP.MMH; }
+syncMini();
 renderIntro();
 spawnGermans();
 applyGfx();

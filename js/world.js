@@ -6,6 +6,7 @@
    Norte = -Z (interior). Sul = +Z (mar ou estrada de chegada).
    ========================================================= */
 const WORLD = { minX: -700, maxX: 700, minZ: -1000, maxZ: 620 };
+const CORE = { minX: -700, maxX: 700, minZ: -1000, maxZ: 620 };
 const SHORE_Z = 330;
 const DRAWS = [-220, 180];
 const WIRE_Z = 214;
@@ -70,6 +71,20 @@ const SCENARIOS = {
     airNames: { p47: 'F6F Hellcat', b26: 'B-25 Mitchell' },
   },
 };
+SCENARIOS.reno = {
+  id: 'reno', big: true, river: 720, bounds: { minX: -2600, maxX: 2600, minZ: -6000, maxZ: 1100 },
+  trenches: ['wn'], biome: 'normandy', edge: 'fence', forestTree: 'pine', coast: true, bluff: 14, hills: 1.4, seed: 1945,
+  title: 'RENO', subtitle: 'Do Reno ao coração da Alemanha', card: 'Alemanha — Reno', when: 'mar 1945', op: 'OPERAÇÃO PLUNDER',
+  eyebrow: '24 DE MARÇO DE 1945 · 02:00 · 9º EXÉRCITO DOS EUA',
+  brief: ['Os botes de assalto atravessam o Reno perto de Wesel sob o fogo das posições alemãs na margem leste. Destrua as quatro posições para garantir a cabeça de ponte.',
+    'Os engenheiros vão lançar uma ponte flutuante para o Veículo de Construção. Depois avance pelo interior da Alemanha: mais de 150 cidades, vilas, fábricas, aeródromos, estações e castelos para conquistar, até o QG alemão em Magdeburg, no rio Elba.'],
+  towns: ['Wesel', 'Bislich', 'Hamminkeln', 'Schermbeck', 'Dorsten'],
+  sky: 0xa4adb2, fog: [340, 1350], sun: 0xfff2dc, sunI: 0.85, hemi: [0xcfd8dd, 0x4c4a36, 0.8], skyTop: 0x7c8d99, skyHor: 0xbdbfb6,
+  houses: { walls: [0x9a5a44, 0xd8d0bc, 0xb07055, 0xc9bfa6, 0x8e5440, 0xe0d8c4], roofs: [0x7a3a2a, 0x8a4430, 0x4a4e57, 0x6a3428, 0x5a3026], shut: 0x3a4a36 },
+  strikeNames: { naval: 'Artilharia de campanha' },
+};
+SCENARIOS.omaha.op = 'OPERAÇÃO OVERLORD'; SCENARIOS.africa.op = 'CAMPANHA DA TUNÍSIA'; SCENARIOS.italia.op = 'OPERAÇÃO SHINGLE';
+SCENARIOS.ardenas.op = 'BATALHA DAS ARDENAS'; SCENARIOS.pacifico.op = 'OPERAÇÃO FORAGER';
 let SC = SCENARIOS.omaha;
 
 function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
@@ -94,7 +109,14 @@ function groundH(x, z) {
   let h;
   if (z > 232) {
     if (SC.coast) {
-      if (z > SHORE_Z) return -(z - SHORE_Z) * 0.045 - 1.2 * smooth((z - SHORE_Z) / 24);
+      if (z > SHORE_Z) {
+        if (!SC.river) return -(z - SHORE_Z) * 0.045 - 1.2 * smooth((z - SHORE_Z) / 24);
+        const far = SC.river;
+        if (z >= far) return Math.min((z - far) * 0.03, 2.6) + 0.6 * smooth((z - far - 60) / 90) * Math.sin(x * 0.021 + z * 0.013);
+        if (MAP.pontoon !== null && Math.abs(x - MAP.pontoon) < 5.5) return 0.45;
+        const a = Math.min(z - SHORE_Z, far - z);
+        return -a * 0.045 - 1.2 * smooth(a / 24);
+      }
       h = (SHORE_Z - z) * 0.03;
     } else {
       h = 2.94 + smooth((z - 232) / 50) * (1.0 * Math.sin(x * 0.013 + z * 0.01) + 0.6 * Math.sin(x * 0.04 - z * 0.03) + 0.8);
@@ -109,6 +131,7 @@ function groundH(x, z) {
     if (k > 0) h += k * (2.6 * Math.sin(x * 0.011 + 1.3) * Math.cos(z * 0.009) + 1.4 * Math.sin(x * 0.027 + z * 0.021) + 0.7 * Math.cos(x * 0.05 - z * 0.04));
   }
   if (SC.mountain) { const [mx, mz, mh, mr] = SC.mountain, dx = x - mx, dz = z - mz; h += mh * Math.exp(-(dx * dx + dz * dz) / (mr * mr)); }
+  if (SC.big && z < 232) h = bigTerrain(x, z, h);
   if (SC.biome === 'desert') {
     const k = smooth((200 - z) / 120);
     h += k * (1.4 * Math.sin(x * 0.021 + Math.sin(z * 0.013) * 2.2) * Math.sin(z * 0.017) + 0.6 * Math.sin(x * 0.06 + z * 0.045));
@@ -116,6 +139,16 @@ function groundH(x, z) {
   return h;
 }
 function surfaceH(x, z) { return Math.max(groundH(x, z), 0); }
+// mapa grande: colinas largas fora do núcleo, morros dos castelos e bordas niveladas
+function bigTerrain(x, z, h) {
+  const ox = Math.max(0, Math.abs(x) - CORE.maxX), oz = Math.max(0, CORE.minZ - z), od = ox > 0 || oz > 0 ? Math.hypot(ox, oz) : 0;
+  const w = smooth(od / 350) * smooth((200 - z) / 150);
+  if (w > 0) h += w * (14 + 12 * Math.sin(x * 0.0019 + 0.7) * Math.cos(z * 0.0016 + 0.3) + 6 * Math.sin(x * 0.0047 - z * 0.0035 + 1.1) + 3 * Math.sin(x * 0.013 + z * 0.011) + 1.5 * Math.cos(x * 0.031 - z * 0.027));
+  for (const b of MAP.bumps) { const dx = x - b[0], dz = z - b[1], d2 = dx * dx + dz * dz; if (d2 < b[3] * b[3] * 6) h += b[2] * Math.exp(-d2 / (b[3] * b[3])); }
+  const e = Math.min(x - WORLD.minX, WORLD.maxX - x, z - WORLD.minZ);
+  if (e < 200) h = lerp(h, 2.94 + SC.bluff + 14, smooth((200 - e) / 200));
+  return h;
+}
 
 const FIELDS = {
   normandy: [[0.36, 0.47, 0.22], [0.30, 0.41, 0.19], [0.62, 0.57, 0.31], [0.44, 0.36, 0.24], [0.44, 0.53, 0.26], [0.33, 0.44, 0.2], [0.55, 0.55, 0.28]],
@@ -130,7 +163,10 @@ function groundColor(x, z, h, c) {
   const k = hash2(Math.floor(x / 70), Math.floor(z / 60));
   const F = FIELDS[bio][Math.floor(k * FIELDS[bio].length)];
   if (SC.coast && h < 0.12) { r = 0.40; g = 0.39; b = 0.31; }
-  else if (SC.coast && z > 236) {
+  else if (SC.river && z > SC.river + 34) {
+    r = F[0]; g = F[1]; b = F[2];
+    const bl = smooth((SC.river + 70 - z) / 36); r = lerp(r, 0.5, bl); g = lerp(g, 0.48, bl); b = lerp(b, 0.34, bl);
+  } else if (SC.coast && z > 236) {
     const wet = smooth((z - 296) / 30), sand = bio === 'med' ? [0.74, 0.69, 0.57] : bio === 'tropical' ? [0.88, 0.84, 0.72] : [0.8, 0.72, 0.53];
     r = sand[0] - wet * 0.2; g = sand[1] - wet * 0.18; b = sand[2] - wet * 0.13;
     if (z < 251) { if (bio === 'tropical') { r = 0.8; g = 0.76; b = 0.64; } else { r = 0.55; g = 0.53; b = 0.5; } }
@@ -265,7 +301,11 @@ function resetMap() {
     roads: BASE_ROADS.map(r => r.slice()), roadSegs: [], trenchLines: [], trenchSpots: [], hedgehogs: [], hedge: new Set(),
     obstacles: new SGrid(24), coverPts: new SGrid(12), trench: new SGrid(10),
     navalGuns: [], ships: [], water: null, miniBase: null, root: MAP.root || null,
+    places: [], bumps: [], pontoon: null, pontoonMesh: null,
   });
+  Object.assign(WORLD, SC.bounds || CORE);
+  MAP.MMW = 176; MAP.MMH = Math.round(176 * (WORLD.maxZ - WORLD.minZ) / (WORLD.maxX - WORLD.minX));
+  if (SC.river) MAP.roads.push([[22, WORLD.maxZ - 8], [22, SC.river + 14]], [[22, SHORE_Z - 6], [23, 262]]);
   if (!SC.coast) {
     MAP.roads[1].unshift([-226, 615], [-222, 420]);
     MAP.roads[3].unshift([170, 615], [178, 420]);
@@ -351,7 +391,7 @@ const HOUSE_STYLE = {
   winter: { walls: [0x9a958c, 0x8a857c, 0xb0a99c, 0x7d776c], roofs: [0xe6ebef, 0xdfe5ea], shut: 0x3a2f28 },
 };
 function addHouse(B, x, z, ry, damaged) {
-  const st = HOUSE_STYLE[SC.biome], desert = SC.biome === 'desert';
+  const st = SC.houses || HOUSE_STYLE[SC.biome], desert = SC.biome === 'desert';
   const w = wrr(7, 10), d = wrr(6, 8.5), h = desert ? wrr(4, 6) : wrr(5, 7.5);
   const wall = wpick(st.walls);
   const par = new THREE.Matrix4().compose(new THREE.Vector3(x, groundH(x, z), z), new THREE.Quaternion().setFromAxisAngle(UP, ry), new THREE.Vector3(1, 1, 1));
@@ -438,6 +478,69 @@ function registerTerrainShaders() {
     diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.92, 0.95, 1.04), 0.6);`;
 }
 
+/* ---------- terreno em blocos, instâncias por setor e ponte flutuante ---------- */
+G.trunk = new THREE.CylinderGeometry(1, 1, 1, 6, 1, true);   // troncos: sem tampas (ninguém vê)
+G.twig = new THREE.CylinderGeometry(1, 1, 1, 4, 1, true);
+// bloco de terreno com normais analíticas e uma saia para baixo nas bordas (sem frestas entre blocos)
+function terrainTileGeo(x0, x1, z0, z1, cell) {
+  const nx = Math.max(1, Math.round((x1 - x0) / cell)), nz = Math.max(1, Math.round((z1 - z0) / cell)), W = nx + 3, H = nz + 3;
+  const pos = new Float32Array(W * H * 3), nor = new Float32Array(W * H * 3), col = new Float32Array(W * H * 3), c = [0, 0, 0], e = cell * 0.5;
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const ii = clamp(i - 1, 0, nx), jj = clamp(j - 1, 0, nz), skirt = ii !== i - 1 || jj !== j - 1;
+    const x = x0 + (x1 - x0) * ii / nx, z = z0 + (z1 - z0) * jj / nz, h = groundH(x, z), k = (j * W + i) * 3;
+    pos[k] = x; pos[k + 1] = h - (skirt ? 5 : 0); pos[k + 2] = z;
+    const hx = groundH(x + e, z) - groundH(x - e, z), hz = groundH(x, z + e) - groundH(x, z - e), l = Math.hypot(hx, 2 * e, hz);
+    nor[k] = -hx / l; nor[k + 1] = 2 * e / l; nor[k + 2] = -hz / l;
+    groundColor(x, z, h, c); col[k] = c[0]; col[k + 1] = c[1]; col[k + 2] = c[2];
+  }
+  const idx = [];
+  for (let j = 0; j < H - 1; j++) for (let i = 0; i < W - 1; i++) { const a = j * W + i, b = a + 1, cc = a + W, d = cc + 1; idx.push(a, cc, b, b, cc, d); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  g.setIndex(idx); g.computeBoundingSphere();
+  return g;
+}
+// instâncias agrupadas em setores de 600 m: cada setor tem a própria esfera envolvente,
+// assim a câmera só desenha (e projeta sombra de) o que está à vista
+const _dummy = new THREE.Object3D(), _bc = new THREE.Color();
+function instSectors(root, geo, mat, list, setup, cast) {
+  const S = 600, groups = new Map();
+  if (!geo.boundingSphere) geo.computeBoundingSphere();
+  const gr = geo.boundingSphere.radius + geo.boundingSphere.center.length();
+  list.forEach((it, i) => {
+    _dummy.rotation.order = 'XYZ'; _dummy.rotation.set(0, 0, 0); _dummy.scale.set(1, 1, 1);
+    const col = setup(it, i, _dummy); _dummy.updateMatrix();
+    const k = Math.floor(_dummy.position.x / S) * 4096 + Math.floor(_dummy.position.z / S);
+    let gp = groups.get(k); if (!gp) { gp = []; groups.set(k, gp); }
+    gp.push([_dummy.matrix.clone(), col, _dummy.position.clone(), Math.max(_dummy.scale.x, _dummy.scale.y, _dummy.scale.z)]);
+  });
+  for (const gp of groups.values()) {
+    const g2 = geo.clone(), m = new THREE.InstancedMesh(g2, mat, gp.length), ctr = new THREE.Vector3();
+    gp.forEach((e, i) => { m.setMatrixAt(i, e[0]); m.setColorAt(i, _bc.setHex(e[1])); ctr.add(e[2]); });
+    ctr.multiplyScalar(1 / gp.length);
+    let r = 0; for (const e of gp) r = Math.max(r, e[2].distanceTo(ctr) + e[3] * gr);
+    g2.boundingSphere = new THREE.Sphere(ctr, r);
+    m.frustumCulled = true; // o InstancedMesh do r128 vem com o recorte desligado
+    m.castShadow = cast; m.receiveShadow = true; root.add(m);
+  }
+}
+// ponte flutuante dos engenheiros sobre o Reno (eixo z, centrada em x = 0)
+function pontoonGeo(B) {
+  const z0 = SHORE_Z - 8, z1 = SC.river + 10;
+  for (let z = z0; z < z1; z += 7.2) {
+    B.add(G.box, 0x6a5a40, 10.8, 0.22, 7.0, 0, 0.5, z + 3.6);
+    for (const sx of [-1, 1]) {
+      B.add(G.box, 0x3b3f2c, 2.2, 0.9, 6.4, sx * 3.4, 0.05, z + 3.6);
+      B.add(G.cyl8, 0x4a4a40, 0.07, 1.1, 0.07, sx * 5.2, 1.1, z + 0.4);
+    }
+    for (let i = 0; i < 5; i++) B.add(G.box, 0x58492f, 10.8, 0.05, 0.3, 0, 0.62, z + 0.8 + i * 1.4);
+  }
+  for (const sx of [-1, 1]) B.add(G.box, 0x4a4a40, 0.08, 0.08, z1 - z0, sx * 5.2, 1.55, (z0 + z1) / 2);
+  for (const z of [z0, z1]) B.add(G.box, 0x6a5a40, 10.8, 0.3, 6, 0, 0.35, z);
+}
+
 /* ---------- construção do mundo ---------- */
 function disposeWorld(scene) {
   if (!MAP.root) return;
@@ -456,11 +559,23 @@ function buildWorld(scene) {
   for (const r of MAP.roads) for (let i = 0; i < r.length - 1; i++) MAP.roadSegs.push([r[i][0], r[i][1], r[i + 1][0], r[i + 1][1]]);
 
   /* terreno */
-  const SX = WORLD.maxX - WORLD.minX, SZ = WORLD.maxZ - WORLD.minZ, CELL = 6;
+  if (SC.big) genPlaces();
+  const SX = WORLD.maxX - WORLD.minX, SZ = WORLD.maxZ - WORLD.minZ, CELL = 6, c = [0, 0, 0];
+  const terrMat = addDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'terrain_' + bio, true);
+  if (SC.big) {
+    // núcleo detalhado + blocos de 12 m com saias que escondem as emendas
+    const add = (g) => { const m = new THREE.Mesh(g, terrMat); m.receiveShadow = true; root.add(m); };
+    add(terrainTileGeo(CORE.minX, CORE.maxX, CORE.minZ, CORE.maxZ, CELL));
+    const xs = [WORLD.minX, -1950, -1300, CORE.minX, CORE.maxX, 1300, 1950, WORLD.maxX], zs = [WORLD.minZ, -5000, -4000, -3000, -2000, CORE.minZ, CORE.maxZ, WORLD.maxZ];
+    for (let i = 0; i < xs.length - 1; i++) for (let j = 0; j < zs.length - 1; j++) {
+      if (xs[i] === CORE.minX && zs[j] === CORE.minZ) continue;
+      add(terrainTileGeo(xs[i], xs[i + 1], zs[j], zs[j + 1], 12));
+    }
+  } else {
   const tg = new THREE.PlaneGeometry(SX, SZ, Math.round(SX / CELL), Math.round(SZ / CELL));
   tg.rotateX(-Math.PI / 2);
   tg.translate((WORLD.minX + WORLD.maxX) / 2, 0, (WORLD.minZ + WORLD.maxZ) / 2);
-  const pos = tg.attributes.position, cols = new Float32Array(pos.count * 3), c = [0, 0, 0];
+  const pos = tg.attributes.position, cols = new Float32Array(pos.count * 3);
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i), z = pos.getZ(i), h = groundH(x, z);
     pos.setY(i, h); groundColor(x, z, h, c);
@@ -468,10 +583,21 @@ function buildWorld(scene) {
   }
   tg.setAttribute('color', new THREE.BufferAttribute(cols, 3));
   tg.computeVertexNormals();
-  const terrain = new THREE.Mesh(tg, addDetail(new THREE.MeshLambertMaterial({ vertexColors: true }), 'terrain_' + bio, true));
+  const terrain = new THREE.Mesh(tg, terrMat);
   terrain.receiveShadow = true; root.add(terrain);
+  }
   const farCol = { normandy: 0x55643a, med: 0x5d6a40, desert: 0xbfa77c, winter: 0xdfe4e8, tropical: 0x3f6a2c }[bio];
   const farMat = addDetail(new THREE.MeshLambertMaterial({ color: farCol }), 'terrain_' + bio, true);
+  if (SC.big) {
+    const EH = 2.94 + SC.bluff + 14, W2 = (WORLD.maxX - WORLD.minX) / 2;
+    const plane = (w, d, x, y, z) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), farMat); m.rotation.x = -Math.PI / 2; m.position.set(x, y, z); root.add(m); };
+    plane(W2 * 2 + 6000, 3000, 0, EH, WORLD.minZ - 1500);
+    for (const sx of [-1, 1]) {
+      plane(3000, 232 - WORLD.minZ, sx * (W2 + 1500), EH, (232 + WORLD.minZ) / 2);
+      plane(3000, 1600, sx * (W2 + 1500), 2.2, SC.river + 820);
+    }
+    plane(W2 * 2 + 6000, 2000, 0, 2.2, WORLD.maxZ + 1000);
+  } else {
   const far = new THREE.Mesh(new THREE.PlaneGeometry(6000, 3000), farMat);
   far.rotation.x = -Math.PI / 2; far.position.set(0, 14, -2490); root.add(far);
   for (const sx of [-1, 1]) {
@@ -482,9 +608,16 @@ function buildWorld(scene) {
     const south = new THREE.Mesh(new THREE.PlaneGeometry(6000, 2000), farMat);
     south.rotation.x = -Math.PI / 2; south.position.set(0, 2.5, 620 + 1000); root.add(south);
   }
+  }
 
   /* mar */
-  if (SC.coast) {
+  if (SC.river) {
+    const ww = WORLD.maxX - WORLD.minX + 4000, wd = SC.river - SHORE_Z + 120;
+    const wg = new THREE.PlaneGeometry(ww, wd, Math.round(ww / 30), 44); wg.rotateX(-Math.PI / 2); wg.translate(0, 0, (SHORE_Z + SC.river) / 2);
+    const water = new THREE.Mesh(wg, makeWaterMaterial());
+    water.renderOrder = 2; root.add(water); MAP.water = water;
+    MAP.pontoonMesh = VM(merged('pontoon', pontoonGeo), root, 22, 0, 0, true); MAP.pontoonMesh.visible = false;
+  } else if (SC.coast) {
     const wg = new THREE.PlaneGeometry(4200, 2600, 140, 90); wg.rotateX(-Math.PI / 2); wg.translate(0, 0, 1050);
     const water = new THREE.Mesh(wg, makeWaterMaterial());
     water.renderOrder = 2; root.add(water); MAP.water = water;
@@ -552,18 +685,16 @@ function buildWorld(scene) {
       }
     }
   }
-  const dummy = new THREE.Object3D(), bc = new THREE.Color();
-  const inst = (geo, list, cols, setup, cast) => {
-    if (!list.length) return null;
-    const m = new THREE.InstancedMesh(geo, addDetail(new THREE.MeshLambertMaterial({ color: 0xffffff }), 'ground', false), list.length);
-    list.forEach((it, i) => { dummy.rotation.order = 'XYZ'; setup(it, dummy); dummy.updateMatrix(); m.setMatrixAt(i, dummy.matrix); m.setColorAt(i, bc.setHex(Array.isArray(cols) ? cols[i % cols.length] : cols)); });
-    m.castShadow = cast !== false; m.receiveShadow = true; m.userData.shared = true; root.add(m); return m;
+  const inst = (geo, list, cols, setup, cast, vc) => {
+    if (!list.length) return;
+    const mat = addDetail(new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: !!vc }), 'ground', false);
+    instSectors(root, geo, mat, list, (it, i, d) => { setup(it, d); return Array.isArray(cols) ? cols[i % cols.length] : typeof cols === 'function' ? cols(it) : cols; }, cast !== false);
   };
   const bagCols = bio === 'winter' ? [0xc9ccc8, 0xb8bab4, 0x8a7a58] : bio === 'desert' ? [0xb39c70, 0xa38e66, 0xbba57a] : [0x8a7a58, 0x7d6f50, 0x94845f];
   inst(G.box, bags, bagCols, (b, d) => { d.position.set(b[0], b[1], b[2]); d.rotation.set(0, b[3], 0); d.scale.set(0.68, 0.48, 1.18); });
 
   /* praia (litoral): ouriços tchecos, rampas de troncos com minas */
-  if (SC.coast) {
+  if (SC.coast && !SC.river) {
     for (let i = 0; i < 95; i++) {
       const x = wrr(-560, 560), z = wrr(256, 320);
       const par = new THREE.Matrix4().compose(new THREE.Vector3(x, groundH(x, z), z), new THREE.Quaternion().setFromAxisAngle(UP, wrr(0, 3)), new THREE.Vector3(1, 1, 1));
@@ -592,7 +723,7 @@ function buildWorld(scene) {
 
   /* bordas de campo: sebes (Normandia), muros de pedra (Itália), cercas (Ardenas) */
   const bush = [], walls = [], posts = [], rails = [], trees = [];
-  const edgeKind = { normandy: 'hedge', med: 'wall', winter: 'fence', desert: null, tropical: 'hedge' }[bio];
+  const edgeKind = SC.edge || { normandy: 'hedge', med: 'wall', winter: 'fence', desert: null, tropical: 'hedge' }[bio];
   if (edgeKind) for (let i = -9; i <= 9; i++) for (let j = -16; j <= 1; j++) {
     for (const vert of [true, false]) {
       if (wr() > (edgeKind === 'hedge' ? 0.55 : 0.4)) continue;
@@ -611,7 +742,7 @@ function buildWorld(scene) {
     }
   }
   const forestCount = { normandy: 9, med: 7, desert: 0, winter: 24, tropical: 20 }[bio];
-  const forestTree = { normandy: 'round', med: 'umbrella', winter: 'pine', tropical: 'round' }[bio];
+  const forestTree = SC.forestTree || { normandy: 'round', med: 'umbrella', winter: 'pine', tropical: 'round' }[bio];
   for (let f = 0; f < forestCount; f++) {
     const cx = wrr(-640, 640), cz = wrr(-960, SC.coast ? 60 : 160);
     if (nearTown(cx, cz, 40)) continue;
@@ -643,6 +774,7 @@ function buildWorld(scene) {
     for (let a = 0; a < 6; a++) for (let b = 0; b < 5; b++) { const x = cx + a * 8, z = cz + b * 8; if (!nearRoad(x, z, 5)) trees.push([x + wrr(-1, 1), z + wrr(-1, 1), wrr(0.6, 0.8), 'olive']); }
   }
 
+  if (SC.big) buildBig(root, { trees, bush, rocks: null, posts, rails });
   const bushCols = { normandy: [0x2f4a22, 0x37532a, 0x2a4220, 0x3e5a2c], med: [0x4a5a30, 0x56643a], desert: [0x6b6a3e, 0x7a7448, 0x5e5d36], winter: [0xd6dadc, 0xc4c9cc], tropical: [0x2c5a22, 0x37682a, 0x24501c, 0x3f7030] }[bio];
   inst(G.ico, bush, bushCols, (b, d) => { d.position.set(b[0], groundH(b[0], b[1]) + b[3] * 0.45, b[1]); d.rotation.set(0, (b[0] * 13) % 6, 0); d.scale.set(b[2], b[3], b[2]); });
   inst(G.box, walls, [0x9a948a, 0x8c867c, 0xa49e92], (w, d) => { d.position.set(w[0], groundH(w[0], w[1]) + 0.5 * w[3], w[1]); d.rotation.set(0, w[2], 0); d.scale.set(0.7, 1.0 * w[3], 2.5); });
@@ -661,7 +793,7 @@ function buildWorld(scene) {
     palm: { th: 8, cw: 1, ch: 1, geo: 'palm', cols: [0x4f6a2c, 0x5a7432, 0x46602a] },
     bare: { th: 6, cw: 0, ch: 0, geo: null, cols: [0] },
   };
-  inst(G.cyl8, trees, bio === 'desert' ? 0x6b5a40 : 0x4a3b2a, (t, d) => {
+  inst(G.trunk, trees, bio === 'desert' ? 0x6b5a40 : 0x4a3b2a, (t, d) => {
     const T = TT[t[3]], s = t[2], y = groundH(t[0], t[1]), palm = t[3] === 'palm';
     d.position.set(t[0], y + T.th * s / 2, t[1]); d.rotation.set(palm ? 0.08 : 0, (t[0] * 7) % 6, palm ? 0.06 : 0);
     const r = (palm ? 0.28 : t[3] === 'bare' ? 0.3 : 0.35) * s;
@@ -672,7 +804,7 @@ function buildWorld(scene) {
     B2.add(G.sph, 0xd8d0b8, 0.5, 0.5, 0.5, 0, 0, 0);
   });
   const BARE = merged('bareCrown', B2 => {
-    for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; B2.add(G.cyl8, 0xffffff, 0.08, 2.6, 0.08, Math.sin(a) * 0.8, 1.0, Math.cos(a) * 0.8, Math.cos(a) * 0.6, 0, -Math.sin(a) * 0.6); }
+    for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; B2.add(G.twig, 0xffffff, 0.08, 2.6, 0.08, Math.sin(a) * 0.8, 1.0, Math.cos(a) * 0.8, Math.cos(a) * 0.6, 0, -Math.sin(a) * 0.6); }
   });
   const byGeo = { ico: [], cone: [], palm: [], bare: [] };
   for (const t of trees) { const T = TT[t[3]]; if (T.geo) byGeo[T.geo].push(t); if (t[3] === 'bare') byGeo.bare.push(t); }
@@ -681,12 +813,7 @@ function buildWorld(scene) {
     if (T.geo === 'palm') { d.position.set(t[0] + 0.5 * s, y + T.th * s, t[1] + 0.6 * s); d.rotation.set(0, (t[1] * 3) % 6, 0); d.scale.setScalar(s); return; }
     d.position.set(t[0], y + (T.th + T.ch * (T.geo === 'cone' ? 0.5 : 0.55)) * s, t[1]); d.rotation.set(0, (t[0] * 5) % 6, 0); d.scale.set(T.cw * s, T.ch * s, T.cw * s);
   };
-  const instCrowns = (geo, list) => {
-    if (!list.length) return;
-    const m = new THREE.InstancedMesh(geo, addDetail(new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: geo === PALM }), 'ground', false), list.length);
-    list.forEach((it, i) => { dummy.rotation.order = 'XYZ'; crownSetup(it, dummy); dummy.updateMatrix(); m.setMatrixAt(i, dummy.matrix); m.setColorAt(i, bc.setHex(wpickFrom(TT[it[3]].cols, it[0] + it[1]))); });
-    m.castShadow = true; m.userData.shared = true; root.add(m);
-  };
+  const instCrowns = (geo, list) => inst(geo, list, (it) => wpickFrom(TT[it[3]].cols, it[0] + it[1]), crownSetup, true, geo === PALM);
   instCrowns(G.ico, byGeo.ico);
   instCrowns(G.cone, byGeo.cone);
   instCrowns(PALM, byGeo.palm);
@@ -706,7 +833,8 @@ function buildWorld(scene) {
   };
   for (let i = 0; i < nRocks; i++) { const p = freeSpot(-980, SC.coast ? 228 : 600); if (p) rocks.push([p[0], p[1], wrr(1.0, 2.2), wrr(0.7, 1.4)]); }
   for (let i = 0; i < nLogs; i++) { const p = freeSpot(-980, SC.coast ? 228 : 600); if (p) logs.push([p[0], p[1], wrr(0, 3)]); }
-  if (!SC.coast) for (let i = 0; i < 70; i++) { const x = wrr(-520, 520), z = wrr(232, 330); if (!nearRoad(x, z, 5)) { if (i % 2) rocks.push([x, z, wrr(1.2, 2.2), wrr(0.8, 1.3)]); else logs.push([x, z, wrr(0, 3)]); } }
+  if (SC.big) buildBigCover(rocks, logs);
+  if (!SC.coast || SC.river) for (let i = 0; i < 70; i++) { const x = wrr(-520, 520), z = SC.river ? wrr(240, 322) : wrr(232, 330); if (!nearRoad(x, z, 5)) { if (i % 2) rocks.push([x, z, wrr(1.2, 2.2), wrr(0.8, 1.3)]); else logs.push([x, z, wrr(0, 3)]); } }
   const rockCols = { normandy: [0x77736b, 0x6b675f, 0x837e74], med: [0x9a958a, 0x8c877c], desert: [0x9a7f5c, 0x8a6f4f, 0xa88b66], winter: [0x6f6e6a, 0x7d7c78], tropical: [0xb8b0a0, 0x9a9488, 0x6d6a60] }[bio];
   inst(G.ico1, rocks, rockCols, (r, d) => { d.position.set(r[0], groundH(r[0], r[1]) + r[3] * 0.35, r[1]); d.rotation.set(r[2], r[0] % 6, 0); d.scale.set(r[2], r[3], r[2] * 0.9); });
   for (const r of rocks) { MAP.coverPts.add({ x: r[0], z: r[1], r: r[2] + 1.3, q: 1.3 }); if (r[2] > 1.4) MAP.obstacles.add({ x: r[0], z: r[1], r: r[2] * 0.8 }); }
@@ -729,7 +857,7 @@ function buildWorld(scene) {
   ground.receiveShadow = true; root.add(ground);
 
   /* frota ao largo */
-  if (SC.coast) {
+  if (SC.coast && !SC.river) {
     const fleet = [[-320, 840, 60, false, 0.15], [260, 900, 64, false, -0.1], [-60, 1180, 130, true, 0.05], [520, 1300, 120, true, -0.05], [-600, 1050, 60, false, 0.2]];
     for (const f of fleet) {
       const s = makeWarship(f[2], f[3]); s.position.set(f[0], 0, f[1]); s.rotation.y = Math.PI / 2 + f[4];
@@ -761,13 +889,16 @@ function buildWorld(scene) {
 /* mar: ondas no shader, profundidade analítica, espuma da arrebentação */
 function makeWaterMaterial() {
   const depthFn = `
+    uniform float uFar;
     float seaDepth(float z){
-      if (z > 330.0) { float t = clamp((z - 330.0) / 24.0, 0.0, 1.0); return (z - 330.0) * 0.045 + 1.2 * t * t * (3.0 - 2.0 * t); }
-      return -(330.0 - z) * 0.03;
+      float a = z - 330.0;
+      if (uFar > 0.0) a = min(a, uFar - z);
+      if (a > 0.0) { float t = clamp(a / 24.0, 0.0, 1.0); return a * 0.045 + 1.2 * t * t * (3.0 - 2.0 * t); }
+      return a * 0.03;
     }`;
   return new THREE.ShaderMaterial({
     uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
-      uTime: { value: 0 }, uSun: { value: new THREE.Vector3(150, 260, 110).normalize() },
+      uTime: { value: 0 }, uFar: { value: SC.river || 0 }, uSun: { value: new THREE.Vector3(150, 260, 110).normalize() },
       uDeep: { value: new THREE.Color(SC.water ? SC.water.deep : 0x1d3a44) }, uShallow: { value: new THREE.Color(SC.water ? SC.water.shallow : 0x4d7f7c) },
       uSand: { value: new THREE.Color(SC.water ? SC.water.sand : 0x8d8064) }, uFoam: { value: new THREE.Color(0xf0f4f1) }, uSky: { value: new THREE.Color(0xb3bcbe) },
     }]),
