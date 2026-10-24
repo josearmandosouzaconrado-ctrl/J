@@ -630,16 +630,112 @@ function makeWarship(len, big) {
 }
 
 /* ---------- construções ---------- */
-function foundation(g, w, d, col) { P(G.box, col || 0x5d5444, w + 1, 4, d + 1, 0, -2.0, 0, g, false); }
-function sandbagRing(g, r, n, gapFrom, gapTo) {
-  for (let i = 0; i < n; i++) {
-    const a = i / n * Math.PI * 2;
-    if (gapFrom !== undefined && a > gapFrom && a < gapTo) continue;
-    const b = P(G.box, i % 2 ? 0x8a7a58 : 0x7e7051, 1.4, 0.55, 0.7, Math.sin(a) * r, 0.3, Math.cos(a) * r, g);
-    b.rotation.y = a;
-    const b2 = P(G.box, 0x857654, 1.3, 0.5, 0.65, Math.sin(a + 0.15) * r, 0.82, Math.cos(a + 0.15) * r, g);
-    b2.rotation.y = a + 0.15;
+const OD = 0x535833, ODd = 0x464b2b, CANVAS = 0x666548, WOOD = 0x6e5434, DIRT = 0x5d5444, GRAVEL = 0x7b7362, RUBBER = 0x222220;
+const _mpar = new THREE.Matrix4(), _qpar = new THREE.Quaternion(), _one = new THREE.Vector3(1, 1, 1);
+function at(x, y, z, ry) { return new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), _qpar.setFromAxisAngle(UP, ry || 0).clone(), _one); }
+function local(B, par) { return (geo, c, sx, sy, sz, x, y, z, rx, ry, rz) => B.add(geo, c, sx, sy, sz, x, y, z, rx || 0, ry || 0, rz || 0, par); }
+const ARCH_Z = [0, Math.PI / 2, Math.PI / 2];   // meio-cilindro com arco para cima, eixo em z
+const ARCH_X = [0, 0, Math.PI / 2];             // meio-cilindro com arco para cima, eixo em x
+
+function bPad(B, w, d, col) {
+  B.add(G.box, DIRT, w + 1, 4, d + 1, 0, -2.0, 0);
+  B.add(G.box, col || GRAVEL, w, 0.1, d, 0, 0.05, 0);
+}
+function bBags(B, x0, z0, x1, z1, rows, par) {
+  const A = local(B, par), L = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.round(L / 0.95)), ry = Math.atan2(x1 - x0, z1 - z0) + Math.PI / 2;
+  for (let r = 0; r < rows; r++) for (let i = 0; i < n - (r % 2); i++) {
+    const t = (i + 0.5 + (r % 2) * 0.5) / n;
+    A(G.box, (i + r) % 3 ? 0x8a7a58 : 0x7c6e50, 0.95, 0.4, 0.55, lerp(x0, x1, t), 0.2 + r * 0.38, lerp(z0, z1, t), 0, ry + ((i * 7 + r) % 5 - 2) * 0.03, 0);
   }
+}
+function bBagRing(B, r, n, rows, gapFrom, gapTo, par) {
+  const A = local(B, par);
+  for (let k = 0; k < rows; k++) for (let i = 0; i < n; i++) {
+    const a = (i + (k % 2) * 0.5) / n * Math.PI * 2;
+    if (gapFrom !== undefined && a > gapFrom && a < gapTo) continue;
+    A(G.box, (i + k) % 3 ? 0x8a7a58 : 0x7c6e50, 2 * Math.PI * r / n + 0.12, 0.4, 0.6, Math.sin(a) * r, 0.2 + k * 0.38, Math.cos(a) * r, 0, a, 0);
+  }
+}
+function bCrate(B, x, y, z, w, h, d, ry, col, par) {
+  const A = local(B, par); col = col || 0x6e5c3b;
+  A(G.box, col, w, h, d, x, y + h / 2, z, 0, ry);
+  A(G.box, 0x4a3d27, w + 0.04, 0.08, d + 0.04, x, y + h * 0.2, z, 0, ry);
+  A(G.box, 0x4a3d27, w + 0.04, 0.08, d + 0.04, x, y + h * 0.8, z, 0, ry);
+}
+function bDrum(B, x, z, col, par, y) {
+  const A = local(B, par); y = y || 0;
+  A(G.cyl12, col || 0x3e4a2c, 0.4, 1.1, 0.4, x, y + 0.55, z);
+  A(G.cyl12, 0x2e3522, 0.42, 0.06, 0.42, x, y + 0.35, z); A(G.cyl12, 0x2e3522, 0.42, 0.06, 0.42, x, y + 0.8, z);
+}
+function bPole(B, x, z, h, col, par) { local(B, par)(G.cyl8, col || WOOD, 0.1, h, 0.1, x, h / 2, z); }
+function bWheel(A, x, y, z, r, w) {
+  A(G.cyl12, RUBBER, r, w, r, x, y, z, 0, 0, Math.PI / 2);
+  A(G.cyl12, ODd, r * 0.55, w + 0.04, r * 0.55, x, y, z, 0, 0, Math.PI / 2);
+}
+function bTruck(B, x, z, ry, kind) {
+  const A = local(B, at(x, 0, z, ry)), body = kind === 'amb' ? 0x5a6036 : OD;
+  A(G.box, 0x2f3020, 2.0, 0.3, 6.6, 0, 0.9, 0);
+  for (const wz of [2.3, -1.2, -2.4]) for (const sx of [-1, 1]) bWheel(A, sx * 1.02, 0.52, wz, 0.5, 0.36);
+  A(G.box, body, 1.5, 0.8, 1.5, 0, 1.5, 2.65);
+  A(G.box, 0x23241a, 1.3, 0.65, 0.05, 0, 1.45, 3.42);
+  for (const sx of [-1, 1]) { A(G.box, body, 0.6, 0.1, 1.3, sx * 0.98, 1.2, 2.55, -0.15); A(G.cyl8, 0x3a3a30, 0.12, 0.1, 0.12, sx * 0.55, 1.75, 3.42, Math.PI / 2); }
+  A(G.box, body, 2.2, 1.1, 1.3, 0, 1.85, 1.3);
+  A(G.box, 0x2e3a3c, 1.9, 0.5, 0.05, 0, 2.2, 1.97);
+  A(G.box, ODd, 2.25, 0.08, 1.35, 0, 2.44, 1.3);
+  if (kind === 'amb') {
+    A(G.box, body, 2.3, 1.9, 3.6, 0, 2.0, -1.3);
+  } else {
+    A(G.box, body, 2.4, 0.7, 3.9, 0, 1.4, -1.35);
+    A(G.halfcyl, kind === 'radio' ? ODd : CANVAS, 1.2, 3.9, 1.05, 0, 1.75, -1.35, ...ARCH_Z);
+    if (kind === 'radio') { A(G.cyl8, 0x2a2a2a, 0.03, 7, 0.03, 0.9, 5.2, -2.8); A(G.box, 0x3a3b30, 0.6, 0.6, 0.8, -0.8, 2.6, -2.6); }
+  }
+}
+function bJeep(B, x, z, ry) {
+  const A = local(B, at(x, 0, z, ry));
+  A(G.box, 0x2f3020, 1.4, 0.25, 3.2, 0, 0.62, 0);
+  for (const wz of [1.05, -1.05]) for (const sx of [-1, 1]) bWheel(A, sx * 0.72, 0.4, wz, 0.4, 0.28);
+  A(G.box, OD, 1.3, 0.42, 1.1, 0, 1.0, 1.05);
+  A(G.box, 0x23241a, 1.1, 0.35, 0.05, 0, 0.98, 1.62);
+  A(G.box, OD, 1.5, 0.55, 1.9, 0, 1.0, -0.5);
+  for (const sx of [-1, 1]) A(G.box, OD, 0.25, 0.08, 1.0, sx * 0.72, 0.85, 1.1);
+  A(G.box, 0x2e3a3c, 1.35, 0.5, 0.05, 0, 1.55, 0.48, -0.15);
+  for (const sx of [-1, 1]) A(G.box, 0x3d3b2c, 0.5, 0.5, 0.5, sx * 0.35, 1.35, -0.2);
+  A(G.cyl12, RUBBER, 0.38, 0.25, 0.38, 0, 1.0, -1.55, Math.PI / 2);
+  A(G.cyl8, 0x2a2a2a, 0.02, 2.4, 0.02, -0.65, 2.3, -1.3, -0.2);
+  A(G.box, 0x4a4c34, 0.3, 0.45, 0.2, 0.55, 1.35, -1.45);
+}
+function bPyrTent(B, x, z, s, ry, col) {
+  const A = local(B, at(x, 0, z, ry)); col = col || CANVAS;
+  A(G.box, col, s, 1.3, s, 0, 0.65, 0);
+  A(G.cone4, col, s * 0.74, 2.4, s * 0.74, 0, 2.5, 0, 0, Math.PI / 4, 0);
+  A(G.cyl8, WOOD, 0.08, 0.6, 0.08, 0, 3.9, 0);
+  A(G.box, 0x2e2f22, s * 0.28, 1.25, 0.06, 0, 0.62, s / 2 + 0.02);
+  A(G.box, col, s * 0.18, 1.2, 0.06, s * 0.2, 0.7, s / 2 + 0.25, 0, 0.7, 0);
+  for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) A(G.cyl8, WOOD, 0.04, 1.2, 0.04, sx * (s / 2 + 0.6), 0.45, sz * (s / 2 + 0.6), sz * 0.5, 0, -sx * 0.5);
+}
+function bNet(B, x, z, w, d, h) {
+  for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) B.add(G.cyl8, WOOD, 0.09, h, 0.09, x + sx * w / 2, h / 2, z + sz * d / 2);
+  B.add(G.box, 0x4b5833, w + 0.6, 0.05, d + 0.6, x, h, z);
+  for (let i = 0; i < 9; i++) {
+    const px = x + ((i * 37) % 9 / 8 - 0.5) * w, pz = z + ((i * 53) % 7 / 6 - 0.5) * d;
+    B.add(G.box, i % 2 ? 0x5e6a3b : 0x3c4729, w * 0.28, 0.07, d * 0.3, px, h + 0.02, pz, 0, i * 0.7, 0);
+  }
+}
+function bScaffold(B, w, d, h) {
+  for (let x = -w / 2; x <= w / 2 + 0.01; x += w / 3) for (const z of [-d / 2 - 0.6, d / 2 + 0.6]) B.add(G.cyl8, 0x8a6a42, 0.08, h, 0.08, x, h / 2, z);
+  for (let z = -d / 2; z <= d / 2 + 0.01; z += d / 2) for (const x of [-w / 2 - 0.6, w / 2 + 0.6]) B.add(G.cyl8, 0x8a6a42, 0.08, h, 0.08, x, h / 2, z);
+  for (const y of [h * 0.35, h * 0.7]) {
+    for (const z of [-d / 2 - 0.6, d / 2 + 0.6]) B.add(G.box, 0x9a7a4f, w + 1.4, 0.12, 0.5, 0, y, z);
+    for (const x of [-w / 2 - 0.6, w / 2 + 0.6]) B.add(G.box, 0x9a7a4f, 0.5, 0.12, d + 1.4, x, y, 0);
+  }
+}
+function decal(g, tex, s, x, y, z, rx, ry) {
+  const m = P(G.plane, decalMat(tex), s, s, 1, x, y, z, g, false); m.rotation.order = 'YXZ'; m.rotation.set(rx || 0, ry || 0, 0); return m;
+}
+// decalque preso a um sub-conjunto posicionado em (px, pz) e girado em pyaw
+function decalAt(g, tex, s, px, pz, pyaw, lx, ly, lz, ry, rx) {
+  const c = Math.cos(pyaw), sn = Math.sin(pyaw);
+  return decal(g, tex, s, px + lx * c + lz * sn, ly, pz - lx * sn + lz * c, rx || 0, pyaw + (ry || 0));
 }
 function flagPole(g, x, z, h, tex) {
   P(G.cyl8, 0x8a8a84, 0.08, h, 0.08, x, h / 2, z, g);
@@ -648,140 +744,259 @@ function flagPole(g, x, z, h, tex) {
 }
 function staticGunner(g, team, x, z, ry) {
   const s = makeSoldier(team, 'rifle'); s.position.set(x, -0.45, z); s.rotation.y = ry || 0;
-  s.userData.legL.rotation.x = -1.4; s.userData.shinL.rotation.x = 1.4; s.userData.legR.rotation.x = 0.15; s.userData.shinR.rotation.x = 1.6;
-  s.userData.foreL.rotation.x = -0.3; s.userData.foreR.rotation.x = -1.0;
-  s.userData.armL.rotation.x = -1.3; s.userData.armR.rotation.x = -1.2;
-  if (s.userData.rifle) s.visible = true;
+  const u = s.userData;
+  u.legL.rotation.x = -1.4; u.shinL.rotation.x = 1.4; u.legR.rotation.x = 0.15; u.shinR.rotation.x = 1.6;
+  u.armL.rotation.x = -1.3; u.armR.rotation.x = -1.2; u.foreL.rotation.x = -0.3; u.foreR.rotation.x = -0.6;
+  if (u.rifle) u.rifle.visible = false;
   g.add(s); return s;
 }
 
+const BUILD_GEO = {
+  hq(B) {
+    bPad(B, 16, 14);
+    // casa de fazenda normanda requisitada
+    B.add(G.box, 0xbfb398, 9, 4.6, 6.4, -2, 2.3, -2.8);
+    B.add(G.roof, 0x4a4e57, 9.8, 2.7, 7.4, -2, 4.6, -2.8);
+    B.add(G.box, 0x8a7d6a, 0.9, 2.4, 0.9, -5.2, 6.4, -3.6);
+    for (const [cx, cy] of [[-6.6, 0.2], [-6.6, 4.4], [2.6, 0.2], [2.6, 4.4]]) B.add(G.box, 0xd6cbb2, 0.4, 0.5, 0.4, cx, cy + 0.25, 0.42);
+    for (const x of [-5, 1]) { B.add(G.box, 0x2f3438, 1.0, 1.3, 0.12, x, 2.9, 0.42); B.add(G.box, 0x4f5f3a, 0.45, 1.3, 0.08, x - 0.75, 2.9, 0.44); B.add(G.box, 0x4f5f3a, 0.45, 1.3, 0.08, x + 0.75, 2.9, 0.44); }
+    B.add(G.box, 0x4a3524, 1.2, 2.3, 0.12, -2, 1.15, 0.43);
+    bBags(B, -6.4, 1.2, -3.2, 1.2, 3); bBags(B, -0.8, 1.2, 2.4, 1.2, 3);
+    // tenda de comando anexa
+    B.add(G.box, CANVAS, 5, 1.7, 6, 5.2, 0.85, -2.8);
+    B.add(G.roof, ODd, 6.6, 1.9, 5.8, 5.2, 1.7, -2.8, 0, Math.PI / 2, 0);
+    // mastro de rádio estaiado
+    B.add(G.cyl8, 0x3a3a34, 0.12, 15, 0.12, 3.2, 7.5, -6.2);
+    for (const y of [10, 13]) B.add(G.box, 0x3a3a34, 2.4, 0.07, 0.07, 3.2, y, -6.2);
+    for (const a of [0.6, 2.7, 4.8]) B.add(G.cyl8, 0x2a2a2a, 0.015, 11.5, 0.015, 3.2 + Math.cos(a) * 3.3, 5.5, -6.2 + Math.sin(a) * 3.3, Math.sin(a) * 0.3, 0, -Math.cos(a) * 0.3);
+    // mesa de mapas sob toldo
+    for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) bPole(B, -2 + sx * 2, 3 + sz * 1.2, 2.5);
+    B.add(G.box, CANVAS, 4.4, 0.08, 2.8, -2, 2.5, 3);
+    B.add(G.box, WOOD, 2.2, 0.08, 1.2, -2, 0.9, 3); B.add(G.box, 0xd9cfa8, 1.8, 0.02, 1.0, -2, 0.95, 3);
+    for (const sx of [-1, 1]) B.add(G.box, WOOD, 0.1, 0.9, 1.0, -2 + sx * 1, 0.45, 3);
+    bBags(B, -7.6, 6.4, -2.2, 6.4, 2); bBags(B, 1.2, 6.4, 3.8, 6.4, 2);
+    bTruck(B, 5.8, 3.4, -0.25, 'radio');
+    bJeep(B, -6.4, 3.6, 0.35);
+    bCrate(B, 0.4, 0, 2.6, 1.0, 0.7, 0.8, 0.3); bCrate(B, 0.6, 0.7, 2.6, 0.8, 0.5, 0.7, 0.1);
+    bDrum(B, 7.2, -6); bDrum(B, 6.3, -6.4);
+  },
+  depot(B) {
+    bPad(B, 12, 10);
+    bNet(B, -1.2, -1.2, 8, 6.4, 3.3);
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) {
+      const x = -3.8 + i * 2.6, z = -2.6 + j * 2.6, hgt = 2 + ((i + j) % 2);
+      for (let k = 0; k < hgt; k++) bCrate(B, x, k * 0.9, z, 1.6, 0.9, 1.1, (k % 2) * 0.1, k % 2 ? 0x7a6845 : 0x6b5a3a);
+    }
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) bDrum(B, 3.6 + i * 0.85, -3.6 + j * 0.85);
+    bDrum(B, 4.0, -3.2, 0x3e4a2c, null, 1.1); bDrum(B, 4.85, -3.2, 0x3e4a2c, null, 1.1);
+    for (let r = 0; r < 3; r++) for (let i = 0; i < 4 - r; i++) B.add(G.box, 0x4f5631, 0.18, 0.46, 0.34, 3.6 + i * 0.24 + r * 0.12, 0.23 + r * 0.46, -1.2);
+    B.add(G.box, WOOD, 2.4, 0.15, 1.8, -3.8, 0.08, 3.4); B.add(G.roof, 0x5d5f3c, 2.4, 1.2, 1.9, -3.8, 0.16, 3.4);
+    bTruck(B, 2.8, 2.2, Math.PI * 0.55);
+    bBags(B, -5.8, 4.8, -1.8, 4.8, 2);
+    bPole(B, 5.6, 4.6, 2.4); B.add(G.box, 0xd9d2b8, 1.4, 0.7, 0.06, 5.6, 2.1, 4.65);
+  },
+  barracks(B) {
+    bPad(B, 15, 10);
+    bPyrTent(B, -3.9, -1.2, 5.6, 0);
+    bPyrTent(B, 3.9, -1.2, 5.6, 0);
+    for (let i = 0; i < 6; i++) B.add(G.box, 0x7a6040, 1.2, 0.06, 0.28, 0, 0.12, 2.6 + i * 0.4);
+    bBags(B, -7.2, 4.8, -1.4, 4.8, 2); bBags(B, 1.4, 4.8, 7.2, 4.8, 2);
+    // armário de fuzis
+    B.add(G.box, WOOD, 2.2, 0.1, 0.5, -6.3, 0.9, 2.6); B.add(G.box, WOOD, 2.2, 0.1, 0.5, -6.3, 0.2, 2.6);
+    for (let i = 0; i < 6; i++) B.add(G.box, 0x4b3322, 0.07, 1.3, 0.1, -7.2 + i * 0.36, 0.95, 2.62, 0.12, 0, 0);
+    // reboque-tanque de água
+    B.add(G.cyl12, OD, 0.65, 2.2, 0.65, 6.0, 1.15, 2.6, 0, 0, Math.PI / 2);
+    for (const sx of [-1, 1]) B.add(G.cyl12, RUBBER, 0.4, 0.25, 0.4, 6.0 + sx * 0.9, 0.4, 2.6, 0, 0, Math.PI / 2);
+    B.add(G.box, 0x2f3020, 0.12, 0.12, 1.4, 6.0, 0.6, 3.6);
+    bCrate(B, -6.6, 0, -4.4, 1.2, 0.8, 0.9, 0.4); bDrum(B, 7.0, -4.4);
+  },
+  factory(B) {
+    bPad(B, 20, 16, 0x8a877e);
+    // hangar Quonset de chapa ondulada
+    B.add(G.halfcyl, 0x6c705a, 8.8, 13, 6.6, 0, 0, -1.5, ...ARCH_Z);
+    for (let z = -7.5; z <= 4.6; z += 1.5) B.add(G.halfcyl, 0x575b47, 8.9, 0.22, 6.7, 0, 0, z, ...ARCH_Z);
+    B.add(G.halfcyl, 0x5f6350, 8.8, 0.25, 6.6, 0, 0, -8.0, ...ARCH_Z);
+    B.add(G.halfcyl, 0x5f6350, 8.8, 0.25, 6.6, 0, 0, 5.0, ...ARCH_Z);
+    B.add(G.box, 0x1f201a, 7.6, 5.2, 0.12, 0, 2.6, 5.14);
+    B.add(G.cyl12, 0x4c4f3e, 0.45, 8.2, 0.45, 0, 5.45, 5.2, 0, 0, Math.PI / 2);
+    for (const sx of [-1, 1]) B.add(G.box, 0x3a3d2c, 0.3, 5.4, 0.3, sx * 3.95, 2.7, 5.25);
+    for (const sx of [-1, 1]) B.add(G.box, 0x2e3a3c, 1.6, 0.9, 0.1, sx * 6.2, 2.4, 4.4, 0, 0, 0);
+    // pórtico com guincho e motor pendurado
+    for (const sx of [-1, 1]) { B.add(G.box, 0x3a3d28, 0.3, 7.5, 0.3, sx * 4.2, 3.75, 7.2, 0, 0, sx * 0.08); }
+    B.add(G.box, 0x3a3d28, 9, 0.5, 0.5, 0, 7.5, 7.2);
+    B.add(G.box, 0x2d2e22, 0.8, 0.6, 0.7, 1.4, 6.95, 7.2);
+    B.add(G.cyl8, 0x222222, 0.03, 3.0, 0.03, 1.4, 5.2, 7.2);
+    B.add(G.box, 0x45473a, 1.3, 1.0, 1.7, 1.4, 3.3, 7.2);
+    // torre de Sherman em cavaletes, pneus, tambores, tanque de combustível
+    B.add(G.box, WOOD, 2.6, 0.6, 0.4, -6.4, 0.3, 6.4); B.add(G.box, WOOD, 2.6, 0.6, 0.4, -6.4, 0.3, 7.6);
+    B.add(G.cyl12, 0x55592e, 1.1, 0.5, 1.2, -6.4, 0.85, 7.0); B.add(G.dome, 0x55592e, 1.1, 0.65, 1.2, -6.4, 1.1, 7.0);
+    B.add(G.cyl12, 0x45472f, 0.09, 2.4, 0.09, -6.4, 1.3, 8.2, Math.PI / 2, 0, 0);
+    for (let i = 0; i < 4; i++) B.add(G.cyl12, RUBBER, 0.55, 0.3, 0.55, 7.2, 0.15 + i * 0.3, 7.2);
+    bDrum(B, 8.4, 5.6, 0x5a3b2a); bDrum(B, 8.4, 6.5, 0x3e4a2c);
+    B.add(G.cyl12, 0x7a7d70, 1.1, 5, 1.1, -8.6, 1.9, -3, Math.PI / 2, 0, 0);
+    for (const z of [-4.6, -1.4]) B.add(G.box, 0x3a3d2c, 1.4, 0.8, 0.3, -8.6, 0.4, z);
+    bCrate(B, 8.2, 0, -5.5, 1.4, 1.0, 1.1, 0.2); bCrate(B, 8.0, 1.0, -5.5, 1.0, 0.7, 0.9, -0.1);
+  },
+  mgnest(B) {
+    B.add(G.box, DIRT, 8, 4, 8, 0, -2.0, 0);
+    B.add(G.cyl8, 0x6b5c43, 3.8, 0.35, 3.8, 0, 0.17, 0);
+    bBagRing(B, 2.9, 14, 3, Math.PI * 0.8, Math.PI * 1.2);
+    for (let i = 0; i < 3; i++) B.add(G.box, 0x4a4f2e, 0.32, 0.3, 0.18, -1.6 + i * 0.36, 0.5, -1.2);
+    B.add(G.box, 0x4a4f2e, 0.32, 0.3, 0.18, 1.5, 0.5, -1.4, 0, 0.6, 0);
+  },
+  atgun(B) {
+    B.add(G.box, DIRT, 8, 4, 8, 0, -2.0, 0);
+    B.add(G.cyl8, 0x6b5c43, 3.9, 0.3, 3.9, 0, 0.15, 0);
+    bBagRing(B, 3.4, 16, 3, Math.PI * 0.7, Math.PI * 1.3);
+    bCrate(B, -2.0, 0.3, -2.2, 1.0, 0.45, 0.6, 0.4, 0x5d5a3a); bCrate(B, -2.0, 0.75, -2.2, 1.0, 0.45, 0.6, 0.5, 0x5d5a3a);
+    for (let i = 0; i < 5; i++) B.add(G.cyl8, 0xb08a3a, 0.06, 0.6, 0.06, 2.0 + i * 0.14, 0.6, -2.0, 0, 0, 0.1);
+  },
+  hospital(B) {
+    bPad(B, 14, 12);
+    B.add(G.box, CANVAS, 11, 1.9, 7, 0, 0.95, -1.2);
+    B.add(G.roof, ODd, 11.8, 2.4, 7.9, 0, 1.9, -1.2);
+    B.add(G.box, CANVAS, 2.4, 2.2, 2.0, 0, 1.1, 3.1);
+    B.add(G.roof, ODd, 2.4, 1.0, 2.6, 0, 2.2, 3.1, 0, Math.PI / 2, 0);
+    B.add(G.box, 0x2e2f22, 1.2, 1.8, 0.06, 0, 0.9, 4.12);
+    for (let i = 0; i < 3; i++) {
+      const x = -4.4 + i * 1.5;
+      B.add(G.box, WOOD, 0.7, 0.08, 2.1, x, 0.45, 4.3); B.add(G.box, 0x6d6a4c, 0.6, 0.18, 1.6, x, 0.56, 4.3);
+      B.add(G.sph, 0xd2a17a, 0.15, 0.13, 0.15, x, 0.6, 5.2);
+      for (const sx of [-1, 1]) B.add(G.box, WOOD, 0.06, 0.4, 0.06, x + sx * 0.3, 0.2, 4.3);
+    }
+    for (let i = 0; i < 4; i++) B.add(G.cyl8, 0x2f5a3a, 0.15, 1.2, 0.15, 4.8 + i * 0.35, 0.6, 1.0);
+    bTruck(B, 4.6, 4.2, -0.3, 'amb');
+    bCrate(B, -5.6, 0, 2.2, 0.9, 0.6, 0.7, 0.2, 0xcfc9b3);
+  },
+  bunker(B) {
+    B.add(G.box, 0x6f6c66, 11, 4, 10, 0, -2.0, 0);
+    B.add(sideProfile([[4.2, 0], [4.2, 3.4], [3.6, 4.0], [-3.6, 4.0], [-4.2, 3.4], [-4.2, 0]], 9.4, 3), 0x8e8b82, 1, 1, 1, 0, 0, 0);
+    B.add(G.box, 0x99968c, 10.2, 0.6, 1.2, 0, 3.7, 4.5);
+    B.add(G.box, 0x6d6a63, 5.2, 1.4, 0.8, 0, 2.6, 4.25);
+    B.add(G.box, 0x111111, 4.4, 0.55, 0.3, 0, 2.6, 4.68);
+    for (const sx of [-1, 1]) B.add(G.roof, 0x5c5b3e, 3.6, 3.3, 9.6, sx * 6.2, 0, -0.2, 0, Math.PI / 2, 0);
+    B.add(G.roof, 0x5f6040, 9.8, 1.0, 8.4, 0, 4.0, -0.4);
+    for (let i = 0; i < 6; i++) B.add(G.ico, i % 2 ? 0x4a5a33 : 0x3d4a2a, 1.2, 0.7, 1.2, -3.5 + i * 1.4, 4.5, -1.5 + (i % 3) * 0.6);
+    B.add(G.cyl12, 0x8e8b82, 0.9, 0.7, 0.9, 2.2, 4.35, -2.4);
+    B.add(G.cyl12, 0x111111, 0.6, 0.72, 0.6, 2.2, 4.36, -2.4);
+    B.add(G.box, 0x5a4b36, 1.6, 0.9, 3.0, -2.6, 0.45, -5.6);
+  },
+  nest_de(B) {
+    B.add(G.box, DIRT, 8, 4, 8, 0, -2.0, 0);
+    B.add(G.cyl8, 0x6b5c43, 3.8, 0.35, 3.8, 0, 0.17, 0);
+    bBagRing(B, 2.9, 14, 3, Math.PI * 0.8, Math.PI * 1.2);
+    for (let i = 0; i < 3; i++) B.add(G.box, 0x4f5348, 0.3, 0.26, 0.16, -1.6 + i * 0.34, 0.48, -1.2);
+    for (const a of [0.3, 2.0, 4.3]) B.add(G.cyl8, WOOD, 0.06, 2.0, 0.06, Math.cos(a) * 3.3, 1.0, Math.sin(a) * 3.3);
+  },
+  dehq(B) {
+    B.add(G.box, 0x6f6658, 27, 4, 21, 0, -2.0, 0);
+    B.add(G.box, 0x7b7362, 26, 0.1, 20, 0, 0.05, 0);
+    B.add(G.box, 0xb8ad98, 22, 10, 13, 0, 5, 0);
+    B.add(G.box, 0xa49a85, 22.4, 0.5, 13.4, 0, 0.25, 0);
+    B.add(G.box, 0xcfc4ad, 22.3, 0.4, 13.3, 0, 5.1, 0);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) for (let k = 0; k < 5; k++) B.add(G.box, 0xd6cbb2, 0.5, 0.9, 0.5, sx * 11, 0.6 + k * 2, sz * 6.5);
+    B.add(G.roof, 0x41454d, 22.6, 6, 14, 0, 10, 0);
+    for (const x of [-7, 0, 7]) { B.add(G.box, 0xb8ad98, 1.6, 1.8, 1.4, x, 11.6, 5.4); B.add(G.roof, 0x41454d, 1.4, 0.9, 2.0, x, 12.5, 5.4, 0, Math.PI / 2, 0); B.add(G.box, 0x2d3236, 0.9, 1.0, 0.1, x, 11.7, 6.12); }
+    for (const x of [-8, 6]) B.add(G.box, 0x8a7d6a, 1.0, 3.5, 1.0, x, 15, -2);
+    for (const sx of [-1, 1]) {
+      B.add(G.cyl12, 0xb0a590, 2.8, 15, 2.8, sx * 12, 7.5, 4.6);
+      B.add(G.cyl12, 0xcfc4ad, 2.95, 0.4, 2.95, sx * 12, 13.2, 4.6);
+      B.add(G.cone, 0x41454d, 3.3, 5.5, 3.3, sx * 12, 17.75, 4.6);
+      for (const y of [4, 9]) B.add(G.box, 0x2d3236, 0.8, 1.4, 0.2, sx * 12, y, 7.35);
+    }
+    for (let i = 0; i < 6; i++) for (const y of [2.8, 7]) {
+      const x = -7.5 + i * 3;
+      B.add(G.box, 0x2d3236, 1.2, 1.9, 0.12, x, y, 6.53);
+      B.add(G.box, 0xd6cbb2, 1.5, 0.22, 0.2, x, y + 1.05, 6.55);
+    }
+    B.add(G.box, 0x3d2c1e, 2.4, 3.4, 0.14, 0, 1.7, 6.56);
+    for (let k = 0; k < 3; k++) B.add(G.box, 0xa49a85, 5 - k, 0.3, 1.2, 0, 0.15 + k * 0.3, 7.4 - k * 0.3);
+    for (const x of [-8, 8]) bBagRing(B, 2.4, 10, 2, undefined, undefined, at(x, 0, 11.5, 0));
+    // canhão antiaéreo de 20 mm e Kübelwagen
+    const F = local(B, at(-8, 0, 11.5, 0.4));
+    F(G.cyl8, 0x4f5348, 0.6, 0.5, 0.6, 0, 0.5, 0); F(G.box, 0x4f5348, 0.8, 0.5, 0.9, 0, 1.0, 0);
+    F(G.cyl8, 0x2a2a2a, 0.06, 2.2, 0.06, 0, 1.6, 0.9, -1.0, 0, 0); F(G.box, 0x5a5e52, 1.2, 0.6, 0.06, 0, 1.2, 0.5);
+    const K = local(B, at(-15, 0, 9, 0.5));
+    K(G.box, 0x8c7b4c, 1.6, 0.8, 3.6, 0, 0.9, 0); K(G.box, 0x7a6b42, 1.5, 0.5, 1.2, 0, 1.45, -0.6);
+    for (const wz of [1.2, -1.2]) for (const sx of [-1, 1]) bWheel(K, sx * 0.8, 0.42, wz, 0.42, 0.3);
+    B.add(G.cyl8, 0x3a3a34, 0.12, 12, 0.12, 9, 16, -3);
+  },
+};
+const BUILD_SIZE = { hq: [16, 14, 7], depot: [12, 10, 4], barracks: [15, 10, 5], factory: [20, 16, 8], mgnest: [7, 7, 2.5], atgun: [7, 7, 2.5], hospital: [14, 12, 4.5] };
+
 function makeBuilding(kind) {
   const g = new THREE.Group(); const ud = {};
-  const OD = 0x59603a, ODd = 0x4b5131;
+  VM(merged('bld' + kind, B => { B.cf = paintFn(-1, kind === 'bunker' ? [0x6f7258, 0x7d6a52] : null, 0); BUILD_GEO[kind](B); }), g, 0, 0, 0, true);
+  const SLOPE = Math.PI / 2 - Math.atan2(2.4, 3.95);
   switch (kind) {
-    case 'hq': {
-      foundation(g, 16, 14);
-      P(G.box, OD, 12, 4.2, 9, 0, 2.1, -0.5, g);
-      const r = P(G.roof, ODd, 12.8, 2.2, 10, 0, 4.2, -0.5, g);
-      P(G.box, 0x2b2d1f, 2.2, 2.6, 0.1, 0, 1.3, 4.02, g);
-      for (const x of [-4, 4]) P(G.box, 0x2b3a3a, 1.6, 1.1, 0.1, x, 2.6, 4.02, g);
-      for (const sx of [-1, 1]) { P(G.box, 0x8a7a58, 0.8, 1.1, 13, sx * 7.6, 0.55, 0, g); }
-      P(G.box, 0x8a7a58, 15, 1.1, 0.8, 0, 0.55, -6.6, g);
-      P(G.box, 0x8a7a58, 5, 1.1, 0.8, -5.2, 0.55, 6.6, g); P(G.box, 0x8a7a58, 5, 1.1, 0.8, 5.2, 0.55, 6.6, g);
-      P(G.cyl8, 0x3a3a34, 0.12, 15, 0.12, -5, 7.5, -4, g);
-      P(G.box, 0x3a3a34, 3, 0.08, 0.08, -5, 14.6, -4, g);
-      ud.flag = flagPole(g, 5.5, 5.2, 9, TEX.usflag);
-      // jipe
-      P(G.box, 0x4f5428, 1.7, 0.8, 3.4, 9.8, 0.9, 3, g); P(G.box, 0x3c4020, 1.5, 0.6, 0.1, 9.8, 1.6, 3.8, g);
-      for (const sx of [-1, 1]) for (const z of [1.9, 4.1]) { const w = P(G.cyl8, 0x222, 0.42, 0.3, 0.42, 9.8 + sx * 0.85, 0.42, z, g); w.rotation.z = Math.PI / 2; }
-      const st = P(G.plane, decalMat(TEX.star), 5, 5, 1, 0, 6.5, -0.5, g, false); st.rotation.x = -Math.PI / 2;
-      r.castShadow = true; break;
-    }
-    case 'depot': {
-      foundation(g, 12, 10);
-      for (let i = 0; i < 7; i++) P(G.box, i % 2 ? 0x6b5a3a : 0x786644, 2.2, 1.6, 1.6, -4 + (i % 4) * 2.4, 0.8 + Math.floor(i / 4) * 1.6, -2.5, g);
-      for (let i = 0; i < 10; i++) P(G.cyl8, 0x3f4a2a, 0.5, 1.4, 0.5, 1 + (i % 5) * 1.1, 0.7, 1.2 + Math.floor(i / 5) * 1.1, g);
-      P(G.roof, 0x5d5f3c, 6, 2.4, 4, -2.5, 0, 2.2, g);
-      P(G.box, 0x4f5428, 2.4, 2.0, 5.0, 5.6, 1.4, -1.0, g);
-      P(G.box, 0x5a5e35, 2.4, 1.2, 2.0, 5.6, 1.0, 2.6, g);
+    case 'hq':
+      ud.flag = flagPole(g, -7.4, -6.2, 9, TEX.usflag);
+      for (const sx of [-1, 1]) decalAt(g, TEX.star, 0.9, 5.8, 3.4, -0.25, sx * 1.12, 1.85, 1.3, sx * Math.PI / 2);
+      decal(g, TEX.star, 2.2, 5.2 + 2.0, 2.0, -2.8, -(Math.PI / 2 - Math.atan2(1.9, 2.9)), Math.PI / 2);
+      break;
+    case 'barracks': ud.flag = flagPole(g, 0, -4.4, 8, TEX.usflag); break;
+    case 'depot': for (const sx of [-1, 1]) decalAt(g, TEX.star, 0.9, 2.8, 2.2, Math.PI * 0.55, sx * 1.12, 1.85, 1.3, sx * Math.PI / 2); break;
+    case 'factory': decal(g, TEX.star, 1.2, 0, 5.9, 5.15, 0, 0); break;
+    case 'hospital': {
+      decal(g, TEX.redcross, 2.6, 0, 3.2, -1.2 + 2.0, -SLOPE, 0);
+      decal(g, TEX.redcross, 2.6, 0, 3.2, -1.2 - 2.0, -SLOPE, Math.PI);
+      decal(g, TEX.redcross, 0.9, 0, 2.4, 4.13, 0, 0);
+      for (const sx of [-1, 1]) decalAt(g, TEX.redcross, 1.4, 4.6, 4.2, -0.3, sx * 1.17, 2.1, -1.3, sx * Math.PI / 2);
+      flagPole(g, -6.2, -5, 6, TEX.redcross);
       break;
     }
-    case 'barracks': {
-      foundation(g, 15, 10);
-      const q = P(G.halfcyl, 0x5f6640, 4.6, 14, 4.6, 0, 0, 0, g); q.rotation.z = Math.PI / 2;
-      for (const sx of [-1, 1]) P(G.box, 0x4a5131, 0.2, 4.4, 9.0, sx * 7.0, 2.2, 0, g);
-      P(G.box, 0x2b2d1f, 1.8, 2.4, 0.1, 0, 1.2, 4.62, g);
-      for (const x of [-4.5, 4.5]) P(G.box, 0x2b3a3a, 1.2, 0.9, 0.12, x, 1.6, 4.5, g);
-      for (let i = 0; i < 4; i++) P(G.box, 0x8a7a58, 1.3, 0.55, 0.7, -5 + i * 1.4, 0.28, 6.2, g);
-      ud.flag = flagPole(g, 7.5, 5.5, 7, TEX.usflag);
-      break;
-    }
-    case 'factory': {
-      foundation(g, 20, 16);
-      P(G.box, 0x5a5f3c, 20, 7, 14, 0, 3.5, -1, g);
-      const r = P(G.halfcyl, 0x4c5233, 7.2, 20.6, 3.0, 0, 7, -1, g); r.rotation.z = Math.PI / 2;
-      P(G.box, 0x23251a, 9, 6, 0.12, 0, 3, 6.03, g);
-      for (const sx of [-1, 1]) P(G.box, 0x3a3d28, 0.5, 9, 0.5, sx * 9.5, 4.5, 7.3, g);
-      P(G.box, 0x3a3d28, 19.6, 0.6, 0.6, 0, 9, 7.3, g);
-      P(G.box, 0x2d2e22, 1.5, 1.4, 1.2, 3, 8.2, 7.3, g);
-      P(G.cyl8, 0x3c3c34, 0.6, 5, 0.6, -7, 11, -5, g);
-      P(G.box, 0x4f5428, 3.2, 1.3, 5.5, 6.5, 0.9, 9.5, g);
-      break;
-    }
-    case 'mgnest': {
-      foundation(g, 7, 7, 0x6e6048);
-      sandbagRing(g, 2.8, 12);
-      const t = new THREE.Group(); t.position.set(0, 1.3, 0); g.add(t);
-      P(G.box, 0x2b2b26, 0.18, 0.2, 1.6, 0, 0, 0.6, t); P(G.box, 0x3a3a30, 0.3, 0.3, 0.6, 0, 0, 0, t);
-      P(G.cyl8, 0x2b2b26, 0.05, 1.1, 0.05, 0, -0.55, 0.2, t);
-      staticGunner(t, 'us', 0, -0.9, 0).position.y = -1.4;
-      const m = new THREE.Object3D(); m.position.set(0, 0, 1.5); t.add(m);
+    case 'mgnest': case 'nest_de': {
+      const us = kind === 'mgnest';
+      const t = new THREE.Group(); t.position.set(0, 1.25, 0); g.add(t);
+      VM(merged('mg' + kind, B => {
+        for (const a of [0, 2.1, 4.2]) B.add(G.cyl8, 0x2b2b26, 0.03, 1.2, 0.03, Math.sin(a) * 0.35, -0.6, Math.cos(a) * 0.35 - 0.1, Math.cos(a) * 0.35, 0, -Math.sin(a) * 0.35);
+        B.add(G.box, 0x2c2c28, 0.16, 0.2, 0.7, 0, 0, 0);
+        B.add(G.cyl8, us ? 0x3a3a34 : 0x262624, us ? 0.07 : 0.06, 0.9, us ? 0.07 : 0.06, 0, 0.02, 0.75, Math.PI / 2, 0, 0);
+        B.add(G.cyl8, 0x1a1a1a, 0.025, 0.25, 0.025, 0, 0.02, 1.3, Math.PI / 2, 0, 0);
+        B.add(G.box, us ? 0x4a4f2e : 0x4f5348, 0.22, 0.2, 0.3, -0.2, -0.05, 0.05);
+        if (!us) B.add(G.box, 0x5a3a22, 0.07, 0.12, 0.3, 0, -0.04, -0.45);
+      }), t, 0, 0, 0, true);
+      staticGunner(t, us ? 'us' : 'de', 0, -0.95, 0).position.y = -1.4;
+      const loader = staticGunner(g, us ? 'us' : 'de', -1.1, -1.0, 0.5); loader.position.y = -0.1;
+      const m = new THREE.Object3D(); m.position.set(0, 0.02, 1.45); t.add(m);
       ud.turret = t; ud.muzzle = m; break;
     }
     case 'atgun': {
-      foundation(g, 7, 7, 0x6e6048);
-      sandbagRing(g, 3.2, 12, Math.PI * 0.75, Math.PI * 1.25);
       const t = new THREE.Group(); t.position.set(0, 0.9, 0); g.add(t);
-      P(G.box, 0x4f5428, 2.4, 1.3, 0.12, 0, 0.5, 0.6, t);
-      const b = P(G.cyl8, 0x3a3b2c, 0.1, 3.6, 0.1, 0, 0.45, 2.2, t); b.rotation.x = Math.PI / 2;
-      for (const sx of [-1, 1]) { const w = P(G.cyl8, 0x222, 0.55, 0.3, 0.55, sx * 1.0, -0.3, 0.2, t); w.rotation.z = Math.PI / 2; const tr = P(G.box, 0x4f5428, 0.18, 0.18, 2.6, sx * 0.5, -0.5, -1.3, t); tr.rotation.y = sx * 0.25; }
-      staticGunner(t, 'us', 0.7, -0.6, 0).position.y = -1.0;
-      staticGunner(t, 'us', -0.9, -1.4, 0.3).position.y = -1.0;
-      const m = new THREE.Object3D(); m.position.set(0, 0.45, 4.2); t.add(m);
+      VM(merged('atgunT', B => {
+        B.add(G.box, OD, 1.3, 1.25, 0.1, 0, 0.55, 0.6);
+        for (const sx of [-1, 1]) B.add(G.box, OD, 0.7, 1.05, 0.1, sx * 0.95, 0.48, 0.48, 0, -sx * 0.45, 0);
+        B.add(G.box, ODd, 0.28, 0.22, 0.12, -0.3, 0.75, 0.66);
+        B.add(G.box, 0x3a3b2c, 0.35, 0.35, 0.9, 0, 0.42, 0.0);
+        B.add(G.cyl12, 0x3a3b2c, 0.1, 3.6, 0.1, 0, 0.45, 2.3, Math.PI / 2, 0, 0);
+        B.add(G.cyl12, 0x3a3b2c, 0.08, 1.6, 0.08, 0, 0.28, 1.2, Math.PI / 2, 0, 0);
+        B.add(G.cyl12, 0x2c2d22, 0.13, 0.2, 0.13, 0, 0.45, 4.05, Math.PI / 2, 0, 0);
+        for (const sx of [-1, 1]) {
+          B.add(G.cyl12, RUBBER, 0.5, 0.28, 0.5, sx * 0.85, -0.38, 0.25, 0, 0, Math.PI / 2);
+          B.add(G.cyl12, ODd, 0.3, 0.32, 0.3, sx * 0.85, -0.38, 0.25, 0, 0, Math.PI / 2);
+          B.add(G.box, OD, 0.16, 0.16, 2.8, sx * 0.62, -0.62, -1.3, 0.12, sx * 0.32, 0);
+          B.add(G.box, 0x2c2d22, 0.3, 0.1, 0.3, sx * 1.05, -0.85, -2.55);
+        }
+      }), t, 0, 0, 0, true);
+      staticGunner(t, 'us', 0.65, -0.55, 0).position.y = -1.0;
+      staticGunner(g, 'us', -1.0, -1.6, 0.4).position.y = -0.1;
+      const m = new THREE.Object3D(); m.position.set(0, 0.45, 4.25); t.add(m);
       ud.turret = t; ud.muzzle = m; break;
-    }
-    case 'hospital': {
-      foundation(g, 14, 12);
-      P(G.roof, 0xcfcab6, 12, 4.6, 8, 0, 0, -1, g);
-      P(G.box, 0xc7c2ad, 12, 0.8, 8, 0, 0.4, -1, g);
-      for (const sx of [-1, 1]) {
-        const c = P(G.plane, decalMat(TEX.redcross), 2.6, 2.6, 1, sx * 1.0, 2.9, -1, g, false);
-        c.rotation.x = -Math.PI / 2; c.rotation.y = sx * 0.9;
-      }
-      for (let i = 0; i < 3; i++) P(G.box, 0x7e7a5c, 0.9, 0.3, 2.2, -3 + i * 3, 0.4, 5, g);
-      P(G.box, 0xc9c4ae, 2.0, 2.0, 4.4, 6.5, 1.6, 4.2, g);
-      const c2 = P(G.plane, decalMat(TEX.redcross), 1.4, 1.4, 1, 7.52, 2, 4.2, g, false); c2.rotation.y = Math.PI / 2;
-      break;
     }
     case 'bunker': {
-      foundation(g, 10, 9, 0x6f6c66);
-      P(G.box, 0x8b8880, 9, 3.6, 8, 0, 1.8, 0, g);
-      P(G.box, 0x96938a, 10, 0.8, 9, 0, 3.9, 0.3, g);
-      P(G.box, 0x111111, 4.4, 0.55, 0.3, 0, 2.6, 4.02, g);
-      for (const sx of [-1, 1]) { const e = P(G.roof, 0x5b5a3e, 3.5, 3.3, 8.5, sx * 5.6, 0, 0, g); e.rotation.y = Math.PI / 2; }
-      P(G.roof, 0x5b5a3e, 9.5, 1.2, 8, 0, 4.3, -0.2, g);
-      const t = new THREE.Group(); t.position.set(0, 2.6, 3.6); g.add(t);
-      P(G.box, 0x222, 0.15, 0.15, 1.2, 0, 0, 0.4, t);
-      const m = new THREE.Object3D(); m.position.set(0, 0, 1.2); t.add(m);
+      const t = new THREE.Group(); t.position.set(0, 2.6, 4.2); g.add(t);
+      VM(merged('bunkerMG', B => { B.add(G.box, 0x1e1e1c, 0.14, 0.14, 1.3, 0, 0, 0.4); B.add(G.cyl8, 0x1a1a1a, 0.05, 0.4, 0.05, 0, 0, 1.1, Math.PI / 2, 0, 0); }), t, 0, 0, 0, false);
+      const m = new THREE.Object3D(); m.position.set(0, 0, 1.3); t.add(m);
       ud.turret = t; ud.muzzle = m; break;
     }
-    case 'nest_de': {
-      foundation(g, 7, 7, 0x6e6048);
-      sandbagRing(g, 2.8, 12);
-      const t = new THREE.Group(); t.position.set(0, 1.3, 0); g.add(t);
-      P(G.box, 0x1e1e1c, 0.14, 0.16, 1.5, 0, 0, 0.6, t); P(G.box, 0x2c2c28, 0.25, 0.3, 0.5, 0, 0, 0, t);
-      staticGunner(t, 'de', 0, -0.9, 0).position.y = -1.4;
-      const m = new THREE.Object3D(); m.position.set(0, 0, 1.4); t.add(m);
-      ud.turret = t; ud.muzzle = m; break;
-    }
-    case 'dehq': {
-      foundation(g, 26, 20, 0x6f6658);
-      P(G.box, 0xb8ad98, 22, 10, 13, 0, 5, 0, g);
-      P(G.roof, 0x4a4e57, 22.6, 6, 14, 0, 10, 0, g);
-      for (const sx of [-1, 1]) {
-        P(G.cyl, 0xb0a590, 2.8, 14, 2.8, sx * 11.5, 7, 4.5, g);
-        P(G.cone, 0x4a4e57, 3.3, 5, 3.3, sx * 11.5, 16.5, 4.5, g);
-      }
-      for (let i = 0; i < 6; i++) for (const y of [3, 7]) P(G.box, 0x2d3236, 1.2, 1.8, 0.12, -7.5 + i * 3, y, 6.53, g);
-      P(G.box, 0x3d2c1e, 2.4, 3.4, 0.14, 0, 1.7, 6.55, g);
+    case 'dehq':
       ud.flag = flagPole(g, -3, 10.5, 10, TEX.deflag);
       flagPole(g, 4, 10.5, 10, TEX.deflag);
-      for (const x of [-8, 8]) { const s = new THREE.Group(); s.position.set(x, 0, 11); g.add(s); sandbagRing(s, 2.4, 10); }
-      P(G.cyl8, 0x3a3a34, 0.12, 12, 0.12, 9, 16, -3, g);
-      P(G.box, 0x51503f, 2, 1.1, 4.6, -14, 1, 9, g);
+      for (const x of [-8, 8]) staticGunner(g, 'de', x, 11.5, 0).position.y = 0.0;
       break;
-    }
   }
-  g.userData = Object.assign(g.userData || {}, ud);
+  const sz = BUILD_SIZE[kind];
+  if (sz) { ud.scaffold = VM(merged('scaf' + kind, B => bScaffold(B, sz[0] * 0.9, sz[1] * 0.9, sz[2])), g, 0, 0, 0, false); ud.scaffold.visible = false; }
+  g.userData = ud;
   return g;
 }

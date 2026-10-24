@@ -292,7 +292,7 @@ function spawnBuilding(kind, x, z, o) {
     wcool: rand(), burst: rand() * 2, turretYaw: 0, retarget: rand() * 0.5, target: null, rally: null,
   });
   mesh.position.set(x, b.y, z); mesh.rotation.y = b.heading;
-  if (!b.complete) { mesh.scale.y = 0.06; b.hp = d.hp * 0.1; }
+  if (!b.complete) { mesh.scale.y = 0.06; b.hp = d.hp * 0.1; if (mesh.userData.scaffold) mesh.userData.scaffold.visible = true; }
   b.obs = MAP.obstacles.add({ x, z, r: b.r });
   return b;
 }
@@ -594,9 +594,10 @@ function updateBuilding(b, dt) {
     b.progress = Math.min(1, b.progress + dt / (d.time || 5));
     b.hp = Math.min(b.maxHp, b.hp + d.hp * 0.9 * dt / (d.time || 5));
     m.scale.y = 0.06 + 0.94 * b.progress;
+    if (m.userData.scaffold) m.userData.scaffold.scale.y = 1 / Math.max(0.3, m.scale.y);
     if (rand() < dt * 6) emit(b.x + rr(-d.w / 2, d.w / 2), b.y + 0.5, b.z + rr(-d.d / 2, d.d / 2), { c: 0x9a8b6c, life: 1.2, vy: 1.5, s0: 0.6, s1: 2.2, a: 0.5 });
     if (b.progress >= 1) {
-      b.complete = true; m.scale.y = 1;
+      b.complete = true; m.scale.y = 1; if (m.userData.scaffold) m.userData.scaffold.visible = false;
       if (b.team === 'us') { toast(d.name + ' concluído.', 'good'); refreshPanel(true); }
     }
     return;
