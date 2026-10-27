@@ -247,13 +247,13 @@ const REGIONS = [
     ruler: { title: 'Imperatriz', name: 'Hana Nove-Caudas', race: 'kitsune' }, towns: 3, villages: 4, dungeons: 8, color: '#e06890',
     desc: 'Terra das kitsunes: templos, lanternas, cerejeiras e espadachins errantes.' },
   // ----- Valtheria: o Grande Continente do sul (maior que Eldoria) -----
-  { id: 'aurelion', name: 'Império de Aurélion', short: 'Aurélion', race: 'humano', fx: 1.050, fy: 1.965, biome: 'plains', lvl: [14, 22], mount: -0.04, culture: 'imperial', cont: 2,
+  { id: 'aurelion', name: 'Império de Aurélion', short: 'Aurélion', race: 'humano', fx: 1.074, fy: 1.453, biome: 'plains', lvl: [14, 22], mount: -0.04, culture: 'imperial', cont: 2,
     ruler: { title: 'Imperador', name: 'Cassius Aurélio', race: 'humano' }, towns: 6, villages: 10, dungeons: 16, color: '#5a78e0',
     desc: 'O maior império do mundo: avenidas de pedra, fábricas e regimentos de mosqueteiros arcanos.' },
   { id: 'gromhald', name: 'Picos de Gromhald', short: 'Gromhald', race: 'gigante', fx: 0.537, fy: 1.550, biome: 'snow', lvl: [20, 30], mount: 0.12, culture: 'giant', cont: 2,
     ruler: { title: 'Rei-Montanha', name: 'Ulfgar Pedra-Viva', race: 'gigante' }, towns: 5, villages: 8, dungeons: 14, color: '#8aa0b8',
     desc: 'Montanhas geladas dos meio-gigantes, onde tudo é grande demais.' },
-  { id: 'lunethar', name: 'Bosque Eterno de Lunethar', short: 'Lunethar', race: 'elfo', fx: 1.074, fy: 1.441, biome: 'forest', lvl: [16, 26], mount: 0.0, culture: 'elf', cont: 2,
+  { id: 'lunethar', name: 'Bosque Eterno de Lunethar', short: 'Lunethar', race: 'elfo', fx: 1.050, fy: 2.075, biome: 'forest', lvl: [16, 26], mount: 0.0, culture: 'elf', cont: 2,
     ruler: { title: 'Rei', name: 'Aelindor Lua-de-Prata', race: 'elfo' }, towns: 5, villages: 8, dungeons: 14, color: '#a0a0f0',
     desc: 'Florestas antigas dos elfos da lua, onde as árvores brilham à noite.' },
   { id: 'rodafina', name: 'Vale de Rodafina', short: 'Rodafina', race: 'gnomo', fx: 0.464, fy: 2.039, biome: 'hills', lvl: [12, 20], mount: 0.0, culture: 'gnome', cont: 2,
@@ -262,7 +262,7 @@ const REGIONS = [
   { id: 'kumari', name: 'Savana de Kumari', short: 'Kumari', race: 'felino', fx: 1.611, fy: 2.478, biome: 'desert', lvl: [18, 28], mount: -0.05, culture: 'desert', cont: 2,
     ruler: { title: 'Rainha-Leoa', name: 'Nala Juba-Dourada', race: 'felino' }, towns: 5, villages: 8, dungeons: 14, color: '#d8a040',
     desc: 'Savanas e cânions dourados dos clãs felinos do sul.' },
-  { id: 'ferrania', name: 'República de Ferrânia', short: 'Ferrânia', race: 'humano', fx: 0.806, fy: 2.380, biome: 'plains', lvl: [16, 26], mount: -0.03, culture: 'industrial', cont: 2,
+  { id: 'ferrania', name: 'República de Ferrânia', short: 'Ferrânia', race: 'humano', fx: 1.099, fy: 2.625, biome: 'plains', lvl: [16, 26], mount: -0.03, culture: 'industrial', cont: 2,
     ruler: { title: 'Chanceler', name: 'Augusto Vapormont', race: 'humano' }, towns: 5, villages: 7, dungeons: 12, color: '#9a3a3a',
     desc: 'Cidades de tijolo, fábricas a vapor e mosqueteiros. O coração da era industrial.' },
   { id: 'kharzul', name: 'Fortaleza de Kharzul', short: 'Kharzul', race: 'anao', fx: 1.636, fy: 1.538, biome: 'mountain', lvl: [22, 32], mount: 0.14, culture: 'dwarf', cont: 2,
@@ -274,7 +274,7 @@ const REGIONS = [
   { id: 'serpentis', name: 'Reino de Serpentis', short: 'Serpentis', race: 'draconato', fx: 0.562, fy: 2.466, biome: 'swamp', lvl: [18, 28], mount: -0.08, culture: 'swamp', cont: 2,
     ruler: { title: 'Imperatriz-Serpente', name: 'Sylith Escama-de-Jade', race: 'draconato' }, towns: 4, villages: 7, dungeons: 14, color: '#3a9a6a',
     desc: 'Pântanos e templos afundados dos draconatos do sul.' },
-  { id: 'umbraval', name: 'Abismo de Umbraval', short: 'Umbraval', race: null, fx: 1.074, fy: 2.588, biome: 'dead', lvl: [28, 40], mount: 0.03, culture: 'fort', cont: 2,
+  { id: 'umbraval', name: 'Abismo de Umbraval', short: 'Umbraval', race: null, fx: 0.757, fy: 2.527, biome: 'dead', lvl: [28, 40], mount: 0.03, culture: 'fort', cont: 2,
     ruler: null, towns: 2, villages: 0, dungeons: 16, color: '#604878', hostile: true,
     desc: 'Uma ferida na terra de onde saem horrores antigos. Só os mais fortes voltam.' }
 ];

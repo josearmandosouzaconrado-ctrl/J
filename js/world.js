@@ -596,6 +596,7 @@ class World {
       [2, 2700, 'Porto do Norte'], [2, 4400, 'Porto Imperial'], [2, 6200, 'Porto Leste de Valtheria']
     ];
     specs.forEach(([cont, x0, name], n) => this.placePortV(cont, x0, name, n, rng));
+    this.placePortV(2, 4500, 'Porto de Ferrânia', 9, rng, 1);
     const nv = this.ports.slice(before);
     this.buildRoads(rng, made.concat(nv.filter(p => p.port.cont === 2)), false);
     const edges = [];
@@ -613,14 +614,15 @@ class World {
     this.roadEdges = this.roadEdges.concat(edges);
   }
   // porto em costa norte/sul: varre na vertical a partir do mar
-  placePortV(cont, x0, name, n, rng) {
-    const dir = cont === 2 ? -1 : 1;                 // dir>0: o mar fica ao sul
+  placePortV(cont, x0, name, n, rng, south) {
+    const dir = cont === 2 && !south ? -1 : 1;       // dir>0: o mar fica ao sul
     const seaAt = (x, y) => { const t = this.baseTile(x, y); return TWATER[t] || t === T.DEEP; };
     for (let dx = 0; dx < 900; dx += 10) for (const xx of [x0 + dx, x0 - dx]) {
-      let y = cont === 2 ? VALTHERIA_Y + 20 : VALTHERIA_Y - 20;
-      const lim = cont === 2 ? VALTHERIA_Y + 2600 : 2600;
-      while (cont === 2 ? y < lim : y > lim) { if (this.isLand(xx, y)) break; y += dir > 0 ? -1 : 1; }
-      if (cont === 2 ? y >= lim : y <= lim) continue;
+      const down = cont === 2 && !south;              // varre de cima para baixo?
+      let y = down ? VALTHERIA_Y + 20 : south ? WORLD_H - 100 : VALTHERIA_Y - 20;
+      const lim = down ? VALTHERIA_Y + 2600 : south ? WORLD_H - 2600 : 2600;
+      while (down ? y < lim : y > lim) { if (this.isLand(xx, y)) break; y += down ? 1 : -1; }
+      if (down ? y >= lim : y <= lim) continue;
       if (contAt(xx, y) !== cont) continue;
       let land = 0, sea = 0;
       for (let k = 1; k <= 12; k++) { if (this.isLand(xx, y - dir * k) && this.isLand(xx - 3, y - dir * k) && this.isLand(xx + 3, y - dir * k)) land++; if (seaAt(xx, y + dir * k) && seaAt(xx - 3, y + dir * k) && seaAt(xx + 4, y + dir * k)) sea++; }
@@ -1217,6 +1219,8 @@ class World {
       const y = this.mapRow;
       for (let x = 0; x < MAP_W; x++) {
         const t = this.baseTile(Math.floor(x * step + step / 2), Math.floor(y * step + step / 2));
+        if (!this.navWater) this.navWater = new Uint8Array(MAP_W * MAP_H);
+        this.navWater[y * MAP_W + x] = (TWATER[t] || t === T.DEEP) ? 1 : 0;
         const [r, g, b] = hexToRgb(TILE_DEFS[t].c);
         const sh = clamp(1 + (this._e - 0.5) * 0.35, 0.8, 1.25);
         const i = (y * MAP_W + x) * 4; d[i] = r * sh; d[i + 1] = g * sh; d[i + 2] = b * sh; d[i + 3] = 255;

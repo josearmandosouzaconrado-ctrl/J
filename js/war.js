@@ -203,6 +203,7 @@ const War = {
       if (mine.length < 2 && rng.chance(0.6)) this.raise(k, foe, rng);
       for (const a of mine) if (a.state === 'camp') a.n = Math.min(a.n0, a.n + rng.int(8, 16));
     }
+    Naval.daily();
     // campos de batalha antigos somem
     S.fields = S.fields.filter(f => Game.day - f.day < 5);
     // soldo do jogador
@@ -297,6 +298,7 @@ const War = {
       A.n = Math.max(0, A.n - la); B.n = Math.max(0, B.n - lb); bt.dead += la + lb; bt.deadA += la; bt.deadB += lb;
       if (A.n <= bt.a0 * 0.4 || B.n <= bt.b0 * 0.4 || bt.h >= 5) this.resolve(bt, A.n / bt.a0 < B.n / bt.b0 ? 'a' : 'b');
     }
+    Naval.hour();
   },
   startBattle(a, b) {
     const S = this.st();
@@ -691,6 +693,7 @@ const War = {
   // ---------- Mapa ----------
   drawMap(ctx, toS, z) {
     const S = this.st();
+    Naval.drawMap(ctx, toS);
     for (const s of Game.world.settlements) { const o = S.owner[s.id]; if (!o || o === s.region.id || !this.K[o]) continue; const [x, y] = toS(s.x, s.y); ctx.strokeStyle = this.K[o].color; ctx.lineWidth = 3; ctx.strokeRect(x - 9, y - 9, 18, 18); }
     for (const a of S.armies) { const [x, y] = toS(a.x, a.y); ctx.fillStyle = '#000'; ctx.fillRect(x - 4, y - 9, 9, 7); ctx.fillStyle = this.K[a.k].color; ctx.fillRect(x - 3, y - 8, 7, 5); ctx.fillStyle = '#6a4a2a'; ctx.fillRect(x - 4, y - 9, 1, 12); if (a.state === 'camp') { ctx.fillStyle = '#e0d0a0'; ctx.fillText('⛺', x + 9, y + 4); } }
     for (const b of S.battles) { const [x, y] = toS(b.x, b.y); ctx.fillStyle = '#000'; ctx.fillText('⚔', x + 1, y + 6); ctx.fillStyle = '#ff5040'; ctx.fillText('⚔', x, y + 5); }

@@ -302,9 +302,9 @@ Object.assign(Game, {
       const sh = s.port.ship;
       if (sh.x < camX - 80 || sh.x > camX + this.vw + 80 || sh.y < camY - 80 || sh.y > camY + this.vh + 80) continue;
       const own = War.ownerOf(s), col = own && War.K[own] ? War.K[own].color : s.region.color;
-      const img = this.shipImg(col, s.port.axis !== 'y' && s.port.dir < 0);
-      const bob = Math.round(Math.sin(this.t * 1.5) * 1.5);
-      D.push({ y: sh.y + 10, img, x: sh.x - 36 + (s.port.axis === 'y' ? 0 : s.port.dir * 6), yy: sh.y - 52 + bob });
+      const img = Naval.sprite(own ? Naval.shipTypeOf(own) : 'galeao', col, Math.floor(this.t * 2) % 2);
+      const flip = s.port.axis !== 'y' && s.port.dir < 0, x = sh.x + (s.port.axis === 'y' ? 0 : s.port.dir * 6), y = sh.y + 12;
+      D.push({ y: sh.y + 10, fn: (ctx) => Naval.drawShip(ctx, img, x - camX, y - camY, { flip }) });
     }
   },
   captainTalk(a) {
@@ -325,6 +325,7 @@ Object.assign(Game, {
       { n: cap.name, look: cap.look, t: 'Levantar âncora! Içar as velas! Rumo ao Mar das Brumas!', fx: () => Sfx.play('quest') },
       { n: to.port.cont === 2 || from.port.cont === 2 ? 'Oceano do Sul' : 'Mar das Brumas', t: '<i>O navio corta as ondas. Gaivotas acompanham o casco e a névoa cobre o horizonte...</i>' },
       { n: to.port.cont === 2 || from.port.cont === 2 ? 'Oceano do Sul' : 'Mar das Brumas', t: '<i>À noite, o céu se enche de estrelas. Os marinheiros cantam velhas canções sobre serpentes marinhas.</i>' },
+      ...(War.st().navals && War.st().navals.length ? [{ n: cap.name, look: cap.look, t: `Ao longe, canhões trovejam no horizonte: ${esc(War.st().navals[0].name.replace('Batalha naval', 'uma batalha naval'))}! Mantenham distância!` }] : []),
       { n: cap.name, look: cap.look, t: `Terra à vista! Bem-vindo(a) a ${esc(to.name)}.` }
     ], () => {
       const d = to.port.dock, land = to.port.axis === 'y' ? { x: to.mid.x * 16 + 8, y: (to.mid.y - to.port.dir * 2) * 16 + 8 } : { x: to.mid.x * 16 + 8 - to.port.dir * 32, y: to.mid.y * 16 + 8 };

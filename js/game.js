@@ -111,6 +111,7 @@ const Game = {
     this.camX = this.player.x - this.vw / 2; this.camY = this.player.y - this.vh / 2;
     this.carcasses = []; this.intro = null;
     Object.assign(Academy, { key: '', visit: null, spar: null, visitT: 60 }); Academy.cineOn(false);
+    Naval.vis = []; Naval.balls = []; Naval.boats = [];
     if (this.player.follower) this.spawnFollower();
     this.spawnPet();
     UI.showHUD(true);
@@ -299,6 +300,7 @@ const Game = {
     if (this.intro) { this.updateIntro(dt); Input.queue.clear(); }
     Academy.update(dt);
     War.update(dt);
+    Naval.update(dt);
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();
@@ -1188,7 +1190,7 @@ const Game = {
     if (!P.dead || true) D.push({ y: P.y, a: P });
     for (const k of this.pickups) D.push({ y: k.y, pk: k });
     this.drawMountsCart(D); this.drawCarcasses(D);
-    if (L.isWorld) { War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); }
+    if (L.isWorld) { War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); }
     D.sort((a, b) => a.y - b.y);
     for (const d of D) {
       if (d.a) d.a.draw(ctx, camX, camY);
