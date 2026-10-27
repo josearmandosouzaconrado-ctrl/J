@@ -435,6 +435,7 @@ class World {
       const p = { id: 'rune' + i, kind: 'runestone', x: pos.x, y: pos.y, region: R, shout: runeShouts[i], name: 'Pedra Rúnica' };
       this.stampSmall(p, O.RUNESTONE, rng); this.pois.push(p);
     });
+    this.placeAcademy();
     // ---- Estradas
     this.buildRoads(rng);
     this.placeDestiny();
@@ -449,6 +450,82 @@ class World {
     }
   }
 
+  placeAcademy() {
+    const rng = new RNG(this.seed * 17 + 3);
+    const V = this.regions[REGION_BY_ID.valdoria.index], S = this.regions[REGION_BY_ID.sylvaris.index];
+    const tx = lerp(V.cx, S.cx, 0.45), ty = lerp(V.cy, S.cy, 0.45);
+    const size = 64, half = size / 2;
+    const ok = (x, y) => {
+      for (let dy = -half; dy <= half; dy += 8) for (let dx = -half; dx <= half; dx += 8) { const t = this.baseTile(x + dx, y + dy); if (t === T.DEEP || t === T.LAVA || (TWATER[t] && Math.abs(dx) < half - 8 && Math.abs(dy) < half - 8)) return false; }
+      if (!this.farFrom(x, y, this.settlements, 80)) return false;
+      for (const d of this.dungeons) if (Math.abs(d.x - x) < half + 12 && Math.abs(d.y - y) < half + 12) return false;
+      for (const p of this.pois) if (Math.abs(p.x - x) < half + 10 && Math.abs(p.y - y) < half + 10) return false;
+      return true;
+    };
+    let pos = null;
+    for (let r = 0; r < 700 && !pos; r += 6) for (let k = 0; k < 24 && !pos; k++) { const a = k / 24 * Math.PI * 2; const x = Math.round(tx + Math.cos(a) * r), y = Math.round(ty + Math.sin(a) * r); if (ok(x, y)) pos = { x, y }; }
+    if (!pos) return;
+    const reg = this.regions[this.regionAt(pos.x, pos.y)];
+    const s = { id: 'academy', name: ACADEMY.name, type: 'academy', region: reg, x: pos.x, y: pos.y, cx: pos.x, cy: pos.y, academy: true };
+    this.settlements.push(s);
+    this.academy = s;
+    this.layoutAcademy(s, rng);
+  }
+  layoutAcademy(s, rng) {
+    const size = 64; s.w = s.h = size; s.x0 = s.cx - 32; s.y0 = s.cy - 32;
+    const N = size * size;
+    const tiles = new Uint8Array(N).fill(T.GRASS), objs = new Uint8Array(N).fill(0), occ = new Uint8Array(N);
+    const setT = (x, y, t) => { if (x >= 0 && y >= 0 && x < size && y < size) tiles[y * size + x] = t; };
+    const setO = (x, y, o) => { if (x >= 0 && y >= 0 && x < size && y < size && !occ[y * size + x]) objs[y * size + x] = o; };
+    s.buildings = []; s.npcSpots = []; s.lamps = []; s.gates = [];
+    const cul = Object.assign({}, CULTURES.human, { wallC: '#dcd8d0', roof: ['#2a3a7a'] });
+    for (let i = 0; i < size; i++) for (const [x, y] of [[i, 0], [i, size - 1], [0, i], [size - 1, i]]) { setT(x, y, T.WALL); occ[y * size + x] = 3; }
+    // avenidas
+    for (let y = 11; y < size; y++) for (let x = 30; x <= 33; x++) setT(x, y, T.COBBLE);
+    for (let x = 1; x < size - 1; x++) for (let y = 33; y <= 35; y++) setT(x, y, T.COBBLE);
+    for (let y = 20; y <= 28; y++) for (let x = 24; x <= 39; x++) setT(x, y, T.COBBLE);
+    for (const yy of [44, 45, 57, 58]) for (let x = 1; x < size - 1; x++) setT(x, yy, T.COBBLE);
+    for (const [dir, gx, gy] of [['s', 32, size - 1], ['w', 0, 34], ['e', size - 1, 34]]) {
+      for (let k = -2; k <= 1; k++) { const x = dir === 's' ? gx + k : gx, y = dir === 's' ? gy : gy + k; setT(x, y, T.COBBLE); occ[y * size + x] = 0; }
+      s.gates.push({ x: s.x0 + gx + (dir === 'w' ? -1 : dir === 'e' ? 1 : 0), y: s.y0 + gy + (dir === 's' ? 1 : 0), dir });
+    }
+    const place = (bt, bx, by, spec, owner) => {
+      const b = this.placeBuilding(s, bt, bx, by, rng, objs, occ, size, cul);
+      Object.assign(b.spec, spec);
+      if (owner) Object.assign(b.owner, owner);
+      b.name = BUILDINGS[bt].name;
+      // caminho até a avenida
+      if (b.door) { let y = b.door.y - s.y0 + 1; const x = b.door.x - s.x0; for (let k = 0; k < 30 && y < size - 1; k++, y++) { if (tiles[y * size + x] === T.COBBLE && k > 0) break; setT(x, y, T.COBBLE); } }
+      return b;
+    };
+    const blue = '#2a3a7a';
+    place('grandhall', 23, 2, { type: 'castle', style: 'castle', roof: blue, wall: '#e4e0d8', banner: '#3050c0' }, Object.assign({ ruler: false }, ACADEMY.head));
+    place('dorm_real', 4, 13, { type: 'house', style: 'stone', roof: '#7a2030', wall: '#e0dcd4', chimney: true, sign: 'house' }, { name: 'Zeladora Marta Lumen', race: 'humano', sex: 'f' });
+    place('dorm', 48, 13, { type: 'house', style: 'stone', roof: blue, wall: '#d8d4cc', chimney: true, sign: 'house' }, { name: 'Zelador Bertoldo Pó', race: 'pequenino', sex: 'm' });
+    place('library', 6, 37, { type: 'tower', style: 'stone', roof: '#4a2a7a', wall: '#d8d4cc', sign: 'magic' }, { name: 'Bibliotecária Lirien Folha-de-Prata', race: 'elfo', sex: 'f' });
+    place('refectory', 47, 38, { type: 'house', style: 'timber', roof: '#8a3a2a', sign: 'inn' }, { name: 'Cozinheiro Gorbo Barriga-Cheia', race: 'pequenino', sex: 'm' });
+    place('fencing', 6, 50, { type: 'guildhall', style: 'stone', roof: '#8a2a2a', wall: '#d0ccc4', sign: 'guild', banner: '#c03030' }, ACADEMY.fencingTeacher);
+    place('alchemylab', 45, 51, { type: 'house', style: 'stone', roof: '#2a6a4a', sign: 'alchemist' }, { name: 'Mestre Alquimista Ozric Vael', race: 'anao', sex: 'm' });
+    place('magic', 55, 51, { type: 'tower', style: 'stone', roof: '#4a2a7a', sign: 'magic' }, { name: 'Lojista Fenna Brilho-Azul', race: 'elfo', sex: 'f' });
+    // pátio de treino de esgrima
+    for (let y = 48; y <= 55; y++) for (let x = 18; x <= 27; x++) setT(x, y, T.SAND);
+    for (let y = 49; y <= 54; y += 3) for (let x = 19; x <= 26; x += 3) setO(x, y, O.DUMMY);
+    // jardins e praça
+    setO(31, 24, O.FOUNTAIN);
+    setO(26, 21, O.STATUE); setO(37, 21, O.STATUE); setO(26, 27, O.STATUE); setO(37, 27, O.STATUE);
+    for (let y = 1; y < size - 1; y++) for (let x = 1; x < size - 1; x++) {
+      if (occ[y * size + x] || tiles[y * size + x] !== T.GRASS || objs[y * size + x]) continue;
+      const h = rng.next();
+      if (h < 0.06) setO(x, y, O.FLOWERS); else if (h < 0.085) setO(x, y, rng.chance(0.4) ? O.ELFTREE : O.OAK); else if (h < 0.095) setO(x, y, O.BUSH); else if (h < 0.1) setO(x, y, O.BENCH);
+    }
+    for (let y = 13; y < size - 2; y += 5) { if (tiles[y * size + 29] === T.COBBLE) continue; setO(29, y, O.LAMP); setO(34, y, O.LAMP); s.lamps.push({ x: s.x0 + 29, y: s.y0 + y }); }
+    for (let x = 4; x < size - 3; x += 6) { if (x >= 29 && x <= 34) continue; setO(x, 32, O.LAMP); setO(x, 36, O.LAMP); }
+    for (const x of [24, 27, 36, 39]) setO(x, 19, O.BANNER);
+    // guardas nos portões
+    s.npcSpots.push({ role: 'guard', x: s.x0 + 30, y: s.y0 + size - 3 }, { role: 'guard', x: s.x0 + 34, y: s.y0 + size - 3 }, { role: 'guard', x: s.x0 + 2, y: s.y0 + 32 }, { role: 'guard', x: s.x0 + size - 3, y: s.y0 + 32 });
+    s.mid = { x: s.x0 + 32, y: s.y0 + 30 };
+    this.addStamp({ x0: s.x0, y0: s.y0, w: size, h: size, tiles, objs });
+  }
   placeDestiny() {
     const rng = new RNG(this.seed * 13 + 5);
     const cap = this.settlements.find(s => s.region.id === 'valdoria' && s.type === 'capital');

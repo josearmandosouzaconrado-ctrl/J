@@ -109,6 +109,10 @@ input { font-family: inherit; font-size: 22px; background: #140c10; color: var(-
 .tbtn { width: 40px; height: 40px; border: 2px solid var(--border); background: rgba(30,18,16,.75); display: flex; align-items: center; justify-content: center; padding: 0; }
 .tbtn img { image-rendering: pixelated; }
 .tbtn:active { background: rgba(255,210,90,.4); }
+#cine { position: absolute; inset: 0; pointer-events: none; }
+#cine::before, #cine::after { content: ''; position: absolute; left: 0; right: 0; height: 0; background: #000; transition: height .5s; }
+#cine::before { top: 0; } #cine::after { bottom: 0; }
+#cine.on::before, #cine.on::after { height: 9vh; }
 #fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
 #fade.go { animation: fade .6s; }
 @keyframes fade { 0% { opacity: 1; } 100% { opacity: 0; } }

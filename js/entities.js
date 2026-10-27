@@ -597,7 +597,8 @@ class NPC extends Actor {
   update(dt) {
     this.moving = false;
     if (this.talkT > 0) { this.talkT -= dt; const P = Game.player; this.setDir(angleTo(this.x, this.y, P.x, P.y)); return; }
-    const wander = this.role === 'citizen' || this.role === 'resident' || this.role === 'patron' || this.role === 'child' || this.role === 'kid' || this.role === 'spouse';
+    if (this.visiting) return;
+    const wander = this.role === 'student' || this.role === 'citizen' || this.role === 'resident' || this.role === 'patron' || this.role === 'child' || this.role === 'kid' || this.role === 'spouse';
     if (!wander) {
       const P = Game.player;
       if (P && dist(this.x, this.y, P.x, P.y) < 40) this.setDir(angleTo(this.x, this.y, P.x, P.y));

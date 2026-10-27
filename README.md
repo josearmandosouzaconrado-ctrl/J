@@ -24,7 +24,15 @@ WASD/setas andar • Shift correr • J/Espaço atacar • K magia • Q trocar 
 - **65+ cidades, vilas e capitais** com muralhas, castelos, palácios, tavernas, ferrarias, armazéns, alquimistas, lojas de magia, templos, estábulos, casas à venda, guardas e moradores que andam pelas ruas.
 - **Estradas, pontes e placas** conectando todo o reino; viagem rápida para cidades descobertas.
 - **8 raças jogáveis** (Humano, Elfo, Anão, Orc, Pequenino, Draconato, Felino, Nórdico), cada uma com bônus e habilidade especial.
-- **Sem classe fixa**: você começa como Aventureiro e seu estilo (Guerreiro, Mago, Arqueiro, Paladino, Druida, Ladino e mais de 20 outros) surge das habilidades que você mais usa, com bônus próprios. As **Pedras do Destino** perto de Valdoria dão bênçãos que aceleram seu caminho.
+- **Você nasce sem magia e com uma espada fraca.** Sem classe fixa: você começa como Aventureiro e seu estilo (Guerreiro, Mago, Arqueiro, Paladino, Druida, Ladino e mais de 20 outros) surge das habilidades que você mais usa, com bônus próprios. As **Pedras do Destino** perto de Valdoria dão bênçãos que aceleram seu caminho.
+- **Academia Real de Astralis** — a única e mais famosa academia de magia do mundo, um campus enorme entre Valdoria e Sylvaris (marcado em azul no mapa). Príncipes e princesas de todos os reinos e herdeiros das casas nobres estudam lá:
+  - Matricule-se pagando ou passe no **exame de admissão** (acertar tudo dá a Bolsa de Honra no Dormitório Real).
+  - **Cerimônia de matrícula** com o Cristal das Afinidades (Fogo, Gelo, Raio, Luz, Natureza ou Sombra), uniforme e espada de treino.
+  - **Aulas de magia** (8h–12h) que despertam sua magia e ensinam os feitiços da sua afinidade; **aulas de esgrima** (14h–18h) com duelos de treino contra colegas.
+  - **Dormitórios** com sua cama, Grande Salão, Biblioteca Arcana, Refeitório, Salão de Esgrima, laboratório e loja.
+  - 22 colegas com personalidade e agenda própria: faça amizades e romances. Amigos **batem na porta do seu dormitório** ou **te procuram pela escola** para curtir a cidade ou caçar monstros — mas não te seguem para outros territórios, porque não sabem para onde você foi.
+  - **Graduação** com cena especial, Manto do Graduado e Florete Real.
+  - Quem não estudar pode despertar a magia com um caro Ritual do Despertar nos templos.
 - **Interiores exploráveis em todos os 800 prédios**: casas com moradores, tavernas, ferrarias, lojas, templos, guildas, castelos com sala do trono.
 - **Romance, casamento e filhos**: converse, dê presentes, flerte, namore e case (Amuleto da Aurora). Seu cônjuge mora com você, cozinha, dá presentes e pode lutar ao seu lado. Tenha filhos ou adote no orfanato do templo.
 - **Animais de estimação** (cachorro, gato selvagem, lobo domado) e **pesca**.
@@ -56,6 +64,7 @@ WASD/setas andar • Shift correr • J/Espaço atacar • K magia • Q trocar 
 | `js/entities.js`, `js/player.js` | Combate, IA dos monstros, NPCs e jogador |
 | `js/quests.js`, `js/shops.js`, `js/items.js` | Missões, lojas, itens e saque |
 | `js/ui.js`, `js/input.js`, `js/audio.js` | Interface, controles de toque/teclado e áudio |
-| `js/game.js` | Loop principal, renderização, iluminação, salvamento |
+| `js/game.js`, `js/game2.js` | Loop principal, renderização, iluminação, salvamento, montarias, empregos, construção, cena inicial |
+| `js/academy.js` | Academia Real de Astralis: alunos, aulas, matrícula, visitas de amigos e cenas |
 
 Sem dependências externas além da fonte VT323 (opcional).

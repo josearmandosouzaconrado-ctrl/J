@@ -12,7 +12,7 @@ class Player extends Actor {
     const C = CLASSES[o.cls];
     this.gold = 60 + (C.gold || 0);
     this.inv = []; this.equip = { weapon: null, offhand: null, head: null, body: null, feet: null, ring: null, neck: null };
-    this.spells = C.spells.slice(); this.spellIdx = 0;
+    this.spells = C.spells.slice(); this.spellIdx = 0; this.magicAwake = this.spells.length > 0; this.academy = null;
     this.shouts = []; this.shoutLvl = {}; this.shoutIdx = 0; this.souls = 0;
     this.skills = {}; for (const k in SKILLS) this.skills[k] = { lvl: 5 + (C.skills[k] || 0), xp: 0 };
     this.quests = []; this.guilds = {}; this.main = 0; this.doneQuests = 0;
@@ -41,7 +41,7 @@ class Player extends Actor {
   // ---------- Serialização ----------
   toJSON() {
     const o = {};
-    for (const k of ['name', 'race', 'cls', 'app', 'level', 'xp', 'base', 'perkPts', 'gold', 'inv', 'equip', 'spells', 'spellIdx', 'shouts', 'shoutLvl', 'shoutIdx', 'souls', 'skills', 'quests', 'guilds', 'main', 'doneQuests', 'hasHorse', 'houses', 'storage', 'follower', 'stats', 'hp', 'mp', 'st', 'x', 'y', 'lastTown', 'pendingLevels', 'cds', 'rel', 'spouse', 'spouseHome', 'children', 'babyDue', 'pet', 'sign', 'style', 'mount', 'horse', 'cart', 'carrying', 'job', 'chronicle', 'freeMode']) o[k] = this[k];
+    for (const k of ['name', 'race', 'cls', 'app', 'level', 'xp', 'base', 'perkPts', 'gold', 'inv', 'equip', 'spells', 'spellIdx', 'shouts', 'shoutLvl', 'shoutIdx', 'souls', 'skills', 'quests', 'guilds', 'main', 'doneQuests', 'hasHorse', 'houses', 'storage', 'follower', 'stats', 'hp', 'mp', 'st', 'x', 'y', 'lastTown', 'pendingLevels', 'cds', 'rel', 'spouse', 'spouseHome', 'children', 'babyDue', 'pet', 'sign', 'style', 'mount', 'horse', 'cart', 'carrying', 'job', 'chronicle', 'freeMode', 'magicAwake', 'academy']) o[k] = this[k];
     o.perks = [...this.perks];
     o.buffs = this.buffs.filter(b => b.t < 1e6);
     return o;
@@ -54,6 +54,7 @@ class Player extends Actor {
     p.cds = o.cds || {};
     p.rel = o.rel || {}; p.children = o.children || []; p.chronicle = o.chronicle || [];
     if (o.freeMode === undefined) p.freeMode = false;
+    if (o.magicAwake === undefined) p.magicAwake = true;
     if (p.hasHorse && !p.mount) p.mount = 'cavalo';
     for (const k in SKILLS) if (!p.skills[k]) p.skills[k] = { lvl: 5, xp: 0 };
     for (const sl of EQUIP_SLOTS) if (p.equip[sl]) { const inst = p.inv.find(i => i.u === p.equip[sl].u); if (inst) p.equip[sl] = inst; else p.inv.push(p.equip[sl]); }
@@ -234,6 +235,7 @@ class Player extends Actor {
     const d = ITEMS[it.id];
     if (d.slot) { if (this.isEquipped(it)) { this.unequipInst(it); this.recalc(); } else this.equipItem(it); return; }
     if (d.type === 'tome') {
+      if (!this.magicAwake) { Game.toast('Sua magia ainda está adormecida. Estude na Academia de Astralis ou faça o Ritual do Despertar num templo.', '#c0a0ff'); return; }
       if (this.spells.includes(d.spell)) { Game.toast('Você já conhece esta magia.', '#ffa0a0'); return; }
       this.spells.push(d.spell); this.removeInst(it);
       Game.toast('Magia aprendida: ' + SPELLS[d.spell].name, '#c0a0ff'); Sfx.play('learn');
@@ -362,6 +364,7 @@ class Player extends Actor {
   }
   castSpell() {
     if (this.dead || this.rolling > 0) return;
+    if (!this.magicAwake) { Game.toast('Sua magia está adormecida. Desperte-a na Academia de Astralis ou com o Ritual do Despertar num templo.', '#c0a0ff'); this.castT = 0.5; return; }
     const id = this.spells[this.spellIdx];
     if (!id) { Game.toast('Você não conhece magias. Compre tomos em lojas de magia.', '#c0a0ff'); return; }
     const sp = SPELLS[id];
@@ -598,7 +601,7 @@ class Player extends Actor {
       let spd = this.stat.speed * (this.mounted ? 1 : tdef.slow) * this.speedFactor * (1 + this.buffVal('speed'));
       if (this.mounted) spd *= ((MOUNTS[this.mount] || MOUNTS.cavalo).speed) * (this.perks.has('cavaleiro') ? 1.25 : 1) * (this.cart && this.cart.hitched ? 0.85 : 1);
       if (this.carrying) spd *= 0.62;
-      if (this.sleeping || Game.intro) spd = 0;
+      if (this.sleeping || Game.intro || Academy.cine) spd = 0;
       if (this.castT > 0 || (this.atkT > 0 && this.swing)) spd *= 0.6;
       if (m.mag > 0.12) {
         if ((Input.sprint || m.mag > 0.94) && this.st > 1 && !this.carrying) { spd *= 1.45; this.st -= (this.mounted ? 7 : 15) * dt; this.sprinting = true; }

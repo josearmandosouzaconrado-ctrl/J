@@ -253,6 +253,8 @@ const UI = {
       this.dialog(a.name, a.look, esc(lines[Math.floor(Math.random() * lines.length)]), [{ label: 'Tchau' }]);
       return;
     }
+    if (a.isFollower && a.studentId) return Academy.followerTalk(a);
+    if (a.student) return Academy.talk(a);
     if (a.isFollower && a.spouse) {
       this.dialog(a.name, a.look, 'Estou com você, meu amor. Para onde vamos?', [
         { label: 'Continue comigo' },
@@ -320,6 +322,14 @@ const UI = {
     if (own && b.role !== 'ruler' && b.role !== 'guild') opts.push({ label: 'Conversa pessoal 💬', fn: () => this.personal(own, () => this.building(b)) });
     switch (b.role) {
       case 'ruler': return this.ruler(b);
+      case 'academy': return Academy.hall(b);
+      case 'fencing': return Academy.fencingHall(b);
+      case 'dorm': {
+        const A = Academy.state(), mine = A.enrolled && A.dorm === b.kind;
+        text = mine ? 'Seu quarto está arrumado e sua cama, feita. Silêncio depois das 22h, hein!' : b.kind === 'dorm_real' ? 'Este é o Dormitório Real. Só príncipes, princesas, nobres e bolsistas de honra dormem aqui.' : 'Dormitório dos estudantes. Só alunos matriculados podem dormir aqui.';
+        if (mine) opts.push({ label: 'Dormir na sua cama (grátis)', fn: () => this.rest(b, 0) });
+        break;
+      }
       case 'guild': return this.guild(b);
       case 'inn':
         text = `Bem-vindo à <b>${esc(b.name)}</b>! Quer comida, uma cama ou companhia para a estrada?`;
@@ -343,6 +353,7 @@ const UI = {
         opts.push({ label: 'Bênção divina (50 ouro)', fn: () => { if (P.gold < 50) return Game.toast('Ouro insuficiente.', '#ff8080'); P.gold -= 50; P.addBuff('dmg', 0.1, 900, 'Bênção'); P.addBuff('regen', 2, 900, 'Bênção'); P.addBuff('resFire', 0.15, 900); P.addBuff('resFrost', 0.15, 900); Sfx.play('learn'); Game.toast('Abençoado! +10% dano e regeneração.', '#fff0a0'); this.building(b); } });
         opts.push({ label: 'Comprar itens sagrados', fn: () => this.shop(b, 'temple') });
         opts.push({ label: 'Orfanato: adotar uma criança', fn: () => this.adopt(b) });
+        if (!P.magicAwake) opts.push({ label: 'Ritual do Despertar da magia (3000 ouro)', fn: () => { if (P.gold < 3000) return Game.toast('Ouro insuficiente. (A Academia de Astralis desperta a magia dos alunos.)', '#ff8080'); P.gold -= 3000; P.magicAwake = true; Sfx.play('learn'); Game.centerMsg('MAGIA DESPERTADA!', 'Agora você pode aprender magias com tomos'); Game.chron('Despertei minha magia num ritual do templo.'); this.building(b); } });
         break;
       case 'stable':
         text = P.hasHorse ? 'Seu cavalo está bem cuidado! Use o botão do cavalo para montar.' : 'Um bom cavalo deixa qualquer viagem mais curta. 800 de ouro.';
@@ -745,7 +756,7 @@ const UI = {
   },
   mapMarkers() {
     const W = Game.world, M = Game.mods, out = [];
-    for (const s of W.settlements) { const known = M.discovered.has(s.id); if (known || s.type === 'capital') out.push({ x: s.x, y: s.y, kind: 's', s, known, name: known ? s.name : '???' }); }
+    for (const s of W.settlements) { const known = M.discovered.has(s.id); if (known || s.type === 'capital' || s.academy) out.push({ x: s.x, y: s.y, kind: 's', s, known, name: known ? s.name : '???' }); }
     for (const d of W.dungeons) if (M.discovered.has(d.id)) out.push({ x: d.x, y: d.y, kind: 'd', d, name: d.name + ' (Nv ' + d.lvl + ')' });
     for (const p of W.pois) if (M.discovered.has(p.id)) out.push({ x: p.x, y: p.y, kind: 'p', p, name: p.name + (p.kind === 'runestone' && M.runes.has(p.id) ? ' (absorvida)' : '') });
     return out;
@@ -768,10 +779,10 @@ const UI = {
       const [x, y] = toS(m.x, m.y);
       if (x < -20 || y < -20 || x > cw + 20 || y > ch + 20) continue;
       if (m.kind === 's') {
-        const sz = m.s.type === 'capital' ? 7 : m.s.type === 'town' ? 5 : 4;
+        const sz = m.s.type === 'capital' || m.s.academy ? 7 : m.s.type === 'town' ? 5 : 4;
         ctx.fillStyle = '#1a1010'; ctx.fillRect(x - sz - 1, y - sz - 1, sz * 2 + 2, sz * 2 + 2);
-        ctx.fillStyle = m.known ? (m.s.type === 'capital' ? '#ffd040' : '#f0e0c0') : '#807060'; ctx.fillRect(x - sz, y - sz, sz * 2, sz * 2);
-        if (m.s.type === 'capital' || z > 3.5 || this.mapSel === m) { ctx.fillStyle = '#000'; ctx.fillText(m.name, x + 1, y - sz - 3 + 1); ctx.fillStyle = m.known ? '#fff' : '#b0a090'; ctx.fillText(m.name, x, y - sz - 3); }
+        ctx.fillStyle = m.s.academy ? '#6090ff' : m.known ? (m.s.type === 'capital' ? '#ffd040' : '#f0e0c0') : '#807060'; ctx.fillRect(x - sz, y - sz, sz * 2, sz * 2);
+        if (m.s.type === 'capital' || m.s.academy || z > 3.5 || this.mapSel === m) { ctx.fillStyle = '#000'; ctx.fillText(m.name, x + 1, y - sz - 3 + 1); ctx.fillStyle = m.known ? '#fff' : '#b0a090'; ctx.fillText(m.name, x, y - sz - 3); }
       } else if (m.kind === 'd') {
         const cl = M.cleared[m.d.id] !== undefined;
         ctx.fillStyle = '#1a1010'; ctx.fillRect(x - 4, y - 4, 8, 8);

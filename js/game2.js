@@ -242,6 +242,7 @@ Object.assign(Game, {
       `Não se lembra de onde veio? Hm... Pela sua bolsa você parece um viajante. Talvez tenha sido assaltado na estrada.`,
       `Bem, aqui em ${v} todo mundo merece um recomeço. Tome, algumas moedas e um pão quentinho.`,
       `Se quiser trabalho honesto, a taverna, o armazém e a ferraria sempre precisam de ajuda. Se tiver coragem, a Guilda dos Heróis paga bem por aventureiros. E se quiser um lar, terreno é o que não falta para construir.`,
+      `Ah, e se um dia quiser aprender magia... dizem que na Academia Real de Astralis, entre Valdoria e Sylvaris, até príncipes e princesas de outros reinos vão estudar. Mas não é barato!`,
       `O que você vai fazer da sua vida agora... é com você. Seja bem-vindo(a) a ${v}!`
     ];
     let i = 0;
@@ -259,7 +260,7 @@ Object.assign(Game, {
         this.chron(`Acordei em ${v}, sem memória. ${n.name}, ${title}, me ajudou a recomeçar.`);
         this.centerMsg(v, 'Sua história começa agora. Viva como quiser!');
         this.saveGame(0, true);
-        const tips = ['Dica: arraste o lado esquerdo da tela para andar.', 'Dica: entre nas casas e lojas tocando no botão de AÇÃO perto da porta.', 'Dica: peça emprego na taverna, armazém ou ferraria para ganhar dinheiro.', 'Dica: o diário (Menu > Missões) guarda a sua história.', 'Dica: compre um Machado de Lenhador no armazém para cortar árvores e construir sua casa.'];
+        const tips = ['Dica: arraste o lado esquerdo da tela para andar.', 'Dica: entre nas casas e lojas tocando no botão de AÇÃO perto da porta.', 'Dica: peça emprego na taverna, armazém ou ferraria para ganhar dinheiro.', 'Dica: o diário (Menu > Missões) guarda a sua história.', 'Dica: compre um Machado de Lenhador no armazém para cortar árvores e construir sua casa.', 'Dica: você nasceu sem magia. A Academia Real de Astralis (marcada em azul no mapa) pode despertá-la.'];
         tips.forEach((t, k) => this.later(4 + k * 9, () => this.toast(t, '#a0e0ff')));
       }
     };

@@ -110,6 +110,7 @@ const Game = {
     this.player.dead = false;
     this.camX = this.player.x - this.vw / 2; this.camY = this.player.y - this.vh / 2;
     this.carcasses = []; this.intro = null;
+    Object.assign(Academy, { key: '', visit: null, spar: null, visitT: 60 }); Academy.cineOn(false);
     if (this.player.follower) this.spawnFollower();
     this.spawnPet();
     UI.showHUD(true);
@@ -292,6 +293,7 @@ const Game = {
     if (this.slowTime > 0) this.slowTime -= dt;
     W.tick++;
     if (this.intro) { this.updateIntro(dt); Input.queue.clear(); }
+    Academy.update(dt);
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();
@@ -572,7 +574,7 @@ const Game = {
     const P = this.player;
     const f = P.follower;
     const m = new Monster('mercenario', P.x + 12, P.y + 6, Math.max(P.level, 3), { follow: true, name: f.name, look: f.look ? Object.assign({}, f.look, { weapon: 'sword', wc: '#c0c0c0' }) : undefined });
-    m.isFollower = true; m.spouse = !!f.spouse;
+    m.isFollower = true; m.spouse = !!f.spouse; m.studentId = f.student || null;
     this.actors.push(m);
   },
   spawnPet() {
@@ -723,7 +725,7 @@ const Game = {
     // névoa do mapa
     const ex = ptx >> 4, ey = pty >> 4;
     for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const x = ex + dx, y = ey + dy; if (x >= 0 && y >= 0 && x < 256 && y < 256 && dx * dx + dy * dy <= 5) M.explored[y * 256 + x] = 1; }
-    for (const s of W.settlements) if (!M.discovered.has(s.id) && Math.abs(s.mid.x - ptx) < 30 && Math.abs(s.mid.y - pty) < 30) { M.discovered.add(s.id); this.toast('Local descoberto: ' + s.name, '#ffe080'); P.addXP(15); if (s.type === 'capital') this.chron(`Cheguei pela primeira vez a ${s.name}, capital de ${s.region.name}.`); }
+    for (const s of W.settlements) if (!M.discovered.has(s.id) && Math.abs(s.mid.x - ptx) < 30 && Math.abs(s.mid.y - pty) < 30) { M.discovered.add(s.id); this.toast('Local descoberto: ' + s.name, '#ffe080'); P.addXP(15); if (s.type === 'capital') this.chron(`Cheguei pela primeira vez a ${s.name}, capital de ${s.region.name}.`); if (s.academy) { this.chron(`Avistei a ${s.name}, onde estudam príncipes e princesas de todos os reinos.`); this.centerMsg(s.name, 'A academia mais famosa do mundo'); } }
     for (const d of W.dungeons) if (!M.discovered.has(d.id) && Math.abs(d.x - ptx) < 14 && Math.abs(d.y - pty) < 14) { M.discovered.add(d.id); this.toast('Masmorra descoberta: ' + d.name, '#ff9080'); P.addXP(10); }
     for (const p of W.pois) if (!M.discovered.has(p.id) && Math.abs(p.x - ptx) < 14 && Math.abs(p.y - pty) < 14) { M.discovered.add(p.id); this.toast('Descoberto: ' + p.name, '#c0e0ff'); }
     // região
@@ -774,6 +776,7 @@ const Game = {
   // ---------- Mortes ----------
   onMonsterDeath(m, killer) {
     const P = this.player;
+    if (m.spar) return;
     const byPlayer = killer === P || (killer && killer.team === 'ally') || m.provoked === P;
     this.burst(m.x, m.y - 8, m.def.undead ? '#d8d0c0' : '#a02020', 12, 70);
     if (m.team === 'enemy' && byPlayer) {
@@ -781,6 +784,7 @@ const Game = {
       P.addXP(m.xp);
       this.floater(m.x, m.y - 30, '+' + m.xp, '#c0a0ff');
       Quests.onKill(m);
+      Academy.onKill(m);
       // saque
       const d = m.def, rng = new RNG(Math.floor(Math.random() * 1e9));
       if (CARCASS[m.eid]) { this.spawnCarcass(m); }
@@ -804,7 +808,8 @@ const Game = {
       if (p.alive <= 0) { this.mods.camps[p.id] = this.day; Quests.onCamp(p.id); this.toast(`${p.name} eliminado!`, '#80ff80'); P.addXP(40 + p.lvl * 8); }
     }
     if (m.isFollower) {
-      if (m.spouse) { P.follower = null; this.toast(`${m.name} desmaiou e voltou para casa para se recuperar.`, '#ffb080'); }
+      if (m.studentId) { P.follower = null; if (P.academy) P.academy.hunt = null; this.toast(`${m.name} se feriu e voltou para a Academia.`, '#ffb080'); }
+      else if (m.spouse) { P.follower = null; this.toast(`${m.name} desmaiou e voltou para casa para se recuperar.`, '#ffb080'); }
       else { P.follower = null; this.toast('Seu mercenário caiu em combate.', '#ff8080'); }
     }
     if (m.isPet && P.pet) { P.pet.downDay = this.day; this.toast(`${P.pet.name} se feriu e voltou para casa. Volta amanhã.`, '#ffb080'); }
@@ -883,7 +888,7 @@ const Game = {
       const o = L.objAt(tx, ty);
       const od = OBJ_DEFS[o];
       if (!o || !od.interact) continue;
-      const labels = { destiny: 'Tocar', wardrobe: 'Baú', crib: 'Ver bebê', chest: 'Abrir', harvest: o >= O.ORE_FERRO && o <= O.ORE_EBANO ? 'Minerar' : 'Coletar', cook: 'Cozinhar', forge: 'Forjar', alchemy: 'Alquimia', runestone: 'Ler', shrine: 'Orar', dungeon: 'Entrar', exit: 'Sair', sign: 'Ler' };
+      const labels = { sleep: 'Dormir', destiny: 'Tocar', wardrobe: 'Baú', crib: 'Ver bebê', chest: 'Abrir', harvest: o >= O.ORE_FERRO && o <= O.ORE_EBANO ? 'Minerar' : 'Coletar', cook: 'Cozinhar', forge: 'Forjar', alchemy: 'Alquimia', runestone: 'Ler', shrine: 'Orar', dungeon: 'Entrar', exit: 'Sair', sign: 'Ler' };
       let name = od.name;
       if (od.interact === 'dungeon' && L.isWorld) { const dd = this.world.entrances.get(tkey(tx, ty)); if (dd) name = `${dd.name} (Nv ${dd.lvl})`; }
       bd = d; best = { kind: od.interact, tx, ty, o, label: labels[od.interact] || 'Usar', name };
@@ -947,6 +952,7 @@ const Game = {
       case 'destiny': UI.destiny(it.o); break;
       case 'wardrobe': if (this.level.isInterior && this.level.b.role === 'playerhouse' && this.player.houses.includes(this.level.s.id)) UI.storage(this.level.s); else this.toast('Isso não é seu.', '#ffa0a0'); break;
       case 'crib': UI.babyCrib(); break;
+      case 'sleep': if (Academy.state().enrolled) UI.rest(null, 0); else this.toast('Esta cama é de um aluno da Academia.', '#ffa0a0'); break;
       case 'sign': UI.sign(it.s); break;
       case 'chest': this.openChest(it.tx, it.ty, it.o); break;
       case 'harvest': {

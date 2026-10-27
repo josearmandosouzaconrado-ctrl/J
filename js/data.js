@@ -72,7 +72,7 @@ const O = {
   FOUNTAIN: 62, BANNER: 63, CHEST_BOSS: 64, ENT_LAVA: 65, ENT_ICE: 66, ENT_ARENA: 67, BED: 68, TABLE: 69, LILY: 70,
   HUT_TOTEM: 71, ICEROCK: 72, SANDROCK: 73, ALTAR: 74, PORTAL: 75,
   COUNTER: 76, SHELF: 77, BOOKSHELF: 78, CHAIR: 79, FIREPLACE: 80, THRONE: 81, PLANT: 82, WARDROBE: 83, CRIB: 84, WEAPONRACK: 85,
-  DOOR_IN: 86, CANDLE: 87, BENCH: 88, POTSHELF: 89, KEG: 90, CAULDRON: 91, DESTINY: 92, ANVIL: 93, WINDOW: 94, PAINTING: 95, QUESTBOARD: 96, BEDSMALL: 97, DESTINY2: 98, DESTINY3: 99, STUMP: 100, WORKBENCH: 101
+  DOOR_IN: 86, CANDLE: 87, BENCH: 88, POTSHELF: 89, KEG: 90, CAULDRON: 91, DESTINY: 92, ANVIL: 93, WINDOW: 94, PAINTING: 95, QUESTBOARD: 96, BEDSMALL: 97, DESTINY2: 98, DESTINY3: 99, STUMP: 100, WORKBENCH: 101, PLAYERBED: 102, DUMMY: 103, LECTERN: 104, BLACKBOARD: 105
 };
 // solid; tall=altura do sprite (px); harvest; light (raio px); kind de interação
 const OBJ_DEFS = [];
@@ -169,6 +169,10 @@ odef(O.PAINTING, { name: 'Quadro', solid: true });
 odef(O.QUESTBOARD, { name: 'Quadro de Missões', solid: true });
 odef(O.BEDSMALL, { name: 'Cama', solid: true });
 odef(O.STUMP, { name: 'Toco' });
+odef(O.PLAYERBED, { name: 'Sua cama', solid: true, interact: 'sleep' });
+odef(O.DUMMY, { name: 'Boneco de treino', solid: true });
+odef(O.LECTERN, { name: 'Púlpito', solid: true });
+odef(O.BLACKBOARD, { name: 'Lousa', solid: true });
 odef(O.WORKBENCH, { name: 'Bancada de Carpintaria', solid: true, interact: 'carpentry' });
 for (const id of [O.ENT_CAVE, O.ENT_CRYPT, O.ENT_RUIN, O.ENT_MINE, O.ENT_TOMB, O.ENT_BARROW, O.ENT_LAVA, O.ENT_ICE, O.ENT_ARENA])
   odef(id, { name: 'Entrada', solid: true, interact: 'dungeon', light: 24 });
@@ -247,7 +251,7 @@ const RACE_ABILITIES = {
 // ---------- Classes ----------
 const CLASSES = {
   aventureiro: { name: 'Aventureiro', desc: 'Você decide quem será jogando: use espadas, arcos ou magias e seu estilo surgirá naturalmente.', mods: {},
-    items: ['sword_ferro', 'body_couro', 'feet_couro', 'bow_ferro', 'flecha:25', 'pocao_vida_p', 'pocao_vida_p', 'pocao_vida_p', 'pocao_magia_p'], spells: ['bola_fogo', 'cura'],
+    items: ['espada_enferrujada', 'roupa_simples', 'pocao_vida_p'], spells: [],
     skills: {}, color: '#7a5a3a' },
   guerreiro: { name: 'Guerreiro', desc: 'Mestre das armas e armaduras pesadas.', mods: { hp: 30, st: 20 },
     items: ['sword_ferro', 'shield_ferro', 'body_ferro', 'head_ferro', 'pocao_vida_p', 'pocao_vida_p', 'pocao_vida_p'], spells: [],
@@ -705,7 +709,7 @@ const GUILDS = {
   guerreiros: { name: 'Companhia do Aço', desc: 'Irmandade de guerreiros honrados de Nordheim.', hq: 'nordheim',
     ranks: ['Recruta', 'Escudeiro', 'Guerreiro', 'Veterano', 'Campeão', 'Lenda'], th: [0, 2, 5, 9, 14, 20], qtypes: ['kill', 'clear', 'kill'], color: '#a0a8b0',
     rewards: [null, { item: 'sword_aco' }, { item: 'body_aco' }, { item: 'great_anao' }, { item: 'body_orc' }, { item: 'great_ebano' }] },
-  magos: { name: 'Academia Arcana', desc: 'Escola de magia mais antiga do mundo, em Sylvaris.', hq: 'sylvaris',
+  magos: { name: 'Círculo Arcano', desc: 'Sociedade de magos andarilhos sediada em Sylvaris.', hq: 'sylvaris',
     ranks: ['Aprendiz', 'Iniciado', 'Adepto', 'Mago', 'Mestre', 'Arquimago'], th: [0, 2, 5, 9, 14, 20], qtypes: ['collect', 'kill', 'clear', 'deliver'], color: '#6080ff',
     rewards: [null, { spell: 'raio' }, { item: 'staff_adepto' }, { spell: 'nevasca' }, { item: 'robe_mestre' }, { spell: 'meteoro', item: 'staff_arquimago' }] },
   ladroes: { name: 'Irmandade das Sombras', desc: 'Ladrões e espiões que dominam o comércio oculto de Zahrim.', hq: 'zahrim',
@@ -882,7 +886,14 @@ const BUILDINGS = {
   house: { name: 'Casa', w: 4, h: 3, role: 'house' },
   house2: { name: 'Casa', w: 5, h: 3, role: 'house' },
   house3: { name: 'Casa', w: 3, h: 3, role: 'house' },
-  tower: { name: 'Torre', w: 3, h: 3, role: 'tower' }
+  tower: { name: 'Torre', w: 3, h: 3, role: 'tower' },
+  grandhall: { name: 'Grande Salão de Astralis', w: 18, h: 8, role: 'academy' },
+  dorm_real: { name: 'Dormitório Real', w: 12, h: 5, role: 'dorm' },
+  dorm: { name: 'Dormitório Comum', w: 12, h: 5, role: 'dorm' },
+  library: { name: 'Biblioteca Arcana', w: 7, h: 6, role: 'magic' },
+  refectory: { name: 'Refeitório', w: 10, h: 5, role: 'inn' },
+  fencing: { name: 'Salão de Esgrima', w: 9, h: 5, role: 'fencing' },
+  alchemylab: { name: 'Laboratório Alquímico', w: 6, h: 4, role: 'alchemist' }
 };
 const SHOP_NAMES = {
   inn: ['O Pônei Saltitante', 'O Dragão Bêbado', 'Caneca de Ouro', 'O Javali Feliz', 'A Lareira Quente', 'O Corvo Cansado', 'O Barril Sem Fundo'],
@@ -956,3 +967,43 @@ const HOME_TIERS = {
   casarao: { name: 'Casarão', w: 7, h: 5, mats: { tabua: 90, pedra: 60, prego: 100, bloco_pedra: 30 }, labor: 2400, hire: 9800, days: 5, work: 24 }
 };
 const HOME_QUALITY = ['Precária', 'Simples', 'Boa', 'Excelente', 'Obra-prima'];
+
+// ---------- Academia Real de Astralis ----------
+idef('espada_enferrujada', { name: 'Espada Enferrujada', type: 'weapon', slot: 'weapon', wclass: 'sword', dmg: 6, cd: 0.45, range: 19, arc: 1.1, value: 5, icon: { k: 'sword', c: '#8a6a50' }, lvl: 1, tier: 0 });
+idef('roupa_simples', { name: 'Roupas Gastas', type: 'armor', slot: 'body', akind: 'robe', armor: 1, value: 2, icon: { k: 'body', c: '#7a6a50' }, color: '#7a6a50', lvl: 1 });
+idef('uniforme_academia', { name: 'Uniforme de Astralis', type: 'armor', slot: 'body', akind: 'robe', armor: 8, mpBonus: 25, mpRegen: 0.3, value: 150, icon: { k: 'robe', c: '#2a3a8a' }, color: '#2a3a8a', lvl: 1 });
+idef('espada_treino', { name: 'Espada de Treino da Academia', type: 'weapon', slot: 'weapon', wclass: 'sword', dmg: 12, cd: 0.4, range: 20, arc: 1.15, value: 80, icon: { k: 'sword', c: '#c0c8e0' }, lvl: 1, tier: 2 });
+idef('florete_real', { name: 'Florete Real de Astralis', type: 'weapon', slot: 'weapon', wclass: 'dagger', dmg: 34, cd: 0.26, range: 19, arc: 0.95, crit: 0.2, value: 3500, icon: { k: 'dagger', c: '#e0e8ff' }, unique: true, ench: [{ k: 'crit', v: 10 }, { k: 'magic', v: 15 }], lvl: 8, tier: 5 });
+idef('manto_astralis', { name: 'Manto do Graduado de Astralis', type: 'armor', slot: 'body', akind: 'robe', armor: 18, mpBonus: 80, mpRegen: 0.7, value: 3500, icon: { k: 'robe', c: '#1a2a6a' }, color: '#1a2a6a', unique: true, ench: [{ k: 'magic', v: 20 }], lvl: 8 });
+idef('varinha_astralis', { name: 'Varinha de Astralis', type: 'weapon', slot: 'weapon', wclass: 'staff', dmg: 9, cd: 0.42, range: 170, magicBonus: 0.3, two: true, ranged: true, value: 300, icon: { k: 'staff', c: '#3a2a5a', g: '#80c0ff' }, lvl: 1, tier: 2 });
+const ACADEMY = {
+  name: 'Academia Real de Astralis', short: 'Astralis', fee: 800,
+  head: { name: 'Arquimaga Seraphine Valtoris', race: 'elfo', sex: 'f' },
+  magicTeacher: { name: 'Professor Aldebrand Crowe', race: 'humano', sex: 'm' },
+  fencingTeacher: { name: 'Mestra de Esgrima Ysolde Varn', race: 'nordico', sex: 'f' },
+  affinities: {
+    fogo: { name: 'Fogo', spells: ['bola_fogo', 'luz', 'escudo_arcano', 'meteoro'], c: '#ff7020' },
+    gelo: { name: 'Gelo', spells: ['estilhaco_gelo', 'luz', 'escudo_arcano', 'nevasca'], c: '#80d0ff' },
+    raio: { name: 'Raio', spells: ['raio', 'luz', 'passo_arcano', 'tempestade'], c: '#fff070' },
+    luz: { name: 'Luz', spells: ['cura', 'luz_sagrada', 'escudo_arcano', 'cura_maior'], c: '#fff4b0' },
+    natureza: { name: 'Natureza', spells: ['raizes', 'cura', 'invocar_lobo', 'nevoa_toxica'], c: '#60d060' },
+    sombra: { name: 'Sombra', spells: ['drenar_vida', 'passo_arcano', 'reanimar', 'invocar_elemental'], c: '#a060e0' }
+  },
+  magicMilestones: [1, 4, 9, 15], graduateMagic: 15, graduateFencing: 12,
+  personalities: {
+    gentil: { hi: ['Oi! Que bom te ver por aqui.', 'Precisa de ajuda com as aulas?'], likes: 'city' },
+    orgulhoso: { hi: ['Hmpf. Você de novo?', 'Não me atrapalhe, estou ocupado sendo excelente.'], likes: 'hunt' },
+    timido: { hi: ['A-ah, oi...', 'Eu... gosto de conversar com você.'], likes: 'city' },
+    aventureiro: { hi: ['Ei! Já foi caçar hoje?', 'Essas aulas são chatas, quero ação!'], likes: 'hunt' },
+    estudioso: { hi: ['Você leu o capítulo sobre runas?', 'A biblioteca fecha tarde hoje.'], likes: 'city' },
+    brincalhao: { hi: ['Haha! Sabia que o professor Crowe dorme na aula dele?', 'Vamos aprontar alguma?'], likes: 'city' }
+  },
+  outingsCity: ['Vocês passearam pelo mercado e dividiram doces de mel.', 'Um bardo tocou uma canção sobre heróis antigos e vocês cantaram juntos.', 'Vocês assistiram a um torneio de justa e torceram até ficar roucos.', 'Vocês tomaram chá numa taverna elegante e riram das manias dos professores.', 'Um mágico de rua fez truques e vocês tentaram adivinhar como.', 'Vocês subiram na torre do relógio e viram o pôr do sol sobre os reinos.'],
+  quiz: [
+    { q: 'Qual reino é o lar dos elfos?', a: ['Sylvaris', 'Khaz Durim', 'Zahrim'], ok: 0 },
+    { q: 'Quantos reinos existem em Eldoria?', a: ['Sete', 'Nove', 'Doze'], ok: 1 },
+    { q: 'Qual elemento é mais eficaz contra um Elemental de Gelo?', a: ['Gelo', 'Raio', 'Fogo'], ok: 2 },
+    { q: 'Quem governa as Terras Geladas de Nordheim?', a: ['Um Jarl', 'Uma Sultã', 'Um Chefe'], ok: 0 },
+    { q: 'O que as Pedras Rúnicas ensinam?', a: ['Receitas', 'Gritos de dragão', 'Mapas'], ok: 1 }
+  ]
+};

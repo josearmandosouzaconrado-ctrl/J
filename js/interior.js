@@ -1,6 +1,6 @@
 'use strict';
 // ===================== INTERIORES EXPLORÁVEIS =====================
-const INTERIOR_SIZES = { castle: [22, 16], palace: [22, 16], temple: [16, 14], heroes: [16, 12], guildhall: [16, 12], inn: [17, 12], smith: [13, 10], general: [12, 10], alchemist: [12, 10], magic: [12, 10], stable: [14, 10], playerhouse: [14, 11], house: [11, 9], house2: [12, 9], house3: [9, 8] };
+const INTERIOR_SIZES = { castle: [22, 16], palace: [22, 16], temple: [16, 14], heroes: [16, 12], guildhall: [16, 12], inn: [17, 12], smith: [13, 10], general: [12, 10], alchemist: [12, 10], magic: [12, 10], stable: [14, 10], playerhouse: [14, 11], house: [11, 9], house2: [12, 9], house3: [9, 8], grandhall: [26, 18], dorm_real: [20, 12], dorm: [20, 12], library: [18, 14], refectory: [18, 12], fencing: [18, 13], alchemylab: [12, 10] };
 
 class Interior {
   constructor(b) {
@@ -11,7 +11,7 @@ class Interior {
     const r = this.rng = new RNG(hashStr(b.name) + b.tx * 31 + b.ty * 17);
     const [W, H] = b.home ? ({ cabana: [10, 8], casa: [14, 11], casarao: [19, 13] })[b.home.tier] : (INTERIOR_SIZES[b.kind] || [11, 9]);
     this.w = W; this.h = H;
-    const grand = b.kind === 'castle' || b.kind === 'palace' || b.kind === 'temple';
+    const grand = b.kind === 'castle' || b.kind === 'palace' || b.kind === 'temple' || b.kind === 'grandhall' || b.kind === 'library' || b.kind === 'fencing';
     this.wallT = (cul === 'nordic' || cul === 'orc' || cul === 'swamp') ? T.LOGWALL : cul === 'desert' ? T.TWALL : (cul === 'dwarf' || cul === 'fort' || (grand && cul !== 'elf' && cul !== 'halfling')) ? T.WALL : T.HWALL;
     this.floorT = grand ? (cul === 'desert' ? T.SANDSTONE : cul === 'elf' ? T.RFLOOR : T.DFLOOR) : (cul === 'dwarf' ? T.DCOBBLE : cul === 'desert' ? T.SANDSTONE : cul === 'elf' ? T.RFLOOR : T.HFLOOR);
     this.tiles = new Uint8Array(W * H).fill(this.wallT);
@@ -24,7 +24,7 @@ class Interior {
     this.entry = { x: dx, y: H - 2 };
     this.dx = dx;
     this.spots = [];
-    this.build(b.kind, r);
+    this.build(b.kind === 'alchemylab' ? 'alchemist' : b.kind, r);
     this.canvas = null;
   }
   idx(x, y) { return y * this.w + x; }
@@ -119,6 +119,66 @@ class Interior {
         this.spot('owner', dx, 3);
         this.spot('guard', dx - 2, 4); this.spot('guard', dx + 2, 4); this.spot('guard', dx - 2, H - 3); this.spot('guard', dx + 2, H - 3);
         this.spot('patron', 4, 8); this.spot('patron', W - 5, 9);
+        break;
+      }
+      case 'grandhall': {
+        // Grande Salão: púlpito, lousa, mesas longas e estandartes
+        for (let y = 3; y < H - 1; y++) for (let x = dx - 1; x <= dx + 1; x++) this.setFloor(x, y, T.CARPET);
+        this.put(dx - 1, 2, O.BLACKBOARD); this.put(dx + 3, 2, O.CRYSTAL); this.put(dx - 4, 2, O.CRYSTAL);
+        this.put(dx, 4, O.LECTERN);
+        for (const x of [2, 5, W - 3, W - 6]) this.put(x, 2, O.BANNER);
+        this.put(1, 2, O.BOOKSHELF); this.put(W - 2, 2, O.BOOKSHELF);
+        for (let y = 7; y < H - 3; y += 3) {
+          for (let x = 3; x <= dx - 4; x++) { this.put(x, y, O.TABLE); this.put(x, y + 1, O.BENCH); }
+          for (let x = dx + 4; x <= W - 4; x++) { this.put(x, y, O.TABLE); this.put(x, y + 1, O.BENCH); }
+        }
+        for (let y = 5; y < H - 2; y += 4) { this.put(1, y, O.PILLAR); this.put(W - 2, y, O.PILLAR); this.put(dx - 3, y, O.CANDLE); this.put(dx + 3, y, O.CANDLE); }
+        this.spot('owner', dx + 1, 4); this.teacherSpot = { x: dx, y: 5 };
+        this.seatSpots = [];
+        for (let y = 8; y < H - 2; y += 3) for (let x = 3; x <= W - 4; x += 2) if (x < dx - 3 || x > dx + 3) this.seatSpots.push({ x, y });
+        break;
+      }
+      case 'dorm_real': case 'dorm': {
+        const royal = kind === 'dorm_real';
+        const P = Game.player, mine = P && P.academy && P.academy.enrolled && P.academy.dorm === kind;
+        this.bedSpots = [];
+        for (let x = 2; x < W - 2; x += 3) { this.put(x, 2, royal ? O.BED : O.BEDSMALL); this.put(x + 1, 2, O.WARDROBE); this.bedSpots.push({ x, y: 3 }); }
+        for (let x = 2; x < W - 2; x += 3) { if (x === dx || x + 1 === dx) continue; this.put(x, H - 3, royal ? O.BED : O.BEDSMALL); this.put(x + 1, H - 3, O.CANDLE); this.bedSpots.push({ x, y: H - 4 }); }
+        for (let y = 5; y <= 6; y++) for (let x = 3; x < W - 3; x++) this.setFloor(x, y, T.CARPET);
+        this.put(1, 5, O.FIREPLACE); this.put(W - 2, 5, royal ? O.STATUE : O.BOOKSHELF); this.table(dx + 3, 6); this.table(dx - 4, 6);
+        if (royal) { this.put(1, 2, O.BANNER); this.put(W - 2, 2, O.BANNER); this.put(W - 2, 7, O.PLANT); }
+        if (mine) {
+          const bx = 2, by = H - 3;
+          this.objs[this.idx(bx, by)] = O.PLAYERBED; this.objs[this.idx(bx + 1, by)] = O.WARDROBE;
+          this.playerBed = { x: bx, y: by };
+        }
+        this.spot('owner', W - 3, H - 4);
+        break;
+      }
+      case 'library': {
+        for (let x = 1; x < W - 1; x++) if (x !== dx) this.put(x, 2, x % 4 === 0 ? O.CANDLE : O.BOOKSHELF);
+        for (let y = 4; y < H - 3; y += 3) { for (let x = 2; x <= 5; x++) this.put(x, y, O.BOOKSHELF); for (let x = W - 6; x <= W - 3; x++) this.put(x, y, O.BOOKSHELF); }
+        this.table(dx, 5); this.table(dx, 8); this.put(dx + 2, 5, O.CANDLE); this.put(dx - 2, 8, O.CANDLE);
+        this.put(1, H - 2, O.CRYSTAL); this.put(W - 2, H - 2, O.PLANT); this.put(dx + 3, 3, O.LECTERN);
+        this.spot('owner', dx + 2, 3);
+        break;
+      }
+      case 'refectory': {
+        for (let x = 2; x <= 6; x++) this.put(x, 4, O.COUNTER);
+        this.put(2, 2, O.CAULDRON); this.put(3, 2, O.KEG); this.put(5, 2, O.SHELF); this.put(6, 2, O.FIREPLACE);
+        this.spot('owner', 4, 3);
+        for (let y = 6; y < H - 2; y += 3) for (let x = 9; x <= W - 3; x++) { this.put(x, y, O.TABLE); this.put(x, y + 1, O.BENCH); }
+        this.put(1, H - 2, O.BARREL); this.put(W - 2, 2, O.BANNER);
+        this.seatSpots = [];
+        for (let y = 7; y < H - 1; y += 3) for (let x = 9; x <= W - 3; x += 2) this.seatSpots.push({ x, y: y + 1 });
+        break;
+      }
+      case 'fencing': {
+        for (let y = 5; y < H - 3; y++) for (let x = 4; x < W - 4; x++) this.setFloor(x, y, T.SANDSTONE);
+        for (let x = 2; x < W - 2; x += 2) this.put(x, 2, x % 4 === 0 ? O.WEAPONRACK : O.BANNER);
+        for (let y = 5; y < H - 3; y += 3) { this.put(1, y, O.DUMMY); this.put(W - 2, y, O.DUMMY); }
+        this.put(1, H - 2, O.BARREL); this.put(W - 2, H - 2, O.CRATE);
+        this.spot('owner', dx, 4);
         break;
       }
       case 'stable': {
