@@ -100,6 +100,7 @@
             if (torsoH > 5) p(9, tT + 2, bS, 1, torsoH - 4);
           }
         }
+        if (L.crossbelt && !robe) { for (let k = 0; k <= torsoH; k++) { p(tx0 + 1 + k, tT + k, '#f0ece0'); p(tx1 - 1 - k, tT + k, '#f0ece0'); } if (front) p(9, tT + 3, '#e0c060', 2, 2); }
         if (L.tabard && !robe) {
           const tc = L.tabard, tS = shade(tc, -0.25);
           for (let y = tT + 1; y <= tB + 2; y++) { p(8, y, tc, 4, 1); p(11, y, tS, 1, 1); }
@@ -197,6 +198,9 @@
         else for (let y = hT + 3; y < hB; y++) p(6, y, y % 2 ? h : hsd, 8, 1);
         if (L.helmHorns) { const hc = '#ece0c4'; p(4, hT, hc); p(3, hT - 1, hc); p(3, hT - 2, hc); p(15, hT, hc); p(16, hT - 1, hc); p(16, hT - 2, hc); }
         const hst = L.helmStyle;
+        if (hst === 'tricorne') { p(3, hT + 1, h, 14, 2); p(2, hT, h, 2, 2); p(16, hT, h, 2, 2); p(9, hT - 1, h, 2, 2); p(4, hT + 1, '#e0c060', 12, 1); }
+        if (hst === 'shako') { p(6, hT - 6, h, 8, 7); p(6, hT - 6, hh, 8, 1); p(6, hT - 1, '#e0c060', 8, 1); p(5, hT + 2, '#101010', 10, 1); if (front) { p(9, hT - 4, '#e0c060', 2, 2); } if (L.plume) { p(9, hT - 9, L.plume, 2, 3); p(10, hT - 10, shade(L.plume, 0.3), 1, 1); } }
+        if (hst === 'bearskin') { for (let y = hT - 9; y <= hT + 2; y++) { const w = y < hT - 7 ? 6 : 10; p(10 - w / 2, y, y % 3 ? '#1a1a1e' : '#2a2a30', w, 1); } p(12, hT - 6, L.plume || '#c02020', 1, 5); if (front) p(7, hT + 2, '#e0c060', 6, 1); }
         if (hst === 'kettle') { p(3, hT + 2, h, 14, 1); p(3, hT + 3, hsd, 14, 1); }
         if (hst === 'full' && front) { p(6, hT + 3, h, 8, 4); p(6, hT + 3, hh, 1, 4); p(13, hT + 3, hsd, 1, 4); p(7, ey, '#101018', 6, 1); p(9, ey + 2, hsd, 2, 2); p(8, ey + 2, '#101018', 1, 1); p(11, ey + 2, '#101018', 1, 1); }
         if (hst === 'spike') { p(9, hT - 5, hsd, 2, 3); p(9, hT - 6, h, 1, 1); p(4, hT + 1, hsd, 1, 2); p(15, hT + 1, hsd, 1, 2); if (front) p(7, ey, '#101018', 6, 1); }
@@ -251,6 +255,7 @@
         else if (!mum && !L.fur && !L.nobelt) { p(sx0, tB - 1, '#3a2416', sx1 - sx0 + 1, 1); p(sx1, tB - 1, '#e0b848'); }
         if (L.cape) { p(sx0 - 1, tT, L.cape, 2, torsoH + 3); p(sx0 - 2, tT + 3, shade(L.cape, -0.15), 1, torsoH); }
         if (L.tabard && !robe) { for (let y = tT + 1; y <= tB + 2; y++) p(sx1 - 1, y, L.tabard, 2, 1); }
+        if (L.crossbelt && !robe) { for (let k = 0; k <= torsoH; k++) p(sx0 + 1 + Math.floor(k * (sx1 - sx0 - 1) / torsoH), tT + k, '#f0ece0'); }
       }
       // cabeça
       for (let y = hT; y <= hB; y++) for (let x = 7; x <= 13; x++) {
@@ -285,6 +290,9 @@
       if (L.helm) { const h = L.helm; p(8, hT - 2, h, 5, 1); p(6, hT - 1, h, 8, 3); p(6, hT + 2, h, 3, 4); p(13, hT + 2, h, 1, 2); p(8, hT - 2, shade(h, 0.35), 3, 1); p(6, hT + 1, shade(h, -0.3), 8, 1); if (L.helmHorns) { p(7, hT - 2, '#ece0c4'); p(6, hT - 3, '#ece0c4'); }
         const hst = L.helmStyle, hd = shade(h, -0.3);
         if (hst === 'kettle') { p(5, hT + 1, h, 10, 1); }
+        if (hst === 'tricorne') { p(4, hT, h, 12, 2); p(3, hT - 1, h, 2, 2); p(14, hT - 1, h, 2, 2); }
+        if (hst === 'shako') { p(7, hT - 6, h, 7, 7); p(7, hT - 1, '#e0c060', 7, 1); p(13, hT + 1, '#101010', 3, 1); if (L.plume) p(10, hT - 9, L.plume, 2, 3); }
+        if (hst === 'bearskin') { for (let y = hT - 9; y <= hT + 2; y++) p(y < hT - 7 ? 8 : 6, y, '#1a1a1e', y < hT - 7 ? 5 : 8, 1); }
         if (hst === 'full') { p(9, hT + 2, h, 5, 4); p(10, ey, '#101018', 4, 1); }
         if (hst === 'spike') { p(10, hT - 5, hd, 2, 3); }
         if (hst === 'leaf') { p(10, hT - 4, shade(h, 0.3), 2, 2); p(5, hT, shade(h, 0.3), 2, 1); }
@@ -527,6 +535,8 @@
       case 'mace': p(0, 7, wood, 11, 2); S.ellipse(p, 13, 8, 3.5, 3.5, col); p(12, 6, hi, 2, 2); p(13, 3, col); p(17, 8, col); p(13, 12, col); break;
       case 'hammer': p(0, 7, wood, 12, 2); p(11, 2, col, 6, 12); p(11, 2, hi, 6, 1); p(16, 2, sh, 1, 12); break;
       case 'bow': for (let y = 0; y < 16; y++) { const x = 2 + Math.round(Math.sin(y / 15 * Math.PI) * 5); p(x, y, col, 2, 1); } p(2, 0, '#e8e8e0', 1, 16); break;
+      case 'musket': p(0, 7, wood, 7, 3); p(0, 9, shade(wood, -0.3), 4, 1); p(6, 7, '#3a3a40', 13, 2); p(6, 7, '#6a6a74', 13, 1); p(9, 9, '#c0a040', 2, 1); p(13, 6, glow || '#80c0ff', 2, 1); p(18, 6, '#a0a0a8', 2, 1); break;
+      case 'pistol': p(2, 8, wood, 4, 4); p(5, 7, '#3a3a40', 8, 2); p(5, 7, '#6a6a74', 8, 1); p(6, 9, '#c0a040', 1, 2); p(9, 6, glow || '#80c0ff', 2, 1); break;
       case 'spear': p(0, 7, wood, 16, 1); p(0, 8, shade(wood, -0.25), 16, 1); p(16, 6, col, 2, 4); p(18, 7, col, 2, 2); p(16, 6, hi, 2, 1); p(14, 6, '#c03030', 1, 4); break;
       case 'staff': p(0, 7, col, 15, 2); p(0, 7, shade(col, 0.2), 15, 1); S.ellipse(p, 16.5, 8, 2.8, 2.8, glow || '#60a0ff'); p(15, 7, '#ffffff'); break;
     }
@@ -547,7 +557,7 @@
   };
   function makeBuilding(sp) {
     const W = sp.w * 16, FH = sp.h * 16;
-    const extra = sp.type === 'castle' || sp.type === 'palace' ? 30 : sp.type === 'tower' ? 34 : sp.type === 'temple' ? 18 : 14;
+    const extra = sp.type === 'castle' || sp.type === 'palace' ? 30 : sp.type === 'tower' ? 34 : sp.type === 'temple' ? 18 : sp.type === 'factory' ? 40 : sp.style === 'brick' ? 20 : 14;
     const H = FH + extra;
     const c = cv(W + 2, H + 1), ctx = c.getContext('2d'), p = P(ctx);
     const r = new RNG(sp.seed || 1);
@@ -555,7 +565,7 @@
     const roofC = sp.roof || '#a03a2a', wallC = sp.wall || '#e8dcc0';
     const rhi = shade(roofC, 0.2), rsh = shade(roofC, -0.3), rdk = shade(roofC, -0.5);
     const whi = shade(wallC, 0.12), wsh = shade(wallC, -0.2), wdk = shade(wallC, -0.4);
-    const wallH = Math.max(14, Math.min(26, Math.round(FH * 0.55)));
+    const wallH = sp.style === 'brick' || sp.type === 'factory' ? Math.max(20, Math.min(36, Math.round(FH * 0.78))) : Math.max(14, Math.min(26, Math.round(FH * 0.55)));
     const wallTop = H - wallH;
     const ox = 1;
     const doorW = sp.type === 'castle' ? 12 : sp.type === 'palace' || sp.type === 'temple' || sp.type === 'guildhall' || sp.type === 'heroes' ? 10 : 8;
@@ -563,7 +573,13 @@
     const doorX = ox + Math.floor(W / 2) - Math.floor(doorW / 2);
     // ---- PAREDES
     const wallRect = (x, y, w, h) => {
-      if (style === 'stone' || style === 'castle') {
+      if (style === 'brick') {
+        // tijolos aparentes com argamassa, cantos de pedra e faixa entre os andares
+        p(x, y, shade(wallC, -0.25), w, h);
+        for (let yy = 0; yy < h; yy += 3) { const off = (yy / 3) % 2 ? 3 : 0; for (let xx = -off; xx < w; xx += 6) { const sx = Math.max(0, xx), sw = Math.min(5, w - sx, xx + 5 - sx); if (sw > 0) p(x + sx, y + yy, shade(wallC, (r.next() - 0.5) * 0.14), sw, 2); } }
+        for (let yy = 0; yy < h; yy += 4) { p(x, y + yy, '#d8d0c0', 3, 3); p(x + w - 3, y + yy, '#c8c0b0', 3, 3); }
+        if (h > 22) { p(x, y + Math.floor(h / 2) - 1, '#d8d0c0', w, 2); p(x, y + Math.floor(h / 2) + 1, '#a09888', w, 1); }
+      } else if (style === 'stone' || style === 'castle') {
         p(x, y, wallC, w, h);
         for (let yy = 0; yy < h; yy += 4) { const off = (yy / 4) % 2 * 4; p(x, y + yy, wdk, w, 1); for (let xx = -off; xx < w; xx += 8) if (xx >= 0) p(x + xx, y + yy, wdk, 1, 4); }
       } else if (style === 'log') {
@@ -695,6 +711,17 @@
       p(ox + W / 2 - 2, wallTop - 12, '#f0d060', 4, 8); p(ox + W / 2 - 4, wallTop - 10, '#f0d060', 8, 2);
       for (let xx = 4; xx < W - 4; xx += 10) { p(ox + xx, wallTop + 1, '#f0f0f0', 4, wallH - 1); p(ox + xx, wallTop + 1, '#ffffff', 1, wallH - 1); }
       door(doorX, H - doorH, doorW, doorH, true);
+    } else if (sp.type === 'factory') {
+      // fábrica: galpão de tijolos, telhado em dente de serra e chaminés altas
+      wallRect(ox, wallTop, W, wallH);
+      const roofTop = wallTop - 14;
+      for (let x = 0; x < W; x++) { const k = x % 16, hgt = k < 12 ? Math.round(k / 12 * 12) : Math.round((16 - k) / 4 * 12); for (let y = 0; y < hgt; y++) p(ox + x, wallTop - 1 - y, k < 12 ? (y % 3 ? '#4a4a56' : '#3a3a44') : '#a0c0d8', 1, 1); }
+      p(ox, wallTop - 2, '#2a2a34', W, 2);
+      for (const sx of [ox + 6, ox + W - 14]) { for (let y = 0; y < wallTop; y++) p(sx, y, y % 4 === 0 ? '#6a3a2a' : '#8a4a36', 7, 1); p(sx - 1, 0, '#3a2a2a', 9, 3); p(sx + 1, 0, '#1a1010', 5, 1); }
+      for (let i = 0; i < Math.floor((W - 10) / 12); i++) { const wx = ox + 6 + i * 12; p(wx - 1, wallTop + 4, '#d8d0c0', 8, 1); p(wx, wallTop + 5, '#3a4a5a', 6, 9); p(wx, wallTop + 5, '#7aa0bc', 6, 3); p(wx + 3, wallTop + 5, '#2a2a30', 1, 9); for (let y = wallTop + 8; y < wallTop + 14; y += 3) p(wx, y, '#2a2a30', 6, 1); }
+      p(doorX - 3, H - 16, '#d8d0c0', doorW + 6, 2); p(doorX - 2, H - 14, '#3a3a40', doorW + 4, 14); for (let y = H - 13; y < H; y += 2) p(doorX - 2, y, '#5a5a62', doorW + 4, 1);
+      p(ox + W / 2 - 8, wallTop + 1, '#e8e0d0', 16, 4); p(ox + W / 2 - 7, wallTop + 2, '#3a2a2a', 14, 1);
+      void roofTop;
     } else if (style === 'hide') {
       // tenda orc
       for (let yy = 0; yy < H - 2; yy++) { const t = yy / (H - 2); const inset = Math.round((1 - t) * W * 0.42); p(ox + inset, yy + 2, Math.floor(yy / 4) % 2 ? roofC : rsh, W - inset * 2, 1); }
@@ -714,6 +741,14 @@
       // janelas
       const lit = style === 'elven' ? '#a0f0e0' : undefined;
       const nwin = Math.floor((W - doorW) / 2 / 14);
+      if (style === 'brick') {
+        // sobrado: janelas altas com vergas de pedra nos dois andares e mansardas no telhado
+        const tall = (x, y) => { p(x - 1, y - 2, '#e0d8c8', 7, 2); p(x - 1, y - 1, '#2a2020', 7, 10); p(x, y, '#4a6a88', 5, 8); p(x, y, '#8ab0cc', 5, 3); p(x + 2, y, '#2a2020', 1, 8); p(x, y + 4, '#2a2020', 5, 1); p(x + 1, y + 1, '#e0f0ff', 1, 1); p(x - 2, y + 8, '#e0d8c8', 9, 1); };
+        for (let i = 0; i < Math.max(1, nwin); i++) { tall(ox + 5 + i * 14, wallTop + 5); tall(ox + W - 10 - i * 14, wallTop + 5); }
+        if (wallH > 22) for (let x = ox + 5; x < ox + W - 8; x += 12) if (x + 7 < doorX - 1 || x > doorX + doorW + 2) tall(x, wallTop + Math.floor(wallH / 2) + 4);
+        for (let x = ox + 8; x < ox + W - 10; x += 16) { p(x, wallTop - 9, '#3a3a44', 8, 7); p(x + 1, wallTop - 11, '#3a3a44', 6, 2); p(x + 2, wallTop - 7, '#8ab0cc', 4, 4); p(x + 4, wallTop - 7, '#2a2020', 1, 4); }
+        p(ox, wallTop, '#e0d8c8', W, 2);
+      } else
       for (let i = 0; i < nwin; i++) { window(ox + 5 + i * 14, wallTop + 5, 5, 5, lit); window(ox + W - 10 - i * 14, wallTop + 5, 5, 5, lit); }
       door(doorX, H - doorH, doorW, doorH, style === 'round' || style === 'elven');
       if (style === 'round') { S.ellipse(p, doorX + doorW / 2, H - doorH / 2, doorW / 2 + 1, doorH / 2, '#2a6a2a'); p(doorX + doorW / 2, H - doorH / 2, '#e0c060'); }

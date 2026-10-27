@@ -42,6 +42,14 @@ const Shops = {
         add('minerio_ferro', rng.int(3, 10));
         break;
       }
+      case 'gunsmith': {
+        add('pistola_arcana'); add('mosquete_arcano');
+        if (lvl >= 10 || rng.chance(0.5)) add('bacamarte_arcano');
+        if (lvl >= 16 || s.type === 'capital') add('mosquete_imperial');
+        add('bala_arcana', rng.int(60, 160));
+        ['lingote_ferro', 'lingote_aco'].forEach(id => add(id, rng.int(2, 6))); add('essencia_fogo', rng.int(1, 3));
+        break;
+      }
       case 'alchemist': {
         const sz = lvl < 8 ? ['p'] : lvl < 16 ? ['p', 'm'] : ['p', 'm', 'g'];
         for (const z of sz) { add('pocao_vida_' + z, rng.int(2, 6)); add('pocao_magia_' + z, rng.int(2, 6)); }

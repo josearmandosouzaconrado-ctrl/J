@@ -365,6 +365,14 @@ const UI = {
         opts.push({ label: 'Orfanato: adotar uma criança', fn: () => this.adopt(b) });
         if (!P.magicAwake) opts.push({ label: 'Ritual do Despertar da magia (3000 ouro)', fn: () => { if (P.gold < 3000) return Game.toast('Ouro insuficiente. (A Academia de Astralis desperta a magia dos alunos.)', '#ff8080'); P.gold -= 3000; P.magicAwake = true; Sfx.play('learn'); Game.centerMsg('MAGIA DESPERTADA!', 'Agora você pode aprender magias com tomos'); Game.chron('Despertei minha magia num ritual do templo.'); this.building(b); } });
         break;
+      case 'gunsmith':
+        text = `<b>${esc(b.name)}</b>. Mosquetes de pólvora arcana: pólvora negra misturada com pó de cristal mágico. Só os reinos humanos de Valtheria sabem fabricá-los!`;
+        opts.push({ label: 'Comprar armas e cartuchos', cls: 'gold', fn: () => this.shop(b, 'gunsmith') });
+        opts.push({ label: 'Usar a bancada (forja)', fn: () => this.craft('forge', b) });
+        break;
+      case 'factory':
+        text = `<b>${esc(b.name)}</b>. O vapor nunca para por aqui! Precisamos de braços para as máquinas.`;
+        break;
       case 'stable':
         text = P.hasHorse ? 'Seu cavalo está bem cuidado! Use o botão do cavalo para montar.' : 'Um bom cavalo deixa qualquer viagem mais curta. 800 de ouro.';
         opts.push({ label: 'Montarias e carroça', cls: 'gold', fn: () => this.mountsShop(b) });
@@ -417,7 +425,7 @@ const UI = {
     const lines = {
       valdoria: 'Valdoria precisa de heróis. Fale com a Ordem da Aurora e a Guilda dos Heróis.', sylvaris: 'A floresta sussurra seu nome, Portador.', khazdurim: 'Hah! Volte quando tiver minério de verdade!',
       nordheim: 'Bem-vindo ao salão de Nordheim. Hidromel e honra para todos!', gorthak: 'Fale rápido, forasteiro.', zahrim: 'As areias contam histórias... e você será uma delas.',
-      ssarak: 'Sssseja bem-vindo, sangue-quente.', colinas: 'Aceita um segundo café da manhã?', talassa: 'As marés trouxeram você até nós, viajante de Eldoria.', aurelion: 'Todo caminho leva a Aurélion. Ajoelhe-se diante do Império.', gromhald: 'HAH! Tão pequeno! Sente-se, coma um javali inteiro.', lunethar: 'A lua nos contou que você viria.', rodafina: 'Cuidado onde pisa! Este chão é uma invenção minha.', kumari: 'A savana respeita quem tem coragem. Você tem?', kharzul: 'Bem-vindo à verdadeira casa dos anões. Limpe as botas.', orkhai: 'O Grão-Khan não fala com fracos. Prove seu valor!', serpentis: 'Sssua chegada foi prevista nas águasss.', azhkar: 'Ajoelhe-se diante do Império... ou saia.', shirokai: 'Seja bem-vindo. Que as cerejeiras guiem seus passos.', morvath: 'Cada espada conta neste bastião. Os mortos não dormem!'
+      ssarak: 'Sssseja bem-vindo, sangue-quente.', colinas: 'Aceita um segundo café da manhã?', talassa: 'As marés trouxeram você até nós, viajante de Eldoria.', aurelion: 'Todo caminho leva a Aurélion. Ajoelhe-se diante do Império.', gromhald: 'HAH! Tão pequeno! Sente-se, coma um javali inteiro.', lunethar: 'A lua nos contou que você viria.', rodafina: 'Cuidado onde pisa! Este chão é uma invenção minha.', kumari: 'A savana respeita quem tem coragem. Você tem?', kharzul: 'Bem-vindo à verdadeira casa dos anões. Limpe as botas.', ferrania: 'A República precisa de cidadãos trabalhadores. E de bons atiradores.', orkhai: 'O Grão-Khan não fala com fracos. Prove seu valor!', serpentis: 'Sssua chegada foi prevista nas águasss.', azhkar: 'Ajoelhe-se diante do Império... ou saia.', shirokai: 'Seja bem-vindo. Que as cerejeiras guiem seus passos.', morvath: 'Cada espada conta neste bastião. Os mortos não dormem!'
     };
     const extra = st ? `<br><br><span class="dim">História atual: ${esc(st.title)}</span>` : '';
     const wtxt = War.castleOptions(b, opts);

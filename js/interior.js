@@ -1,6 +1,6 @@
 'use strict';
 // ===================== INTERIORES EXPLORÁVEIS =====================
-const INTERIOR_SIZES = { castle: [22, 16], palace: [22, 16], temple: [16, 14], heroes: [16, 12], guildhall: [16, 12], inn: [17, 12], smith: [13, 10], general: [12, 10], alchemist: [12, 10], magic: [12, 10], stable: [14, 10], playerhouse: [14, 11], house: [11, 9], house2: [12, 9], house3: [9, 8], grandhall: [26, 18], dorm_real: [20, 12], dorm: [20, 12], library: [18, 14], refectory: [18, 12], fencing: [18, 13], alchemylab: [12, 10] };
+const INTERIOR_SIZES = { castle: [22, 16], palace: [22, 16], temple: [16, 14], heroes: [16, 12], guildhall: [16, 12], inn: [17, 12], smith: [13, 10], general: [12, 10], alchemist: [12, 10], magic: [12, 10], stable: [14, 10], playerhouse: [14, 11], house: [11, 9], house2: [12, 9], house3: [9, 8], grandhall: [26, 18], gunsmith: [13, 10], factory: [24, 15], dorm_real: [20, 12], dorm: [20, 12], library: [18, 14], refectory: [18, 12], fencing: [18, 13], alchemylab: [12, 10] };
 
 class Interior {
   constructor(b) {
@@ -184,6 +184,23 @@ class Interior {
         this.spot('owner', dx, 4);
         break;
       }
+      case 'gunsmith': {
+        for (let x = 1; x < W - 1; x++) if (x !== dx) this.put(x, 2, x % 3 === 0 ? O.GASLAMP : O.GUNRACK);
+        for (let x = 2; x <= W - 4; x++) this.put(x, 5, O.COUNTER);
+        this.spot('owner', 4, 4);
+        this.put(1, H - 3, O.WORKBENCH); this.put(W - 2, H - 3, O.BARREL); this.put(W - 2, H - 2, O.CRATE); this.put(1, H - 2, O.CRATE);
+        break;
+      }
+      case 'factory': {
+        for (let x = 2; x < W - 2; x += 5) this.wall(x, O.WINDOW);
+        for (let x = 4; x < W - 2; x += 6) this.wall(x, O.GASLAMP);
+        this.put(2, 2, O.BOILER); this.put(W - 3, 2, O.BOILER);
+        for (let x = 4; x < W - 4; x += 3) this.put(x, 2, O.PIPES);
+        for (let y = 5; y < H - 3; y += 4) for (let x = 3; x < W - 3; x += 5) if (Math.abs(x - dx) > 1) { this.put(x, y, O.MACHINE); this.spot('patron', x, y + 1); }
+        this.put(1, H - 2, O.CRATE); this.put(2, H - 2, O.CRATE); this.put(W - 2, H - 2, O.BARREL); this.put(W - 3, H - 2, O.SACKS);
+        this.spot('owner', dx + 2, H - 4);
+        break;
+      }
       case 'stable': {
         for (let x = 2; x < W - 2; x += 3) { this.put(x, 2, O.HAY); this.put(x, 4, O.FENCE); }
         this.put(W - 2, 2, O.BARREL); this.put(1, H - 2, O.HAY);
@@ -198,7 +215,7 @@ class Interior {
     const res = Game.residentsOf(b);
     const adults = res.filter(x => !x.child).length || 1, kids = res.filter(x => x.child).length;
     const wealth = r.pick([0, 1, 1, 1, 2, 2]);
-    const jobs = { nordic: ['cacador', 'cacador', 'soldado', 'pescador', 'ferreiro'], orc: ['cacador', 'soldado', 'soldado', 'mineiro'], dwarf: ['mineiro', 'mineiro', 'ferreiro', 'soldado', 'estudioso'], elf: ['estudioso', 'musico', 'tecela', 'alquimista', 'cacador'], halfling: ['padeiro', 'padeiro', 'fazendeiro', 'musico', 'tecela'], desert: ['tecela', 'mercador', 'alquimista', 'estudioso'], swamp: ['pescador', 'alquimista', 'cacador'] }[cul] || ['fazendeiro', 'cacador', 'pescador', 'estudioso', 'padeiro', 'tecela', 'musico', 'soldado', 'alquimista', 'mercador', 'ferreiro'];
+    const jobs = { industrial: ['operario', 'operario', 'mosqueteiro', 'mercador', 'estudioso', 'tecela'], imperial: ['operario', 'mosqueteiro', 'mercador', 'estudioso', 'musico'], nordic: ['cacador', 'cacador', 'soldado', 'pescador', 'ferreiro'], orc: ['cacador', 'soldado', 'soldado', 'mineiro'], dwarf: ['mineiro', 'mineiro', 'ferreiro', 'soldado', 'estudioso'], elf: ['estudioso', 'musico', 'tecela', 'alquimista', 'cacador'], halfling: ['padeiro', 'padeiro', 'fazendeiro', 'musico', 'tecela'], desert: ['tecela', 'mercador', 'alquimista', 'estudioso'], swamp: ['pescador', 'alquimista', 'cacador'] }[cul] || ['fazendeiro', 'cacador', 'pescador', 'estudioso', 'padeiro', 'tecela', 'musico', 'soldado', 'alquimista', 'mercador', 'ferreiro'];
     const job = r.pick(jobs);
     this.profile = { wealth, job };
     // remove a decoração genérica da parede para redecorar por cômodo
@@ -262,6 +279,7 @@ class Interior {
     const decorFor = () => {
       const L = [O.WINDOW];
       if (wealth >= 1) L.push(O.PAINTING); if (wealth >= 2) L.push(O.PAINTING);
+      if (indus) L.push(O.GASLAMP, O.GASLAMP);
       if (job === 'cacador' || cul === 'nordic' || cul === 'orc') L.push(O.TROPHY);
       if (job === 'soldado' || cul === 'dwarf' || cul === 'nordic') L.push(O.SHIELDWALL);
       if (job === 'pescador') L.push(O.FISHNET);
@@ -270,6 +288,7 @@ class Interior {
       L.push(O.SHELFWALL);
       return L;
     };
+    const indus = CULTURES[cul] && CULTURES[cul].industrial;
     const bedroom = (rm) => {
       wallDecor(rm, [O.WINDOW, wealth >= 1 ? O.PAINTING : O.SHELFWALL]);
       if (adults >= 2 && wealth >= 1) topRow(rm, O.BED); else for (let i = 0; i < Math.min(adults, 2); i++) topRow(rm, O.BEDSMALL);
@@ -279,6 +298,7 @@ class Interior {
       byWall(rm, O.CANDLE);
       if (kids) byWall(rm, O.TOYBOX);
       if (wealth >= 2) { byWall(rm, O.CLOCK); if (r.chance(0.5)) byWall(rm, O.BATHTUB); }
+      if (indus) { if (r.chance(0.5)) byWall(rm, O.SEWING); }
       if (wealth >= 1) rug(rm);
     };
     const kitchen = (rm) => {
@@ -297,8 +317,9 @@ class Interior {
       if (wealth >= 1) { byWall(rm, O.ARMCHAIR); byWall(rm, O.BOOKSHELF); byWall(rm, O.PLANT); } else byWall(rm, O.BENCH);
       if (wealth >= 2) { byWall(rm, O.ARMCHAIR); byWall(rm, r.chance(0.5) ? O.STATUE : O.CLOCK); byWall(rm, O.PLANT); }
       if (cul === 'elf') { byWall(rm, O.PLANT); byWall(rm, O.PLANT); }
+      if (indus) { byWall(rm, O.GRAMOPHONE); if (wealth >= 1) byWall(rm, O.PIANO); byWall(rm, O.CLOCK); }
       // canto da profissão
-      const J = { cacador: [O.WEAPONRACK, O.BARREL], fazendeiro: [O.SACKS, O.HAY, O.SACKS], pescador: [O.BARREL, O.BARREL], estudioso: [O.DESK, O.BOOKSHELF, O.BOOKSHELF, O.LECTERN], padeiro: [O.SACKS, O.SACKS, O.OVEN], tecela: [O.LOOM, O.CRATE], musico: [O.INSTRUMENT, O.INSTRUMENT], soldado: [O.ARMORSTAND, O.WEAPONRACK], alquimista: [O.ALCHEMY, O.POTSHELF], mercador: [O.CRATE, O.CRATE, O.BARREL, O.DESK], ferreiro: [O.ANVIL, O.WEAPONRACK], mineiro: [O.CRATE, O.ROCK === 0 ? O.CRATE : O.BARREL] }[job] || [];
+      const J = { cacador: [O.WEAPONRACK, O.BARREL], fazendeiro: [O.SACKS, O.HAY, O.SACKS], pescador: [O.BARREL, O.BARREL], estudioso: [O.DESK, O.BOOKSHELF, O.BOOKSHELF, O.LECTERN], padeiro: [O.SACKS, O.SACKS, O.OVEN], tecela: [O.LOOM, O.CRATE], musico: [O.INSTRUMENT, O.INSTRUMENT], soldado: [O.ARMORSTAND, O.WEAPONRACK], alquimista: [O.ALCHEMY, O.POTSHELF], mercador: [O.CRATE, O.CRATE, O.BARREL, O.DESK], ferreiro: [O.ANVIL, O.WEAPONRACK], operario: [O.TOOLRACK, O.CRATE, O.PIPES], mosqueteiro: [O.GUNRACK, O.BARREL], mineiro: [O.CRATE, O.ROCK === 0 ? O.CRATE : O.BARREL] }[job] || [];
       for (const o of J) byWall(rm, o);
       if (job === 'estudioso') byWall(rm, O.CANDLE);
     };

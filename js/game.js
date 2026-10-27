@@ -336,7 +336,7 @@ const Game = {
       this.spawnT -= dt; if (this.spawnT <= 0) { this.spawnT = 1.2; this.spawnTick(); }
       this.discT -= dt; if (this.discT <= 0) { this.discT = 0.5; this.discoveryTick(); }
       this.smokeT = (this.smokeT || 0) - dt;
-      if (this.smokeT <= 0) { this.smokeT = 0.22; for (const b of W.buildingsInView(this.camX, this.camY, this.camX + this.vw, this.camY + this.vh)) if (b.spec && b.spec.chimney && !b.site) { const img = Sprites.building(b.spec); const x = b.tx * 16 + b.w * 16 - 9, y = (b.ty + b.h) * 16 - img.height + 1; if (Math.random() < 0.6) this.particles.push({ x: x + Math.random() * 3, y, vx: 4 + Math.random() * 4, vy: -10 - Math.random() * 6, color: Math.random() < 0.5 ? 'rgba(200,200,205,0.55)' : 'rgba(160,160,170,0.5)', life: 2.4, max: 2.4, size: Math.random() < 0.5 ? 2 : 1, grav: 0 }); } }
+      if (this.smokeT <= 0) { this.smokeT = 0.22; for (const b of W.buildingsInView(this.camX, this.camY, this.camX + this.vw, this.camY + this.vh)) if (b.kind === 'factory') { const img = Sprites.building(b.spec), y = (b.ty + b.h) * 16 - img.height + 1; for (const sx of [b.tx * 16 + 9, b.tx * 16 + b.w * 16 - 11]) for (let k = 0; k < 2; k++) this.particles.push({ x: sx + Math.random() * 4, y, vx: 6 + Math.random() * 6, vy: -14 - Math.random() * 8, color: Math.random() < 0.5 ? 'rgba(70,70,78,0.7)' : 'rgba(110,110,118,0.6)', life: 3.2, max: 3.2, size: 2 + (Math.random() < 0.5 ? 1 : 0), grav: 0 }); } else if (b.spec && b.spec.chimney && !b.site) { const img = Sprites.building(b.spec); const x = b.tx * 16 + b.w * 16 - 9, y = (b.ty + b.h) * 16 - img.height + 1; if (Math.random() < 0.6) this.particles.push({ x: x + Math.random() * 3, y, vx: 4 + Math.random() * 4, vy: -10 - Math.random() * 6, color: Math.random() < 0.5 ? 'rgba(200,200,205,0.55)' : 'rgba(160,160,170,0.5)', life: 2.4, max: 2.4, size: Math.random() < 0.5 ? 2 : 1, grav: 0 }); } }
       W.pregen(P.x + (Input.move.x * 300), P.y + (Input.move.y * 300));
       this.updateWeather(dt);
     }
@@ -384,7 +384,7 @@ const Game = {
         if (!(o && !TSOLID[L.tileAt(Math.floor(p.x / 16), Math.floor(p.y / 16))] && Math.random() < 0.5 && p.kind !== 'arrow')) dead = true;
       }
       if (!dead) {
-        for (const a of Combat.targetsOf({ team: p.team })) {
+        for (const a of Combat.targetsOf(p.src && p.src.faction && !p.src.dead ? p.src : { team: p.team, faction: p.src && p.src.faction })) {
           if (p.hit.has(a)) continue;
           const ay = a.y - 6 - a.z * 0.8;
           if (Math.abs(a.x - p.x) < a.r + p.r + 2 && Math.abs(ay - p.y) < a.r + p.r + 6 + (a.h || 16) * 0.3) {
@@ -394,7 +394,8 @@ const Game = {
           }
         }
       }
-      if (p.kind === 'fireball' || p.kind === 'breath') { if (Math.random() < 0.7) this.particle(p.x, p.y, (Math.random() - 0.5) * 20, (Math.random() - 0.5) * 20, Math.random() < 0.5 ? '#ff8020' : '#ffd040', 0.3); }
+      if (p.kind === 'bullet') { if (Math.random() < 0.8) this.particle(p.x, p.y, (Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10, Math.random() < 0.5 ? (p.color || '#80c0ff') : '#ffe0a0', 0.18); }
+      else if (p.kind === 'fireball' || p.kind === 'breath') { if (Math.random() < 0.7) this.particle(p.x, p.y, (Math.random() - 0.5) * 20, (Math.random() - 0.5) * 20, Math.random() < 0.5 ? '#ff8020' : '#ffd040', 0.3); }
       else if (p.kind === 'frost') { if (Math.random() < 0.5) this.particle(p.x, p.y, 0, 0, '#c0f0ff', 0.25); }
       else if (p.kind === 'dark' || p.kind === 'poison' || p.kind === 'bolt') { if (Math.random() < 0.5) this.particle(p.x, p.y, 0, 0, p.kind === 'poison' ? '#80e040' : p.kind === 'bolt' ? (p.color || '#80a0ff') : '#a040e0', 0.25); }
       if (dead) {
@@ -469,7 +470,7 @@ const Game = {
             const cr = RACES[CULTURES[s.region.culture].race];
             if (cr.ears) look.ears = cr.ears; if (cr.tusks) look.tusks = true; if (cr.short) look.short = cr.short; if (cr.snout) look.snout = true; if (cr.tail) { look.tail = true; look.tailC = look.skin; } if (cr.catears) look.catears = true; if (cr.bulky) look.bulky = true;
             const own = War.ownerOf(s);
-            if (own && own !== s.region.id && War.K[own]) { const lk = War.look(own, 'soldado', rng); a = new Monster('guarda', spot.x * 16 + 8, spot.y * 16 + 12, Math.max(10, P.level + 5), { look: lk, name: 'Ocupante de ' + War.K[own].short }); }
+            if (own && War.K[own] && (own !== s.region.id || KSTYLE[own].musket)) { const lk = War.look(own, own === s.region.id ? rng.pick(['soldado', 'mosqueteiro']) : 'soldado', rng); a = new Monster('guarda', spot.x * 16 + 8, spot.y * 16 + 12, Math.max(10, P.level + 5), { look: lk, name: own === s.region.id ? 'Guarda de ' + s.name : 'Ocupante de ' + War.K[own].short }); }
             else a = new Monster('guarda', spot.x * 16 + 8, spot.y * 16 + 12, Math.max(10, P.level + 5), { look, name: 'Guarda de ' + s.name });
             a.guardOf = s; if (own) a.faction = own;
           } else { a = new NPC(spot, s, rng); if (spot.role === 'captain') { a.name = (a.sex === 'f' ? 'Capitã ' : 'Capitão ') + a.name; a.look = Object.assign({}, a.look, { body: '#2a3a6a', hood: '#1a1a2a', robe: false }); a.S = Sprites.actor(a.look); } }
@@ -1244,9 +1245,21 @@ const Game = {
       if (k.item.r >= 2 || ITEMS[k.item.id].unique) { ctx.fillStyle = c; ctx.globalAlpha = 0.5 + Math.sin(this.t * 6) * 0.3; ctx.fillRect(x - 1, y - 14, 2, 3); ctx.globalAlpha = 1; }
     }
   },
+  musketFx(x, y, ang, col) {
+    for (let i = 0; i < 10; i++) { const a = ang + (Math.random() - 0.5) * 0.6, s = 60 + Math.random() * 120; this.particle(x, y, Math.cos(a) * s, Math.sin(a) * s, Math.random() < 0.4 ? '#fff0a0' : Math.random() < 0.5 ? '#ff9030' : col, 0.2, Math.random() < 0.3 ? 2 : 1); }
+    for (let i = 0; i < 8; i++) this.particles.push({ x: x + Math.cos(ang) * 4, y: y, vx: Math.cos(ang) * 20 + (Math.random() - 0.5) * 16, vy: -8 - Math.random() * 12, color: Math.random() < 0.5 ? 'rgba(200,200,210,0.6)' : 'rgba(160,160,175,0.55)', life: 1.1, max: 1.1, size: 2, grav: 0 });
+    this.fx.push({ kind: 'ring', x, y, r0: 2, r1: 12, t: 0, dur: 0.15, color: col });
+    Sfx.play('shot'); this.shake = Math.max(this.shake, 2);
+  },
   drawProjectile(ctx, p, camX, camY) {
     const x = Math.round(p.x - camX), y = Math.round(p.y - camY);
     switch (p.kind) {
+      case 'bullet': {
+        const L = Math.hypot(p.vx, p.vy) || 1, tx = p.vx / L, ty = p.vy / L;
+        ctx.strokeStyle = p.color || '#80c0ff'; ctx.globalAlpha = 0.55; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - tx * 12, y - ty * 12); ctx.lineTo(x, y); ctx.stroke(); ctx.globalAlpha = 1; ctx.lineWidth = 1;
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 1, y - 1, 2, 2); ctx.fillStyle = '#ffe080'; ctx.fillRect(x - 2, y, 1, 1);
+        break;
+      }
       case 'arrow': {
         const a = Math.atan2(p.vy, p.vx);
         ctx.save(); ctx.translate(x, y); ctx.rotate(a);

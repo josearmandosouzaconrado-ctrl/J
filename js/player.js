@@ -341,6 +341,18 @@ class Player extends Actor {
         Combat.projectile(this, this.x, this.y - 8, a, 'arrow', pk.dmg, { crit: pk.crit, spd: 320, life: 0.9, weapon: true, kind2: 'bow' });
       }
       this.st = Math.max(0, this.st - 1); Sfx.play('bow');
+    } else if (wc === 'musket' || wc === 'pistol') {
+      if (!this.count('bala_arcana')) { Game.toast('Sem cartuchos arcanos! Compre numa Armaria Arcana nos reinos humanos de Valtheria.', '#ffb080'); this.atkT = 0.5; return; }
+      this.removeItem('bala_arcana', 1);
+      const n = d.pellets || 1, mx = this.x + Math.cos(ang) * 14, my = this.y - 9 + Math.sin(ang) * 8;
+      for (let i = 0; i < n; i++) {
+        const pk = this.rollDamage('bow');
+        const a = ang + (n > 1 ? (i - (n - 1) / 2) * 0.15 + (Math.random() - 0.5) * 0.06 : 0);
+        Combat.projectile(this, mx, my, a, 'bullet', pk.dmg * (1 + this.skill('destruicao') * 0.004), { crit: pk.crit, spd: 540, life: n > 1 ? 0.32 : 0.62, weapon: true, magic: true, elem: 'fire', aoe: n > 1 ? 0 : 18, color: d.icon.g || '#80c0ff', r: 2 });
+      }
+      Game.musketFx(mx, my, ang, d.icon.g || '#80c0ff');
+      this.kbx -= Math.cos(ang) * 50; this.kby -= Math.sin(ang) * 50;
+      this.train('arquearia', 1); this.train('destruicao', 0.3);
     } else if (wc === 'staff') {
       const pk = this.rollDamage('staff');
       Combat.projectile(this, this.x, this.y - 10, ang, 'bolt', pk.dmg, { crit: pk.crit, spd: 230, life: 0.9, elem: 'magic', magic: true, color: d.icon.g || '#80a0ff', weapon: true });

@@ -73,7 +73,7 @@ const O = {
   HUT_TOTEM: 71, ICEROCK: 72, SANDROCK: 73, ALTAR: 74, PORTAL: 75,
   COUNTER: 76, SHELF: 77, BOOKSHELF: 78, CHAIR: 79, FIREPLACE: 80, THRONE: 81, PLANT: 82, WARDROBE: 83, CRIB: 84, WEAPONRACK: 85,
   DOOR_IN: 86, CANDLE: 87, BENCH: 88, POTSHELF: 89, KEG: 90, CAULDRON: 91, DESTINY: 92, ANVIL: 93, WINDOW: 94, PAINTING: 95, QUESTBOARD: 96, BEDSMALL: 97, DESTINY2: 98, DESTINY3: 99, STUMP: 100, WORKBENCH: 101, PLAYERBED: 102, DUMMY: 103, LECTERN: 104, BLACKBOARD: 105,
-  STOVE: 106, SACKS: 107, POTS: 108, TROPHY: 109, PELT: 110, FISHNET: 111, DESK: 112, LOOM: 113, OVEN: 114, INSTRUMENT: 115, ARMORSTAND: 116, CLOCK: 117, ARMCHAIR: 118, TOOLRACK: 119, DRESSER: 120, TOYBOX: 121, RUG: 122, SHELFWALL: 123, HERBS: 124, BATHTUB: 125, SHIELDWALL: 126
+  GRAMOPHONE: 127, PIANO: 128, SEWING: 129, GASLAMP: 130, MACHINE: 131, PIPES: 132, BOILER: 133, GUNRACK: 134, STOVE: 106, SACKS: 107, POTS: 108, TROPHY: 109, PELT: 110, FISHNET: 111, DESK: 112, LOOM: 113, OVEN: 114, INSTRUMENT: 115, ARMORSTAND: 116, CLOCK: 117, ARMCHAIR: 118, TOOLRACK: 119, DRESSER: 120, TOYBOX: 121, RUG: 122, SHELFWALL: 123, HERBS: 124, BATHTUB: 125, SHIELDWALL: 126
 };
 // solid; tall=altura do sprite (px); harvest; light (raio px); kind de interação
 const OBJ_DEFS = [];
@@ -195,6 +195,14 @@ odef(O.SHELFWALL, { name: 'Prateleira', solid: true });
 odef(O.HERBS, { name: 'Ervas secando', solid: true });
 odef(O.BATHTUB, { name: 'Banheira', solid: true });
 odef(O.SHIELDWALL, { name: 'Escudo na parede', solid: true });
+odef(O.GRAMOPHONE, { name: 'Gramofone', solid: true });
+odef(O.PIANO, { name: 'Piano', solid: true });
+odef(O.SEWING, { name: 'Máquina de costura', solid: true });
+odef(O.GASLAMP, { name: 'Lampião a gás', solid: true, light: 34 });
+odef(O.MACHINE, { name: 'Máquina a vapor', solid: true, light: 10 });
+odef(O.PIPES, { name: 'Canos de vapor', solid: true });
+odef(O.BOILER, { name: 'Caldeira', solid: true, light: 26 });
+odef(O.GUNRACK, { name: 'Suporte de mosquetes', solid: true });
 odef(O.WORKBENCH, { name: 'Bancada de Carpintaria', solid: true, interact: 'carpentry' });
 for (const id of [O.ENT_CAVE, O.ENT_CRYPT, O.ENT_RUIN, O.ENT_MINE, O.ENT_TOMB, O.ENT_BARROW, O.ENT_LAVA, O.ENT_ICE, O.ENT_ARENA])
   odef(id, { name: 'Entrada', solid: true, interact: 'dungeon', light: 24 });
@@ -241,7 +249,7 @@ const REGIONS = [
   // ----- Valtheria: o Grande Continente do sul (maior que Eldoria) -----
   { id: 'aurelion', name: 'Império de Aurélion', short: 'Aurélion', race: 'humano', fx: 1.050, fy: 1.965, biome: 'plains', lvl: [14, 22], mount: -0.04, culture: 'imperial', cont: 2,
     ruler: { title: 'Imperador', name: 'Cassius Aurélio', race: 'humano' }, towns: 6, villages: 10, dungeons: 16, color: '#5a78e0',
-    desc: 'O maior império do mundo, de cidades de mármore branco e legiões disciplinadas.' },
+    desc: 'O maior império do mundo: avenidas de pedra, fábricas e regimentos de mosqueteiros arcanos.' },
   { id: 'gromhald', name: 'Picos de Gromhald', short: 'Gromhald', race: 'gigante', fx: 0.537, fy: 1.550, biome: 'snow', lvl: [20, 30], mount: 0.12, culture: 'giant', cont: 2,
     ruler: { title: 'Rei-Montanha', name: 'Ulfgar Pedra-Viva', race: 'gigante' }, towns: 5, villages: 8, dungeons: 14, color: '#8aa0b8',
     desc: 'Montanhas geladas dos meio-gigantes, onde tudo é grande demais.' },
@@ -254,6 +262,9 @@ const REGIONS = [
   { id: 'kumari', name: 'Savana de Kumari', short: 'Kumari', race: 'felino', fx: 1.611, fy: 2.478, biome: 'desert', lvl: [18, 28], mount: -0.05, culture: 'desert', cont: 2,
     ruler: { title: 'Rainha-Leoa', name: 'Nala Juba-Dourada', race: 'felino' }, towns: 5, villages: 8, dungeons: 14, color: '#d8a040',
     desc: 'Savanas e cânions dourados dos clãs felinos do sul.' },
+  { id: 'ferrania', name: 'República de Ferrânia', short: 'Ferrânia', race: 'humano', fx: 0.806, fy: 2.380, biome: 'plains', lvl: [16, 26], mount: -0.03, culture: 'industrial', cont: 2,
+    ruler: { title: 'Chanceler', name: 'Augusto Vapormont', race: 'humano' }, towns: 5, villages: 7, dungeons: 12, color: '#9a3a3a',
+    desc: 'Cidades de tijolo, fábricas a vapor e mosqueteiros. O coração da era industrial.' },
   { id: 'kharzul', name: 'Fortaleza de Kharzul', short: 'Kharzul', race: 'anao', fx: 1.636, fy: 1.538, biome: 'mountain', lvl: [22, 32], mount: 0.14, culture: 'dwarf', cont: 2,
     ruler: { title: 'Alto-Rei', name: 'Durgrim Martelo-Rúnico', race: 'anao' }, towns: 4, villages: 6, dungeons: 14, color: '#c08a50',
     desc: 'O maior reino anão do mundo, escavado em montanhas maiores que as de Khaz Durim.' },
@@ -726,6 +737,7 @@ const ENEMIES = {
   lobo_domado: { name: 'Lobo Domado', look: { k: 'wolf', c: '#5a5a62' }, hp: 150, dmg: 14, spd: 84, ai: 'melee', xp: 0, ally: true },
   mercenario: { name: 'Mercenário', look: { k: 'hum', skin: '#d8a070', body: '#5a6a8a', legs: '#3a3a4a', hair: '#3a2a1a', helm: '#9aa0a8', weapon: 'sword', wc: '#c0c0c0', shield: true }, hp: 160, dmg: 14, spd: 68, ai: 'melee', xp: 0, ally: true },
   hidra_jovem: { name: 'Hidra Jovem', look: { k: 'hum', skin: '#3a8a5a', body: '#2a6a3a', legs: '#1a4a2a', snout: true, horns: true, tail: true, tailC: '#3a8a5a', size: 1.6, bulky: true, nobelt: true, eyes: '#ffe040', weapon: 'mace', wc: '#2a5a3a' }, hp: 300, dmg: 26, spd: 50, ai: 'charge', charge: true, r: 9, xp: 150, poison: 4, gold: [30, 100], drops: [['escama_lagarto', 1], ['veneno', 0.6]], dropGear: 0.3 },
+  pistoleiro: { name: 'Pistoleiro Fora-da-Lei', look: { k: 'hum', skin: '#e0ac69', body: '#4a3a2a', legs: '#2a2a30', hair: '#2a1a10', helm: '#2a2a2a', helmStyle: 'tricorne', crossbelt: true, weapon: 'musket', wc: '#5a4a3a' }, hp: 60, dmg: 22, spd: 60, ai: 'ranged', proj: 'bullet', cd: 2.4, xp: 42, gold: [20, 70], drops: [['bala_arcana', 0.6]], dropGear: 0.15 },
   legionario_renegado: { name: 'Legionário Renegado', look: { k: 'hum', skin: '#e0ac69', body: '#a03030', legs: '#5a4a3a', hair: '#2a1a10', helm: '#c0a050', helmStyle: 'kettle', crest: '#c02020', weapon: 'sword', wc: '#d0d0d8', shield: '#a03030' }, hp: 95, dmg: 16, spd: 62, ai: 'melee', xp: 40, armor: 20, gold: [15, 50], dropGear: 0.2 },
   gigante_bruto: { name: 'Gigante Bruto', look: { k: 'hum', skin: '#c89070', body: '#6a5040', legs: '#4a3a2a', hair: '#8a8a8a', bulky: true, beard: true, fur: true, size: 1.7, weapon: 'hammer', wc: '#7a7a80' }, hp: 340, dmg: 30, spd: 50, ai: 'charge', charge: true, r: 9, xp: 160, gold: [40, 140], dropGear: 0.4 },
   automato: { name: 'Autômato Desregulado', look: { k: 'hum', skin: '#a0a0a8', body: '#b08040', legs: '#6a5a40', helm: '#c09050', helmStyle: 'full', eyes: '#40e0ff', nobelt: true, weapon: 'mace', wc: '#8a8a90' }, hp: 110, dmg: 17, spd: 52, ai: 'melee', xp: 44, armor: 30, gold: [10, 40], drops: [['lingote_ferro', 0.4], ['lingote_aco', 0.1]] },
@@ -740,10 +752,11 @@ const ENEMIES = {
 };
 
 const SPAWNS = {
+  ferrania: { day: [['pistoleiro', 3], ['automato', 2], ['bandido', 2], ['lobo', 2], ['javali', 2], ['cervo', 2]], night: [['pistoleiro', 2], ['automato', 2], ['zumbi', 2], ['espectro', 1]] },
   kharzul: { day: [['golem_pedra', 1.5], ['troll', 1.5], ['lobo_gelo', 2], ['urso', 2], ['automato', 1], ['goblin', 2]], night: [['draugr', 2], ['esqueleto', 2], ['troll', 1.5], ['espectro', 1]] },
   orkhai: { day: [['orc_renegado', 3], ['lobo', 3], ['javali', 2], ['cervo', 2], ['ogro', 1], ['goblin_arqueiro', 1]], night: [['orc_renegado', 2], ['lobo', 3], ['esqueleto', 2], ['ogro', 1]] },
   serpentis: { day: [['lagarto', 3], ['aranha', 2], ['slime', 2], ['escorpiao', 1], ['cervo', 1], ['hidra_jovem', 0.4]], night: [['lagarto', 2], ['zumbi', 2], ['espectro', 2], ['aranha', 2]] },
-  aurelion: { day: [['bandido', 2], ['bandido_arqueiro', 1], ['lobo', 2], ['javali', 2], ['cervo', 3], ['coelho', 2], ['ogro', 0.6], ['legionario_renegado', 1.5]], night: [['esqueleto', 2], ['zumbi', 2], ['espectro', 1], ['lobo', 2]] },
+  aurelion: { day: [['pistoleiro', 2], ['bandido', 2], ['bandido_arqueiro', 1], ['lobo', 2], ['javali', 2], ['cervo', 3], ['coelho', 2], ['ogro', 0.6], ['legionario_renegado', 1.5]], night: [['esqueleto', 2], ['zumbi', 2], ['espectro', 1], ['lobo', 2]] },
   gromhald: { day: [['lobo_gelo', 3], ['urso_polar', 2], ['troll_gelo', 1.5], ['yeti', 0.6], ['gigante_bruto', 0.8]], night: [['draugr', 2], ['lobo_gelo', 3], ['troll_gelo', 1], ['espectro', 1]] },
   lunethar: { day: [['aranha', 3], ['lobo', 2], ['cervo', 3], ['urso', 2], ['espectro', 1], ['coelho', 2]], night: [['aranha', 3], ['espectro', 2], ['lobo', 2], ['cavaleiro_morto', 0.4]] },
   rodafina: { day: [['automato', 3], ['goblin', 2], ['goblin_arqueiro', 1], ['javali', 2], ['coelho', 3], ['slime', 2]], night: [['automato', 2], ['goblin_xama', 1], ['esqueleto', 2], ['lobo', 2]] },
@@ -780,6 +793,7 @@ const DUNGEON_TYPES = {
   arena: { name: 'Arena', gen: 'arena', floor: T.SAND, wall: T.WALL, ent: O.ENT_ARENA, mobs: ['orc_renegado', 'ogro'], boss: 'campeao_orc', deco: [O.TORCH, O.BANNER] }
 };
 const REGION_DUNGEONS = {
+  ferrania: ['covil_bandido', 'mina_ana', 'caverna', 'cripta'],
   kharzul: ['mina_ana', 'mina_ana', 'caverna', 'cripta'],
   orkhai: ['covil_bandido', 'caverna', 'arena', 'covil_goblin'],
   serpentis: ['ruina_afundada', 'ruina_afundada', 'caverna', 'cripta'],
@@ -876,6 +890,7 @@ const NAMES = {
     s: ['Machado-Gélido', 'Filho-do-Urso', 'Escudo-Partido', 'Lobo-Branco', 'Barba-de-Neve'] }
 };
 const SETTLEMENT_NAMES = {
+  ferrania: { cap: 'Ferrânia', list: ['Vila Caldeira', 'Porto Carvão', 'Engrenagem Alta', 'Fundição Velha', 'Trilho Novo', 'Chaminé Vermelha', 'Vapor Branco', 'Ponte de Ferro', 'Bairro do Relógio', 'Usina Sul', 'Manufatura', 'Vila Locomotiva', 'Campo do Vapor', 'Cais de Carvão', 'Forja Nova'] },
   kharzul: { cap: 'Kharzul', list: ['Bigorna Funda', 'Portão de Ferro', 'Mina do Rei', 'Salão das Runas', 'Forja Eterna', 'Pico Martelo', 'Veio de Ouro', 'Cripta dos Ancestrais', 'Ponte de Pedra', 'Barba-Longa'] },
   orkhai: { cap: 'Orkhai', list: ['Acampamento do Khan', 'Yurta Vermelha', 'Colina dos Lobos', 'Pedra do Uivo', 'Rio de Sangue', 'Totem Alto', 'Vale do Trovão', 'Estepe Seca', 'Poço dos Cavalos', 'Fogueira Eterna', 'Garra Partida'] },
   serpentis: { cap: 'Serpentis', list: ['Templo Afundado', 'Lagoa de Jade', 'Raiz-Serpente', 'Ninho de Escamas', 'Brejo Antigo', 'Ilha dos Ovos', 'Névoa Verde', 'Vila Palafita', 'Ruínas Sibilantes', 'Lírio Negro'] },
@@ -901,7 +916,8 @@ const SETTLEMENT_NAMES = {
 
 // ---------- Estilos culturais (cidades) ----------
 const CULTURES = {
-  imperial: { plaza: T.COBBLE, street: T.COBBLE, wall: T.WALL, walls: ['capital', 'town'], houseWall: 'stone', roof: ['#3a5ab0', '#2a4a8a', '#a03a2a', '#c05030'], wallC: '#ece8e0', race: 'humano', guard: true },
+  industrial: { plaza: T.COBBLE, street: T.COBBLE, wall: T.WALL, walls: ['capital', 'town'], houseWall: 'brick', roof: ['#4a4a56', '#3a3a46', '#5a4a4a'], wallC: '#9a4a3a', race: 'humano', guard: true, industrial: true },
+  imperial: { plaza: T.COBBLE, street: T.COBBLE, wall: T.WALL, walls: ['capital', 'town'], houseWall: 'brick', roof: ['#3a4a7a', '#2a3a6a', '#4a4a56'], wallC: '#d8c8b0', race: 'humano', guard: true, industrial: true },
   giant: { plaza: T.DCOBBLE, street: T.DCOBBLE, wall: T.PALISADE, walls: ['capital', 'town'], houseWall: 'log', roof: ['#e8eef4', '#d8e0e8'], wallC: '#7a5a3a', race: 'gigante', snowroof: true, guard: true },
   gnome: { plaza: T.COBBLE, street: T.COBBLE, wall: null, walls: [], houseWall: 'round', roof: ['#e04080', '#40a0e0', '#e0c030', '#60c060', '#a060e0'], wallC: '#f0e0c0', race: 'gnomo', flowers: true },
   tide: { plaza: T.SANDSTONE, street: T.SANDSTONE, wall: T.WALL, walls: ['capital'], houseWall: 'adobe', roof: ['#f0f0f0', '#3a7ac0', '#e8e0d0'], wallC: '#f0ece0', race: 'tritao', domes: true, guard: true },
@@ -997,6 +1013,7 @@ const MAIN_QUEST = [
 
 // ---------- Falas ----------
 const RUMORS = {
+  ferrania: ['As fábricas de Ferrânia nunca dormem: o vapor sobe dia e noite.', 'Os mosquetes arcanos misturam pólvora com pó de cristal mágico. Um tiro derruba um troll!', 'Só os reinos humanos de Valtheria sabem fabricar mosquetes.', 'O Chanceler quer trilhos de ferro ligando todo o continente.', 'Os gnomos de Rodafina dizem que roubamos as invenções deles.'],
   kharzul: ['As minas de Kharzul são tão fundas que chegam ao fogo do mundo.', 'Os anões de Kharzul dizem que Khaz Durim é só uma vila deles.', 'O Alto-Rei forja runas que nunca se apagam.', 'Cuidado com os golens nas minas abandonadas.'],
   orkhai: ['As hordas do Grão-Khan cavalgam lobos do tamanho de cavalos.', 'Nas estepes, a honra vale mais que o ouro.', 'Aurélion e Orkhai brigam por estas terras há séculos.', 'Os tambores de guerra tocam quando a lua fica vermelha.'],
   serpentis: ['A Imperatriz-Serpente troca de pele a cada cem anos.', 'Os templos afundados guardam ovos de dragão.', 'Hidras vivem nos lagos mais fundos.', 'Os draconatos de Ssarak vieram daqui, dizem os sábios.'],
@@ -1040,6 +1057,8 @@ const BUILDINGS = {
   house2: { name: 'Casa', w: 5, h: 3, role: 'house' },
   house3: { name: 'Casa', w: 3, h: 3, role: 'house' },
   tower: { name: 'Torre', w: 3, h: 3, role: 'tower' },
+  gunsmith: { name: 'Armaria Arcana', w: 5, h: 4, role: 'gunsmith' },
+  factory: { name: 'Fábrica a Vapor', w: 8, h: 5, role: 'factory' },
   grandhall: { name: 'Grande Salão de Astralis', w: 18, h: 8, role: 'academy' },
   dorm_real: { name: 'Dormitório Real', w: 12, h: 5, role: 'dorm' },
   dorm: { name: 'Dormitório Comum', w: 12, h: 5, role: 'dorm' },
@@ -1099,6 +1118,7 @@ const CARCASS = { lobo: 1, lobo_gelo: 1, urso: 2, urso_polar: 2, javali: 1, cerv
 // ---------- Empregos ----------
 const JOBS = {
   taverneiro: { name: 'Taverneiro', role: 'inn', skill: 'eloquencia', pay: 18, desc: 'Servir bebidas e ouvir histórias.', yield: ['hidromel', 'pao'] },
+  operario: { name: 'Operário de Fábrica', role: 'factory', skill: 'ferraria', pay: 38, desc: 'Turnos longos entre caldeiras e engrenagens.', yield: ['lingote_ferro', 'prego', 'bala_arcana'] },
   ferreiro: { name: 'Ajudante de Ferreiro', role: 'smith', skill: 'ferraria', pay: 24, desc: 'Martelar aço o dia todo.', yield: ['lingote_ferro', 'prego'] },
   alquimista: { name: 'Ajudante de Alquimista', role: 'alchemist', skill: 'alquimia', pay: 22, desc: 'Moer ervas e vigiar o caldeirão.', yield: ['pocao_vida_p', 'erva_vermelha'] },
   comerciante: { name: 'Balconista', role: 'general', skill: 'eloquencia', pay: 16, desc: 'Atender clientes e organizar o estoque.', yield: ['pao', 'maca'] },
@@ -1129,6 +1149,12 @@ idef('espada_treino', { name: 'Espada de Treino da Academia', type: 'weapon', sl
 idef('florete_real', { name: 'Florete Real de Astralis', type: 'weapon', slot: 'weapon', wclass: 'dagger', dmg: 34, cd: 0.26, range: 19, arc: 0.95, crit: 0.2, value: 3500, icon: { k: 'dagger', c: '#e0e8ff' }, unique: true, ench: [{ k: 'crit', v: 10 }, { k: 'magic', v: 15 }], lvl: 8, tier: 5 });
 idef('manto_astralis', { name: 'Manto do Graduado de Astralis', type: 'armor', slot: 'body', akind: 'robe', armor: 18, mpBonus: 80, mpRegen: 0.7, value: 3500, icon: { k: 'robe', c: '#1a2a6a' }, color: '#1a2a6a', unique: true, ench: [{ k: 'magic', v: 20 }], lvl: 8 });
 idef('varinha_astralis', { name: 'Varinha de Astralis', type: 'weapon', slot: 'weapon', wclass: 'staff', dmg: 9, cd: 0.42, range: 170, magicBonus: 0.3, two: true, ranged: true, value: 300, icon: { k: 'staff', c: '#3a2a5a', g: '#80c0ff' }, lvl: 1, tier: 2 });
+// ---------- Armas de pólvora arcana (só nos reinos humanos de Valtheria) ----------
+idef('bala_arcana', { name: 'Cartucho Arcano', type: 'ammo', value: 6, stack: true, icon: { k: 'bullet', c: '#80c0ff' }, desc: 'Pólvora misturada com pó de cristal mágico.' });
+idef('pistola_arcana', { name: 'Pistola Arcana', type: 'weapon', slot: 'weapon', wclass: 'pistol', dmg: 30, cd: 0.85, range: 210, ranged: true, value: 1400, icon: { k: 'pistol', c: '#8a6a4a', g: '#80c0ff' }, lvl: 8, tier: 4, desc: 'Leve e rápida. Cada tiro explode em faíscas arcanas.' });
+idef('mosquete_arcano', { name: 'Mosquete Arcano', type: 'weapon', slot: 'weapon', wclass: 'musket', dmg: 50, cd: 1.25, range: 280, ranged: true, two: true, value: 2400, icon: { k: 'musket', c: '#6a4a2a', g: '#80c0ff' }, lvl: 10, tier: 5, desc: 'Pólvora e magia: dano enorme e uma pequena explosão arcana.' });
+idef('bacamarte_arcano', { name: 'Bacamarte Arcano', type: 'weapon', slot: 'weapon', wclass: 'musket', dmg: 21, pellets: 5, cd: 1.45, range: 150, ranged: true, two: true, value: 2800, icon: { k: 'musket', c: '#7a5030', g: '#ffa040' }, lvl: 12, tier: 5, desc: 'Dispara cinco esferas arcanas em leque. Devastador de perto.' });
+idef('mosquete_imperial', { name: 'Mosquete Imperial Rúnico', type: 'weapon', slot: 'weapon', wclass: 'musket', dmg: 70, cd: 1.15, range: 300, ranged: true, two: true, value: 5200, icon: { k: 'musket', c: '#3a2a3a', g: '#c080ff' }, lvl: 18, tier: 6, ench: [{ k: 'magic', v: 15 }], desc: 'Obra-prima das fábricas imperiais, gravada com runas.' });
 const ACADEMY = {
   name: 'Academia Real de Astralis', short: 'Astralis', fee: 800,
   head: { name: 'Arquimaga Seraphine Valtoris', race: 'elfo', sex: 'f' },

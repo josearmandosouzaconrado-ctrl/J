@@ -10,7 +10,7 @@ const WAR_RANKS = [
   { id: 'cavaleiro', name: 'Cavaleiro', merit: 50, lvl: 8, pay: 65 },
   { id: 'elite', name: 'Elite Real', merit: 120, lvl: 14, pay: 120 }
 ];
-const WAR_KIND_RANK = { milicia: 0, soldado: 1, arqueiro: 1, cavaleiro: 2, elite: 3 };
+const WAR_KIND_RANK = { milicia: 0, soldado: 1, arqueiro: 1, mosqueteiro: 1, cavaleiro: 2, elite: 3 };
 // estilo de armadura de cada reino
 const KSTYLE = {
   valdoria: { metal: '#b8c0cc', helm1: 'kettle', helm2: 'full', weapons: ['sword', 'spear', 'sword'], wItem: 'sword', mat2: 'aco' },
@@ -24,7 +24,8 @@ const KSTYLE = {
   talassa: { metal: '#7ab0c8', helm1: 'leaf', helm2: 'full', crest: true, weapons: ['spear', 'spear', 'sword'], wItem: 'sword', mat2: 'elfico' },
   azhkar: { metal: '#5a2a30', helm1: 'spike', helm2: 'spike', weapons: ['sword', 'great', 'axe'], wItem: 'sword', mat2: 'orc' },
   shirokai: { metal: '#3a4a3a', helm1: 'kettle', helm2: 'full', crest: true, weapons: ['sword', 'spear', 'sword'], wItem: 'sword', mat2: 'aco', archers: 0.3 },
-  aurelion: { metal: '#d0d8e8', helm1: 'kettle', helm2: 'full', crest: true, weapons: ['sword', 'spear', 'sword'], wItem: 'sword', mat2: 'aco' },
+  aurelion: { metal: '#c8ccd8', musket: true, weapons: ['musket', 'musket', 'sword'], wItem: 'sword', mat2: 'aco' },
+  ferrania: { metal: '#8a8a94', musket: true, weapons: ['musket', 'musket', 'sword'], wItem: 'sword', mat2: 'aco' },
   gromhald: { metal: '#7a8088', helm1: 'kettle', helm2: 'full', horns: true, fur: true, weapons: ['hammer', 'axe', 'great'], wItem: 'hammer', mat2: 'anao', archers: 0.08 },
   lunethar: { metal: '#c0c8e8', helm1: 'leaf', helm2: 'leaf', weapons: ['sword', 'spear', 'sword'], wItem: 'sword', mat2: 'elfico', archers: 0.4 },
   rodafina: { metal: '#c09050', helm1: 'kettle', helm2: 'kettle', weapons: ['mace', 'sword', 'spear'], wItem: 'mace', mat2: 'aco', archers: 0.3 },
@@ -34,7 +35,7 @@ const KSTYLE = {
   kumari: { metal: '#d8b070', helm1: 'turban', helm2: 'turban', cloth: true, weapons: ['spear', 'sword', 'spear'], wItem: 'sword', mat2: 'elfico' }
 };
 // simpatias e rivalidades históricas (relação de base)
-const KBIAS = { 'colinas|valdoria': 35, 'sylvaris|valdoria': 15, 'khazdurim|valdoria': 15, 'khazdurim|sylvaris': -25, 'gorthak|nordheim': -55, 'gorthak|khazdurim': -40, 'gorthak|valdoria': -30, 'ssarak|zahrim': -45, 'gorthak|zahrim': -20, 'nordheim|valdoria': 0, 'colinas|sylvaris': 20, 'azhkar|talassa': -50, 'azhkar|shirokai': -35, 'shirokai|talassa': 10, 'aurelion|kumari': -40, 'aurelion|gromhald': -20, 'gromhald|rodafina': -30, 'lunethar|rodafina': 25, 'aurelion|lunethar': 5, 'kumari|lunethar': -10, 'aurelion|rodafina': 15, 'aurelion|orkhai': -45, 'kharzul|orkhai': -35, 'gromhald|kharzul': 10, 'kumari|orkhai': -20, 'rodafina|serpentis': -15, 'serpentis|umbraval': -30 };
+const KBIAS = { 'colinas|valdoria': 35, 'sylvaris|valdoria': 15, 'khazdurim|valdoria': 15, 'khazdurim|sylvaris': -25, 'gorthak|nordheim': -55, 'gorthak|khazdurim': -40, 'gorthak|valdoria': -30, 'ssarak|zahrim': -45, 'gorthak|zahrim': -20, 'nordheim|valdoria': 0, 'colinas|sylvaris': 20, 'azhkar|talassa': -50, 'azhkar|shirokai': -35, 'shirokai|talassa': 10, 'aurelion|kumari': -40, 'aurelion|gromhald': -20, 'gromhald|rodafina': -30, 'lunethar|rodafina': 25, 'aurelion|lunethar': 5, 'kumari|lunethar': -10, 'aurelion|rodafina': 15, 'aurelion|orkhai': -45, 'kharzul|orkhai': -35, 'gromhald|kharzul': 10, 'kumari|orkhai': -20, 'rodafina|serpentis': -15, 'serpentis|umbraval': -30, 'aurelion|ferrania': -30, 'ferrania|rodafina': 10, 'ferrania|serpentis': -25 };
 const WAR_EVENTS = {
   bad: ['Patrulhas de {a} e {b} trocaram golpes na fronteira.', 'Um emissário de {a} foi insultado na corte de {b}.', 'Caravanas de {b} foram saqueadas em terras de {a}.', '{a} acusa {b} de espionagem.', 'Uma disputa por uma mina de ouro opõe {a} e {b}.'],
   good: ['{a} e {b} assinaram um acordo comercial.', 'Um casamento real uniu nobres de {a} e {b}.', '{a} enviou ajuda a {b} depois de uma colheita ruim.', 'Bardos de {a} foram aclamados em {b}.']
@@ -44,6 +45,7 @@ Object.assign(ENEMIES, {
   war_soldado: { name: 'Soldado', look: { k: 'hum', body: '#a0a8b0' }, hp: 100, dmg: 11, spd: 62, ai: 'melee', xp: 24, armor: 18, gold: [5, 18] },
   war_arqueiro: { name: 'Arqueiro', look: { k: 'hum', body: '#a0a8b0' }, hp: 70, dmg: 10, spd: 60, ai: 'ranged', proj: 'arrow', xp: 22, armor: 10, gold: [4, 15] },
   war_cavaleiro: { name: 'Cavaleiro', look: { k: 'hum', body: '#c0c8d0' }, hp: 170, dmg: 15, spd: 66, ai: 'charge', charge: true, xp: 48, armor: 32, gold: [15, 40] },
+  war_mosqueteiro: { name: 'Mosqueteiro Arcano', look: { k: 'hum', body: '#3a4a9a', weapon: 'musket' }, hp: 80, dmg: 21, spd: 60, ai: 'ranged', proj: 'bullet', cd: 2.3, xp: 38, armor: 12, gold: [8, 25] },
   war_elite: { name: 'Elite Real', look: { k: 'hum', body: '#d0d8e0' }, hp: 250, dmg: 20, spd: 66, ai: 'melee', xp: 85, armor: 46, gold: [30, 80] }
 });
 
@@ -122,6 +124,16 @@ const War = {
     const race = K.race, sex = rng.chance(race === 'anao' || race === 'orc' ? 0.12 : 0.3) ? 'f' : 'm';
     const L = npcLook(race, sex, rng, 'guard'); delete L.robe; delete L.hood;
     const metal = shade(S.metal, [-0.12, 0, 0.12, 0.22][r]);
+    if (S.musket) {
+      // exércitos da era industrial: casacas, cintos cruzados, tricórnios, barretinas e gorros de pele
+      L.body = r === 0 ? '#6a5040' : r === 2 ? metal : K.color; L.sleeve = r === 2 ? K.color : undefined;
+      L.legs = r === 0 ? '#4a3a2a' : '#e8e4dc'; L.boots = '#141418'; L.crossbelt = r !== 2; L.chestplate = r === 2;
+      L.helm = r === 2 ? metal : '#1a1a22'; L.helmStyle = r === 0 ? 'tricorne' : r === 3 ? 'bearskin' : 'shako';
+      if (r >= 1) L.plume = r === 3 ? '#e02020' : shade(K.color, 0.3);
+      if (r === 3) L.pauldron = '#e0c040';
+      L.weapon = kind === 'cavaleiro' ? 'sword' : kind === 'milicia' ? rng.pick(['spear', 'musket']) : 'musket'; L.wc = '#4a4a52';
+      return L;
+    }
     if (r === 0) {
       L.body = S.fur ? '#6a5040' : S.cloth ? '#d8c8a0' : '#7a5a3a'; L.legs = '#4a3a2a'; L.tabard = K.color;
       if (S.helm1 === 'turban') { L.helm = '#e8e0d0'; L.helmStyle = 'turban'; } else if (rng.chance(0.5)) L.hood = shade(K.color, -0.35);
@@ -143,6 +155,7 @@ const War = {
     const x = rng.next();
     if (x < 0.03 + Math.min(0.05, n / 2000)) return 'elite';
     if (x < 0.14) return 'cavaleiro';
+    if (S.musket) return x < 0.62 ? 'mosqueteiro' : x < 0.8 ? 'soldado' : 'milicia';
     if (x < 0.14 + a) return 'arqueiro';
     if (x < 0.62) return 'soldado';
     return 'milicia';
@@ -528,7 +541,8 @@ const War = {
   loot(c) {
     const P = Game.player, r = WAR_KIND_RANK[c.kind] || 0, rng = new RNG(c.seed + 5);
     c.looted = true;
-    const slots = r >= 1 && c.kind !== 'arqueiro' ? ['body', 'body', 'head', 'head', 'shield'] : ['body', 'head'];
+    const slots = r >= 1 && c.kind !== 'arqueiro' && !KSTYLE[c.k].musket ? ['body', 'body', 'head', 'head', 'shield'] : ['body', 'head'];
+    if (KSTYLE[c.k].musket) { P.addItem(Items.make('bala_arcana', rng.int(3, 9))); if (c.kind === 'mosqueteiro' && rng.chance(0.1)) { P.addItem(Items.make('mosquete_arcano')); Game.toast('Você pegou um Mosquete Arcano!', '#80c0ff'); } }
     const id = `war_${c.k}_${r}_${rng.pick(slots)}_d`;
     if (ITEMS[id]) { P.addItem(Items.make(id)); Game.toast(`Você pegou: ${ITEMS[id].name}`, '#e0d0b0'); }
     if (rng.chance(0.5)) { const g = rng.int(3, 12 + r * 10); P.gold += g; Game.toast(`+${g} ouro`, '#ffd040'); }
@@ -579,15 +593,18 @@ const War = {
       const S = KSTYLE[R.id]; if (!S || !R.ruler) continue;
       for (let r = 0; r < 4; r++) {
         const rk = WAR_RANKS[r], metal = shade(S.metal, [-0.12, 0, 0.12, 0.22][r]);
-        const bodyLook = { tabard: R.color }; if (r >= 2) bodyLook.cape = R.color; if (r === 3) { bodyLook.pauldron = '#e0b040'; bodyLook.tabardSign = '#ffffff'; }
-        const headLook = { helmStyle: r === 0 ? (S.helm1 === 'turban' ? 'turban' : undefined) : r >= 2 ? S.helm2 : S.helm1 }; if (S.horns && r > 0) headLook.helmHorns = true; if (r === 2) headLook.plume = R.color; if (r === 3) headLook.crest = '#f0c040'; else if (S.crest && r > 0) headLook.crest = shade(R.color, 0.2);
-        const bodyC = r === 0 ? (S.fur ? '#6a5040' : S.cloth ? '#d8c8a0' : '#7a5a3a') : metal;
-        const headC = r === 0 ? (S.helm1 === 'turban' ? '#e8e0d0' : shade(R.color, -0.35)) : metal;
+        const MK = !!S.musket;
+        const bodyLook = MK ? { crossbelt: r !== 2, sleeve: r === 2 ? R.color : undefined } : { tabard: R.color };
+        if (MK && r === 3) bodyLook.pauldron = '#e0c040'; if (r >= 2) bodyLook.cape = R.color; if (r === 3) { bodyLook.pauldron = '#e0b040'; bodyLook.tabardSign = '#ffffff'; }
+        const headLook = MK ? { helmStyle: ['tricorne', 'shako', 'shako', 'bearskin'][r], plume: r >= 1 ? (r === 3 ? '#e02020' : shade(R.color, 0.3)) : undefined } : { helmStyle: r === 0 ? (S.helm1 === 'turban' ? 'turban' : undefined) : r >= 2 ? S.helm2 : S.helm1 };
+        if (!MK) { if (S.horns && r > 0) headLook.helmHorns = true; if (r === 2) headLook.plume = R.color; if (r === 3) headLook.crest = '#f0c040'; else if (S.crest && r > 0) headLook.crest = shade(R.color, 0.2); }
+        const bodyC = MK ? (r === 0 ? '#6a5040' : r === 2 ? metal : R.color) : r === 0 ? (S.fur ? '#6a5040' : S.cloth ? '#d8c8a0' : '#7a5a3a') : metal;
+        const headC = MK ? (r === 2 ? metal : '#1a1a22') : r === 0 ? (S.helm1 === 'turban' ? '#e8e0d0' : shade(R.color, -0.35)) : metal;
         const base = [
-          ['body', 'Armadura', [10, 24, 42, 64][r], bodyC, bodyLook, r === 0 ? 'couro' : 'ferro'],
-          ['head', 'Elmo', [3, 8, 15, 23][r], headC, headLook, r === 0 && S.helm1 !== 'turban' ? 'couro' : 'ferro']
+          ['body', MK ? (r === 2 ? 'Couraça' : 'Casaca') : 'Armadura', [10, 24, 42, 64][r], bodyC, bodyLook, MK ? (r === 2 ? 'ferro' : 'couro') : r === 0 ? 'couro' : 'ferro'],
+          ['head', MK ? ['Tricórnio', 'Barretina', 'Barretina', 'Gorro de Pele'][r] : 'Elmo', [3, 8, 15, 23][r], headC, headLook, MK || r > 0 || S.helm1 === 'turban' ? 'ferro' : 'couro']
         ];
-        if (r >= 1) base.push(['shield', 'Escudo', [0, 12, 20, 30][r], R.color, null, 'ferro']);
+        if (r >= 1 && !MK) base.push(['shield', 'Escudo', [0, 12, 20, 30][r], R.color, null, 'ferro']);
         for (const [slot, nm, ar, col, wl, mat] of base) {
           const def = { type: 'armor', slot: slot === 'shield' ? 'offhand' : slot, akind: slot, mat, armor: ar, icon: { k: slot, c: col }, lvl: rk.lvl, wlook: wl, kingdom: R.id, tier: r + 1 };
           const name = r === 0 && slot === 'head' && mat === 'couro' ? 'Capuz' : nm;
@@ -599,8 +616,9 @@ const War = {
   },
   giveGear(k, r) {
     const P = Game.player, S = KSTYLE[k];
-    const ids = [`war_${k}_${r}_body`, `war_${k}_${r}_head`]; if (r >= 1) ids.push(`war_${k}_${r}_shield`);
-    const wid = `${S.wItem}_${['ferro', 'aco', S.mat2 || 'aco', 'vidro'][r]}`; if (ITEMS[wid]) ids.push(wid);
+    const ids = [`war_${k}_${r}_body`, `war_${k}_${r}_head`]; if (r >= 1 && !S.musket) ids.push(`war_${k}_${r}_shield`);
+    const wid = S.musket ? ['sword_ferro', 'mosquete_arcano', 'bacamarte_arcano', 'mosquete_imperial'][r] : `${S.wItem}_${['ferro', 'aco', S.mat2 || 'aco', 'vidro'][r]}`; if (ITEMS[wid]) ids.push(wid);
+    if (S.musket) P.addItem(Items.make('bala_arcana', 40 + r * 20), true);
     for (const id of ids) { const it = Items.make(id); P.addItem(it, true); P.equipItem(P.findItem(it.u), true); }
     P.recalc(); P.buildLook();
     if (r === 2 && !P.mount) { P.mount = 'cavalo_guerra'; P.hasHorse = true; P.horse = { x: P.x + 20, y: P.y, dir: 'right' }; Game.toast('Você recebeu um Cavalo de Guerra!', '#ffd080'); }

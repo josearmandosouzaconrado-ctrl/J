@@ -253,7 +253,7 @@ const Combat = {
     Game.projectiles.push(p);
     return p;
   },
-  projElem(kind) { return { fireball: 'fire', frost: 'frost', dark: 'dark', poison: 'poison', bolt: 'magic', rock: 'phys', arrow: 'phys', breath: 'fire', shock: 'shock' }[kind] || 'phys'; }
+  projElem(kind) { return { bullet: 'fire', fireball: 'fire', frost: 'frost', dark: 'dark', poison: 'poison', bolt: 'magic', rock: 'phys', arrow: 'phys', breath: 'fire', shock: 'shock' }[kind] || 'phys'; }
 };
 
 // ---------- Monstros (e aliados) ----------
@@ -338,9 +338,10 @@ class Monster extends Actor {
       const n = this.boss ? 3 : 1;
       for (let i = 0; i < n; i++) {
         const a = ang + (i - (n - 1) / 2) * 0.22 + (Math.random() - 0.5) * 0.08;
-        Combat.projectile(this, this.x, this.y - 8 * this.sizeScale - this.z, a, kind, this.dmg * (kind === 'arrow' ? 0.9 : 1), { elem: Combat.projElem(kind), spd: kind === 'arrow' ? 220 : 150, poison: kind === 'poison' ? 4 + this.lvl * 0.4 : 0, slow: kind === 'frost' ? 0.35 : 0 });
+        Combat.projectile(this, this.x, this.y - 8 * this.sizeScale - this.z, a, kind, this.dmg * (kind === 'arrow' ? 0.9 : 1), { elem: Combat.projElem(kind), spd: kind === 'arrow' ? 220 : kind === 'bullet' ? 430 : 150, poison: kind === 'poison' ? 4 + this.lvl * 0.4 : 0, slow: kind === 'frost' ? 0.35 : 0, magic: kind === 'bullet', color: '#80c0ff', r: kind === 'bullet' ? 2 : undefined });
       }
-      Sfx.play(kind === 'arrow' ? 'bow' : 'spell');
+      if (kind === 'bullet') Game.musketFx(this.x + Math.cos(ang) * 12, this.y - 9 + Math.sin(ang) * 8, ang, '#80c0ff');
+      else Sfx.play(kind === 'arrow' ? 'bow' : 'spell');
     }
   }
   special() {

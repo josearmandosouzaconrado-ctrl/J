@@ -10,14 +10,14 @@ const OBJ_VARIANTS = { [O.COUNTER]: 2, [O.BEDSMALL]: 2, [O.PAINTING]: 4, [O.OAK]
 const TREE_OBJS = new Set([O.OAK, O.PINE, O.SNOWPINE, O.PALM, O.DEADTREE, O.WILLOW, O.AUTUMN]);
 const QUARRY_OBJS = new Set([O.BOULDER, O.ICEROCK, O.SANDROCK]);
 const OBJ_ANIM = new Uint8Array(256);
-[O.CAMPFIRE, O.TORCH, O.RUNESTONE, O.FOUNTAIN, O.PORTAL, O.ALTAR, O.SHRINE, O.FORGE, O.FIREPLACE, O.CANDLE, O.CAULDRON, O.DESTINY, O.DESTINY2, O.DESTINY3, O.STOVE, O.OVEN, O.CLOCK].forEach(o => OBJ_ANIM[o] = 1);
+[O.CAMPFIRE, O.TORCH, O.RUNESTONE, O.FOUNTAIN, O.PORTAL, O.ALTAR, O.SHRINE, O.FORGE, O.FIREPLACE, O.CANDLE, O.CAULDRON, O.DESTINY, O.DESTINY2, O.DESTINY3, O.STOVE, O.OVEN, O.CLOCK, O.MACHINE, O.BOILER, O.GASLAMP].forEach(o => OBJ_ANIM[o] = 1);
 
 const ORE_BY_REGION = {
   valdoria: [O.ORE_FERRO, O.ORE_FERRO, O.ORE_PRATA], colinas: [O.ORE_FERRO, O.ORE_PRATA], sylvaris: [O.ORE_PRATA, O.ORE_FERRO],
   khazdurim: [O.ORE_FERRO, O.ORE_OURO, O.ORE_PRATA, O.ORE_OURO], nordheim: [O.ORE_MALAQUITA, O.ORE_FERRO, O.ORE_MALAQUITA],
   gorthak: [O.ORE_OBSIDIANA, O.ORE_FERRO, O.ORE_OBSIDIANA], zahrim: [O.ORE_OURO, O.ORE_FERRO], ssarak: [O.ORE_FERRO, O.ORE_PRATA],
   morvath: [O.ORE_EBANO, O.ORE_OBSIDIANA, O.ORE_EBANO],
-  talassa: [O.ORE_PRATA, O.ORE_FERRO, O.ORE_PRATA], azhkar: [O.ORE_OBSIDIANA, O.ORE_EBANO, O.ORE_OURO], shirokai: [O.ORE_FERRO, O.ORE_MALAQUITA, O.ORE_PRATA], kharzul: [O.ORE_FERRO, O.ORE_OURO, O.ORE_EBANO, O.ORE_OURO], orkhai: [O.ORE_OBSIDIANA, O.ORE_FERRO], serpentis: [O.ORE_FERRO, O.ORE_PRATA, O.ORE_MALAQUITA],
+  talassa: [O.ORE_PRATA, O.ORE_FERRO, O.ORE_PRATA], azhkar: [O.ORE_OBSIDIANA, O.ORE_EBANO, O.ORE_OURO], shirokai: [O.ORE_FERRO, O.ORE_MALAQUITA, O.ORE_PRATA], ferrania: [O.ORE_FERRO, O.ORE_FERRO, O.ORE_PRATA], kharzul: [O.ORE_FERRO, O.ORE_OURO, O.ORE_EBANO, O.ORE_OURO], orkhai: [O.ORE_OBSIDIANA, O.ORE_FERRO], serpentis: [O.ORE_FERRO, O.ORE_PRATA, O.ORE_MALAQUITA],
   aurelion: [O.ORE_FERRO, O.ORE_PRATA, O.ORE_OURO], gromhald: [O.ORE_MALAQUITA, O.ORE_EBANO, O.ORE_FERRO], lunethar: [O.ORE_PRATA, O.ORE_MALAQUITA], rodafina: [O.ORE_FERRO, O.ORE_FERRO, O.ORE_OURO], kumari: [O.ORE_OURO, O.ORE_FERRO, O.ORE_OBSIDIANA], umbraval: [O.ORE_EBANO, O.ORE_OBSIDIANA, O.ORE_EBANO]
 };
 
@@ -884,6 +884,7 @@ class World {
       if (reg.hostile) { req.push('temple', 'heroes', 'inn', 'smith', 'alchemist', 'general', 'magic'); }
       else { req.push('heroes', 'inn', 'smith', 'general', 'alchemist'); if (rng.chance(0.6)) req.push('magic'); if (rng.chance(0.5)) req.push('temple'); }
     } else { req.push('inn', 'general'); if (rng.chance(0.4)) req.push('smith'); }
+    if (cul.industrial && s.type !== 'village') { req.unshift('factory'); req.push('gunsmith'); if (s.type === 'capital') req.unshift('factory'); }
     const houses = s.type === 'capital' ? 16 : s.type === 'town' ? 9 : 5;
     for (let i = 0; i < houses; i++) req.push(rng.pick(['house', 'house', 'house2', 'house3']));
     for (const r of req) {
@@ -967,7 +968,7 @@ class World {
     for (let y = by; y < by + B.h; y++) for (let x = bx; x < bx + B.w; x++) { objs[y * size + x] = O.BLOCK; occ[y * size + x] = 1; }
     for (let y = by - 1; y <= by + B.h; y++) for (let x = bx - 1; x <= bx + B.w; x++) if (x >= 0 && y >= 0 && x < size && y < size && !occ[y * size + x]) occ[y * size + x] = 4;
     const reg = s.region;
-    const styleMap = { human: 'timber', halfling: 'round', elf: 'elven', dwarf: 'stone', nordic: 'log', orc: 'hide', desert: 'adobe', swamp: 'stilt', fort: 'stone', tide: 'adobe', infernal: 'stone', jade: 'elven', imperial: 'stone', giant: 'log', gnome: 'round' };
+    const styleMap = { industrial: 'brick', human: 'timber', halfling: 'round', elf: 'elven', dwarf: 'stone', nordic: 'log', orc: 'hide', desert: 'adobe', swamp: 'stilt', fort: 'stone', tide: 'adobe', infernal: 'stone', jade: 'elven', imperial: 'brick', giant: 'log', gnome: 'round' };
     let style = styleMap[reg.culture];
     let type = bt;
     if (bt === 'castle' || bt === 'palace') { if (style === 'hide') style = 'log'; if (style === 'round' || style === 'stilt') style = 'timber'; if (reg.culture === 'human') style = 'castle'; }
@@ -976,9 +977,9 @@ class World {
     if (bt === 'magic' && reg.culture === 'elf') type = 'tower';
     if (bt === 'tower') type = 'tower';
     const roof = bt === 'tower' && decorative ? shade(cul.wallC, -0.3) : rng.pick(cul.roof);
-    const signs = { inn: 'inn', smith: 'smith', general: 'general', alchemist: 'alchemist', magic: 'magic', heroes: 'guild', guildhall: 'guild', temple: 'temple', stable: 'stable', playerhouse: 'house' };
+    const signs = { gunsmith: 'smith', inn: 'inn', smith: 'smith', general: 'general', alchemist: 'alchemist', magic: 'magic', heroes: 'guild', guildhall: 'guild', temple: 'temple', stable: 'stable', playerhouse: 'house' };
     const banner = gid ? GUILDS[gid].color : bt === 'heroes' ? '#e0b040' : reg.color;
-    const spec = { type, w: B.w, h: B.h, style, roof: bt === 'magic' ? '#5a3a8a' : bt === 'temple' ? '#c0a050' : roof, wall: decorative ? shade(cul.wallC, -0.1) : cul.wallC, sign: signs[bt] || null, seed: rng.int(1, 99999), snow: !!cul.snowroof, chimney: rng.chance(0.4) && (style === 'timber' || style === 'log' || style === 'stone'), banner, domeC: rng.pick(['#4a80c0', '#e8e0d0', '#40a080']), dome: bt === 'house3' ? false : undefined };
+    const spec = { type, w: B.w, h: B.h, style, roof: bt === 'magic' ? '#5a3a8a' : bt === 'temple' ? '#c0a050' : roof, wall: decorative ? shade(cul.wallC, -0.1) : cul.wallC, sign: signs[bt] || null, seed: rng.int(1, 99999), snow: !!cul.snowroof, chimney: style === 'brick' ? rng.chance(0.85) : rng.chance(0.4) && (style === 'timber' || style === 'log' || style === 'stone'), banner, domeC: rng.pick(['#4a80c0', '#e8e0d0', '#40a080']), dome: bt === 'house3' ? false : undefined };
     const ownerRace = cul.race;
     const ownerSex = rng.chance(0.5) ? 'm' : 'f';
     const nm = NAMES[ownerRace];
@@ -987,6 +988,8 @@ class World {
     if (bt === 'inn') name = 'Taverna ' + rng.pick(SHOP_NAMES.inn);
     else if (SHOP_NAMES[bt]) name = rng.pick(SHOP_NAMES[bt]) + ' ' + owner.name.split(' ')[0];
     else if (bt === 'guildhall') name = GUILDS[gid].name;
+    else if (bt === 'gunsmith') name = 'Armaria Arcana de ' + owner.name.split(' ')[0];
+    else if (bt === 'factory') name = 'Fábrica ' + rng.pick(['a Vapor', 'de Engrenagens', 'de Cartuchos Arcanos', 'de Caldeiras', 'Real de Ferro']);
     else if (bt === 'house' || bt === 'house2' || bt === 'house3') name = 'Casa de ' + owner.name.split(' ')[0];
     else if (bt === 'castle' || bt === 'palace') name = (reg.ruler ? (reg.ruler.title === 'Rei' || reg.ruler.title === 'Rainha' ? 'Castelo' : 'Salão') + ' de ' + s.name : 'Fortaleza ' + s.name);
     if (bt === 'castle' || bt === 'palace') { if (reg.ruler) Object.assign(owner, { name: reg.ruler.title + ' ' + reg.ruler.name, race: reg.ruler.race, ruler: true }); else owner.name = 'Comandante Helena Aurora'; }

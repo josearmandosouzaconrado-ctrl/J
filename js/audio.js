@@ -56,6 +56,7 @@ const Sfx = {
       case 'crit': this.noise(0.12, 0.35, 1400, 1); this.tone(220, 0.12, 'square', 0.15, -120); this.tone(660, 0.08, 'triangle', 0.1, 0, 0.02); break;
       case 'hurt': this.tone(200, 0.18, 'sawtooth', 0.15, -120); this.noise(0.1, 0.2, 500, 1); break;
       case 'block': this.tone(900, 0.12, 'square', 0.12, -300); this.noise(0.06, 0.2, 3000, 2); break;
+      case 'shot': this.noise(0.25, 0.4, 1800, 0.6, 0, 'lowpass', -1200); this.tone(90, 0.2, 'sine', 0.25, -40); this.tone(1400, 0.08, 'square', 0.05, -900); break;
       case 'bow': this.tone(500, 0.12, 'triangle', 0.15, -300); this.noise(0.1, 0.12, 3000, 1); break;
       case 'spell': this.tone(400, 0.25, 'sine', 0.12, 500); this.tone(600, 0.2, 'triangle', 0.06, 700, 0.03); break;
       case 'zap': this.noise(0.15, 0.2, 4000, 3, 0, 'highpass'); this.tone(1200, 0.1, 'square', 0.06, -800); break;
