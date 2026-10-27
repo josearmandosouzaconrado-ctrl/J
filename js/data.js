@@ -227,8 +227,19 @@ const REGIONS = [
     desc: 'Pântanos nebulosos dos draconatos. Ruínas afundadas e criaturas antigas.' },
   { id: 'morvath', name: 'Terras Sombrias de Morvath', short: 'Morvath', race: null, fx: 0.83, fy: 0.15, biome: 'dead', lvl: [18, 30], mount: 0.04, culture: 'fort',
     ruler: null, towns: 1, villages: 0, dungeons: 14, color: '#8060a0', hostile: true,
-    desc: 'Terra amaldiçoada do Lich Morvath. Os mortos não descansam aqui.' }
+    desc: 'Terra amaldiçoada do Lich Morvath. Os mortos não descansam aqui.' },
+  // ----- Continente de Além-Mar: Kaeloria -----
+  { id: 'talassa', name: 'Reino de Talassa', short: 'Talassa', race: 'tritao', fx: 1.19, fy: 0.27, biome: 'plains', lvl: [10, 18], mount: -0.04, culture: 'tide', cont: 1,
+    ruler: { title: 'Rainha', name: 'Nerissa das Ondas', race: 'tritao' }, towns: 3, villages: 4, dungeons: 8, color: '#40a8d0',
+    desc: 'Reino litorâneo dos tritões, de cidades brancas e cúpulas azuis à beira-mar.' },
+  { id: 'azhkar', name: 'Império de Azhkar', short: 'Azhkar', race: 'tiefling', fx: 1.34, fy: 0.56, biome: 'volcanic', lvl: [16, 26], mount: 0.02, culture: 'infernal', cont: 1,
+    ruler: { title: 'Imperador', name: 'Malakar IV', race: 'tiefling' }, towns: 2, villages: 3, dungeons: 8, color: '#b02040',
+    desc: 'Império dos tieflings, nascido de pactos antigos. Fortalezas negras entre rios de lava.' },
+  { id: 'shirokai', name: 'Reino de Shirokai', short: 'Shirokai', race: 'kitsune', fx: 1.18, fy: 0.78, biome: 'forest', lvl: [12, 20], mount: 0.01, culture: 'jade', cont: 1,
+    ruler: { title: 'Imperatriz', name: 'Hana Nove-Caudas', race: 'kitsune' }, towns: 3, villages: 4, dungeons: 8, color: '#e06890',
+    desc: 'Terra das kitsunes: templos, lanternas, cerejeiras e espadachins errantes.' }
 ];
+const CONTINENTS = ['Eldoria', 'Kaeloria'];
 const REGION_BY_ID = {}; REGIONS.forEach((r, i) => { r.index = i; REGION_BY_ID[r.id] = r; });
 const VOLCANO = { fx: 0.91, fy: 0.29 };
 
@@ -257,7 +268,16 @@ const RACES = {
     mods: { speed: 0.12, st: 20 }, catears: true, tail: true, muzzle: true, nightvision: true },
   nordico: { name: 'Nórdico', desc: 'Filhos do gelo. +30 Vida, resistem ao frio (50%).', ability: 'sangue_gelo',
     skins: ['#f8dcc8', '#f0c8a8', '#e0b090'], hairs: ['#f0e0a0', '#d8c080', '#c06030', '#8a5a2a'],
-    mods: { hp: 30, st: 10 }, res: { frost: 0.5 }, beard: true, tall: 1 }
+    mods: { hp: 30, st: 10 }, res: { frost: 0.5 }, beard: true, tall: 1 },
+  tritao: { name: 'Tritão', desc: 'Povo do mar de Talassa. +20 Magia, +10 Vida e resistem ao frio (30%).', ability: 'mare',
+    skins: ['#6ab0c0', '#4a90a8', '#7ac8b8', '#5a80a0'], hairs: ['#1a4a6a', '#e0f0f0', '#2a6a5a', '#8ad0e0'],
+    mods: { mp: 20, hp: 10 }, res: { frost: 0.3 }, ears: 'elf', eyes: '#103050' },
+  tiefling: { name: 'Tiefling', desc: 'Herdeiros de pactos infernais. +12% dano mágico e resistem ao fogo (40%).', ability: 'chama_infernal',
+    skins: ['#b03a3a', '#8a2a4a', '#6a3a7a', '#c05a4a'], hairs: ['#1a1a1a', '#3a1a2a', '#e0e0e0', '#5a1a1a'],
+    mods: { magic: 0.12, mp: 15 }, res: { fire: 0.4 }, horns: true, tail: true, eyes: '#ffc020' },
+  kitsune: { name: 'Kitsune', desc: 'Raposas encantadas de Shirokai. +10% crítico, +8% velocidade e ilusões.', ability: 'ilusao',
+    skins: ['#f1d0b0', '#e0b890', '#f8e0c8'], hairs: ['#d86a2a', '#f0f0f0', '#e8a040', '#3a2a2a'],
+    mods: { crit: 0.1, speed: 0.08 }, catears: true, tail: true, tailHair: true }
 };
 const RACE_ABILITIES = {
   coragem: { name: 'Coragem Humana', desc: '+30% dano e -30% dano recebido por 30s.', cd: 120 },
@@ -267,7 +287,10 @@ const RACE_ABILITIES = {
   sorte: { name: 'Sorte do Pequenino', desc: '+40% chance de crítico por 30s.', cd: 120 },
   sopro: { name: 'Sopro Dracônico', desc: 'Cospe fogo em cone causando grande dano.', cd: 60 },
   garras: { name: 'Garras Felinas', desc: '+40% velocidade e +25% dano por 20s.', cd: 120 },
-  sangue_gelo: { name: 'Sangue de Gelo', desc: 'Cura 50% da vida e resiste a dano por 15s.', cd: 120 }
+  sangue_gelo: { name: 'Sangue de Gelo', desc: 'Cura 50% da vida e resiste a dano por 15s.', cd: 120 },
+  mare: { name: 'Fôlego das Marés', desc: 'Cura 35% da vida, remove venenos e dá +30% velocidade por 15s.', cd: 100 },
+  chama_infernal: { name: 'Chama Infernal', desc: 'Explosão de fogo ao seu redor que queima os inimigos.', cd: 60 },
+  ilusao: { name: 'Ilusão da Raposa', desc: 'Fica invisível para os inimigos por 8s e +30% dano crítico.', cd: 90 }
 };
 
 // ---------- Classes ----------
@@ -502,7 +525,9 @@ const MATS = [
   ['esmeralda', 'Esmeralda', 130, { k: 'gem', c: '#20c060' }],
   ['ametista', 'Ametista', 90, { k: 'gem', c: '#a040e0' }],
   ['diamante', 'Diamante', 300, { k: 'gem', c: '#e0f8ff' }],
-  ['alma_dragao', 'Alma de Dragão', 0, { k: 'soul', c: '#ffb040' }]
+  ['alma_dragao', 'Alma de Dragão', 0, { k: 'soul', c: '#ffb040' }],
+  ['perola', 'Pérola de Talassa', 90, { k: 'gem', c: '#f0f0f8' }],
+  ['sal_fogo', 'Sal de Enxofre', 20, { k: 'goo', c: '#e0c030' }]
 ];
 for (const [id, name, value, icon] of MATS) idef(id, { name, type: 'material', value, stack: true, icon });
 ITEMS.alma_dragao.type = 'misc';
@@ -664,10 +689,20 @@ const ENEMIES = {
   gato_selvagem: { name: 'Gato Selvagem', look: { k: 'wolf', c: '#d0a050' }, hp: 90, dmg: 12, spd: 90, ai: 'melee', xp: 0, ally: true },
   lobo_domado: { name: 'Lobo Domado', look: { k: 'wolf', c: '#5a5a62' }, hp: 150, dmg: 14, spd: 84, ai: 'melee', xp: 0, ally: true },
   mercenario: { name: 'Mercenário', look: { k: 'hum', skin: '#d8a070', body: '#5a6a8a', legs: '#3a3a4a', hair: '#3a2a1a', helm: '#9aa0a8', weapon: 'sword', wc: '#c0c0c0', shield: true }, hp: 160, dmg: 14, spd: 68, ai: 'melee', xp: 0, ally: true },
+  pirata: { name: 'Pirata', look: { k: 'hum', skin: '#d8a070', body: '#8a2a2a', legs: '#3a3a4a', hair: '#2a1a10', hood: '#2a2a3a', weapon: 'sword', wc: '#c0c0c0' }, hp: 55, dmg: 11, spd: 62, ai: 'melee', xp: 26, gold: [10, 45], drops: [['pocao_vida_p', 0.2], ['perola', 0.08]], dropGear: 0.14 },
+  pirata_arqueiro: { name: 'Pirata Arqueiro', look: { k: 'hum', skin: '#c68642', body: '#2a4a7a', legs: '#3a3a3a', hair: '#1a1a1a', weapon: 'bow', wc: '#6a4a2a' }, hp: 40, dmg: 10, spd: 60, ai: 'ranged', proj: 'arrow', xp: 24, gold: [8, 30], drops: [['flecha', 0.4]] },
+  diabrete: { name: 'Diabrete', look: { k: 'hum', skin: '#c03030', body: '#5a1a1a', legs: '#3a0a0a', short: 3, horns: true, tail: true, tailC: '#c03030', eyes: '#ffd040', nobelt: true, hairStyle: 2, weapon: 'staff', wc: '#3a1a1a' }, hp: 36, dmg: 10, spd: 74, ai: 'caster', proj: 'fireball', xp: 28, gold: [5, 25], drops: [['sal_fogo', 0.2]] },
+  cultista_infernal: { name: 'Cultista Infernal', look: { k: 'hum', skin: '#b03a3a', body: '#5a1020', legs: '#1a1a1a', hood: '#3a0a14', horns: true, robe: true, weapon: 'staff', wc: '#2a0a0a' }, hp: 50, dmg: 14, spd: 56, ai: 'caster', proj: 'fireball', xp: 34, gold: [15, 50], drops: [['pocao_magia_p', 0.3], ['rubi', 0.06]] },
+  ronin: { name: 'Ronin', look: { k: 'hum', skin: '#f1d0b0', body: '#3a3a5a', legs: '#2a2a3a', hair: '#1a1a1a', helm: '#5a4a3a', helmStyle: 'kettle', weapon: 'sword', wc: '#e0e0f0' }, hp: 85, dmg: 15, spd: 66, ai: 'melee', xp: 36, gold: [15, 50], dropGear: 0.18 },
+  ninja: { name: 'Ninja', look: { k: 'hum', skin: '#f1d0b0', body: '#1a1a22', legs: '#1a1a22', hood: '#1a1a22', weapon: 'dagger', wc: '#c0c0d0' }, hp: 48, dmg: 13, spd: 88, ai: 'melee', xp: 32, gold: [10, 40], drops: [['pocao_vida_p', 0.2]] },
+  oni: { name: 'Oni', look: { k: 'hum', skin: '#b03030', body: '#6a4a2a', legs: '#3a2a1a', hair: '#1a1a1a', bulky: true, horns: true, tusks: true, size: 1.5, eyes: '#ffe040', weapon: 'mace', wc: '#5a5a60' }, hp: 260, dmg: 26, spd: 54, ai: 'charge', charge: true, r: 8, xp: 130, gold: [40, 120], dropGear: 0.35 },
   guarda: { name: 'Guarda', look: { k: 'hum', skin: '#d8a070', body: '#9aa0a8', legs: '#3a3a4a', hair: '#3a2a1a', helm: '#9aa0a8', weapon: 'sword', wc: '#c0c0c0', shield: true }, hp: 300, dmg: 18, spd: 64, ai: 'melee', xp: 0, ally: true, guard: true }
 };
 
 const SPAWNS = {
+  talassa: { day: [['pirata', 3], ['pirata_arqueiro', 1.5], ['lobo', 2], ['javali', 2], ['cervo', 3], ['coelho', 2], ['slime', 1], ['lagarto', 1]], night: [['pirata', 2], ['esqueleto', 2], ['zumbi', 1], ['lobo', 2]] },
+  azhkar: { day: [['diabrete', 3], ['cultista_infernal', 2], ['salamandra', 2], ['slime_fogo', 2], ['escorpiao', 1], ['oni', 0.4]], night: [['diabrete', 3], ['esqueleto', 2], ['cultista_infernal', 2], ['elemental_fogo', 0.6], ['oni', 0.5]] },
+  shirokai: { day: [['ronin', 2], ['javali', 2], ['cervo', 3], ['coelho', 3], ['aranha', 1], ['lobo', 2], ['ninja', 1]], night: [['ninja', 2], ['espectro', 2], ['oni', 0.5], ['lobo', 2], ['ronin', 1]] },
   valdoria: { day: [['lobo', 3], ['javali', 2], ['bandido', 2], ['bandido_arqueiro', 1], ['goblin', 2], ['cervo', 3], ['coelho', 3], ['slime', 1], ['urso', 0.6]], night: [['esqueleto', 2], ['zumbi', 2], ['lobo', 3], ['bandido', 1]] },
   colinas: { day: [['coelho', 4], ['cervo', 3], ['goblin', 3], ['goblin_arqueiro', 1], ['javali', 2], ['lobo', 1], ['slime', 1]], night: [['goblin', 3], ['goblin_xama', 1], ['esqueleto', 1], ['lobo', 2]] },
   sylvaris: { day: [['lobo', 2], ['aranha', 3], ['cervo', 3], ['urso', 2], ['slime', 1], ['bandido_mago', 0.6], ['coelho', 2]], night: [['aranha', 3], ['espectro', 2], ['lobo', 2]] },
@@ -696,6 +731,9 @@ const DUNGEON_TYPES = {
   arena: { name: 'Arena', gen: 'arena', floor: T.SAND, wall: T.WALL, ent: O.ENT_ARENA, mobs: ['orc_renegado', 'ogro'], boss: 'campeao_orc', deco: [O.TORCH, O.BANNER] }
 };
 const REGION_DUNGEONS = {
+  talassa: ['caverna', 'covil_bandido', 'ruina_afundada', 'cripta'],
+  azhkar: ['caverna_lava', 'caverna_lava', 'cripta_sombria', 'covil_bandido'],
+  shirokai: ['ruina_elfica', 'caverna', 'cripta', 'covil_bandido'],
   valdoria: ['caverna', 'covil_bandido', 'covil_goblin', 'cripta', 'cripta'],
   colinas: ['covil_goblin', 'covil_goblin', 'caverna', 'covil_bandido'],
   sylvaris: ['ruina_elfica', 'ruina_elfica', 'caverna', 'covil_bandido'],
@@ -756,6 +794,9 @@ const GUILDS = {
 
 // ---------- Nomes ----------
 const NAMES = {
+  tritao: { m: ['Nerion', 'Thalos', 'Coralim', 'Marek', 'Pelágio', 'Ondino', 'Tritonel', 'Abissal', 'Netuno', 'Doris'], f: ['Nerissa', 'Maris', 'Ondina', 'Pérola', 'Coralina', 'Thalassa', 'Sirene', 'Anfitrite', 'Brisa'], s: ['das Ondas', 'Maré-Alta', 'Escama-Azul', 'Concha-Branca', 'do Recife', 'Espuma-do-Mar'] },
+  tiefling: { m: ['Malakar', 'Zevrah', 'Kael', 'Morthis', 'Azazir', 'Belath', 'Vexor', 'Draven', 'Asmon'], f: ['Lilith', 'Nyxa', 'Seraxa', 'Velka', 'Morrigan', 'Zariel', 'Ishara', 'Kassia', 'Vesper'], s: ['Chama-Negra', 'do Abismo', 'Pacto-Rubro', 'Cinza-Eterna', 'Coração-de-Brasa', 'Sangue-Antigo'] },
+  kitsune: { m: ['Kenji', 'Haruto', 'Ren', 'Takeshi', 'Sora', 'Daichi', 'Akira', 'Hikaru', 'Ryo'], f: ['Hana', 'Yuki', 'Sakura', 'Aiko', 'Mei', 'Kaede', 'Rin', 'Tomoe', 'Akane'], s: ['Cauda-Dourada', 'Lua-Prateada', 'Folha-de-Bordo', 'Nove-Caudas', 'Vento-Leve', 'Flor-de-Cerejeira'] },
   humano: { m: ['Aldric', 'Edmund', 'Gareth', 'Roland', 'Tomás', 'Henrique', 'Bento', 'Duarte', 'Afonso', 'Rodrigo', 'Martim', 'Gonçalo', 'Vasco', 'Nuno', 'Lourenço', 'Ricardo', 'Fernão', 'Godofredo'],
     f: ['Isolda', 'Beatriz', 'Leonor', 'Mirela', 'Helena', 'Inês', 'Marta', 'Elena', 'Brites', 'Constança', 'Urraca', 'Teresa', 'Matilde', 'Joana', 'Catarina', 'Guiomar'],
     s: ['Corvo-Negro', 'Pedregal', 'Ferreira', 'Valente', 'do Vale', 'Montalvo', 'Torres', 'Lobo', 'Sarmento', 'Bravo', 'Castelo', 'Ribeiro'] },
@@ -775,6 +816,9 @@ const NAMES = {
     s: ['Machado-Gélido', 'Filho-do-Urso', 'Escudo-Partido', 'Lobo-Branco', 'Barba-de-Neve'] }
 };
 const SETTLEMENT_NAMES = {
+  talassa: { cap: 'Talassa', list: ['Porto Coral', 'Enseada Azul', 'Recife Branco', 'Baía das Pérolas', 'Farol do Norte', 'Vila Concha', 'Maré Baixa', 'Rochedo das Sereias', 'Areia Clara'] },
+  azhkar: { cap: 'Azhkar', list: ['Forja Rubra', 'Cinzaval', 'Torre do Pacto', 'Vale do Enxofre', 'Brasa Negra', 'Pedra Sangrenta', 'Fenda Ardente'] },
+  shirokai: { cap: 'Shirokai', list: ['Vila Sakura', 'Monte Kaze', 'Ponte da Lua', 'Templo do Bambu', 'Vale das Lanternas', 'Rio Jade', 'Aldeia Kitsune', 'Colina do Chá'] },
   valdoria: { cap: 'Valdoria', list: ['Pedravale', 'Rio Claro', 'Ponte Alta', 'Vila Trigal', 'Monte Sereno', 'Águas Frias', 'Campo Dourado', 'Bosque do Corvo', 'Porto Velho', 'Três Moinhos', 'Vau do Cervo', 'Pinhal'] },
   colinas: { cap: 'Valebolso', list: ['Pé-de-Feijão', 'Colina Verde', 'Ribeira Doce', 'Moinho Velho', 'Toca do Texugo', 'Campina', 'Vila Pudim', 'Sete Tortas', 'Morro Alegre'] },
   sylvaris: { cap: 'Sylvaris', list: ['Lothiel', 'Aelindor', 'Faelwen', 'Miriandel', 'Thalassë', 'Nimrais', 'Elenhir', 'Caras Luin'] },
@@ -788,6 +832,9 @@ const SETTLEMENT_NAMES = {
 
 // ---------- Estilos culturais (cidades) ----------
 const CULTURES = {
+  tide: { plaza: T.SANDSTONE, street: T.SANDSTONE, wall: T.WALL, walls: ['capital'], houseWall: 'adobe', roof: ['#f0f0f0', '#3a7ac0', '#e8e0d0'], wallC: '#f0ece0', race: 'tritao', domes: true, guard: true },
+  infernal: { plaza: T.DCOBBLE, street: T.DCOBBLE, wall: T.WALL, walls: ['capital', 'town'], houseWall: 'stone', roof: ['#3a1a1a', '#5a1a2a', '#2a2a2a'], wallC: '#5a4040', race: 'tiefling', guard: true },
+  jade: { plaza: T.COBBLE, street: T.COBBLE, wall: T.WALL, walls: ['capital', 'town'], houseWall: 'timber', roof: ['#c03030', '#2a6a4a', '#3a3a3a'], wallC: '#f0e8d8', race: 'kitsune', flowers: true, guard: true },
   human: { plaza: T.COBBLE, street: T.COBBLE, wall: T.WALL, walls: ['capital', 'town'], houseWall: 'timber', roof: ['#a03a2a', '#8a4a2a', '#6a3a2a', '#9a5a3a'], wallC: '#e8dcc0', race: 'humano', guard: true },
   halfling: { plaza: T.ROAD, street: T.ROAD, wall: null, walls: [], houseWall: 'round', roof: ['#5a8a3a', '#c09030', '#7a9a3a', '#a06a30'], wallC: '#f0e0b0', race: 'pequenino', flowers: true },
   elf: { plaza: T.ELFGRASS, street: T.RFLOOR, wall: null, walls: [], houseWall: 'elven', roof: ['#2a8a7a', '#3a7aa0', '#4a9a6a'], wallC: '#f0f0e8', race: 'elfo', glow: true },
@@ -878,6 +925,9 @@ const MAIN_QUEST = [
 
 // ---------- Falas ----------
 const RUMORS = {
+  talassa: ['Os navios de Eldoria chegam ao nosso porto toda semana.', 'Dizem que piratas escondem tesouros nas cavernas do litoral.', 'A Rainha Nerissa canta para acalmar as tempestades.', 'Azhkar cobiça nossos portos há séculos.', 'As pérolas de Talassa valem mais que ouro em Eldoria.'],
+  azhkar: ['O Imperador Malakar não perdoa traidores.', 'Os diabretes saem das fendas de lava à noite.', 'Um pacto antigo protege as muralhas da capital.', 'Os onis das montanhas são mais fortes que dez soldados.', 'Nossas lâminas são forjadas no fogo do abismo.'],
+  shirokai: ['As cerejeiras florescem o ano todo em Shirokai.', 'Ronins sem mestre vagam pelas estradas procurando duelos.', 'Ninjas foram vistos perto do Templo do Bambu.', 'A Imperatriz tem nove caudas... dizem que viveu mil anos.', 'Cuidado com os onis nas noites sem lua.'],
   valdoria: ['Dizem que um dragão foi visto sobre os campos de trigo!', 'A Ordem da Aurora recruta jovens corajosos na capital.', 'A Cripta dos Reis, a leste, está cheia de mortos-vivos.', 'O Rei Aldric é justo, mas os impostos estão pesados.', 'Bandidos atacam caravanas nas estradas à noite.'],
   colinas: ['A Fortaleza Goblin nas colinas é um perigo para todos!', 'Você já provou a torta de maçã da minha avó?', 'A Liga dos Caçadores paga bem por peles de lobo.', 'Pequeninos não precisam de muralhas. Precisamos de despensas cheias!'],
   sylvaris: ['A Academia Arcana aceita estudantes de todas as raças.', 'O Templo Lunar foi tomado por aranhas gigantes...', 'As árvores ancestrais brilham à noite. São as almas dos nossos antepassados.', 'Respeite a floresta e ela respeitará você.'],

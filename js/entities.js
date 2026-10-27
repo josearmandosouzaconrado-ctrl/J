@@ -564,8 +564,8 @@ function npcLook(race, sex, rng, role) {
   if (R.tall) L.tall = 1; if (R.short) L.short = R.short; if (R.bulky) L.bulky = true;
   if (R.beard && sex === 'm' && rng.chance(0.8)) L.beard = true;
   if (R.tusks) L.tusks = true; if (R.snout) L.snout = true; if (R.horns) L.horns = true;
-  if (R.tail) { L.tail = true; L.tailC = L.skin; }
-  if (R.catears) L.catears = true; if (R.muzzle) L.muzzle = true;
+  if (R.tail) { L.tail = true; L.tailC = R.tailHair ? L.hair : L.skin; }
+  if (R.catears) L.catears = true; if (R.muzzle) L.muzzle = true; if (R.eyes) L.eyes = R.eyes;
   const clothes = ['#7a4a2a', '#4a6a3a', '#3a4a7a', '#7a3a3a', '#6a5a3a', '#5a3a6a', '#8a7a5a', '#3a6a6a', '#9a8a6a', '#a05a30'];
   L.body = rng.pick(clothes);
   L.legs = rng.pick(['#3a3020', '#2a2a30', '#4a3a2a', '#3a3a3a']);

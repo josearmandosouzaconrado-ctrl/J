@@ -19,11 +19,12 @@ WASD/setas andar • Shift correr • J/Espaço atacar • K magia • Q trocar 
 
 ## O que tem no jogo
 
-- **Mundo procedural de 4096 × 4096 tiles (~65 km²)** — maior que o mapa de Skyrim — gerado a partir de uma semente (cada jogo pode ter um mundo diferente).
-- **9 reinos/regiões** com biomas e culturas próprias: Reino humano de Valdoria, Condado das Colinas (pequeninos), Floresta élfica de Sylvaris, Montanhas anãs de Khaz Durim, Terras Geladas de Nordheim, Ermos orcs de Gor'Thak, Deserto felino de Zahrim, Pântanos draconatos de Ssarak e as Terras Sombrias de Morvath.
+- **Mundo procedural de 6144 × 4096 tiles (~100 km²)** — muito maior que o mapa de Skyrim — com **dois continentes**: **Eldoria** e **Kaeloria**, separados pelo **Mar das Brumas**. Cada jogo pode ter um mundo diferente.
+- **Kaeloria, o continente de além-mar**: o Reino de Talassa (tritões, cidades brancas de cúpulas azuis), o Império de Azhkar (tieflings, fortalezas negras entre lava) e o Reino de Shirokai (kitsunes, templos e cerejeiras), com inimigos próprios (piratas, diabretes, cultistas infernais, ronins, ninjas e onis). Chegue lá de **navio**: fale com o capitão num porto.
+- **12 reinos/regiões** com biomas e culturas próprias: Reino humano de Valdoria, Condado das Colinas (pequeninos), Floresta élfica de Sylvaris, Montanhas anãs de Khaz Durim, Terras Geladas de Nordheim, Ermos orcs de Gor'Thak, Deserto felino de Zahrim, Pântanos draconatos de Ssarak e as Terras Sombrias de Morvath.
 - **65+ cidades, vilas e capitais** com muralhas, castelos, palácios, tavernas, ferrarias, armazéns, alquimistas, lojas de magia, templos, estábulos, casas à venda, guardas e moradores que andam pelas ruas.
 - **Estradas, pontes e placas** conectando todo o reino; viagem rápida para cidades descobertas.
-- **8 raças jogáveis** (Humano, Elfo, Anão, Orc, Pequenino, Draconato, Felino, Nórdico), cada uma com bônus e habilidade especial.
+- **11 raças jogáveis** (Humano, Elfo, Anão, Orc, Pequenino, Draconato, Felino, Nórdico, Tritão, Tiefling e Kitsune), cada uma com bônus e habilidade especial.
 - **Você nasce sem magia e com uma espada fraca.** Sem classe fixa: você começa como Aventureiro e seu estilo (Guerreiro, Mago, Arqueiro, Paladino, Druida, Ladino e mais de 20 outros) surge das habilidades que você mais usa, com bônus próprios. As **Pedras do Destino** perto de Valdoria dão bênçãos que aceleram seu caminho.
 - **Academia Real de Astralis** — a única e mais famosa academia de magia do mundo, um campus enorme entre Valdoria e Sylvaris (marcado em azul no mapa). Príncipes e princesas de todos os reinos e herdeiros das casas nobres estudam lá:
   - Matricule-se pagando ou passe no **exame de admissão** (acertar tudo dá a Bolsa de Honra no Dormitório Real).
@@ -33,7 +34,11 @@ WASD/setas andar • Shift correr • J/Espaço atacar • K magia • Q trocar 
   - 22 colegas com personalidade e agenda própria: faça amizades e romances. Amigos **batem na porta do seu dormitório** ou **te procuram pela escola** para curtir a cidade ou caçar monstros — mas não te seguem para outros territórios, porque não sabem para onde você foi.
   - **Graduação** com cena especial, Manto do Graduado e Florete Real.
   - Quem não estudar pode despertar a magia com um caro Ritual do Despertar nos templos.
-- **Interiores exploráveis em todos os 800 prédios**: casas com moradores, tavernas, ferrarias, lojas, templos, guildas, castelos com sala do trono.
+- **Interiores exploráveis em mais de 1000 prédios**: tavernas, ferrarias, lojas, templos, guildas e castelos com sala do trono. As **casas são procedurais**: cada uma tem tamanho, cômodos (quarto, cozinha, sala), riqueza e profissão do dono diferentes (caçador, pescador, padeiro, tecelã, estudioso, músico, ex-soldado...), com móveis de acordo. Pelas janelas entra a luz do dia, e em volta da casa aparece a paisagem lá fora.
+- **Guerra e diplomacia procedurais**: os reinos fazem acordos e casamentos reais, brigam na fronteira e declaram guerra. Exércitos marcham pelo mapa, lutam batalhas, cercam e **conquistam cidades** (que passam a ter os guardas e a bandeira do conquistador), recuam para **acampamentos esperando reforços** e voltam para retomar o que perderam. Na paz, cada lado fica com as cidades que conquistou.
+- **Soldados de cada reino com armaduras próprias** (elmos fechados, de aba, élficos, com espinhos, turbantes, chifres, plumas, cristas, tabardos e capas nas cores do reino), em cinco tipos: miliciano, soldado, arqueiro, cavaleiro e elite real.
+- **Aliste-se** no castelo de qualquer reino e suba de **Miliciano → Soldado → Cavaleiro → Elite Real** por mérito em batalha, com soldo, ordens na bússola, armadura do posto e cavalo de guerra.
+- Viajando, você pode **dar de cara com batalhas** acontecendo. Depois, o campo fica cheio de corpos: dá para **saquear armaduras danificadas** (com defesa menor), e lobos, ursos, goblins e outros carniceiros aparecem para comer os mortos. Veja tudo no menu **Reinos** e no mapa.
 - **Romance, casamento e filhos**: converse, dê presentes, flerte, namore e case (Amuleto da Aurora). Seu cônjuge mora com você, cozinha, dá presentes e pode lutar ao seu lado. Tenha filhos ou adote no orfanato do templo.
 - **Animais de estimação** (cachorro, gato selvagem, lobo domado) e **pesca**.
 - **9 guildas** — incluindo a **Guilda dos Heróis** com ranks F → S, Companhia do Aço, Academia Arcana, Irmandade das Sombras, Ordem da Aurora, Liga dos Caçadores, Círculo Druídico, Irmandade da Forja e Clã do Punho Sangrento — com missões geradas e recompensas por posto.
@@ -65,6 +70,9 @@ WASD/setas andar • Shift correr • J/Espaço atacar • K magia • Q trocar 
 | `js/quests.js`, `js/shops.js`, `js/items.js` | Missões, lojas, itens e saque |
 | `js/ui.js`, `js/input.js`, `js/audio.js` | Interface, controles de toque/teclado e áudio |
 | `js/game.js`, `js/game2.js` | Loop principal, renderização, iluminação, salvamento, montarias, empregos, construção, cena inicial |
+| `js/war.js` | Guerra, diplomacia, exércitos, batalhas, conquistas, alistamento e saque |
 | `js/academy.js` | Academia Real de Astralis: alunos, aulas, matrícula, visitas de amigos e cenas |
+
+O modo **Multiplayer** aparece no menu inicial como "em breve".
 
 Sem dependências externas além da fonte VT323 (opcional).

@@ -71,7 +71,7 @@ const War = {
     for (const k of this._kList) for (const o of k.nb) if (k.id < o) S.rel[this.key(k.id, o)] = (KBIAS[this.key(k.id, o)] || 0) + rng.int(-15, 15);
     Game.mods.war = S;
     // a guerra mais antiga do mundo já está acontecendo quando você acorda
-    const pairs = Object.entries(S.rel).filter(([p]) => !p.includes('valdoria') && !p.includes('colinas')).sort((a, b) => a[1] - b[1]);
+    const pairs = Object.entries(S.rel).filter(([p]) => !p.includes('valdoria') && !p.includes('colinas') && p.split('|').every(id => !this.K[id].cont)).sort((a, b) => a[1] - b[1]);
     if (pairs.length) { const [a, b] = pairs[0][0].split('|'); this.declare(a, b, true); }
     return S;
   },
@@ -151,6 +151,7 @@ const War = {
   daily() {
     const S = this.st(), rng = new RNG(Game.world.seed + Game.day * 977);
     const name = id => this.K[id].short;
+    for (const k of this._kList) for (const o of k.nb) if (k.id < o && S.rel[this.key(k.id, o)] === undefined) S.rel[this.key(k.id, o)] = KBIAS[this.key(k.id, o)] || 0;
     for (const [p, v] of Object.entries(S.rel)) {
       const [a, b] = p.split('|');
       if (this.atWar(a, b)) continue;

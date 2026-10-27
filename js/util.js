@@ -3,7 +3,9 @@
 const TILE = 16;
 const CHUNK = 32;
 const CHUNK_PX = TILE * CHUNK;
-const WORLD_TILES = 4096; // 4096 x 4096 tiles (~65 km² de mundo)
+const WORLD_TILES = 4096; // altura do mundo e largura do continente de Eldoria
+const WORLD_W = 6144;      // largura total: Eldoria + Mar das Brumas + Kaeloria
+const MAP_W = WORLD_W / 16; // largura do mapa-múndi / névoa (células de 16 tiles)
 
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;

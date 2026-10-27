@@ -61,7 +61,7 @@ const Game = {
 
   // ---------- Novo jogo / carregar ----------
   newMods() {
-    return { opened: new Set(), harvested: {}, cleared: {}, dopened: {}, camps: {}, runes: new Set(), shrines: {}, discovered: new Set(), explored: new Uint8Array(256 * 256), uniques: new Set(), treasures: [], homes: [], day: 1 };
+    return { opened: new Set(), harvested: {}, cleared: {}, dopened: {}, camps: {}, runes: new Set(), shrines: {}, discovered: new Set(), explored: new Uint8Array(MAP_W * 256), uniques: new Set(), treasures: [], homes: [], day: 1 };
   },
   buildWorld(seed, cb) {
     UI.showLoading('Forjando o mundo de Eldoria...');
@@ -136,7 +136,7 @@ const Game = {
     const exp = M.explored; let bin = ''; for (let i = 0; i < exp.length; i += 8192) bin += String.fromCharCode.apply(null, exp.subarray(i, i + 8192));
     const pj = P.toJSON(); pj.x = px; pj.y = py;
     const s = {
-      v: 1, seed: this.world.seed, time: this.time, day: this.day, track: this.track, player: pj,
+      v: 2, seed: this.world.seed, time: this.time, day: this.day, track: this.track, player: pj,
       mods: { opened: [...M.opened], harvested: M.harvested, cleared: M.cleared, dopened: M.dopened, camps: M.camps, runes: [...M.runes], shrines: M.shrines, discovered: [...M.discovered], explored: btoa(bin), uniques: [...M.uniques], treasures: M.treasures, homes: M.homes.map(h => { const o = Object.assign({}, h); delete o._b; delete o._s; return o; }), war: M.war || null },
       summary: { name: P.name, level: P.level, race: RACES[P.race].name, cls: P.style || 'Aventureiro', loc: this.locationName(), date: Date.now(), time: Math.floor(P.stats.playTime) }
     };
@@ -155,7 +155,7 @@ const Game = {
       const m = s.mods;
       M.opened = new Set(m.opened); M.harvested = m.harvested || {}; M.cleared = m.cleared || {}; M.dopened = m.dopened || {}; M.camps = m.camps || {};
       M.runes = new Set(m.runes || []); M.shrines = m.shrines || {}; M.discovered = new Set(m.discovered || []); M.uniques = new Set(m.uniques || []); M.treasures = m.treasures || []; M.homes = m.homes || []; M.war = m.war || null;
-      try { const bin = atob(m.explored); for (let i = 0; i < bin.length && i < M.explored.length; i++) M.explored[i] = bin.charCodeAt(i); } catch (e) { }
+      try { const bin = atob(m.explored), w = (s.v || 1) >= 2 ? MAP_W : 256; for (let i = 0; i < bin.length; i++) { const x = i % w, y = (i / w) | 0; if (x < MAP_W && y < 256) M.explored[y * MAP_W + x] = bin.charCodeAt(i); } } catch (e) { }
       this.mods = M; this.world.mods = M;
       for (const [k, list] of this.world.stampIndex) this.world.stampIndex.set(k, list.filter(st => !st.homeId));
       for (const [k, d] of this.world.doors) if (d.home) this.world.doors.delete(k);
@@ -468,7 +468,7 @@ const Game = {
             if (own && own !== s.region.id && War.K[own]) { const lk = War.look(own, 'soldado', rng); a = new Monster('guarda', spot.x * 16 + 8, spot.y * 16 + 12, Math.max(10, P.level + 5), { look: lk, name: 'Ocupante de ' + War.K[own].short }); }
             else a = new Monster('guarda', spot.x * 16 + 8, spot.y * 16 + 12, Math.max(10, P.level + 5), { look, name: 'Guarda de ' + s.name });
             a.guardOf = s; if (own) a.faction = own;
-          } else a = new NPC(spot, s, rng);
+          } else { a = new NPC(spot, s, rng); if (spot.role === 'captain') { a.name = (a.sex === 'f' ? 'Capitã ' : 'Capitão ') + a.name; a.look = Object.assign({}, a.look, { body: '#2a3a6a', hood: '#1a1a2a', robe: false }); a.S = Sprites.actor(a.look); } }
           a.spotIndex = i;
           this.findFree(a);
           a.home = { x: a.x, y: a.y };
@@ -730,7 +730,7 @@ const Game = {
     const ptx = Math.floor(P.x / 16), pty = Math.floor(P.y / 16);
     // névoa do mapa
     const ex = ptx >> 4, ey = pty >> 4;
-    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const x = ex + dx, y = ey + dy; if (x >= 0 && y >= 0 && x < 256 && y < 256 && dx * dx + dy * dy <= 5) M.explored[y * 256 + x] = 1; }
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const x = ex + dx, y = ey + dy; if (x >= 0 && y >= 0 && x < MAP_W && y < 256 && dx * dx + dy * dy <= 5) M.explored[y * MAP_W + x] = 1; }
     for (const s of W.settlements) if (!M.discovered.has(s.id) && Math.abs(s.mid.x - ptx) < 30 && Math.abs(s.mid.y - pty) < 30) { M.discovered.add(s.id); this.toast('Local descoberto: ' + s.name, '#ffe080'); P.addXP(15); if (s.type === 'capital') this.chron(`Cheguei pela primeira vez a ${s.name}, capital de ${s.region.name}.`); if (s.academy) { this.chron(`Avistei a ${s.name}, onde estudam príncipes e princesas de todos os reinos.`); this.centerMsg(s.name, 'A academia mais famosa do mundo'); } }
     for (const d of W.dungeons) if (!M.discovered.has(d.id) && Math.abs(d.x - ptx) < 14 && Math.abs(d.y - pty) < 14) { M.discovered.add(d.id); this.toast('Masmorra descoberta: ' + d.name, '#ff9080'); P.addXP(10); }
     for (const p of W.pois) if (!M.discovered.has(p.id) && Math.abs(p.x - ptx) < 14 && Math.abs(p.y - pty) < 14) { M.discovered.add(p.id); this.toast('Descoberto: ' + p.name, '#c0e0ff'); }
@@ -1115,6 +1115,7 @@ const Game = {
   fastTravel(s) {
     const P = this.player;
     if (!this.level.isWorld) { this.toast('Saia da masmorra primeiro.', '#ff8080'); return; }
+    if ((s.x >= WORLD_TILES) !== (this.player.x / 16 >= WORLD_TILES)) { this.toast('Esse lugar fica do outro lado do mar. Pegue um navio num porto!', '#ffb080'); return; }
     if (this.actors.some(a => a.team === 'enemy' && !a.dead && a.target === P && dist(a.x, a.y, P.x, P.y) < 250)) { this.toast('Não é possível viajar com inimigos por perto!', '#ff8080'); return; }
     const d = dist(P.x / 16, P.y / 16, s.mid.x, s.mid.y);
     const hours = Math.max(1, Math.round(d / (P.hasHorse ? 400 : 220)));
@@ -1182,7 +1183,7 @@ const Game = {
     if (!P.dead || true) D.push({ y: P.y, a: P });
     for (const k of this.pickups) D.push({ y: k.y, pk: k });
     this.drawMountsCart(D); this.drawCarcasses(D);
-    if (L.isWorld) War.drawables(D, camX, camY, vw, vh);
+    if (L.isWorld) { War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); }
     D.sort((a, b) => a.y - b.y);
     for (const d of D) {
       if (d.a) d.a.draw(ctx, camX, camY);

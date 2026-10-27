@@ -41,7 +41,7 @@ class Player extends Actor {
   // ---------- Serialização ----------
   toJSON() {
     const o = {};
-    for (const k of ['name', 'race', 'cls', 'app', 'level', 'xp', 'base', 'perkPts', 'gold', 'inv', 'equip', 'spells', 'spellIdx', 'shouts', 'shoutLvl', 'shoutIdx', 'souls', 'skills', 'quests', 'guilds', 'main', 'doneQuests', 'hasHorse', 'houses', 'storage', 'follower', 'stats', 'hp', 'mp', 'st', 'x', 'y', 'lastTown', 'pendingLevels', 'cds', 'rel', 'spouse', 'spouseHome', 'children', 'babyDue', 'pet', 'sign', 'style', 'mount', 'horse', 'cart', 'carrying', 'job', 'chronicle', 'freeMode', 'magicAwake', 'academy', 'army']) o[k] = this[k];
+    for (const k of ['name', 'race', 'cls', 'app', 'level', 'xp', 'base', 'perkPts', 'gold', 'inv', 'equip', 'spells', 'spellIdx', 'shouts', 'shoutLvl', 'shoutIdx', 'souls', 'skills', 'quests', 'guilds', 'main', 'doneQuests', 'hasHorse', 'houses', 'storage', 'follower', 'stats', 'hp', 'mp', 'st', 'x', 'y', 'lastTown', 'pendingLevels', 'cds', 'rel', 'spouse', 'spouseHome', 'children', 'babyDue', 'pet', 'sign', 'style', 'mount', 'horse', 'cart', 'carrying', 'job', 'chronicle', 'freeMode', 'magicAwake', 'academy', 'army', 'visitedCont']) o[k] = this[k];
     o.perks = [...this.perks];
     o.buffs = this.buffs.filter(b => b.t < 1e6);
     return o;
@@ -172,8 +172,8 @@ class Player extends Actor {
     if (R.ears) L.ears = R.ears; if (R.tall) L.tall = 1; if (R.short) L.short = R.short; if (R.bulky) L.bulky = true;
     if (R.beard && a.beard !== false && a.sex === 'm') L.beard = true;
     if (R.tusks) L.tusks = true; if (R.snout) L.snout = true; if (R.horns) L.horns = true;
-    if (R.tail) { L.tail = true; L.tailC = a.skin; }
-    if (R.catears) L.catears = true; if (R.muzzle) L.muzzle = true;
+    if (R.tail) { L.tail = true; L.tailC = R.tailHair ? a.hair : a.skin; }
+    if (R.catears) L.catears = true; if (R.muzzle) L.muzzle = true; if (R.eyes) L.eyes = R.eyes;
     L.body = CLASSES[this.cls].color; L.legs = '#3a3028'; L.boots = '#3a2a1a';
     const b = this.equip.body, h = this.equip.head, f = this.equip.feet, o = this.equip.offhand;
     if (b) {
@@ -540,6 +540,14 @@ class Player extends Actor {
       case 'sorte': this.addBuff('sorte', 1, 30, A.name); break;
       case 'garras': this.addBuff('garras', 1, 20, A.name); this.addBuff('speed', 0.4, 20); break;
       case 'sangue_gelo': this.heal(this.stat.maxHp * 0.5); this.addBuff('sangue_gelo', 1, 15, A.name); break;
+      case 'mare': this.heal(this.stat.maxHp * 0.35); this.fx = this.fx.filter(e => e.k !== 'poison'); this.addBuff('speed', 0.3, 15, A.name); Game.burst(this.x, this.y - 8, '#60c0ff', 24, 70); break;
+      case 'ilusao': this.invisible = 8; this.addBuff('sorte', 1, 8, A.name); Game.burst(this.x, this.y - 8, '#f0a060', 20, 50); break;
+      case 'chama_infernal': {
+        Game.fx.push({ kind: 'ring', x: this.x, y: this.y - 4, r0: 6, r1: 80, t: 0, dur: 0.5, color: '#ff4020' });
+        for (let i = 0; i < 30; i++) { const a = Math.random() * Math.PI * 2, s = 60 + Math.random() * 100; Game.particle(this.x, this.y - 8, Math.cos(a) * s, Math.sin(a) * s, Math.random() < 0.5 ? '#ff5020' : '#ffd040', 0.6); }
+        for (const a of Combat.targetsOf(this)) if (dist(this.x, this.y, a.x, a.y) < 80) Combat.damage(a, 20 + this.level * 5, { src: this, elem: 'fire', burn: 4 + this.level * 0.8 });
+        break;
+      }
       case 'sopro': {
         const ang = this.face;
         Game.fx.push({ kind: 'cone', x: this.x, y: this.y - 6, ang, arc: 0.9, r: 90, t: 0, dur: 0.5, color: '#ff7020' });
@@ -585,6 +593,7 @@ class Player extends Actor {
     if (this.atkT > 0) this.atkT -= dt;
     if (this.castT > 0) this.castT -= dt;
     if (this.invuln > 0) this.invuln -= dt;
+    if (this.invisible > 0) this.invisible -= dt;
     if (this.swing) { this.swing.t += dt; if (this.swing.t >= this.swing.dur) this.swing = null; }
     this.lastHurt += dt;
     const L = Game.level;
@@ -634,6 +643,10 @@ class Player extends Actor {
     Game.onPlayerDeath(killer);
   }
   draw(ctx, camX, camY) {
+    if (this.invisible > 0) { ctx.save(); ctx.globalAlpha = 0.4; this._draw(ctx, camX, camY); ctx.restore(); return; }
+    this._draw(ctx, camX, camY);
+  }
+  _draw(ctx, camX, camY) {
     const blink = this.invuln > 0 && this.rolling <= 0 && Math.floor(Game.t * 20) % 2;
     if (this.mounted) {
       const H = Sprites.horse(this.mount || 'cavalo');
@@ -646,7 +659,7 @@ class Player extends Actor {
       const sd = this.dir; this.dir = hk;
       if (blink) ctx.globalAlpha = 0.5;
       this.drawBody(ctx, camX, camY, this.S);
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = this.invisible > 0 ? 0.4 : 1;
       this.drawWeapon(ctx, camX, camY, this.wimg, this.wclass, this.swingAngle());
       this.dir = sd; this.z = 0;
       return;
@@ -664,7 +677,7 @@ class Player extends Actor {
     if (blink) ctx.globalAlpha = 0.5;
     if (this.rolling > 0) ctx.globalAlpha = 0.75;
     this.drawBody(ctx, camX, camY, this.S);
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = this.invisible > 0 ? 0.4 : 1;
     if (this.dir !== 'up') this.drawWeapon(ctx, camX, camY, this.wimg, this.wclass, sa);
     if (this.carrying) {
       const ci = Sprites.carcass(this.carrying.eid);

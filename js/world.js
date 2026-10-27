@@ -16,7 +16,8 @@ const ORE_BY_REGION = {
   valdoria: [O.ORE_FERRO, O.ORE_FERRO, O.ORE_PRATA], colinas: [O.ORE_FERRO, O.ORE_PRATA], sylvaris: [O.ORE_PRATA, O.ORE_FERRO],
   khazdurim: [O.ORE_FERRO, O.ORE_OURO, O.ORE_PRATA, O.ORE_OURO], nordheim: [O.ORE_MALAQUITA, O.ORE_FERRO, O.ORE_MALAQUITA],
   gorthak: [O.ORE_OBSIDIANA, O.ORE_FERRO, O.ORE_OBSIDIANA], zahrim: [O.ORE_OURO, O.ORE_FERRO], ssarak: [O.ORE_FERRO, O.ORE_PRATA],
-  morvath: [O.ORE_EBANO, O.ORE_OBSIDIANA, O.ORE_EBANO]
+  morvath: [O.ORE_EBANO, O.ORE_OBSIDIANA, O.ORE_EBANO],
+  talassa: [O.ORE_PRATA, O.ORE_FERRO, O.ORE_PRATA], azhkar: [O.ORE_OBSIDIANA, O.ORE_EBANO, O.ORE_OURO], shirokai: [O.ORE_FERRO, O.ORE_MALAQUITA, O.ORE_PRATA]
 };
 
 class World {
@@ -26,6 +27,7 @@ class World {
     this.nE = new Simplex(seed * 7 + 1); this.nM = new Simplex(seed * 7 + 2); this.nW = new Simplex(seed * 7 + 3);
     this.nR = new Simplex(seed * 7 + 4); this.nD = new Simplex(seed * 7 + 5); this.nL = new Simplex(seed * 7 + 6);
     this.regions = REGIONS.map(r => Object.assign({}, r, { cx: r.fx * WORLD_TILES, cy: r.fy * WORLD_TILES }));
+    this.regC = [[], []]; this.regions.forEach((r, i) => this.regC[r.cont || 0].push(i));
     this.volcano = { x: VOLCANO.fx * WORLD_TILES, y: VOLCANO.fy * WORLD_TILES };
     this.chunks = new Map(); this.canvases = new Map();
     this.tick = 0;
@@ -42,26 +44,34 @@ class World {
   regionAt(x, y) {
     const wx = x + 150 * this.nW.noise(x / 520, y / 520), wy = y + 150 * this.nW.noise(x / 520 + 91.3, y / 520 + 47.1);
     let best = 0, bd = Infinity;
-    for (let i = 0; i < this.regions.length; i++) { const r = this.regions[i]; const dx = wx - r.cx, dy = wy - r.cy, d = dx * dx + dy * dy; if (d < bd) { bd = d; best = i; } }
+    for (const i of this.regC[x >= WORLD_TILES ? 1 : 0]) { const r = this.regions[i]; const dx = wx - r.cx, dy = wy - r.cy, d = dx * dx + dy * dy; if (d < bd) { bd = d; best = i; } }
     return best;
   }
   baseTile(x, y) {
     const W = WORLD_TILES;
-    if (x < 0 || y < 0 || x >= W || y >= W) { this._r = 0; this._e = 0; return T.DEEP; }
+    if (x < 0 || y < 0 || x >= WORLD_W || y >= W) { this._r = 0; this._e = 0; return T.DEEP; }
+    const cont = x >= W ? 1 : 0;
     const wx = x + 150 * this.nW.noise(x / 520, y / 520), wy = y + 150 * this.nW.noise(x / 520 + 91.3, y / 520 + 47.1);
     const R = this.regions;
     let best = 0, bd = Infinity, mb = 0, ws = 0;
-    for (let i = 0; i < R.length; i++) {
+    for (const i of this.regC[cont]) {
       const r = R[i]; const dx = wx - r.cx, dy = wy - r.cy, d = dx * dx + dy * dy;
       if (d < bd) { bd = d; best = i; }
       const w = Math.exp(-d / 460800); mb += w * r.mount; ws += w;
     }
     mb = ws > 1e-6 ? mb / ws : 0;
     const reg = R[best]; this._r = best;
-    const nx = x / W * 2 - 1, ny = y / W * 2 - 1;
-    const d = Math.max(Math.abs(nx), Math.abs(ny)) * 0.65 + Math.sqrt(nx * nx + ny * ny) * 0.35;
     let e = 0.5 + 0.6 * fbm(this.nE, x / 820, y / 820, 6) + mb;
-    if (d > 0.8) { const f = (d - 0.8) / 0.2; e -= f * f * 0.75; }
+    if (!cont) {
+      const nx = x / W * 2 - 1, ny = y / W * 2 - 1;
+      const d = Math.max(Math.abs(nx), Math.abs(ny)) * 0.65 + Math.sqrt(nx * nx + ny * ny) * 0.35;
+      if (d > 0.8) { const f = (d - 0.8) / 0.2; e -= f * f * 0.75; }
+    } else {
+      // Kaeloria: continente alongado do outro lado do Mar das Brumas
+      const nx = (x - 5180) / 760, ny = (y - 2048) / 1780;
+      const d = Math.sqrt(nx * nx + ny * ny) * 0.75 + Math.max(Math.abs(nx), Math.abs(ny)) * 0.25 + this.nW.noise(x / 300, y / 300) * 0.08;
+      if (d > 0.72) { const f = (d - 0.72) / 0.28; e -= f * f * 0.85; }
+    }
     const vdx = x - this.volcano.x, vdy = y - this.volcano.y, vd = Math.sqrt(vdx * vdx + vdy * vdy);
     if (vd < 150) { const k = 1 - vd / 150; e += k * k * 0.6; }
     this._e = e;
@@ -261,15 +271,15 @@ class World {
     return { cx, cy, tiles, objs, reg, t: 0 };
   }
   tileAt(tx, ty) {
-    if (tx < 0 || ty < 0 || tx >= WORLD_TILES || ty >= WORLD_TILES) return T.DEEP;
+    if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_TILES) return T.DEEP;
     return this.getChunk(tx >> 5, ty >> 5).tiles[((ty & 31) << 5) | (tx & 31)];
   }
   objAt(tx, ty) {
-    if (tx < 0 || ty < 0 || tx >= WORLD_TILES || ty >= WORLD_TILES) return 0;
+    if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_TILES) return 0;
     return this.getChunk(tx >> 5, ty >> 5).objs[((ty & 31) << 5) | (tx & 31)];
   }
   regAt(tx, ty) {
-    if (tx < 0 || ty < 0 || tx >= WORLD_TILES || ty >= WORLD_TILES) return 0;
+    if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_TILES) return 0;
     return this.getChunk(tx >> 5, ty >> 5).reg[((ty & 31) << 5) | (tx & 31)];
   }
   setObj(tx, ty, o) {
@@ -278,7 +288,7 @@ class World {
     if (OBJ_BAKED[old] || OBJ_BAKED[o]) this.canvases.delete(this.ckey(tx >> 5, ty >> 5));
   }
   solidAt(tx, ty) {
-    if (tx < 0 || ty < 0 || tx >= WORLD_TILES || ty >= WORLD_TILES) return true;
+    if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_TILES) return true;
     const ch = this.getChunk(tx >> 5, ty >> 5); const i = ((ty & 31) << 5) | (tx & 31);
     return TSOLID[ch.tiles[i]] || OSOLID[ch.objs[i]];
   }
@@ -308,7 +318,7 @@ class World {
     const cx0 = Math.floor(camX / CHUNK_PX), cy0 = Math.floor(camY / CHUNK_PX);
     const cx1 = Math.floor((camX + vw) / CHUNK_PX), cy1 = Math.floor((camY + vh) / CHUNK_PX);
     for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) {
-      if (cx < 0 || cy < 0 || cx >= WORLD_TILES / 32 || cy >= WORLD_TILES / 32) { ctx.fillStyle = '#1f4a8a'; ctx.fillRect(cx * CHUNK_PX - camX, cy * CHUNK_PX - camY, CHUNK_PX, CHUNK_PX); continue; }
+      if (cx < 0 || cy < 0 || cx >= WORLD_W / 32 || cy >= WORLD_TILES / 32) { ctx.fillStyle = '#1f4a8a'; ctx.fillRect(cx * CHUNK_PX - camX, cy * CHUNK_PX - camY, CHUNK_PX, CHUNK_PX); continue; }
       ctx.drawImage(this.chunkCanvas(cx, cy), cx * CHUNK_PX - camX, cy * CHUNK_PX - camY);
     }
   }
@@ -335,7 +345,7 @@ class World {
       const rr = radius * Math.sqrt(i / 400 + 0.02);
       const a = rng.range(0, Math.PI * 2);
       const x = Math.round(cx + Math.cos(a) * rr * rng.next()), y = Math.round(cy + Math.sin(a) * rr * rng.next());
-      if (x < 80 || y < 80 || x > WORLD_TILES - 80 || y > WORLD_TILES - 80) continue;
+      if (x < 80 || y < 80 || x > WORLD_W - 80 || y > WORLD_TILES - 80) continue;
       if (test(x, y)) return { x, y };
     }
     return null;
@@ -348,6 +358,7 @@ class World {
     let sid = 0;
     // ---- Assentamentos
     for (const reg of this.regions) {
+      if (reg.cont) continue;
       const names = SETTLEMENT_NAMES[reg.id];
       const pool = rng.shuffle(names.list.slice());
       const types = [];
@@ -395,6 +406,7 @@ class World {
     }
     // ---- Masmorras comuns
     for (const R of this.regions) {
+      if (R.cont) continue;
       const types = REGION_DUNGEONS[R.id];
       for (let i = 0; i < R.dungeons; i++) {
         const pos = this.findLand(R.cx, R.cy, rng, 720, (x, y) => this.regionAt(x, y) === R.index && this.isLand(x, y) && this.isLand(x, y + 1) && this._e < 0.69 && this.farFrom(x, y, all, 36) && this.farFrom(x, y, dungeonList, 34));
@@ -411,6 +423,7 @@ class World {
     // ---- Acampamentos, pedras rúnicas e santuários
     let pid = 0;
     for (const R of this.regions) {
+      if (R.cont) continue;
       const nc = R.hostile ? 3 : 3;
       for (let i = 0; i < nc; i++) {
         const pos = this.findLand(R.cx, R.cy, rng, 650, (x, y) => this.regionAt(x, y) === R.index && this.isLand(x, y) && this._e < 0.66 && this.farFrom(x, y, all, 60) && this.farFrom(x, y, dungeonList, 25) && this.farFrom(x, y, this.pois, 40));
@@ -439,6 +452,7 @@ class World {
     // ---- Estradas
     this.buildRoads(rng);
     this.placeDestiny();
+    this.generateKaeloria();
     // placas
     for (const s of this.settlements) {
       for (const g of s.gates) {
@@ -450,6 +464,129 @@ class World {
     }
   }
 
+  // ---------- Kaeloria: o continente de além-mar ----------
+  generateKaeloria() {
+    const rng = new RNG(this.seed * 53 + 29);
+    const regs = this.regions.filter(r => r.cont === 1);
+    const made = [];
+    let sid = 0;
+    for (const reg of regs) {
+      const names = SETTLEMENT_NAMES[reg.id], pool = rng.shuffle(names.list.slice());
+      const types = ['capital'];
+      for (let i = 0; i < reg.towns; i++) types.push('town');
+      for (let i = 0; i < reg.villages; i++) types.push('village');
+      for (const type of types) {
+        const size = type === 'capital' ? 50 : type === 'town' ? 34 : 24, half = size / 2 + 4;
+        const ok = (x, y) => {
+          if (this.regionAt(x, y) !== reg.index || x < WORLD_TILES + 40) return false;
+          const pts = [[0, 0], [-half, -half], [half, -half], [-half, half], [half, half], [0, -half], [0, half], [-half, 0], [half, 0]];
+          let bad = 0;
+          for (const [dx, dy] of pts) { const t = this.baseTile(x + dx, y + dy); if (t === T.DEEP || t === T.LAVA) return false; if (TSOLID[t] || TWATER[t]) bad++; }
+          return bad <= 2 && this.farFrom(x, y, made, type === 'village' ? 75 : 110);
+        };
+        const pos = this.findLand(reg.cx, reg.cy, rng, type === 'capital' ? 220 : type === 'town' ? 560 : 680, ok) || (type === 'capital' ? this.findLand(reg.cx, reg.cy, rng, 600, ok) : null);
+        if (!pos) continue;
+        const st = { id: 'k' + (sid++), name: type === 'capital' ? names.cap : (pool.pop() || ('Vila ' + sid)), type, region: reg, x: pos.x, y: pos.y, cx: pos.x, cy: pos.y };
+        made.push(st); this.settlements.push(st);
+      }
+    }
+    for (const st of made) this.layoutSettlement(st);
+    // masmorras, acampamentos e santuários
+    let uid = this.dungeons.reduce((m, d) => Math.max(m, d.uid), 0) + 1;
+    const dl = [];
+    for (const R of regs) {
+      const types = REGION_DUNGEONS[R.id];
+      for (let i = 0; i < R.dungeons; i++) {
+        const pos = this.findLand(R.cx, R.cy, rng, 720, (x, y) => this.regionAt(x, y) === R.index && this.isLand(x, y) && this.isLand(x, y + 1) && this._e < 0.69 && this.farFrom(x, y, made, 36) && this.farFrom(x, y, dl, 34));
+        if (!pos) continue;
+        const type = rng.pick(types), dt = DUNGEON_TYPES[type];
+        const d = { id: 'kd' + uid, uid: uid++, name: dt.name + ' ' + rng.pick(DUNGEON_NOUNS), type, boss: dt.boss, lvl: rng.int(R.lvl[0], R.lvl[1]), size: rng.int(44, 60), x: pos.x, y: pos.y, region: R };
+        dl.push(d); this.stampDungeon(d); this.dungeons.push(d); this.dungeonById[d.id] = d;
+      }
+      for (let i = 0; i < 2; i++) {
+        const pos = this.findLand(R.cx, R.cy, rng, 650, (x, y) => this.regionAt(x, y) === R.index && this.isLand(x, y) && this._e < 0.66 && this.farFrom(x, y, made, 60) && this.farFrom(x, y, dl, 25) && this.farFrom(x, y, this.pois, 40));
+        if (!pos) continue;
+        const pc = { id: 'kcamp' + R.id + i, kind: 'camp', x: pos.x, y: pos.y, region: R, lvl: rng.int(R.lvl[0], R.lvl[1]), name: R.id === 'talassa' ? 'Esconderijo Pirata' : R.id === 'azhkar' ? 'Acampamento de Cultistas' : 'Acampamento de Ronins' };
+        this.stampCamp(pc, rng); this.pois.push(pc);
+      }
+      const pos = this.findLand(R.cx, R.cy, rng, 600, (x, y) => this.regionAt(x, y) === R.index && this.isLand(x, y) && this.isLand(x, y + 1) && this.farFrom(x, y, made, 40) && this.farFrom(x, y, this.pois, 40) && this.farFrom(x, y, dl, 20));
+      if (pos) { const pc = { id: 'kshrine' + R.id, kind: 'shrine', x: pos.x, y: pos.y, region: R, name: 'Santuário' }; this.stampSmall(pc, O.SHRINE, rng); this.pois.push(pc); }
+    }
+    // portos dos dois lados do Mar das Brumas
+    this.placePorts(rng);
+    const k1 = made.concat(this.ports.filter(p => p.port.cont === 1));
+    this.buildRoads(rng, k1, false);
+    // portos de Eldoria ligados à cidade mais próxima
+    const edges = [];
+    for (const pt of this.ports.filter(p => p.port.cont === 0)) {
+      let near = null, nd = Infinity;
+      for (const st of this.settlements) { if (st.port || st.x >= WORLD_TILES || st.academy) continue; const d = dist(st.x, st.y, pt.x, pt.y); if (d < nd) { nd = d; near = st; } }
+      if (near) edges.push({ a: pt, b: near, w: 2 });
+    }
+    for (const e of edges) {
+      const ga = this.closestGate(e.a, e.b), gb = this.closestGate(e.b, e.a);
+      const path = this.wiggle([ga.x, ga.y], [gb.x, gb.y], rng, 0);
+      for (let i = 0; i < path.length - 1; i++) this.rasterRoad(path[i][0], path[i][1], path[i + 1][0], path[i + 1][1], e.w);
+      this.extendGate(ga, e.w); this.extendGate(gb, e.w);
+    }
+    this.roadEdges = this.roadEdges.concat(edges);
+  }
+  placePorts(rng) {
+    this.ports = [];
+    const names = [['Porto das Brumas', 'Porto do Sol Nascente'], ['Porto de Kaeloria', 'Porto das Pérolas']];
+    const seaAt = (x, y) => { const t = this.baseTile(x, y); return TWATER[t] || t === T.DEEP; };
+    for (const cont of [0, 1]) {
+      const ys = cont ? [0.3, 0.64] : [0.44, 0.7];
+      ys.forEach((fy, n) => {
+        const y0 = Math.round(fy * WORLD_TILES), dir = cont ? -1 : 1;
+        let found = null;
+        for (let dy = 0; dy < 900 && !found; dy += 10) for (const yy of [y0 + dy, y0 - dy]) {
+          if (found) break;
+          let x = cont ? 4300 : 4060;
+          while (cont ? x < 5700 : x > 2600) { if (this.isLand(x, yy)) break; x -= dir; }
+          if (cont ? x >= 5700 : x <= 2600) continue;
+          // terra firme atrás, mar aberto à frente
+          let land = 0, sea = 0;
+          for (let k = 1; k <= 12; k++) { if (this.isLand(x - dir * k, yy) && this.isLand(x - dir * k, yy - 3) && this.isLand(x - dir * k, yy + 3)) land++; if (seaAt(x + dir * k, yy) && seaAt(x + dir * k, yy - 3) && seaAt(x + dir * k, yy + 4)) sea++; }
+          const R = this.regions[this.regionAt(x, yy)];
+          if (land < 11 || sea < 11 || R.hostile || !this.farFrom(x, yy, this.settlements, 40) || !this.farFrom(x, yy, this.dungeons, 20)) continue;
+          found = { x, y: yy, R };
+        }
+        if (!found) return;
+        this.layoutPort(found, cont, dir, names[cont][n], n, rng);
+      });
+    }
+  }
+  layoutPort(f, cont, dir, name, n, rng) {
+    const W = 24, H = 14, coast = 13;
+    const st = { id: 'port' + cont + n, name, type: 'port', region: f.R, x: f.x, y: f.y, cx: f.x, cy: f.y, port: { cont, dir } };
+    st.w = W; st.h = H;
+    st.x0 = dir > 0 ? f.x - coast + 1 : f.x - (W - coast);
+    st.y0 = f.y - 7;
+    const tiles = new Uint8Array(W * H).fill(255), objs = new Uint8Array(W * H), occ = new Uint8Array(W * H);
+    const lx = x => dir > 0 ? x : W - 1 - x;                    // x local espelhado
+    const at = (x, y) => y * W + lx(x);
+    const cul = CULTURES[f.R.culture];
+    for (let y = 0; y < H; y++) for (let x = 0; x < coast; x++) { const i = at(x, y); const t = this.baseTile(st.x0 + lx(x), st.y0 + y); tiles[i] = (TSOLID[t] || TWATER[t] || t === T.LAVA) ? T.SAND : (y >= 5 && y <= 8) || x >= coast - 3 ? T.WOOD : 255; }
+    // píer sobre o mar
+    for (let x = coast - 3; x < W; x++) for (let y = 6; y <= 7; y++) tiles[at(x, y)] = T.BRIDGE;
+    for (let x = W - 4; x < W; x++) for (let y = 4; y <= 9; y++) tiles[at(x, y)] = T.BRIDGE;
+    st.buildings = []; st.npcSpots = []; st.lamps = []; st.gates = [];
+    // taverna do porto
+    for (let i = 0; i < W * H; i++) if (tiles[i] === T.WOOD || tiles[i] === T.BRIDGE) occ[i] = 2;
+    const bx = dir > 0 ? 1 : W - 1 - 1 - 6 + 1;
+    const b = this.placeBuilding(st, 'inn', bx, 0, rng, objs, occ, W, cul);
+    b.name = 'Taverna do ' + name;
+    for (const [x, y, o] of [[coast - 2, 5, O.CRATE], [coast - 2, 8, O.BARREL], [coast - 1, 9, O.CRATE], [W - 1, 4, O.LAMP], [W - 1, 9, O.LAMP], [coast - 3, 9, O.LAMP], [2, 10, O.BARREL], [3, 11, O.CRATE], [6, 12, O.BARREL]]) { const i = at(x, y); if (!occ[i] || occ[i] === 2) objs[i] = o; }
+    st.lamps.push({ x: st.x0 + lx(W - 1), y: st.y0 + 4 });
+    st.npcSpots.push({ role: 'captain', x: st.x0 + lx(W - 3), y: st.y0 + 6 }, { role: 'citizen', x: st.x0 + lx(coast - 4), y: st.y0 + 7 }, { role: 'citizen', x: st.x0 + lx(4), y: st.y0 + 9 }, { role: 'guard', x: st.x0 + lx(1), y: st.y0 + 7 });
+    st.gates.push({ x: st.x0 + lx(0) - dir, y: st.y0 + 7, dir: dir > 0 ? 'w' : 'e' });
+    st.mid = { x: st.x0 + lx(coast - 2), y: st.y0 + 7 };
+    st.port.ship = { x: (st.x0 + lx(W - 1) + dir * 3) * 16 + 8, y: (st.y0 + 7) * 16 + 8 };
+    st.port.dock = { x: st.x0 + lx(W - 3), y: st.y0 + 7 };
+    this.addStamp({ x0: st.x0, y0: st.y0, w: W, h: H, tiles, objs });
+    this.settlements.push(st); this.ports.push(st);
+  }
   placeAcademy() {
     const rng = new RNG(this.seed * 17 + 3);
     const V = this.regions[REGION_BY_ID.valdoria.index], S = this.regions[REGION_BY_ID.sylvaris.index];
@@ -704,7 +841,7 @@ class World {
     for (let y = by; y < by + B.h; y++) for (let x = bx; x < bx + B.w; x++) { objs[y * size + x] = O.BLOCK; occ[y * size + x] = 1; }
     for (let y = by - 1; y <= by + B.h; y++) for (let x = bx - 1; x <= bx + B.w; x++) if (x >= 0 && y >= 0 && x < size && y < size && !occ[y * size + x]) occ[y * size + x] = 4;
     const reg = s.region;
-    const styleMap = { human: 'timber', halfling: 'round', elf: 'elven', dwarf: 'stone', nordic: 'log', orc: 'hide', desert: 'adobe', swamp: 'stilt', fort: 'stone' };
+    const styleMap = { human: 'timber', halfling: 'round', elf: 'elven', dwarf: 'stone', nordic: 'log', orc: 'hide', desert: 'adobe', swamp: 'stilt', fort: 'stone', tide: 'adobe', infernal: 'stone', jade: 'elven' };
     let style = styleMap[reg.culture];
     let type = bt;
     if (bt === 'castle' || bt === 'palace') { if (style === 'hide') style = 'log'; if (style === 'round' || style === 'stilt') style = 'timber'; if (reg.culture === 'human') style = 'castle'; }
@@ -785,8 +922,7 @@ class World {
   }
 
   // ---------- Estradas ----------
-  buildRoads(rng) {
-    const S = this.settlements;
+  buildRoads(rng, S = this.settlements, uniq = true) {
     const edges = [];
     const byReg = {};
     for (const s of S) (byReg[s.region.id] = byReg[s.region.id] || []).push(s);
@@ -818,12 +954,12 @@ class World {
       if (near && nd < 1500) edges.push({ a: caps[i], b: near, w: 3 });
     }
     // masmorras únicas ligadas ao assentamento mais próximo
-    for (const d of this.dungeons) if (d.unique) {
+    if (uniq) for (const d of this.dungeons) if (d.unique) {
       let near = null, nd = Infinity;
       for (const s of S) { const dd = dist(s.x, s.y, d.x, d.y); if (dd < nd) { nd = dd; near = s; } }
       if (near) edges.push({ a: near, b: { x: d.x, y: d.y + 1, gates: [{ x: d.x, y: d.y + 1, dir: 's' }] }, w: 2 });
     }
-    this.roadEdges = edges;
+    this.roadEdges = (this.roadEdges || []).concat(edges);
     for (const e of edges) {
       const ga = this.closestGate(e.a, e.b), gb = this.closestGate(e.b, e.a);
       const pts = [[ga.x, ga.y], [gb.x, gb.y]];
@@ -879,7 +1015,7 @@ class World {
     }
   }
   markRoad(x, y) {
-    if (x < 1 || y < 1 || x >= WORLD_TILES - 1 || y >= WORLD_TILES - 1) return;
+    if (x < 1 || y < 1 || x >= WORLD_W - 1 || y >= WORLD_TILES - 1) return;
     const k = this.ckey(x >> 5, y >> 5);
     let s = this.roadTiles.get(k);
     if (!s) { s = new Set(); this.roadTiles.set(k, s); }
@@ -939,9 +1075,9 @@ class World {
   // Imagem do mapa-múndi gerada aos poucos
   startMapImage() {
     const R = 256, step = WORLD_TILES / R;
-    this.mapCanvas = Sprites.cv(R, R);
+    this.mapCanvas = Sprites.cv(MAP_W, R);
     this.mapCtx = this.mapCanvas.getContext('2d');
-    this.mapImg = this.mapCtx.createImageData(R, R);
+    this.mapImg = this.mapCtx.createImageData(MAP_W, R);
     this.mapRow = 0; this.mapDone = false;
     this.mapStep = step;
   }
@@ -950,11 +1086,11 @@ class World {
     const R = 256, step = this.mapStep, d = this.mapImg.data;
     for (let k = 0; k < rows && this.mapRow < R; k++, this.mapRow++) {
       const y = this.mapRow;
-      for (let x = 0; x < R; x++) {
+      for (let x = 0; x < MAP_W; x++) {
         const t = this.baseTile(Math.floor(x * step + step / 2), Math.floor(y * step + step / 2));
         const [r, g, b] = hexToRgb(TILE_DEFS[t].c);
         const sh = 1 + (this._e - 0.5) * 0.35;
-        const i = (y * R + x) * 4; d[i] = r * sh; d[i + 1] = g * sh; d[i + 2] = b * sh; d[i + 3] = 255;
+        const i = (y * MAP_W + x) * 4; d[i] = r * sh; d[i + 1] = g * sh; d[i + 2] = b * sh; d[i + 3] = 255;
       }
     }
     if (this.mapRow >= R) {
