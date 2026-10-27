@@ -137,7 +137,7 @@ const Game = {
     const pj = P.toJSON(); pj.x = px; pj.y = py;
     const s = {
       v: 1, seed: this.world.seed, time: this.time, day: this.day, track: this.track, player: pj,
-      mods: { opened: [...M.opened], harvested: M.harvested, cleared: M.cleared, dopened: M.dopened, camps: M.camps, runes: [...M.runes], shrines: M.shrines, discovered: [...M.discovered], explored: btoa(bin), uniques: [...M.uniques], treasures: M.treasures, homes: M.homes.map(h => { const o = Object.assign({}, h); delete o._b; delete o._s; return o; }) },
+      mods: { opened: [...M.opened], harvested: M.harvested, cleared: M.cleared, dopened: M.dopened, camps: M.camps, runes: [...M.runes], shrines: M.shrines, discovered: [...M.discovered], explored: btoa(bin), uniques: [...M.uniques], treasures: M.treasures, homes: M.homes.map(h => { const o = Object.assign({}, h); delete o._b; delete o._s; return o; }), war: M.war || null },
       summary: { name: P.name, level: P.level, race: RACES[P.race].name, cls: P.style || 'Aventureiro', loc: this.locationName(), date: Date.now(), time: Math.floor(P.stats.playTime) }
     };
     try {
@@ -154,7 +154,7 @@ const Game = {
       const M = this.newMods();
       const m = s.mods;
       M.opened = new Set(m.opened); M.harvested = m.harvested || {}; M.cleared = m.cleared || {}; M.dopened = m.dopened || {}; M.camps = m.camps || {};
-      M.runes = new Set(m.runes || []); M.shrines = m.shrines || {}; M.discovered = new Set(m.discovered || []); M.uniques = new Set(m.uniques || []); M.treasures = m.treasures || []; M.homes = m.homes || [];
+      M.runes = new Set(m.runes || []); M.shrines = m.shrines || {}; M.discovered = new Set(m.discovered || []); M.uniques = new Set(m.uniques || []); M.treasures = m.treasures || []; M.homes = m.homes || []; M.war = m.war || null;
       try { const bin = atob(m.explored); for (let i = 0; i < bin.length && i < M.explored.length; i++) M.explored[i] = bin.charCodeAt(i); } catch (e) { }
       this.mods = M; this.world.mods = M;
       for (const [k, list] of this.world.stampIndex) this.world.stampIndex.set(k, list.filter(st => !st.homeId));
@@ -203,7 +203,7 @@ const Game = {
     if (!this.level.isWorld) return this.level.name;
     const P = this.player;
     const s = this.world.settlementAt(Math.floor(P.x / 16), Math.floor(P.y / 16));
-    if (s) return s.name;
+    if (s) { const o = War.ownerOf(s); return o && o !== s.region.id && War.K[o] ? `${s.name} (ocupada por ${War.K[o].short})` : s.name; }
     return this.world.regions[this.world.regAt(Math.floor(P.x / 16), Math.floor(P.y / 16))].name;
   },
   discover(id) {
@@ -294,6 +294,7 @@ const Game = {
     W.tick++;
     if (this.intro) { this.updateIntro(dt); Input.queue.clear(); }
     Academy.update(dt);
+    War.update(dt);
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();
@@ -463,8 +464,10 @@ const Game = {
             const look = Object.assign({}, ENEMIES.guarda.look, { body: shade(col, -0.25), helm: '#a0a8b0', shield: col, skin: rng.pick(RACES[CULTURES[s.region.culture].race].skins) });
             const cr = RACES[CULTURES[s.region.culture].race];
             if (cr.ears) look.ears = cr.ears; if (cr.tusks) look.tusks = true; if (cr.short) look.short = cr.short; if (cr.snout) look.snout = true; if (cr.tail) { look.tail = true; look.tailC = look.skin; } if (cr.catears) look.catears = true; if (cr.bulky) look.bulky = true;
-            a = new Monster('guarda', spot.x * 16 + 8, spot.y * 16 + 12, Math.max(10, P.level + 5), { look, name: 'Guarda de ' + s.name });
-            a.guardOf = s;
+            const own = War.ownerOf(s);
+            if (own && own !== s.region.id && War.K[own]) { const lk = War.look(own, 'soldado', rng); a = new Monster('guarda', spot.x * 16 + 8, spot.y * 16 + 12, Math.max(10, P.level + 5), { look: lk, name: 'Ocupante de ' + War.K[own].short }); }
+            else a = new Monster('guarda', spot.x * 16 + 8, spot.y * 16 + 12, Math.max(10, P.level + 5), { look, name: 'Guarda de ' + s.name });
+            a.guardOf = s; if (own) a.faction = own;
           } else a = new NPC(spot, s, rng);
           a.spotIndex = i;
           this.findFree(a);
@@ -638,7 +641,7 @@ const Game = {
       if (sp.role === 'guard') {
         const look = Object.assign({}, ENEMIES.guarda.look, { body: shade(s.region.color, -0.25), shield: s.region.color });
         a = new Monster('guarda', sp.x * 16 + 8, sp.y * 16 + 12, Math.max(10, P.level + 5), { look, name: 'Guarda Real' });
-        a.guardOf = s;
+        a.guardOf = s; const own = War.ownerOf(s); if (own) a.faction = own;
       } else {
         a = new NPC({ role: sp.role, x: sp.x, y: sp.y }, s, rng);
         if (sp.role === 'owner') {
@@ -740,7 +743,7 @@ const Game = {
     const s = W.settlementAt(ptx, pty);
     if (s !== this.curTown) {
       this.curTown = s;
-      if (s) { this.toast(`Bem-vindo a ${s.name}`, '#ffe8a0'); P.lastTown = s.id; if (this.autosaveT < 120) { this.autosaveT = 150; this.saveGame(0, true); } }
+      if (s) { this.toast(`Bem-vindo a ${s.name}`, '#ffe8a0'); { const o = War.ownerOf(s), ps = War.playerSide(); if (o && ps && War.atWar(o, ps)) this.toast(`⚠ ${s.name} pertence a ${War.K[o].short}, inimigo do seu reino! Os guardas vão te atacar.`, '#ff9080'); } P.lastTown = s.id; if (this.autosaveT < 120) { this.autosaveT = 150; this.saveGame(0, true); } }
     }
   },
   updateWeather(dt) {
@@ -780,6 +783,7 @@ const Game = {
   onMonsterDeath(m, killer) {
     const P = this.player;
     if (m.spar) return;
+    if (m.faction) { War.onDeath(m, killer); this.burst(m.x, m.y - 8, '#a02020', 12, 70); if (m.isFollower) P.follower = null; return; }
     const byPlayer = killer === P || (killer && killer.team === 'ally') || m.provoked === P;
     this.burst(m.x, m.y - 8, m.def.undead ? '#d8d0c0' : '#a02020', 12, 70);
     if (m.team === 'enemy' && byPlayer) {
@@ -872,7 +876,7 @@ const Game = {
     const fx = P.x + Math.cos(P.face) * 8, fy = P.y - 4 + Math.sin(P.face) * 8;
     for (const a of this.actors) {
       if (a.dead || a.hidden) continue;
-      if (!(a instanceof NPC) && !a.guard && !a.isFollower) continue;
+      if (!(a instanceof NPC) && !a.guard && !a.isFollower && !(a.faction && !War.hostile(P, a))) continue;
       const d = dist(fx, fy, a.x, a.y - 6);
       if (d < bd) { bd = d; best = { kind: 'npc', a, label: a.guard ? 'Falar' : a.isFollower ? 'Falar' : 'Falar', name: a.name }; }
     }
@@ -896,6 +900,7 @@ const Game = {
       if (od.interact === 'dungeon' && L.isWorld) { const dd = this.world.entrances.get(tkey(tx, ty)); if (dd) name = `${dd.name} (Nv ${dd.lvl})`; }
       bd = d; best = { kind: od.interact, tx, ty, o, label: labels[od.interact] || 'Usar', name };
     }
+    if (L.isWorld && !P.carrying) { const c = War.nearCorpse(fx, fy); if (c) { const d = dist(fx, fy, c.x + 8, c.y); if (d < bd + 6) { bd = d; best = { kind: 'corpse', c, label: 'Saquear', name: 'Soldado caído' }; } } }
     // carcaças, carroça, cavalo, obras, árvores e rochas
     for (const c of this.carcasses) { if (c.level !== L) continue; const d = dist(fx, fy, c.x, c.y - 4); if (d < bd + 4) { bd = d; best = { kind: 'carcass', c, label: P.carrying ? 'Soltar' : 'Carcaça', name: ENEMIES[c.eid].name }; } }
     if (L.isWorld && P.cart) { const d = dist(P.x, P.y, P.cart.x, P.cart.y) - 4; if (d < 30 && d < bd + 10) { bd = d; best = { kind: 'cart', label: 'Carroça', name: `Carroça (${(P.cart.load || []).length}/${CART_CAP})` }; } }
@@ -955,6 +960,7 @@ const Game = {
       case 'destiny': UI.destiny(it.o); break;
       case 'wardrobe': if (this.level.isInterior && this.level.b.role === 'playerhouse' && this.player.houses.includes(this.level.s.id)) UI.storage(this.level.s); else this.toast('Isso não é seu.', '#ffa0a0'); break;
       case 'crib': UI.babyCrib(); break;
+      case 'corpse': War.loot(it.c); break;
       case 'sleep': if (Academy.state().enrolled) UI.rest(null, 0); else this.toast('Esta cama é de um aluno da Academia.', '#ffa0a0'); break;
       case 'sign': UI.sign(it.s); break;
       case 'chest': this.openChest(it.tx, it.ty, it.o); break;
@@ -1176,6 +1182,7 @@ const Game = {
     if (!P.dead || true) D.push({ y: P.y, a: P });
     for (const k of this.pickups) D.push({ y: k.y, pk: k });
     this.drawMountsCart(D); this.drawCarcasses(D);
+    if (L.isWorld) War.drawables(D, camX, camY, vw, vh);
     D.sort((a, b) => a.y - b.y);
     for (const d of D) {
       if (d.a) d.a.draw(ctx, camX, camY);
@@ -1204,7 +1211,7 @@ const Game = {
   drawQuestMarker(ctx, camX, camY) {
     const q = this.trackedQuest();
     if (!q) return;
-    const t = this.track === 'treasure' ? this.treasureTarget() : Quests.targetPos(q);
+    const t = this.trackTarget(q);
     if (!t || !this.level.isWorld || t.region) return;
     const x = t.x * 16 + 8 - camX, y = t.y * 16 - camY - 18 + Math.sin(this.t * 4) * 2;
     if (x < -10 || y < -10 || x > this.vw + 10 || y > this.vh + 10) return;
@@ -1214,9 +1221,11 @@ const Game = {
   trackedQuest() {
     const P = this.player; if (!P) return null;
     if (this.track === 'treasure') return this.mods.treasures.length ? 'treasure' : null;
+    if (this.track === 'war') return War.orderTarget() ? 'war' : (Quests.mainStep() ? 'main' : null);
     if (this.track === 'main') return Quests.mainStep() ? 'main' : null;
     return P.quests.find(q => q.id === this.track) || (Quests.mainStep() ? 'main' : null);
   },
+  trackTarget(q) { return q === 'treasure' ? this.treasureTarget() : q === 'war' ? War.orderTarget() : q ? Quests.targetPos(q) : null; },
   treasureTarget() { const t = this.mods.treasures[this.mods.treasures.length - 1]; return t ? { x: t.x, y: t.y, name: 'Tesouro' } : null; },
   drawPickup(ctx, k, camX, camY) {
     const x = Math.round(k.x - camX), y = Math.round(k.y - camY + k.z + Math.sin(this.t * 4 + k.x) * 1.5 - 4);

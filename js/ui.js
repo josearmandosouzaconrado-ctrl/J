@@ -262,6 +262,7 @@ const UI = {
       return;
     }
     if (a.isFollower && a.studentId) return Academy.followerTalk(a);
+    if (a.faction && !a.guard) return War.talk(a);
     if (a.student) return Academy.talk(a);
     if (a.isFollower && a.spouse) {
       this.dialog(a.name, a.look, 'Estou com você, meu amor. Para onde vamos?', [
@@ -418,8 +419,9 @@ const UI = {
       ssarak: 'Sssseja bem-vindo, sangue-quente.', colinas: 'Aceita um segundo café da manhã?', morvath: 'Cada espada conta neste bastião. Os mortos não dormem!'
     };
     const extra = st ? `<br><br><span class="dim">História atual: ${esc(st.title)}</span>` : '';
+    const wtxt = War.castleOptions(b, opts);
     opts.push({ label: 'Sair' });
-    this.dialog(b.owner.name, look, esc(lines[s.region.id] || 'Saudações.') + extra, opts);
+    this.dialog(b.owner.name, look, esc(lines[s.region.id] || 'Saudações.') + extra + wtxt, opts);
   },
   guild(b) {
     const P = Game.player, gid = b.guild, G = GUILDS[gid], look = this.ownerLook(b);
@@ -614,7 +616,7 @@ const UI = {
     this.menuTab = tab || this.menuTab || 'inv';
     const P = Game.player;
     if (P.pendingLevels > 0 && !tab) { this.levelUp(); return; }
-    const tabs = [['inv', 'Mochila'], ['char', 'Herói'], ['magic', 'Magias'], ['quests', 'Missões'], ['family', 'Família'], ['guilds', 'Guildas'], ['map', 'Mapa'], ['system', 'Sistema']];
+    const tabs = [['inv', 'Mochila'], ['char', 'Herói'], ['magic', 'Magias'], ['quests', 'Missões'], ['family', 'Família'], ['guilds', 'Guildas'], ['war', 'Reinos'], ['map', 'Mapa'], ['system', 'Sistema']];
     const f = this.reg();
     const head = `<div class="tabs top">${tabs.map(([k, n]) => `<button class="tab ${this.menuTab === k ? 'on' : ''}" ${f(() => k === 'map' ? this.openMap() : this.openMenu(k))}>${n}</button>`).join('')}<button class="tab close" ${f(() => this.close())}>✕</button></div>`;
     let body = '';
@@ -625,6 +627,7 @@ const UI = {
       case 'quests': body = this.questTab(f); break;
       case 'guilds': body = this.guildTab(f); break;
       case 'family': body = this.familyTab(f); break;
+      case 'war': body = War.tab(f); break;
       case 'system': body = this.systemTab(f); break;
     }
     const el = this.show('menu', `<div class="panel menu">${head}<div class="menu-body">${body}</div></div>`);
@@ -783,6 +786,7 @@ const UI = {
     ctx.font = 'bold 14px VT323, monospace'; ctx.textAlign = 'center';
     for (const r of W.regions) { const [x, y] = toS(r.cx, r.cy); ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillText(r.name.toUpperCase(), x + 1, y - 30 + 1); ctx.fillStyle = 'rgba(255,240,200,0.75)'; ctx.fillText(r.name.toUpperCase(), x, y - 30); }
     ctx.font = '15px VT323, monospace';
+    War.drawMap(ctx, toS, z);
     for (const m of this.mapMarkers()) {
       const [x, y] = toS(m.x, m.y);
       if (x < -20 || y < -20 || x > cw + 20 || y > ch + 20) continue;
@@ -804,7 +808,7 @@ const UI = {
     }
     // alvo rastreado
     const q = Game.trackedQuest();
-    const tgt = q === 'treasure' ? Game.treasureTarget() : q ? Quests.targetPos(q) : null;
+    const tgt = Game.trackTarget(q);
     if (tgt) { const [x, y] = toS(tgt.x, tgt.y); const r = 6 + Math.sin(Game.t * 6) * 2; ctx.strokeStyle = '#ffd040'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r + (tgt.region ? 20 : 0), 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = '#ffd040'; ctx.fillText('★', x, y + 5); }
     for (const t of M.treasures) { const [x, y] = toS(t.x, t.y); ctx.fillStyle = '#ff3030'; ctx.font = 'bold 18px VT323, monospace'; ctx.fillText('X', x, y + 5); }
     // jogador
@@ -927,6 +931,7 @@ const UI = {
     let tt = '', tgt = null;
     if (q === 'main') { const st = Quests.mainStep(); tt = `<b class="gold">★ ${esc(st.title)}</b>`; tgt = Quests.targetPos('main'); }
     else if (q === 'treasure') { tt = '<b class="gold">✖ Tesouro escondido</b>'; tgt = Game.treasureTarget(); }
+    else if (q === 'war') { tgt = War.orderTarget(); tt = `<b class="gold">⚔ Ordens</b><br><small>Junte-se ao exército ${esc(tgt ? tgt.name : '')}</small>`; }
     else if (q) { tt = `<b>${esc(q.title)}</b><br><small>${esc(Quests.progressText(q))}</small>`; tgt = Quests.targetPos(q); }
     this.setText('tracker', tt);
     if (tgt && Game.level.isWorld) {
@@ -976,7 +981,7 @@ const UI = {
       ctx.fillRect(x - 1, y - 1, a.boss ? 3 : 2, a.boss ? 3 : 2);
     }
     const q = Game.trackedQuest();
-    const tgt = q === 'treasure' ? Game.treasureTarget() : q ? Quests.targetPos(q) : null;
+    const tgt = Game.trackTarget(q);
     if (tgt && L.isWorld) { let [x, y] = toM(tgt.x * 16, tgt.y * 16); x = clamp(x, 3, N * S - 3); y = clamp(y, 3, N * S - 3); ctx.fillStyle = '#000'; ctx.fillRect(x - 2, y - 2, 5, 5); ctx.fillStyle = '#ffd040'; ctx.fillRect(x - 1, y - 1, 3, 3); }
     ctx.fillStyle = '#fff'; ctx.fillRect(N / 2 * S - 1, N / 2 * S - 1, 3, 3);
   }

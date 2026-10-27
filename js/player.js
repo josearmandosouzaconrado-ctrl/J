@@ -41,7 +41,7 @@ class Player extends Actor {
   // ---------- Serialização ----------
   toJSON() {
     const o = {};
-    for (const k of ['name', 'race', 'cls', 'app', 'level', 'xp', 'base', 'perkPts', 'gold', 'inv', 'equip', 'spells', 'spellIdx', 'shouts', 'shoutLvl', 'shoutIdx', 'souls', 'skills', 'quests', 'guilds', 'main', 'doneQuests', 'hasHorse', 'houses', 'storage', 'follower', 'stats', 'hp', 'mp', 'st', 'x', 'y', 'lastTown', 'pendingLevels', 'cds', 'rel', 'spouse', 'spouseHome', 'children', 'babyDue', 'pet', 'sign', 'style', 'mount', 'horse', 'cart', 'carrying', 'job', 'chronicle', 'freeMode', 'magicAwake', 'academy']) o[k] = this[k];
+    for (const k of ['name', 'race', 'cls', 'app', 'level', 'xp', 'base', 'perkPts', 'gold', 'inv', 'equip', 'spells', 'spellIdx', 'shouts', 'shoutLvl', 'shoutIdx', 'souls', 'skills', 'quests', 'guilds', 'main', 'doneQuests', 'hasHorse', 'houses', 'storage', 'follower', 'stats', 'hp', 'mp', 'st', 'x', 'y', 'lastTown', 'pendingLevels', 'cds', 'rel', 'spouse', 'spouseHome', 'children', 'babyDue', 'pet', 'sign', 'style', 'mount', 'horse', 'cart', 'carrying', 'job', 'chronicle', 'freeMode', 'magicAwake', 'academy', 'army']) o[k] = this[k];
     o.perks = [...this.perks];
     o.buffs = this.buffs.filter(b => b.t < 1e6);
     return o;
@@ -184,6 +184,7 @@ class Player extends Actor {
     if (h) { const d = ITEMS[h.id]; if (h.id === 'coroa_heroi') L.crown = true; else if (d.mat === 'couro') L.hood = d.icon.c; else L.helm = d.icon.c; if (d.mat === 'orc' || d.mat === 'draconico') L.helmHorns = true; }
     if (f) L.boots = shade(ITEMS[f.id].icon.c, -0.2);
     if (o) L.shield = ITEMS[o.id].icon.c;
+    for (const it of [b, h, o]) if (it && ITEMS[it.id].wlook) for (const [k, v] of Object.entries(ITEMS[it.id].wlook)) if (v !== undefined) L[k] = v;
     if (this.cls === 'paladino' || this.cls === 'mago') L.cape = this.cls === 'paladino' ? '#e0e0f0' : undefined;
     this.look = L;
     this.S = Sprites.actor(L);

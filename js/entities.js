@@ -1,7 +1,7 @@
 'use strict';
 // ===================== ENTIDADES, IA E COMBATE =====================
 const HOSTILE = { enemy: { player: 1, ally: 1 }, ally: { enemy: 1 }, player: { enemy: 1 }, npc: {} };
-function isHostile(a, b) { const h = HOSTILE[a.team]; return !!(h && h[b.team]); }
+function isHostile(a, b) { if (a.faction || b.faction) return War.hostile(a, b); const h = HOSTILE[a.team]; return !!(h && h[b.team]); }
 const BOSS_L0 = { bandido_chefe: 3, rei_goblin: 4, troll_rei: 6, cavaleiro_morto: 6, necromante: 8, yeti: 12, senhor_chamas: 14, hidra: 12, farao: 14, rainha_aranha: 8, guardiao_golem: 13, campeao_orc: 17, rei_draugr: 16, lich: 24, vorthax: 30, dragao: 7, dragao_gelo: 9 };
 
 function collides(L, x, y, r) {
@@ -428,7 +428,7 @@ class Monster extends Actor {
     const t = this.target;
     if (this.ai === 'flee') return this.updateFlee(dt, sf);
     if (this.ai === 'flyer') return this.updateFlyer(dt, sf);
-    if (!t || t.dead) { this.target = null; return this.idle(dt, sf); }
+    if (!t || t.dead) { this.target = null; if (this.ctrl && War.steer(this, dt, sf)) return; return this.idle(dt, sf); }
     const d = dist(this.x, this.y, t.x, t.y);
     const reach = this.r + t.r + 10 * this.sizeScale;
     if (this.boss && this.specialT <= 0 && d < 260) { this.special(); return; }

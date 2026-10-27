@@ -100,6 +100,11 @@
             if (torsoH > 5) p(9, tT + 2, bS, 1, torsoH - 4);
           }
         }
+        if (L.tabard && !robe) {
+          const tc = L.tabard, tS = shade(tc, -0.25);
+          for (let y = tT + 1; y <= tB + 2; y++) { p(8, y, tc, 4, 1); p(11, y, tS, 1, 1); }
+          if (front) { p(9, tT + 2, L.tabardSign || '#f0d060', 2, 2); p(8, tB + 2, tS, 4, 1); }
+        }
         if (L.cape) {
           if (front) { p(tx0 - 1, tT, L.cape, 1, torsoH + 2); p(tx1 + 1, tT, L.cape, 1, torsoH + 2); p(8, tT, shade(L.cape, 0.2), 4, 1); }
           else { for (let y = tT; y <= Math.min(footY - 1, tB + 3); y++) p(tx0, y, y % 3 === 0 ? shade(L.cape, -0.15) : L.cape, tx1 - tx0 + 1, 1); p(tx0, tT, shade(L.cape, 0.2), tx1 - tx0 + 1, 1); }
@@ -114,6 +119,7 @@
       };
       const ax0 = tx0 - 2, ax1 = tx1 + 1;
       arm(ax0, frame === 1 ? 1 : 0, ax0); arm(ax1, frame === 2 ? 1 : 0, ax1 + 1);
+      if (L.pauldron) { const pc = L.pauldron; p(ax0 - 1, tT - 1, pc, 4, 2); p(ax1 - 1, tT - 1, pc, 4, 2); p(ax0 - 1, tT - 1, shade(pc, 0.35), 3, 1); p(ax1 + 2, tT, shade(pc, -0.3), 1, 1); }
       if (L.shield && front) {
         const sc = L.shield;
         for (let y = tT + 1; y <= tB + 2; y++) { const w = y > tB ? 2 : 4; p(ax0 - 2 + (4 - w) / 2, y, sc, w, 1); }
@@ -190,6 +196,14 @@
         if (front) { p(9, hT + 3, h, 2, 2); p(6, hT + 1, '#ffffff'); p(13, hT + 1, '#ffffff'); }
         else for (let y = hT + 3; y < hB; y++) p(6, y, y % 2 ? h : hsd, 8, 1);
         if (L.helmHorns) { const hc = '#ece0c4'; p(4, hT, hc); p(3, hT - 1, hc); p(3, hT - 2, hc); p(15, hT, hc); p(16, hT - 1, hc); p(16, hT - 2, hc); }
+        const hst = L.helmStyle;
+        if (hst === 'kettle') { p(3, hT + 2, h, 14, 1); p(3, hT + 3, hsd, 14, 1); }
+        if (hst === 'full' && front) { p(6, hT + 3, h, 8, 4); p(6, hT + 3, hh, 1, 4); p(13, hT + 3, hsd, 1, 4); p(7, ey, '#101018', 6, 1); p(9, ey + 2, hsd, 2, 2); p(8, ey + 2, '#101018', 1, 1); p(11, ey + 2, '#101018', 1, 1); }
+        if (hst === 'spike') { p(9, hT - 5, hsd, 2, 3); p(9, hT - 6, h, 1, 1); p(4, hT + 1, hsd, 1, 2); p(15, hT + 1, hsd, 1, 2); if (front) p(7, ey, '#101018', 6, 1); }
+        if (hst === 'leaf') { p(9, hT - 4, hh, 2, 2); p(8, hT - 3, h, 4, 1); p(4, hT + 1, hh, 2, 1); p(3, hT, hh, 1, 1); p(14, hT + 1, h, 2, 1); p(16, hT, h, 1, 1); }
+        if (hst === 'turban') { for (let y = hT - 2; y <= hT + 2; y++) p(5, y, (y % 2) ? h : hh, 10, 1); p(7, hT - 3, h, 6, 1); if (front) { p(9, hT, '#e02848', 2, 2); p(9, hT - 1, '#f0d060', 2, 1); } }
+        if (L.plume) { const pl = L.plume; p(9, hT - 4, pl, 2, 2); p(10, hT - 5, pl, 2, 1); p(11, hT - 6, shade(pl, 0.25), 2, 1); if (!front) p(10, hT - 3, pl, 2, 3); }
+        if (L.crest) { const cr = L.crest; for (let x = 6; x <= 13; x++) p(x, hT - 3 - (x > 7 && x < 12 ? 1 : 0), x % 2 ? cr : shade(cr, 0.2), 1, 2); }
       }
       if (L.crown) { const g = '#f4c838', gS = '#b08820'; p(6, hT - 1, gS, 8, 1); p(6, hT - 2, g, 8, 1); p(6, hT - 3, g); p(9, hT - 3, g, 2, 1); p(13, hT - 3, g); p(9, hT - 2, '#e02848', 2, 1); }
     } else {
@@ -236,6 +250,7 @@
         if (robe) { p(sx0 + 1, footY, boots, 4, 1); p(sx1 - 1, tT + 1, L.trim || shade(body, 0.4), 1, footY - tT - 1); }
         else if (!mum && !L.fur && !L.nobelt) { p(sx0, tB - 1, '#3a2416', sx1 - sx0 + 1, 1); p(sx1, tB - 1, '#e0b848'); }
         if (L.cape) { p(sx0 - 1, tT, L.cape, 2, torsoH + 3); p(sx0 - 2, tT + 3, shade(L.cape, -0.15), 1, torsoH); }
+        if (L.tabard && !robe) { for (let y = tT + 1; y <= tB + 2; y++) p(sx1 - 1, y, L.tabard, 2, 1); }
       }
       // cabeça
       for (let y = hT; y <= hB; y++) for (let x = 7; x <= 13; x++) {
@@ -267,13 +282,23 @@
         if (hs === 4) { p(6, hT - 1, hair, 3, 3); }
       }
       if (L.hood) { const hc = L.hood; p(8, hT - 2, hc, 5, 1); p(6, hT - 1, hc, 8, 2); p(6, hT + 1, hc, 3, 7); p(13, hT + 1, shade(hc, -0.3), 1, 2); p(5, hT + 2, shade(hc, -0.3), 1, 6); }
-      if (L.helm) { const h = L.helm; p(8, hT - 2, h, 5, 1); p(6, hT - 1, h, 8, 3); p(6, hT + 2, h, 3, 4); p(13, hT + 2, h, 1, 2); p(8, hT - 2, shade(h, 0.35), 3, 1); p(6, hT + 1, shade(h, -0.3), 8, 1); if (L.helmHorns) { p(7, hT - 2, '#ece0c4'); p(6, hT - 3, '#ece0c4'); } }
+      if (L.helm) { const h = L.helm; p(8, hT - 2, h, 5, 1); p(6, hT - 1, h, 8, 3); p(6, hT + 2, h, 3, 4); p(13, hT + 2, h, 1, 2); p(8, hT - 2, shade(h, 0.35), 3, 1); p(6, hT + 1, shade(h, -0.3), 8, 1); if (L.helmHorns) { p(7, hT - 2, '#ece0c4'); p(6, hT - 3, '#ece0c4'); }
+        const hst = L.helmStyle, hd = shade(h, -0.3);
+        if (hst === 'kettle') { p(5, hT + 1, h, 10, 1); }
+        if (hst === 'full') { p(9, hT + 2, h, 5, 4); p(10, ey, '#101018', 4, 1); }
+        if (hst === 'spike') { p(10, hT - 5, hd, 2, 3); }
+        if (hst === 'leaf') { p(10, hT - 4, shade(h, 0.3), 2, 2); p(5, hT, shade(h, 0.3), 2, 1); }
+        if (hst === 'turban') { for (let y = hT - 2; y <= hT + 2; y++) p(6, y, y % 2 ? h : shade(h, 0.3), 8, 1); }
+        if (L.plume) { p(9, hT - 4, L.plume, 2, 2); p(7, hT - 5, L.plume, 3, 1); p(6, hT - 4, L.plume, 1, 2); }
+        if (L.crest) { p(7, hT - 3, L.crest, 6, 1); p(8, hT - 4, L.crest, 4, 1); }
+      }
       if (L.crown) { const g = '#f4c838'; p(7, hT - 2, g, 7, 1); p(7, hT - 3, g); p(10, hT - 3, g); p(13, hT - 3, g); p(10, hT - 2, '#e02848'); }
       // braço da frente
       const ax = 10 + (frame === 1 ? 1 : frame === 2 ? -1 : 0);
       for (let y = tT + 1; y < tB; y++) p(ax, y, skel && !L.body ? bone : armC, 2, 1);
       p(ax, tT + 1, skel && !L.body ? bone : shade(armC, 0.15), 2, 1);
       p(ax, tB, skel ? bone : sk, 2, 1); p(ax, tB + 1, skel ? boneS : skS, 2, 1);
+      if (L.pauldron) { p(ax - 1, tT, L.pauldron, 4, 2); p(ax - 1, tT, shade(L.pauldron, 0.35), 3, 1); }
     }
     outline(c, '#1a1018');
     return c;
@@ -502,6 +527,7 @@
       case 'mace': p(0, 7, wood, 11, 2); S.ellipse(p, 13, 8, 3.5, 3.5, col); p(12, 6, hi, 2, 2); p(13, 3, col); p(17, 8, col); p(13, 12, col); break;
       case 'hammer': p(0, 7, wood, 12, 2); p(11, 2, col, 6, 12); p(11, 2, hi, 6, 1); p(16, 2, sh, 1, 12); break;
       case 'bow': for (let y = 0; y < 16; y++) { const x = 2 + Math.round(Math.sin(y / 15 * Math.PI) * 5); p(x, y, col, 2, 1); } p(2, 0, '#e8e8e0', 1, 16); break;
+      case 'spear': p(0, 7, wood, 16, 1); p(0, 8, shade(wood, -0.25), 16, 1); p(16, 6, col, 2, 4); p(18, 7, col, 2, 2); p(16, 6, hi, 2, 1); p(14, 6, '#c03030', 1, 4); break;
       case 'staff': p(0, 7, col, 15, 2); p(0, 7, shade(col, 0.2), 15, 1); S.ellipse(p, 16.5, 8, 2.8, 2.8, glow || '#60a0ff'); p(15, 7, '#ffffff'); break;
     }
     outline(c);
