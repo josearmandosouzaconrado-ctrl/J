@@ -133,11 +133,12 @@ const Game = {
     const P = this.player, M = this.mods;
     let px = P.x, py = P.y;
     if (!this.level.isWorld && this.worldPos) { px = this.worldPos.x; py = this.worldPos.y; }
-    const exp = M.explored; let bin = ''; for (let i = 0; i < exp.length; i += 8192) bin += String.fromCharCode.apply(null, exp.subarray(i, i + 8192));
+    // névoa do mapa compactada (sequências de 0/1)
+    const exp = M.explored, runs = []; let cur = 0, n = 0; for (let i = 0; i < exp.length; i++) { const v = exp[i] ? 1 : 0; if (v === cur) n++; else { runs.push(n.toString(36)); cur = v; n = 1; } } runs.push(n.toString(36));
     const pj = P.toJSON(); pj.x = px; pj.y = py;
     const s = {
-      v: 3, seed: this.world.seed, time: this.time, day: this.day, track: this.track, player: pj,
-      mods: { opened: [...M.opened], harvested: M.harvested, cleared: M.cleared, dopened: M.dopened, camps: M.camps, runes: [...M.runes], shrines: M.shrines, discovered: [...M.discovered], explored: btoa(bin), uniques: [...M.uniques], treasures: M.treasures, homes: M.homes.map(h => { const o = Object.assign({}, h); delete o._b; delete o._s; return o; }), war: M.war || null },
+      v: 4, seed: this.world.seed, time: this.time, day: this.day, track: this.track, player: pj,
+      mods: { opened: [...M.opened], harvested: M.harvested, cleared: M.cleared, dopened: M.dopened, camps: M.camps, runes: [...M.runes], shrines: M.shrines, discovered: [...M.discovered], exrle: runs.join(','), exw: MAP_W, uniques: [...M.uniques], treasures: M.treasures, homes: M.homes.map(h => { const o = Object.assign({}, h); delete o._b; delete o._s; return o; }), war: M.war || null },
       summary: { name: P.name, level: P.level, race: RACES[P.race].name, cls: P.style || 'Aventureiro', loc: this.locationName(), date: Date.now(), time: Math.floor(P.stats.playTime) }
     };
     try {
@@ -155,7 +156,10 @@ const Game = {
       const m = s.mods;
       M.opened = new Set(m.opened); M.harvested = m.harvested || {}; M.cleared = m.cleared || {}; M.dopened = m.dopened || {}; M.camps = m.camps || {};
       M.runes = new Set(m.runes || []); M.shrines = m.shrines || {}; M.discovered = new Set(m.discovered || []); M.uniques = new Set(m.uniques || []); M.treasures = m.treasures || []; M.homes = m.homes || []; M.war = m.war || null;
-      try { const bin = atob(m.explored), w = (s.v || 1) >= 2 ? MAP_W : 256; for (let i = 0; i < bin.length; i++) { const x = i % w, y = (i / w) | 0; if (x < MAP_W && y < MAP_H) M.explored[y * MAP_W + x] = bin.charCodeAt(i); } } catch (e) { }
+      try {
+        if (m.exrle) { const w = m.exw || MAP_W; let i = 0, v = 0; for (const r of m.exrle.split(',')) { const n = parseInt(r, 36); if (v) for (let k = 0; k < n; k++) { const x = (i + k) % w, y = ((i + k) / w) | 0; if (x < MAP_W && y < MAP_H) M.explored[y * MAP_W + x] = 1; } i += n; v = 1 - v; } }
+        else { const bin = atob(m.explored), w = (s.v || 1) >= 2 ? 384 : 256; for (let i = 0; i < bin.length; i++) { const x = i % w, y = (i / w) | 0; if (x < MAP_W && y < MAP_H) M.explored[y * MAP_W + x] = bin.charCodeAt(i); } }
+      } catch (e) { }
       this.mods = M; this.world.mods = M;
       for (const [k, list] of this.world.stampIndex) this.world.stampIndex.set(k, list.filter(st => !st.homeId));
       for (const [k, d] of this.world.doors) if (d.home) this.world.doors.delete(k);
@@ -263,7 +267,7 @@ const Game = {
     Input.update();
     if (this.state === 'title') { this.renderTitle(dt); return; }
     if (!this.started) return;
-    if (this.world && !this.world.mapDone) this.world.stepMapImage(6);
+    if (this.world && !this.world.mapDone) this.world.stepMapImage(10);
     if (!this.paused && !this.player.dead) {
       if (this.hitstop > 0) this.hitstop -= dt;
       else this.update(dt);

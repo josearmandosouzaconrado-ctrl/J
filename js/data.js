@@ -239,22 +239,31 @@ const REGIONS = [
     ruler: { title: 'Imperatriz', name: 'Hana Nove-Caudas', race: 'kitsune' }, towns: 3, villages: 4, dungeons: 8, color: '#e06890',
     desc: 'Terra das kitsunes: templos, lanternas, cerejeiras e espadachins errantes.' },
   // ----- Valtheria: o Grande Continente do sul (maior que Eldoria) -----
-  { id: 'aurelion', name: 'Império de Aurélion', short: 'Aurélion', race: 'humano', fx: 0.74, fy: 1.80, biome: 'plains', lvl: [14, 22], mount: -0.04, culture: 'imperial', cont: 2,
-    ruler: { title: 'Imperador', name: 'Cassius Aurélio', race: 'humano' }, towns: 5, villages: 8, dungeons: 14, color: '#5a78e0',
+  { id: 'aurelion', name: 'Império de Aurélion', short: 'Aurélion', race: 'humano', fx: 1.050, fy: 1.965, biome: 'plains', lvl: [14, 22], mount: -0.04, culture: 'imperial', cont: 2,
+    ruler: { title: 'Imperador', name: 'Cassius Aurélio', race: 'humano' }, towns: 6, villages: 10, dungeons: 16, color: '#5a78e0',
     desc: 'O maior império do mundo, de cidades de mármore branco e legiões disciplinadas.' },
-  { id: 'gromhald', name: 'Picos de Gromhald', short: 'Gromhald', race: 'gigante', fx: 0.30, fy: 1.36, biome: 'snow', lvl: [20, 30], mount: 0.12, culture: 'giant', cont: 2,
-    ruler: { title: 'Rei-Montanha', name: 'Ulfgar Pedra-Viva', race: 'gigante' }, towns: 3, villages: 5, dungeons: 12, color: '#8aa0b8',
+  { id: 'gromhald', name: 'Picos de Gromhald', short: 'Gromhald', race: 'gigante', fx: 0.537, fy: 1.550, biome: 'snow', lvl: [20, 30], mount: 0.12, culture: 'giant', cont: 2,
+    ruler: { title: 'Rei-Montanha', name: 'Ulfgar Pedra-Viva', race: 'gigante' }, towns: 5, villages: 8, dungeons: 14, color: '#8aa0b8',
     desc: 'Montanhas geladas dos meio-gigantes, onde tudo é grande demais.' },
-  { id: 'lunethar', name: 'Bosque Eterno de Lunethar', short: 'Lunethar', race: 'elfo', fx: 1.18, fy: 1.40, biome: 'forest', lvl: [16, 26], mount: 0.0, culture: 'elf', cont: 2,
-    ruler: { title: 'Rei', name: 'Aelindor Lua-de-Prata', race: 'elfo' }, towns: 4, villages: 6, dungeons: 12, color: '#a0a0f0',
+  { id: 'lunethar', name: 'Bosque Eterno de Lunethar', short: 'Lunethar', race: 'elfo', fx: 1.074, fy: 1.441, biome: 'forest', lvl: [16, 26], mount: 0.0, culture: 'elf', cont: 2,
+    ruler: { title: 'Rei', name: 'Aelindor Lua-de-Prata', race: 'elfo' }, towns: 5, villages: 8, dungeons: 14, color: '#a0a0f0',
     desc: 'Florestas antigas dos elfos da lua, onde as árvores brilham à noite.' },
-  { id: 'rodafina', name: 'Vale de Rodafina', short: 'Rodafina', race: 'gnomo', fx: 0.36, fy: 2.12, biome: 'hills', lvl: [12, 20], mount: 0.0, culture: 'gnome', cont: 2,
-    ruler: { title: 'Grão-Inventora', name: 'Pimpa Engrenagem', race: 'gnomo' }, towns: 4, villages: 7, dungeons: 12, color: '#f09030',
+  { id: 'rodafina', name: 'Vale de Rodafina', short: 'Rodafina', race: 'gnomo', fx: 0.464, fy: 2.039, biome: 'hills', lvl: [12, 20], mount: 0.0, culture: 'gnome', cont: 2,
+    ruler: { title: 'Grão-Inventora', name: 'Pimpa Engrenagem', race: 'gnomo' }, towns: 5, villages: 8, dungeons: 14, color: '#f09030',
     desc: 'Colinas coloridas dos gnomos inventores: moinhos, engenhocas e autômatos.' },
-  { id: 'kumari', name: 'Savana de Kumari', short: 'Kumari', race: 'felino', fx: 1.16, fy: 2.18, biome: 'desert', lvl: [18, 28], mount: -0.05, culture: 'desert', cont: 2,
-    ruler: { title: 'Rainha-Leoa', name: 'Nala Juba-Dourada', race: 'felino' }, towns: 4, villages: 6, dungeons: 12, color: '#d8a040',
+  { id: 'kumari', name: 'Savana de Kumari', short: 'Kumari', race: 'felino', fx: 1.611, fy: 2.478, biome: 'desert', lvl: [18, 28], mount: -0.05, culture: 'desert', cont: 2,
+    ruler: { title: 'Rainha-Leoa', name: 'Nala Juba-Dourada', race: 'felino' }, towns: 5, villages: 8, dungeons: 14, color: '#d8a040',
     desc: 'Savanas e cânions dourados dos clãs felinos do sul.' },
-  { id: 'umbraval', name: 'Abismo de Umbraval', short: 'Umbraval', race: null, fx: 0.76, fy: 2.36, biome: 'dead', lvl: [28, 40], mount: 0.03, culture: 'fort', cont: 2,
+  { id: 'kharzul', name: 'Fortaleza de Kharzul', short: 'Kharzul', race: 'anao', fx: 1.636, fy: 1.538, biome: 'mountain', lvl: [22, 32], mount: 0.14, culture: 'dwarf', cont: 2,
+    ruler: { title: 'Alto-Rei', name: 'Durgrim Martelo-Rúnico', race: 'anao' }, towns: 4, villages: 6, dungeons: 14, color: '#c08a50',
+    desc: 'O maior reino anão do mundo, escavado em montanhas maiores que as de Khaz Durim.' },
+  { id: 'orkhai', name: 'Estepes de Orkhai', short: 'Orkhai', race: 'orc', fx: 1.611, fy: 1.990, biome: 'hills', lvl: [20, 30], mount: 0.0, culture: 'orc', cont: 2,
+    ruler: { title: 'Grão-Khan', name: 'Morgash Cavalga-Ventos', race: 'orc' }, towns: 4, villages: 8, dungeons: 14, color: '#c06a3a',
+    desc: 'Estepes sem fim onde as hordas orcs cavalgam lobos gigantes.' },
+  { id: 'serpentis', name: 'Reino de Serpentis', short: 'Serpentis', race: 'draconato', fx: 0.562, fy: 2.466, biome: 'swamp', lvl: [18, 28], mount: -0.08, culture: 'swamp', cont: 2,
+    ruler: { title: 'Imperatriz-Serpente', name: 'Sylith Escama-de-Jade', race: 'draconato' }, towns: 4, villages: 7, dungeons: 14, color: '#3a9a6a',
+    desc: 'Pântanos e templos afundados dos draconatos do sul.' },
+  { id: 'umbraval', name: 'Abismo de Umbraval', short: 'Umbraval', race: null, fx: 1.074, fy: 2.588, biome: 'dead', lvl: [28, 40], mount: 0.03, culture: 'fort', cont: 2,
     ruler: null, towns: 2, villages: 0, dungeons: 16, color: '#604878', hostile: true,
     desc: 'Uma ferida na terra de onde saem horrores antigos. Só os mais fortes voltam.' }
 ];
@@ -716,6 +725,7 @@ const ENEMIES = {
   gato_selvagem: { name: 'Gato Selvagem', look: { k: 'wolf', c: '#d0a050' }, hp: 90, dmg: 12, spd: 90, ai: 'melee', xp: 0, ally: true },
   lobo_domado: { name: 'Lobo Domado', look: { k: 'wolf', c: '#5a5a62' }, hp: 150, dmg: 14, spd: 84, ai: 'melee', xp: 0, ally: true },
   mercenario: { name: 'Mercenário', look: { k: 'hum', skin: '#d8a070', body: '#5a6a8a', legs: '#3a3a4a', hair: '#3a2a1a', helm: '#9aa0a8', weapon: 'sword', wc: '#c0c0c0', shield: true }, hp: 160, dmg: 14, spd: 68, ai: 'melee', xp: 0, ally: true },
+  hidra_jovem: { name: 'Hidra Jovem', look: { k: 'hum', skin: '#3a8a5a', body: '#2a6a3a', legs: '#1a4a2a', snout: true, horns: true, tail: true, tailC: '#3a8a5a', size: 1.6, bulky: true, nobelt: true, eyes: '#ffe040', weapon: 'mace', wc: '#2a5a3a' }, hp: 300, dmg: 26, spd: 50, ai: 'charge', charge: true, r: 9, xp: 150, poison: 4, gold: [30, 100], drops: [['escama_lagarto', 1], ['veneno', 0.6]], dropGear: 0.3 },
   legionario_renegado: { name: 'Legionário Renegado', look: { k: 'hum', skin: '#e0ac69', body: '#a03030', legs: '#5a4a3a', hair: '#2a1a10', helm: '#c0a050', helmStyle: 'kettle', crest: '#c02020', weapon: 'sword', wc: '#d0d0d8', shield: '#a03030' }, hp: 95, dmg: 16, spd: 62, ai: 'melee', xp: 40, armor: 20, gold: [15, 50], dropGear: 0.2 },
   gigante_bruto: { name: 'Gigante Bruto', look: { k: 'hum', skin: '#c89070', body: '#6a5040', legs: '#4a3a2a', hair: '#8a8a8a', bulky: true, beard: true, fur: true, size: 1.7, weapon: 'hammer', wc: '#7a7a80' }, hp: 340, dmg: 30, spd: 50, ai: 'charge', charge: true, r: 9, xp: 160, gold: [40, 140], dropGear: 0.4 },
   automato: { name: 'Autômato Desregulado', look: { k: 'hum', skin: '#a0a0a8', body: '#b08040', legs: '#6a5a40', helm: '#c09050', helmStyle: 'full', eyes: '#40e0ff', nobelt: true, weapon: 'mace', wc: '#8a8a90' }, hp: 110, dmg: 17, spd: 52, ai: 'melee', xp: 44, armor: 30, gold: [10, 40], drops: [['lingote_ferro', 0.4], ['lingote_aco', 0.1]] },
@@ -730,6 +740,9 @@ const ENEMIES = {
 };
 
 const SPAWNS = {
+  kharzul: { day: [['golem_pedra', 1.5], ['troll', 1.5], ['lobo_gelo', 2], ['urso', 2], ['automato', 1], ['goblin', 2]], night: [['draugr', 2], ['esqueleto', 2], ['troll', 1.5], ['espectro', 1]] },
+  orkhai: { day: [['orc_renegado', 3], ['lobo', 3], ['javali', 2], ['cervo', 2], ['ogro', 1], ['goblin_arqueiro', 1]], night: [['orc_renegado', 2], ['lobo', 3], ['esqueleto', 2], ['ogro', 1]] },
+  serpentis: { day: [['lagarto', 3], ['aranha', 2], ['slime', 2], ['escorpiao', 1], ['cervo', 1], ['hidra_jovem', 0.4]], night: [['lagarto', 2], ['zumbi', 2], ['espectro', 2], ['aranha', 2]] },
   aurelion: { day: [['bandido', 2], ['bandido_arqueiro', 1], ['lobo', 2], ['javali', 2], ['cervo', 3], ['coelho', 2], ['ogro', 0.6], ['legionario_renegado', 1.5]], night: [['esqueleto', 2], ['zumbi', 2], ['espectro', 1], ['lobo', 2]] },
   gromhald: { day: [['lobo_gelo', 3], ['urso_polar', 2], ['troll_gelo', 1.5], ['yeti', 0.6], ['gigante_bruto', 0.8]], night: [['draugr', 2], ['lobo_gelo', 3], ['troll_gelo', 1], ['espectro', 1]] },
   lunethar: { day: [['aranha', 3], ['lobo', 2], ['cervo', 3], ['urso', 2], ['espectro', 1], ['coelho', 2]], night: [['aranha', 3], ['espectro', 2], ['lobo', 2], ['cavaleiro_morto', 0.4]] },
@@ -767,6 +780,9 @@ const DUNGEON_TYPES = {
   arena: { name: 'Arena', gen: 'arena', floor: T.SAND, wall: T.WALL, ent: O.ENT_ARENA, mobs: ['orc_renegado', 'ogro'], boss: 'campeao_orc', deco: [O.TORCH, O.BANNER] }
 };
 const REGION_DUNGEONS = {
+  kharzul: ['mina_ana', 'mina_ana', 'caverna', 'cripta'],
+  orkhai: ['covil_bandido', 'caverna', 'arena', 'covil_goblin'],
+  serpentis: ['ruina_afundada', 'ruina_afundada', 'caverna', 'cripta'],
   aurelion: ['cripta', 'covil_bandido', 'caverna', 'arena', 'cripta'],
   gromhald: ['caverna_gelo', 'tumulo_nordico', 'caverna_gelo', 'mina_ana'],
   lunethar: ['ruina_elfica', 'ruina_elfica', 'caverna', 'cripta'],
@@ -860,6 +876,9 @@ const NAMES = {
     s: ['Machado-Gélido', 'Filho-do-Urso', 'Escudo-Partido', 'Lobo-Branco', 'Barba-de-Neve'] }
 };
 const SETTLEMENT_NAMES = {
+  kharzul: { cap: 'Kharzul', list: ['Bigorna Funda', 'Portão de Ferro', 'Mina do Rei', 'Salão das Runas', 'Forja Eterna', 'Pico Martelo', 'Veio de Ouro', 'Cripta dos Ancestrais', 'Ponte de Pedra', 'Barba-Longa'] },
+  orkhai: { cap: 'Orkhai', list: ['Acampamento do Khan', 'Yurta Vermelha', 'Colina dos Lobos', 'Pedra do Uivo', 'Rio de Sangue', 'Totem Alto', 'Vale do Trovão', 'Estepe Seca', 'Poço dos Cavalos', 'Fogueira Eterna', 'Garra Partida'] },
+  serpentis: { cap: 'Serpentis', list: ['Templo Afundado', 'Lagoa de Jade', 'Raiz-Serpente', 'Ninho de Escamas', 'Brejo Antigo', 'Ilha dos Ovos', 'Névoa Verde', 'Vila Palafita', 'Ruínas Sibilantes', 'Lírio Negro'] },
   aurelion: { cap: 'Aurélion', list: ['Nova Roma', 'Porta Solar', 'Vila Lauro', 'Campo de Marte', 'Aqueduto Alto', 'Colina dos Césares', 'Ponte Imperial', 'Vinhedo Real', 'Forte Legião', 'Vila Oliva', 'Templo de Sol', 'Mármore Branco', 'Arco Dourado', 'Campos Elísios'] },
   gromhald: { cap: 'Gromhald', list: ['Salão dos Gigantes', 'Pico Gelado', 'Vale do Mamute', 'Passo Trovão', 'Rocha Alta', 'Fiorde Branco', 'Garganta Fria', 'Toca do Urso'] },
   lunethar: { cap: 'Lunethar', list: ['Clareira de Prata', 'Árvore-Lua', 'Lago Espelho', 'Bosque Sereno', 'Folha Estelar', 'Riacho de Orvalho', 'Ninho da Coruja', 'Vale Crepúsculo', 'Raiz Antiga', 'Luz Pálida'] },
@@ -978,6 +997,9 @@ const MAIN_QUEST = [
 
 // ---------- Falas ----------
 const RUMORS = {
+  kharzul: ['As minas de Kharzul são tão fundas que chegam ao fogo do mundo.', 'Os anões de Kharzul dizem que Khaz Durim é só uma vila deles.', 'O Alto-Rei forja runas que nunca se apagam.', 'Cuidado com os golens nas minas abandonadas.'],
+  orkhai: ['As hordas do Grão-Khan cavalgam lobos do tamanho de cavalos.', 'Nas estepes, a honra vale mais que o ouro.', 'Aurélion e Orkhai brigam por estas terras há séculos.', 'Os tambores de guerra tocam quando a lua fica vermelha.'],
+  serpentis: ['A Imperatriz-Serpente troca de pele a cada cem anos.', 'Os templos afundados guardam ovos de dragão.', 'Hidras vivem nos lagos mais fundos.', 'Os draconatos de Ssarak vieram daqui, dizem os sábios.'],
   aurelion: ['As legiões de Aurélion nunca perderam uma batalha... dizem.', 'O Imperador Cassius quer unir todo o continente sob uma só bandeira.', 'Os aquedutos levam água das montanhas até a capital.', 'Gladiadores lutam na arena de Aurélion todo fim de semana.', 'Navios de Eldoria chegam ao norte trazendo especiarias.'],
   gromhald: ['Os meio-gigantes bebem hidromel em barris inteiros!', 'Um mamute de gelo foi visto no Vale do Mamute.', 'Gigantes de verdade ainda dormem dentro das montanhas.', 'O Rei-Montanha não gosta de visitantes pequenos.'],
   lunethar: ['As árvores de Lunethar brilham na lua cheia.', 'Os elfos da lua não falam com os elfos de Sylvaris há mil anos.', 'Uma coruja branca guia os perdidos no bosque.', 'Aranhas gigantes guardam as ruínas antigas.'],

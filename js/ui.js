@@ -417,7 +417,7 @@ const UI = {
     const lines = {
       valdoria: 'Valdoria precisa de heróis. Fale com a Ordem da Aurora e a Guilda dos Heróis.', sylvaris: 'A floresta sussurra seu nome, Portador.', khazdurim: 'Hah! Volte quando tiver minério de verdade!',
       nordheim: 'Bem-vindo ao salão de Nordheim. Hidromel e honra para todos!', gorthak: 'Fale rápido, forasteiro.', zahrim: 'As areias contam histórias... e você será uma delas.',
-      ssarak: 'Sssseja bem-vindo, sangue-quente.', colinas: 'Aceita um segundo café da manhã?', talassa: 'As marés trouxeram você até nós, viajante de Eldoria.', aurelion: 'Todo caminho leva a Aurélion. Ajoelhe-se diante do Império.', gromhald: 'HAH! Tão pequeno! Sente-se, coma um javali inteiro.', lunethar: 'A lua nos contou que você viria.', rodafina: 'Cuidado onde pisa! Este chão é uma invenção minha.', kumari: 'A savana respeita quem tem coragem. Você tem?', azhkar: 'Ajoelhe-se diante do Império... ou saia.', shirokai: 'Seja bem-vindo. Que as cerejeiras guiem seus passos.', morvath: 'Cada espada conta neste bastião. Os mortos não dormem!'
+      ssarak: 'Sssseja bem-vindo, sangue-quente.', colinas: 'Aceita um segundo café da manhã?', talassa: 'As marés trouxeram você até nós, viajante de Eldoria.', aurelion: 'Todo caminho leva a Aurélion. Ajoelhe-se diante do Império.', gromhald: 'HAH! Tão pequeno! Sente-se, coma um javali inteiro.', lunethar: 'A lua nos contou que você viria.', rodafina: 'Cuidado onde pisa! Este chão é uma invenção minha.', kumari: 'A savana respeita quem tem coragem. Você tem?', kharzul: 'Bem-vindo à verdadeira casa dos anões. Limpe as botas.', orkhai: 'O Grão-Khan não fala com fracos. Prove seu valor!', serpentis: 'Sssua chegada foi prevista nas águasss.', azhkar: 'Ajoelhe-se diante do Império... ou saia.', shirokai: 'Seja bem-vindo. Que as cerejeiras guiem seus passos.', morvath: 'Cada espada conta neste bastião. Os mortos não dormem!'
     };
     const extra = st ? `<br><br><span class="dim">História atual: ${esc(st.title)}</span>` : '';
     const wtxt = War.castleOptions(b, opts);
@@ -746,7 +746,7 @@ const UI = {
     const cv = document.getElementById('mapcv');
     cv.width = window.innerWidth; cv.height = window.innerHeight;
     this.mcv = cv; this.mctx = cv.getContext('2d');
-    if (!this.mz) this.mz = Math.max(1.2, Math.min(cv.width / MAP_W, cv.height / 256) * 1.1);
+    if (!this.mz) this.mz = Math.max(1, Math.min(cv.width / MAP_W, cv.height / MAP_H) * 2.2);
     const wp0 = Game.level.isWorld ? P : (Game.worldPos || P);
     this.mox = wp0.x / 256; this.moy = wp0.y / 256;
     // névoa

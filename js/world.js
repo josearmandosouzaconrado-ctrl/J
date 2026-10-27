@@ -17,7 +17,7 @@ const ORE_BY_REGION = {
   khazdurim: [O.ORE_FERRO, O.ORE_OURO, O.ORE_PRATA, O.ORE_OURO], nordheim: [O.ORE_MALAQUITA, O.ORE_FERRO, O.ORE_MALAQUITA],
   gorthak: [O.ORE_OBSIDIANA, O.ORE_FERRO, O.ORE_OBSIDIANA], zahrim: [O.ORE_OURO, O.ORE_FERRO], ssarak: [O.ORE_FERRO, O.ORE_PRATA],
   morvath: [O.ORE_EBANO, O.ORE_OBSIDIANA, O.ORE_EBANO],
-  talassa: [O.ORE_PRATA, O.ORE_FERRO, O.ORE_PRATA], azhkar: [O.ORE_OBSIDIANA, O.ORE_EBANO, O.ORE_OURO], shirokai: [O.ORE_FERRO, O.ORE_MALAQUITA, O.ORE_PRATA],
+  talassa: [O.ORE_PRATA, O.ORE_FERRO, O.ORE_PRATA], azhkar: [O.ORE_OBSIDIANA, O.ORE_EBANO, O.ORE_OURO], shirokai: [O.ORE_FERRO, O.ORE_MALAQUITA, O.ORE_PRATA], kharzul: [O.ORE_FERRO, O.ORE_OURO, O.ORE_EBANO, O.ORE_OURO], orkhai: [O.ORE_OBSIDIANA, O.ORE_FERRO], serpentis: [O.ORE_FERRO, O.ORE_PRATA, O.ORE_MALAQUITA],
   aurelion: [O.ORE_FERRO, O.ORE_PRATA, O.ORE_OURO], gromhald: [O.ORE_MALAQUITA, O.ORE_EBANO, O.ORE_FERRO], lunethar: [O.ORE_PRATA, O.ORE_MALAQUITA], rodafina: [O.ORE_FERRO, O.ORE_FERRO, O.ORE_OURO], kumari: [O.ORE_OURO, O.ORE_FERRO, O.ORE_OBSIDIANA], umbraval: [O.ORE_EBANO, O.ORE_OBSIDIANA, O.ORE_EBANO]
 };
 
@@ -69,9 +69,10 @@ class World {
       if (d > 0.8) { const f = (d - 0.8) / 0.2; e -= f * f * 0.75; }
     } else if (cont === 2) {
       // Valtheria: o Grande Continente do sul, maior que Eldoria
-      const nx = (x - 3080) / 2900, ny = (y - 7480) / 2850;
-      const d = Math.sqrt(nx * nx + ny * ny) * 0.7 + Math.max(Math.abs(nx), Math.abs(ny)) * 0.3 + this.nW.noise(x / 420, y / 420) * 0.09;
+      const nx = (x - 4600) / 4400, ny = (y - 8250) / 3900;
+      const d = Math.sqrt(nx * nx + ny * ny) * 0.72 + Math.max(Math.abs(nx), Math.abs(ny)) * 0.28 + this.nW.noise(x / 520, y / 520) * 0.07;
       if (d > 0.76) { const f = (d - 0.76) / 0.24; e -= f * f * 0.85; }
+      if (y < VALTHERIA_Y + 500) { const f = (VALTHERIA_Y + 500 - y) / 500; e -= f * f; }   // oceano largo ao norte
     } else {
       // Kaeloria: continente alongado do outro lado do Mar das Brumas
       const nx = (x - 5180) / 760, ny = (y - 2048) / 1780;
@@ -198,9 +199,9 @@ class World {
   }
 
   // ---------- Chunks ----------
-  ckey(cx, cy) { return cy * 256 + cx; }
+  ckey(cx, cy) { return cy * 512 + cx; }
   getChunk(cx, cy) {
-    const k = cy * 256 + cx;
+    const k = cy * 512 + cx;
     let ch = this.chunks.get(k);
     if (ch) { ch.t = this.tick; return ch; }
     ch = this.genChunk(cx, cy);
@@ -221,7 +222,7 @@ class World {
       tiles[i] = this.baseTile(x0 + lx, y0 + ly);
       reg[i] = this._r;
     }
-    const k = cy * 256 + cx;
+    const k = cy * 512 + cx;
     const roads = this.roadTiles.get(k);
     const isRoad = new Uint8Array(1024);
     if (roads) for (const i of roads) {
@@ -557,7 +558,7 @@ class World {
           for (const [dx, dy] of pts) { const t = this.baseTile(x + dx, y + dy); if (t === T.DEEP || t === T.LAVA) return false; if (TSOLID[t] || TWATER[t]) bad++; }
           return bad <= 2 && this.farFrom(x, y, made, type === 'village' ? 80 : 120);
         };
-        const pos = this.findLand(reg.cx, reg.cy, rng, type === 'capital' || (reg.hostile && !made.some(m => m.region === reg)) ? 260 : type === 'town' ? 900 : 1100, ok);
+        const pos = this.findLand(reg.cx, reg.cy, rng, type === 'capital' || (reg.hostile && !made.some(m => m.region === reg)) ? 300 : type === 'town' ? 1150 : 1400, ok);
         if (!pos) continue;
         const first = reg.hostile && !made.some(m => m.region === reg);
         const st = { id: 'v' + (sid++), name: type === 'capital' || first ? names.cap : (pool.pop() || ('Vila ' + sid)), type, region: reg, x: pos.x, y: pos.y, cx: pos.x, cy: pos.y };
@@ -571,7 +572,7 @@ class World {
     for (const R of regs) {
       const types = REGION_DUNGEONS[R.id];
       for (let i = 0; i < R.dungeons; i++) {
-        const pos = this.findLand(R.cx, R.cy, rng, 1100, (x, y) => this.regionAt(x, y) === R.index && this.isLand(x, y) && this.isLand(x, y + 1) && this._e < 0.69 && this.farFrom(x, y, made, 36) && this.farFrom(x, y, dl, 34));
+        const pos = this.findLand(R.cx, R.cy, rng, 1400, (x, y) => this.regionAt(x, y) === R.index && this.isLand(x, y) && this.isLand(x, y + 1) && this._e < 0.69 && this.farFrom(x, y, made, 36) && this.farFrom(x, y, dl, 34));
         if (!pos) continue;
         const type = rng.pick(types), dt = DUNGEON_TYPES[type];
         const d = { id: 'vd' + uid, uid: uid++, name: dt.name + ' ' + rng.pick(DUNGEON_NOUNS), type, boss: dt.boss, lvl: rng.int(R.lvl[0], R.lvl[1]), size: rng.int(48, 64), x: pos.x, y: pos.y, region: R };
@@ -592,7 +593,7 @@ class World {
     const before = this.ports.length;
     const specs = [
       [0, 1700, 'Porto do Sul'], [0, 2900, 'Porto das Gaivotas'], [1, 5150, 'Porto da Âncora'],
-      [2, 1500, 'Porto do Norte'], [2, 3100, 'Porto Imperial'], [2, 4950, 'Porto Leste de Valtheria']
+      [2, 2700, 'Porto do Norte'], [2, 4400, 'Porto Imperial'], [2, 6200, 'Porto Leste de Valtheria']
     ];
     specs.forEach(([cont, x0, name], n) => this.placePortV(cont, x0, name, n, rng));
     const nv = this.ports.slice(before);
@@ -617,7 +618,7 @@ class World {
     const seaAt = (x, y) => { const t = this.baseTile(x, y); return TWATER[t] || t === T.DEEP; };
     for (let dx = 0; dx < 900; dx += 10) for (const xx of [x0 + dx, x0 - dx]) {
       let y = cont === 2 ? VALTHERIA_Y + 20 : VALTHERIA_Y - 20;
-      const lim = cont === 2 ? VALTHERIA_Y + 1600 : 2600;
+      const lim = cont === 2 ? VALTHERIA_Y + 2600 : 2600;
       while (cont === 2 ? y < lim : y > lim) { if (this.isLand(xx, y)) break; y += dir > 0 ? -1 : 1; }
       if (cont === 2 ? y >= lim : y <= lim) continue;
       if (contAt(xx, y) !== cont) continue;
@@ -1214,7 +1215,7 @@ class World {
       for (let x = 0; x < MAP_W; x++) {
         const t = this.baseTile(Math.floor(x * step + step / 2), Math.floor(y * step + step / 2));
         const [r, g, b] = hexToRgb(TILE_DEFS[t].c);
-        const sh = 1 + (this._e - 0.5) * 0.35;
+        const sh = clamp(1 + (this._e - 0.5) * 0.35, 0.8, 1.25);
         const i = (y * MAP_W + x) * 4; d[i] = r * sh; d[i + 1] = g * sh; d[i + 2] = b * sh; d[i + 3] = 255;
       }
     }
@@ -1223,7 +1224,7 @@ class World {
       // estradas
       this.mapCtx.fillStyle = 'rgba(170,130,80,0.9)';
       for (const [k, set] of this.roadTiles) {
-        const cx = k % 256, cy = Math.floor(k / 256);
+        const cx = k % 512, cy = Math.floor(k / 512);
         for (const i of set) { if ((i & 3) || ((i >> 5) & 3)) continue; this.mapCtx.fillRect(Math.floor((cx * 32 + (i & 31)) / step), Math.floor((cy * 32 + (i >> 5)) / step), 1, 1); }
       }
       this.mapDone = true;
