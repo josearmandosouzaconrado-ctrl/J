@@ -72,7 +72,8 @@ const O = {
   FOUNTAIN: 62, BANNER: 63, CHEST_BOSS: 64, ENT_LAVA: 65, ENT_ICE: 66, ENT_ARENA: 67, BED: 68, TABLE: 69, LILY: 70,
   HUT_TOTEM: 71, ICEROCK: 72, SANDROCK: 73, ALTAR: 74, PORTAL: 75,
   COUNTER: 76, SHELF: 77, BOOKSHELF: 78, CHAIR: 79, FIREPLACE: 80, THRONE: 81, PLANT: 82, WARDROBE: 83, CRIB: 84, WEAPONRACK: 85,
-  DOOR_IN: 86, CANDLE: 87, BENCH: 88, POTSHELF: 89, KEG: 90, CAULDRON: 91, DESTINY: 92, ANVIL: 93, WINDOW: 94, PAINTING: 95, QUESTBOARD: 96, BEDSMALL: 97, DESTINY2: 98, DESTINY3: 99, STUMP: 100, WORKBENCH: 101, PLAYERBED: 102, DUMMY: 103, LECTERN: 104, BLACKBOARD: 105
+  DOOR_IN: 86, CANDLE: 87, BENCH: 88, POTSHELF: 89, KEG: 90, CAULDRON: 91, DESTINY: 92, ANVIL: 93, WINDOW: 94, PAINTING: 95, QUESTBOARD: 96, BEDSMALL: 97, DESTINY2: 98, DESTINY3: 99, STUMP: 100, WORKBENCH: 101, PLAYERBED: 102, DUMMY: 103, LECTERN: 104, BLACKBOARD: 105,
+  STOVE: 106, SACKS: 107, POTS: 108, TROPHY: 109, PELT: 110, FISHNET: 111, DESK: 112, LOOM: 113, OVEN: 114, INSTRUMENT: 115, ARMORSTAND: 116, CLOCK: 117, ARMCHAIR: 118, TOOLRACK: 119, DRESSER: 120, TOYBOX: 121, RUG: 122, SHELFWALL: 123, HERBS: 124, BATHTUB: 125, SHIELDWALL: 126
 };
 // solid; tall=altura do sprite (px); harvest; light (raio px); kind de interação
 const OBJ_DEFS = [];
@@ -173,6 +174,27 @@ odef(O.PLAYERBED, { name: 'Sua cama', solid: true, interact: 'sleep' });
 odef(O.DUMMY, { name: 'Boneco de treino', solid: true });
 odef(O.LECTERN, { name: 'Púlpito', solid: true });
 odef(O.BLACKBOARD, { name: 'Lousa', solid: true });
+odef(O.STOVE, { name: 'Fogão a lenha', solid: true, light: 22, interact: 'cook' });
+odef(O.SACKS, { name: 'Sacos de grãos', solid: true });
+odef(O.POTS, { name: 'Potes de barro', solid: true });
+odef(O.TROPHY, { name: 'Troféu de caça', solid: true });
+odef(O.PELT, { name: 'Pele de urso' });
+odef(O.FISHNET, { name: 'Rede de pesca', solid: true });
+odef(O.DESK, { name: 'Escrivaninha', solid: true });
+odef(O.LOOM, { name: 'Tear', solid: true });
+odef(O.OVEN, { name: 'Forno de pão', solid: true, light: 20, interact: 'cook' });
+odef(O.INSTRUMENT, { name: 'Harpa', solid: true });
+odef(O.ARMORSTAND, { name: 'Armadura antiga', solid: true });
+odef(O.CLOCK, { name: 'Relógio de pêndulo', solid: true });
+odef(O.ARMCHAIR, { name: 'Poltrona', solid: true });
+odef(O.TOOLRACK, { name: 'Ferramentas', solid: true });
+odef(O.DRESSER, { name: 'Cômoda', solid: true });
+odef(O.TOYBOX, { name: 'Baú de brinquedos', solid: true });
+odef(O.RUG, { name: 'Tapete' });
+odef(O.SHELFWALL, { name: 'Prateleira', solid: true });
+odef(O.HERBS, { name: 'Ervas secando', solid: true });
+odef(O.BATHTUB, { name: 'Banheira', solid: true });
+odef(O.SHIELDWALL, { name: 'Escudo na parede', solid: true });
 odef(O.WORKBENCH, { name: 'Bancada de Carpintaria', solid: true, interact: 'carpentry' });
 for (const id of [O.ENT_CAVE, O.ENT_CRYPT, O.ENT_RUIN, O.ENT_MINE, O.ENT_TOMB, O.ENT_BARROW, O.ENT_LAVA, O.ENT_ICE, O.ENT_ARENA])
   odef(id, { name: 'Entrada', solid: true, interact: 'dungeon', light: 24 });

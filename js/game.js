@@ -189,7 +189,7 @@ const Game = {
   isNight() { return this.time < 5 * 60 || this.time >= 20 * 60; },
   timeStr() { const h = Math.floor(this.time / 60), m = Math.floor(this.time % 60); return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`; },
   darkness() {
-    if (this.level.isInterior) return this.isNight() ? 0.5 : 0.12;
+    if (this.level.isInterior) { const h = this.time / 60; return h >= 7 && h < 18 ? 0 : h >= 18 && h < 20.5 ? (h - 18) / 2.5 * 0.45 : h >= 5 && h < 7 ? (7 - h) / 2 * 0.45 : 0.45; }
     if (!this.level.isWorld) return this.level.dark ? 0.9 : 0;
     const h = this.time / 60;
     let d;
@@ -330,6 +330,8 @@ const Game = {
       this.npcT -= dt; if (this.npcT <= 0) { this.npcT = 1; this.manageNPCs(); }
       this.spawnT -= dt; if (this.spawnT <= 0) { this.spawnT = 1.2; this.spawnTick(); }
       this.discT -= dt; if (this.discT <= 0) { this.discT = 0.5; this.discoveryTick(); }
+      this.smokeT = (this.smokeT || 0) - dt;
+      if (this.smokeT <= 0) { this.smokeT = 0.22; for (const b of W.buildingsInView(this.camX, this.camY, this.camX + this.vw, this.camY + this.vh)) if (b.spec && b.spec.chimney && !b.site) { const img = Sprites.building(b.spec); const x = b.tx * 16 + b.w * 16 - 9, y = (b.ty + b.h) * 16 - img.height + 1; if (Math.random() < 0.6) this.particles.push({ x: x + Math.random() * 3, y, vx: 4 + Math.random() * 4, vy: -10 - Math.random() * 6, color: Math.random() < 0.5 ? 'rgba(200,200,205,0.55)' : 'rgba(160,160,170,0.5)', life: 2.4, max: 2.4, size: Math.random() < 0.5 ? 2 : 1, grav: 0 }); } }
       W.pregen(P.x + (Input.move.x * 300), P.y + (Input.move.y * 300));
       this.updateWeather(dt);
     }
@@ -342,8 +344,9 @@ const Game = {
     this.camY = lerp(this.camY, lookY - this.vh / 2, Math.min(1, dt * 6));
     if (!this.level.isWorld) {
       const LW = this.level.w * 16, LH = this.level.h * 16;
-      this.camX = LW + 32 < this.vw ? (LW - this.vw) / 2 : clamp(this.camX, -16, LW - this.vw + 16);
-      this.camY = LH + 32 < this.vh ? (LH - this.vh) / 2 : clamp(this.camY, -16, LH - this.vh + 16);
+      const mg = this.level.isInterior ? 40 : 16;
+      this.camX = LW + mg * 2 < this.vw ? (LW - this.vw) / 2 : clamp(this.camX, -mg, LW - this.vw + mg);
+      this.camY = LH + mg * 2 < this.vh ? (LH - this.vh) / 2 : clamp(this.camY, -mg, LH - this.vh + mg);
     }
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 20);
   },
@@ -1133,6 +1136,7 @@ const Game = {
     if (this.shake > 0) { camX += Math.round((Math.random() - 0.5) * this.shake); camY += Math.round((Math.random() - 0.5) * this.shake); }
     const L = this.level;
     L.drawGround(ctx, camX, camY, vw, vh);
+    if (L.isInterior) L.drawSunbeams(ctx, camX, camY);
     // nuvens venenosas no chão
     for (const c of this.clouds) { ctx.fillStyle = 'rgba(120,220,60,0.18)'; ctx.beginPath(); ctx.ellipse(c.x - camX, c.y - camY, c.r, c.r * 0.6, 0, 0, Math.PI * 2); ctx.fill(); }
     // telegrafias no chão

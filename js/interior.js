@@ -9,7 +9,9 @@ class Interior {
     const s = b.settlement; this.s = s; this.regIndex = s.region.index;
     const cul = s.region.culture;
     const r = this.rng = new RNG(hashStr(b.name) + b.tx * 31 + b.ty * 17);
-    const [W, H] = b.home ? ({ cabana: [10, 8], casa: [14, 11], casarao: [19, 13] })[b.home.tier] : (INTERIOR_SIZES[b.kind] || [11, 9]);
+    let [W, H] = b.home ? ({ cabana: [10, 8], casa: [14, 11], casarao: [19, 13] })[b.home.tier] : (INTERIOR_SIZES[b.kind] || [11, 9]);
+    const isHouse = !b.home && (b.kind === 'house' || b.kind === 'house2' || b.kind === 'house3');
+    if (isHouse) { const big = b.kind === 'house2' ? 3 : b.kind === 'house3' ? -1 : 1; W = 10 + big + r.int(0, 4); H = 8 + (big > 0 ? 1 : 0) + r.int(0, 3); }
     this.w = W; this.h = H;
     const grand = b.kind === 'castle' || b.kind === 'palace' || b.kind === 'temple' || b.kind === 'grandhall' || b.kind === 'library' || b.kind === 'fencing';
     this.wallT = (cul === 'nordic' || cul === 'orc' || cul === 'swamp') ? T.LOGWALL : cul === 'desert' ? T.TWALL : (cul === 'dwarf' || cul === 'fort' || (grand && cul !== 'elf' && cul !== 'halfling')) ? T.WALL : T.HWALL;
@@ -41,7 +43,8 @@ class Interior {
     // janelas, quadros e tochas na parede do fundo
     for (let x = 2; x < W - 2; x += 3) this.wall(x, r.chance(0.6) ? O.WINDOW : (r.chance(0.5) ? O.PAINTING : 0));
     switch (kind) {
-      case 'house': case 'house2': case 'house3': case 'playerhouse': {
+      case 'house': case 'house2': case 'house3': this.buildHouse(r); break;
+      case 'playerhouse': {
         const ph = kind === 'playerhouse';
         this.put(1, 2, O.BEDSMALL); if (W > 9) this.put(2, 2, O.BEDSMALL);
         this.put(dx, 2, O.FIREPLACE);
@@ -189,19 +192,203 @@ class Interior {
       }
     }
   }
+  // ---------- Casas procedurais ----------
+  buildHouse(r) {
+    const W = this.w, H = this.h, dx = this.dx, b = this.b, cul = this.s.region.culture;
+    const res = Game.residentsOf(b);
+    const adults = res.filter(x => !x.child).length || 1, kids = res.filter(x => x.child).length;
+    const wealth = r.pick([0, 1, 1, 1, 2, 2]);
+    const jobs = { nordic: ['cacador', 'cacador', 'soldado', 'pescador', 'ferreiro'], orc: ['cacador', 'soldado', 'soldado', 'mineiro'], dwarf: ['mineiro', 'mineiro', 'ferreiro', 'soldado', 'estudioso'], elf: ['estudioso', 'musico', 'tecela', 'alquimista', 'cacador'], halfling: ['padeiro', 'padeiro', 'fazendeiro', 'musico', 'tecela'], desert: ['tecela', 'mercador', 'alquimista', 'estudioso'], swamp: ['pescador', 'alquimista', 'cacador'] }[cul] || ['fazendeiro', 'cacador', 'pescador', 'estudioso', 'padeiro', 'tecela', 'musico', 'soldado', 'alquimista', 'mercador', 'ferreiro'];
+    const job = r.pick(jobs);
+    this.profile = { wealth, job };
+    // remove a decoração genérica da parede para redecorar por cômodo
+    for (let x = 1; x < W - 1; x++) this.objs[this.idx(x, 1)] = 0;
+    const reserved = new Set();
+    const keep = (x, y) => reserved.add(x + ',' + y);
+    // ---- cômodos
+    const rooms = [];
+    const full = { x0: 1, y0: 2, x1: W - 2, y1: H - 2 };
+    let main = full;
+    const wallCol = (x, y0, y1, door) => { for (let y = y0; y <= y1; y++) if (y !== door) this.tiles[this.idx(x, y)] = this.wallT; keep(x - 1, door); keep(x + 1, door); keep(x, door); };
+    const wallRow = (y, x0, x1, door) => { for (let x = x0; x <= x1; x++) if (x !== door) this.tiles[this.idx(x, y)] = this.wallT; keep(door, y - 1); keep(door, y + 1); keep(door, y); };
+    if (W >= 12 && r.chance(0.85)) {
+      const left = r.chance(0.5);
+      const sx = left ? r.int(4, Math.min(dx - 2, 6)) : r.int(Math.max(dx + 2, W - 7), W - 5);
+      const door = r.int(3, H - 3);
+      wallCol(sx, 2, H - 2, door);
+      const side = left ? { x0: 1, y0: 2, x1: sx - 1, y1: H - 2 } : { x0: sx + 1, y0: 2, x1: W - 2, y1: H - 2 };
+      main = left ? { x0: sx + 1, y0: 2, x1: W - 2, y1: H - 2 } : { x0: 1, y0: 2, x1: sx - 1, y1: H - 2 };
+      if (H >= 10 && side.x1 - side.x0 >= 3 && r.chance(0.6)) {
+        const sy = r.int(5, H - 5), d2 = r.int(side.x0, side.x1);
+        wallRow(sy, side.x0, side.x1, d2);
+        // a porta entre os cômodos precisa alcançar ambas as partes
+        if (door > sy) { rooms.push({ ...side, y1: sy - 1, type: 'bedroom' }, { ...side, y0: sy + 1, type: 'kitchen' }); }
+        else { rooms.push({ ...side, y1: sy - 1, type: 'kitchen' }, { ...side, y0: sy + 1, type: 'bedroom' }); }
+        rooms.push({ ...main, type: 'living' });
+      } else { rooms.push({ ...side, type: 'bedroom' }, { ...main, type: 'livingkitchen' }); }
+    } else rooms.push({ ...full, type: 'all' });
+    // ---- pisos
+    const stone = cul === 'dwarf' || cul === 'desert' ? this.floorT : T.DCOBBLE;
+    for (const rm of rooms) {
+      if (rm.type === 'kitchen') for (let y = rm.y0; y <= rm.y1; y++) for (let x = rm.x0; x <= rm.x1; x++) this.setFloor(x, y, stone);
+      if (wealth === 0 && cul !== 'dwarf' && rm.type !== 'bedroom' && r.chance(0.5)) for (let y = rm.y0; y <= rm.y1; y++) for (let x = rm.x0; x <= rm.x1; x++) if (r.chance(0.7)) this.setFloor(x, y, T.DIRT);
+    }
+    // ---- colocação segura (nunca bloqueia a passagem)
+    const entry = { x: dx, y: H - 2 };
+    const connected = () => {
+      const seen = new Uint8Array(W * H), q = [entry.x + entry.y * W]; seen[q[0]] = 1; let n = 1;
+      while (q.length) { const i = q.pop(), x = i % W, y = (i / W) | 0; for (const [ax, ay] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]) { if (!this.inb(ax, ay)) continue; const j = ay * W + ax; if (seen[j] || this.solidAt(ax, ay)) continue; seen[j] = 1; n++; q.push(j); } }
+      let tot = 0; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (!this.solidAt(x, y)) tot++;
+      return n === tot;
+    };
+    const place = (x, y, o) => {
+      if (reserved.has(x + ',' + y) || !this.free(x, y)) return false;
+      this.objs[this.idx(x, y)] = o;
+      if (OSOLID[o] && !connected()) { this.objs[this.idx(x, y)] = 0; return false; }
+      return true;
+    };
+    const cells = (rm, pred) => { const out = []; for (let y = rm.y0; y <= rm.y1; y++) for (let x = rm.x0; x <= rm.x1; x++) if (pred(x, y)) out.push([x, y]); return r.shuffle(out); };
+    const nearWall = (x, y) => TSOLID[this.tileAt(x - 1, y)] || TSOLID[this.tileAt(x + 1, y)] || TSOLID[this.tileAt(x, y - 1)];
+    const topRow = (rm, o) => { for (const [x, y] of cells(rm, (x, y) => y === rm.y0)) if (place(x, y, o)) return [x, y]; return null; };
+    const byWall = (rm, o) => { for (const [x, y] of cells(rm, nearWall)) if (place(x, y, o)) return [x, y]; return null; };
+    const anywhere = (rm, o) => { for (const [x, y] of cells(rm, () => true)) if (place(x, y, o)) return [x, y]; return null; };
+    const middle = (rm) => [Math.round((rm.x0 + rm.x1) / 2), Math.round((rm.y0 + rm.y1) / 2)];
+    const tableSet = (rm) => {
+      const [mx, my] = middle(rm);
+      for (const [x, y] of [[mx, my], [mx - 1, my], [mx + 1, my], [mx, my + 1], [mx, my - 1]]) if (place(x, y, O.TABLE)) { place(x - 1, y, wealth ? O.CHAIR : O.CRATE); place(x + 1, y, O.CHAIR); return; }
+    };
+    const rug = (rm) => { if (rm.x1 - rm.x0 < 2 || rm.y1 - rm.y0 < 2) return; const [mx, my] = middle(rm); const o = (cul === 'nordic' || cul === 'orc' || job === 'cacador') ? O.PELT : O.RUG; if (this.free(mx, my + 1)) this.objs[this.idx(mx, my + 1)] = o; };
+    const wallDecor = (rm, list) => { const xs = []; for (let x = rm.x0; x <= rm.x1; x++) if (TSOLID[this.tiles[this.idx(x, 1)]] && rm.y0 === 2) xs.push(x); r.shuffle(xs); list.forEach((o, i) => { if (xs[i] !== undefined) this.objs[this.idx(xs[i], 1)] = o; }); };
+    const decorFor = () => {
+      const L = [O.WINDOW];
+      if (wealth >= 1) L.push(O.PAINTING); if (wealth >= 2) L.push(O.PAINTING);
+      if (job === 'cacador' || cul === 'nordic' || cul === 'orc') L.push(O.TROPHY);
+      if (job === 'soldado' || cul === 'dwarf' || cul === 'nordic') L.push(O.SHIELDWALL);
+      if (job === 'pescador') L.push(O.FISHNET);
+      if (job === 'fazendeiro' || job === 'mineiro' || job === 'ferreiro') L.push(O.TOOLRACK);
+      if (job === 'alquimista' || cul === 'swamp' || cul === 'halfling') L.push(O.HERBS);
+      L.push(O.SHELFWALL);
+      return L;
+    };
+    const bedroom = (rm) => {
+      wallDecor(rm, [O.WINDOW, wealth >= 1 ? O.PAINTING : O.SHELFWALL]);
+      if (adults >= 2 && wealth >= 1) topRow(rm, O.BED); else for (let i = 0; i < Math.min(adults, 2); i++) topRow(rm, O.BEDSMALL);
+      for (let i = 0; i < Math.min(kids, 3); i++) byWall(rm, O.BEDSMALL);
+      byWall(rm, wealth ? O.WARDROBE : O.CRATE);
+      if (wealth >= 1) byWall(rm, O.DRESSER);
+      byWall(rm, O.CANDLE);
+      if (kids) byWall(rm, O.TOYBOX);
+      if (wealth >= 2) { byWall(rm, O.CLOCK); if (r.chance(0.5)) byWall(rm, O.BATHTUB); }
+      if (wealth >= 1) rug(rm);
+    };
+    const kitchen = (rm) => {
+      wallDecor(rm, [O.WINDOW, O.SHELFWALL, O.HERBS]);
+      topRow(rm, job === 'padeiro' || cul === 'halfling' ? O.OVEN : O.STOVE);
+      if (job === 'padeiro') topRow(rm, O.STOVE);
+      topRow(rm, O.COUNTER); byWall(rm, O.POTS); byWall(rm, O.SACKS); byWall(rm, r.pick([O.BARREL, O.KEG, O.CRATE]));
+      if (cul === 'swamp' || job === 'alquimista') byWall(rm, O.CAULDRON);
+    };
+    const living = (rm, withKitchen) => {
+      wallDecor(rm, decorFor());
+      topRow(rm, O.FIREPLACE);
+      rug(rm);
+      if (withKitchen) { topRow(rm, cul === 'halfling' ? O.OVEN : O.STOVE); byWall(rm, O.POTS); byWall(rm, O.SACKS); byWall(rm, O.BARREL); }
+      tableSet(rm);
+      if (wealth >= 1) { byWall(rm, O.ARMCHAIR); byWall(rm, O.BOOKSHELF); byWall(rm, O.PLANT); } else byWall(rm, O.BENCH);
+      if (wealth >= 2) { byWall(rm, O.ARMCHAIR); byWall(rm, r.chance(0.5) ? O.STATUE : O.CLOCK); byWall(rm, O.PLANT); }
+      if (cul === 'elf') { byWall(rm, O.PLANT); byWall(rm, O.PLANT); }
+      // canto da profissão
+      const J = { cacador: [O.WEAPONRACK, O.BARREL], fazendeiro: [O.SACKS, O.HAY, O.SACKS], pescador: [O.BARREL, O.BARREL], estudioso: [O.DESK, O.BOOKSHELF, O.BOOKSHELF, O.LECTERN], padeiro: [O.SACKS, O.SACKS, O.OVEN], tecela: [O.LOOM, O.CRATE], musico: [O.INSTRUMENT, O.INSTRUMENT], soldado: [O.ARMORSTAND, O.WEAPONRACK], alquimista: [O.ALCHEMY, O.POTSHELF], mercador: [O.CRATE, O.CRATE, O.BARREL, O.DESK], ferreiro: [O.ANVIL, O.WEAPONRACK], mineiro: [O.CRATE, O.ROCK === 0 ? O.CRATE : O.BARREL] }[job] || [];
+      for (const o of J) byWall(rm, o);
+      if (job === 'estudioso') byWall(rm, O.CANDLE);
+    };
+    for (const rm of rooms) {
+      if (rm.type === 'bedroom') bedroom(rm);
+      else if (rm.type === 'kitchen') kitchen(rm);
+      else if (rm.type === 'living') living(rm, false);
+      else if (rm.type === 'livingkitchen') living(rm, true);
+      else { // casa de um cômodo só
+        wallDecor(rm, decorFor());
+        topRow(rm, O.FIREPLACE);
+        for (let i = 0; i < Math.min(adults + kids, 3); i++) topRow(rm, O.BEDSMALL);
+        topRow(rm, cul === 'halfling' ? O.OVEN : O.STOVE); byWall(rm, wealth ? O.WARDROBE : O.CRATE); byWall(rm, O.POTS); byWall(rm, O.SACKS);
+        rug(rm); tableSet(rm);
+        const J = { cacador: O.WEAPONRACK, estudioso: O.DESK, tecela: O.LOOM, musico: O.INSTRUMENT, soldado: O.ARMORSTAND, alquimista: O.ALCHEMY, ferreiro: O.ANVIL }[job];
+        if (J) byWall(rm, J);
+        byWall(rm, O.CANDLE);
+      }
+    }
+    // moradores andando pela casa
+    const free = []; for (let y = 2; y < H - 2; y++) for (let x = 1; x < W - 1; x++) if (this.free(x, y)) free.push([x, y]);
+    r.shuffle(free);
+    res.forEach((rs, i) => { if (Game.player && Game.player.spouse === rs.id && Game.player.spouseHome) return; const [x, y] = free[i % Math.max(1, free.length)] || [dx, H - 3]; this.spot(rs.child ? 'child' : 'resident', x, y, { res: rs }); });
+  }
   tileAt(tx, ty) { return this.inb(tx, ty) ? this.tiles[ty * this.w + tx] : this.wallT; }
   objAt(tx, ty) { return this.inb(tx, ty) ? this.objs[ty * this.w + tx] : 0; }
   regAt() { return this.regIndex; }
   setObj(tx, ty, o) { if (!this.inb(tx, ty)) return; const i = ty * this.w + tx; const old = this.objs[i]; this.objs[i] = o; if (OBJ_BAKED[old] || OBJ_BAKED[o]) this.canvas = null; }
   solidAt(tx, ty) { if (!this.inb(tx, ty)) return true; const i = ty * this.w + tx; return TSOLID[this.tiles[i]] || OSOLID[this.objs[i]]; }
+  // chão de fora da casa (em vez do vazio preto)
+  outsideTile() {
+    const bio = this.s.region.biome;
+    return bio === 'snow' ? T.SNOW : bio === 'desert' ? T.DESERT : bio === 'volcanic' ? T.BADLAND : bio === 'swamp' ? T.MUD : bio === 'dead' ? T.DEADGRASS : bio === 'mountain' ? T.TUNDRA : bio === 'forest' ? T.DGRASS : T.GRASS;
+  }
   render() {
-    const c = Sprites.cv(this.w * 16, this.h * 16), ctx = c.getContext('2d');
-    Sprites.paintTiles(ctx, this.w, this.h, (x, y) => this.tileAt(x, y), 7);
+    const M = this.M = 14, TW = this.w + M * 2, TH = this.h + M * 2;
+    const c = Sprites.cv(TW * 16, TH * 16), ctx = c.getContext('2d');
+    const out = this.outsideTile(), street = CULTURES[this.s.region.culture].street;
+    const getT = (x, y) => {
+      const ix = x - M, iy = y - M;
+      if (this.inb(ix, iy)) return this.tiles[iy * this.w + ix];
+      if (ix === this.dx && iy >= this.h && iy < this.h + 4) return street;      // caminho até a porta
+      return out;
+    };
+    Sprites.paintTiles(ctx, TW, TH, getT, 7);
+    // um pouco de natureza em volta
+    const rng = new RNG(hashStr(this.b.name) + 99);
+    const deco = out === T.SNOW ? [O.SNOWPINE, O.ROCK] : out === T.DESERT ? [O.CACTUS, O.ROCK] : out === T.BADLAND ? [O.ROCK, O.DEADTREE] : out === T.MUD ? [O.REEDS, O.WILLOW] : [O.FLOWERS, O.TALLGRASS, O.BUSH, O.FLOWERS, O.OAK];
+    for (let i = 0; i < 70; i++) {
+      const x = rng.int(0, TW - 1), y = rng.int(1, TH - 1), ix = x - M, iy = y - M;
+      if (ix >= -2 && ix <= this.w + 1 && iy >= -3 && iy <= this.h + 4) continue;
+      const o = rng.pick(deco), s = Sprites.obj(o, rng.int(0, (OBJ_VARIANTS[o] || 1) - 1));
+      ctx.drawImage(s.c, x * 16 + 8 - (s.w >> 1), y * 16 + 16 - s.h + s.oy);
+    }
+    // sombra da casa sobre o chão de fora
+    ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.fillRect((M + this.w) * 16, (M + 1) * 16, 6, this.h * 16); ctx.fillRect((M + 1) * 16, (M + this.h) * 16, this.w * 16, 4);
+    for (let i = 0; i < this.w * this.h; i++) {
+      const o = this.objs[i]; if (!OBJ_BAKED[o]) continue;
+      const x = i % this.w + M, y = ((i / this.w) | 0) + M;
+      const s = Sprites.obj(o, Math.floor(hash2(x, y, 5) * (OBJ_VARIANTS[o] || 1)));
+      ctx.drawImage(s.c, x * 16 + 8 - (s.w >> 1), y * 16 + 16 - s.h + s.oy);
+    }
     this.canvas = c;
   }
   drawGround(ctx, camX, camY, vw, vh) {
     if (!this.canvas) this.render();
-    ctx.fillStyle = '#0a0608'; ctx.fillRect(0, 0, vw, vh);
-    ctx.drawImage(this.canvas, -camX, -camY);
+    ctx.fillStyle = '#3a5a2a'; ctx.fillRect(0, 0, vw, vh);
+    ctx.drawImage(this.canvas, -camX - this.M * 16, -camY - this.M * 16);
+  }
+  // raios de sol entrando pelas janelas
+  drawSunbeams(ctx, camX, camY) {
+    const h = Game.time / 60;
+    if (h < 6 || h > 19.5) return;
+    const k = h < 9 ? (h - 6) / 3 : h > 16.5 ? (19.5 - h) / 3 : 1;
+    const warm = h < 8 || h > 17;
+    const lean = (h - 12.5) / 6;                                    // manhã: raio vai para a direita; tarde: esquerda
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    for (let x = 1; x < this.w - 1; x++) {
+      if (this.objs[this.idx(x, 1)] !== O.WINDOW) continue;
+      let len = 0; for (let y = 2; y < this.h - 1 && !TSOLID[this.tiles[this.idx(Math.min(this.w - 2, Math.max(1, Math.round(x - lean * (y - 2) * 0.8))), y)]]; y++) len++;
+      len = Math.min(len, 5);
+      if (!len) continue;
+      const x0 = x * 16 + 4 - camX, y0 = 2 * 16 - camY, L = len * 16, sh = -lean * L * 0.8;
+      const g = ctx.createLinearGradient(0, y0, 0, y0 + L);
+      g.addColorStop(0, warm ? `rgba(255,170,80,${0.26 * k})` : `rgba(255,240,190,${0.24 * k})`); g.addColorStop(1, 'rgba(255,230,180,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + 8, y0); ctx.lineTo(x0 + 8 + sh + 6, y0 + L); ctx.lineTo(x0 + sh - 6, y0 + L); ctx.closePath(); ctx.fill();
+      // poeira brilhando no raio
+      for (let i = 0; i < 4; i++) { const t = (Game.t * 0.15 + i * 0.27 + x * 0.13) % 1; const px = x0 + 4 + sh * t + Math.sin(Game.t + i * 2 + x) * 4, py = y0 + L * t; ctx.fillStyle = `rgba(255,250,220,${0.5 * k * (1 - t)})`; ctx.fillRect(Math.round(px), Math.round(py), 1, 1); }
+    }
+    ctx.restore();
   }
 }

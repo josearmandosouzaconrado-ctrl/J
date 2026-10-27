@@ -104,13 +104,21 @@ const UI = {
           ${saves.length ? `<button class="mbtn gold" ${f(() => Game.loadGame(saves[0].i))}>Continuar<br><small>${esc(saves[0].s ? saves[0].s.name + ' • Nv ' + saves[0].s.level : '')}</small></button>` : ''}
           <button class="mbtn" ${f(() => this.showCreate())}>Novo Jogo</button>
           ${saves.length ? `<button class="mbtn" ${f(() => this.slots('load'))}>Carregar</button>` : ''}
+          <button class="mbtn" ${f(() => this.multiplayer())}>Multiplayer <small class="soon">EM BREVE</small></button>
           <button class="mbtn" ${f(() => this.options())}>Opções</button>
           <button class="mbtn" ${f(() => this.help())}>Como Jogar</button>
         </div>
-        <div class="ver">9 reinos • 8 raças • 6 classes • 9 guildas • 140+ masmorras • mundo de 65 km²</div>
+        <div class="ver">2 continentes • 12 reinos • 9 raças • guerras entre reinos • 160+ masmorras</div>
       </div>`, { cls: 'transparent' });
     this.bind(el, f);
     Game.state = 'title';
+  },
+  multiplayer() {
+    const f = this.reg();
+    const el = this.show('multi', `<div class="panel small"><div class="ptitle">Multiplayer</div>
+      <div class="ctext"><b class="gold">Em breve!</b><br><br>Explore Eldoria com amigos, forme guildas, lute nas guerras entre reinos e negocie nas cidades.<br><br><span class="dim">O modo multiplayer ainda está em desenvolvimento.</span></div>
+      <div class="menu-col"><button class="mbtn" disabled style="opacity:.5">Criar Sala</button><button class="mbtn" disabled style="opacity:.5">Entrar em Sala</button><button class="mbtn" ${f(() => this.showTitle())}>Voltar</button></div></div>`, { cls: 'transparent', onBack: () => this.showTitle() });
+    this.bind(el, f);
   },
   // ---------- Criação de personagem ----------
   showCreate() {

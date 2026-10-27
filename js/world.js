@@ -1,16 +1,16 @@
 'use strict';
 // ===================== MUNDO ABERTO PROCEDURAL =====================
-const TSOLID = new Uint8Array(64), OSOLID = new Uint8Array(128), TWATER = new Uint8Array(64);
+const TSOLID = new Uint8Array(64), OSOLID = new Uint8Array(256), TWATER = new Uint8Array(64);
 for (let i = 0; i < TILE_DEFS.length; i++) if (TILE_DEFS[i]) { TSOLID[i] = TILE_DEFS[i].solid ? 1 : 0; TWATER[i] = TILE_DEFS[i].water ? 1 : 0; }
 for (let i = 0; i < OBJ_DEFS.length; i++) if (OBJ_DEFS[i]) OSOLID[i] = OBJ_DEFS[i].solid ? 1 : 0;
 // objetos "chatos" pintados direto no chão do chunk
-const OBJ_BAKED = new Uint8Array(128);
-[O.FLOWERS, O.TALLGRASS, O.BONES, O.LILY, O.ROCK, O.SKULLS, O.CROP].forEach(o => OBJ_BAKED[o] = 1);
-const OBJ_VARIANTS = { [O.COUNTER]: 2, [O.BEDSMALL]: 2, [O.PAINTING]: 4, [O.OAK]: 6, [O.AUTUMN]: 6, [O.PINE]: 6, [O.SNOWPINE]: 6, [O.PALM]: 4, [O.DEADTREE]: 3, [O.WILLOW]: 3, [O.ELFTREE]: 3, [O.BIGSHROOM]: 3, [O.BUSH]: 3, [O.FLOWERS]: 4, [O.STALL]: 4, [O.TENT]: 3, [O.CRYSTAL]: 4, [O.BANNER]: 5, [O.LILY]: 2, [O.CACTUS]: 2, [O.LAMP]: 2, [O.BROKEN_PILLAR]: 3 };
+const OBJ_BAKED = new Uint8Array(256);
+[O.FLOWERS, O.TALLGRASS, O.BONES, O.LILY, O.ROCK, O.SKULLS, O.CROP, O.RUG, O.PELT].forEach(o => OBJ_BAKED[o] = 1);
+const OBJ_VARIANTS = { [O.COUNTER]: 2, [O.BEDSMALL]: 2, [O.PAINTING]: 4, [O.OAK]: 6, [O.AUTUMN]: 6, [O.PINE]: 6, [O.SNOWPINE]: 6, [O.PALM]: 4, [O.DEADTREE]: 3, [O.WILLOW]: 3, [O.ELFTREE]: 3, [O.BIGSHROOM]: 3, [O.BUSH]: 3, [O.FLOWERS]: 4, [O.STALL]: 4, [O.TENT]: 3, [O.CRYSTAL]: 4, [O.BANNER]: 5, [O.LILY]: 2, [O.CACTUS]: 2, [O.LAMP]: 2, [O.BROKEN_PILLAR]: 3, [O.RUG]: 6, [O.POTS]: 3, [O.SACKS]: 2, [O.INSTRUMENT]: 2, [O.TROPHY]: 2, [O.ARMORSTAND]: 3, [O.SHELFWALL]: 3, [O.SHIELDWALL]: 4, [O.DRESSER]: 2, [O.ARMCHAIR]: 3 };
 const TREE_OBJS = new Set([O.OAK, O.PINE, O.SNOWPINE, O.PALM, O.DEADTREE, O.WILLOW, O.AUTUMN]);
 const QUARRY_OBJS = new Set([O.BOULDER, O.ICEROCK, O.SANDROCK]);
-const OBJ_ANIM = new Uint8Array(128);
-[O.CAMPFIRE, O.TORCH, O.RUNESTONE, O.FOUNTAIN, O.PORTAL, O.ALTAR, O.SHRINE, O.FORGE, O.FIREPLACE, O.CANDLE, O.CAULDRON, O.DESTINY, O.DESTINY2, O.DESTINY3].forEach(o => OBJ_ANIM[o] = 1);
+const OBJ_ANIM = new Uint8Array(256);
+[O.CAMPFIRE, O.TORCH, O.RUNESTONE, O.FOUNTAIN, O.PORTAL, O.ALTAR, O.SHRINE, O.FORGE, O.FIREPLACE, O.CANDLE, O.CAULDRON, O.DESTINY, O.DESTINY2, O.DESTINY3, O.STOVE, O.OVEN, O.CLOCK].forEach(o => OBJ_ANIM[o] = 1);
 
 const ORE_BY_REGION = {
   valdoria: [O.ORE_FERRO, O.ORE_FERRO, O.ORE_PRATA], colinas: [O.ORE_FERRO, O.ORE_PRATA], sylvaris: [O.ORE_PRATA, O.ORE_FERRO],
