@@ -528,3 +528,236 @@ BUILD_GEO.motorpool = (B) => {
   B.add(G.box, 0x6e5434, 2.2, 0.9, 0.9, -1.0, 0.55, 4.5);
 };
 BUILD_SIZE.motorpool = [18, 14, 5];
+
+/* =========================================================
+   BLINDADOS DO INÍCIO DA GUERRA (1936–1942), para a campanha mundial
+   ========================================================= */
+const GRAY = 0x4b5054, FR_PAINT = 0x6e6a4a, FR_CAMO = [0x8a7a58, 0x4c5236], SOV_G = 0x4d5a2f, UK_G = 0x5b5f3c, IT_SAND = 0xa89568;
+function rivets(B, x0, x1, y, z, n, col) { for (let i = 0; i < n; i++) B.add(G.sph16, col || 0x3a3a34, 0.04, 0.04, 0.04, x0 + (x1 - x0) * i / Math.max(1, n - 1), y, z); }
+function boxTurret(B, s, w, d, h, opts) {
+  const o = opts || {}, P0 = s.paint;
+  B.add(G.cyl12, DARK, Math.min(w, d) * 0.45, 0.08, Math.min(w, d) * 0.45, 0, 0.04, 0);
+  B.add(planProfile([[-w * 0.38, d * 0.5], [w * 0.38, d * 0.5], [w * 0.5, d * 0.2], [w * 0.5, -d * 0.5], [-w * 0.5, -d * 0.5], [-w * 0.5, d * 0.2]], h, 1), P0, 1, 1, 1, 0, 0.06, 0);
+  B.add(G.box, P0, w * 0.55, h * 0.75, 0.22, 0, h * 0.5, d * 0.5 + 0.08);
+  if (o.cupola !== false) { B.add(G.cyl12, P0, 0.28, 0.28, 0.28, o.cx || -w * 0.22, h + 0.18, -d * 0.2); B.add(G.cyl12, DARK, 0.29, 0.05, 0.29, o.cx || -w * 0.22, h + 0.33, -d * 0.2); }
+  crewBust(B, o.cx || -w * 0.22, h + 0.72, -d * 0.2, o.crew || 'de');
+}
+function simpleGun(len, r, col, brake) { return (B) => longGun(B, len, r, col || 0x3c3e34, brake); }
+
+// Panzer II — 20 mm
+VEH.panzer2 = () => vehicleShell('panzer2', { L: 4.8, W: 2.3, tw: 0.3, th: 0.85, paint: GRAY, camo: null, tur: [0.15, 1.6, 0.1], gy: 0.32, gz: 0.62 },
+  (B, s) => {
+    const P0 = s.paint;
+    B.add(sideProfile([[2.35, 0.4], [2.5, 0.85], [2.2, 1.05], [-2.35, 1.05], [-2.4, 0.45]], s.W - 0.65, 2), P0, 1, 1, 1, 0, 0, 0);
+    B.add(sideProfile([[2.3, 1.02], [1.7, 1.6], [-2.2, 1.6], [-2.35, 1.02]], s.W - 0.15, 3), P0, 1, 1, 1, 0, 0, 0);
+    runGear(B, s, 5, 0.32, { rollers: 4 });
+    B.add(G.box, DARK, 0.4, 0.12, 0.05, -0.45, 1.4, 2.0);
+    tarpRoll(B, 0, 1.75, -2.0, 1.2, 0x5d5a48);
+    for (const x of [-0.75, -0.5]) jerry(B, x, 1.78, -1.4, 0, 0x55584f);
+    antenna(B, -0.9, 1.6, -1.6, 1.8);
+  },
+  (B, s) => boxTurret(B, s, 1.35, 1.5, 0.75, { cx: -0.2 }),
+  (B) => { B.add(G.cyl12, 0x2e2f2a, 0.06, 1.3, 0.06, 0, 0, 0.75, Math.PI / 2, 0, 0); B.add(G.cyl8, 0x1e1e1e, 0.03, 0.8, 0.03, 0.28, 0, 0.5, Math.PI / 2, 0, 0); },
+  1.45, trackSpec({ L: 4.8, th: 0.85, tw: 0.3, W: 2.3 }), null,
+  (g) => { crossDecal(g, 1.03, 1.3, -0.8, 0.55); });
+// Panzer III — 50 mm
+VEH.panzer3 = () => vehicleShell('panzer3', { L: 5.5, W: 2.95, tw: 0.4, th: 0.95, paint: GRAY, camo: null, tur: [0, 1.75, -0.1], gy: 0.4, gz: 0.95 },
+  (B, s) => {
+    const P0 = s.paint;
+    B.add(sideProfile([[2.7, 0.45], [2.85, 0.85], [2.7, 1.05], [-2.7, 1.05], [-2.75, 0.5]], s.W - 1.0, 2), P0, 1, 1, 1, 0, 0, 0);
+    B.add(sideProfile([[2.72, 1.02], [2.6, 1.75], [-2.55, 1.75], [-2.75, 1.5], [-2.75, 1.02]], s.W - 0.08, 3), P0, 1, 1, 1, 0, 0, 0);
+    runGear(B, s, 6, 0.32, { rollers: 3 });
+    B.add(G.box, DARK, 0.5, 0.14, 0.05, -0.55, 1.5, 2.66); B.add(G.sph, METAL, 0.13, 0.13, 0.13, 0.55, 1.45, 2.66);
+    rivets(B, -1.1, 1.1, 1.62, 2.67, 7);
+    for (let i = 0; i < 4; i++) B.add(G.box, DARK, 2.0, 0.04, 0.1, 0, 1.77, -1.2 - i * 0.3);
+    tarpRoll(B, 0, 1.95, -2.4, 1.6, 0x5d5a48);
+    B.add(G.cyl8, 0x5a3b2a, 0.18, 1.6, 0.18, 0, 1.0, -2.85, 0, 0, Math.PI / 2);
+  },
+  (B, s) => { boxTurret(B, s, 1.85, 2.0, 0.85); B.add(G.box, s.paint, 1.5, 0.5, 0.5, 0, 0.45, -1.2); for (const sx of [-1, 1]) B.add(G.box, s.paint, 0.05, 0.6, 0.55, sx * 0.94, 0.45, 0.2); },
+  simpleGun(1.9, 0.07, 0x45473e),
+  2.5, trackSpec({ L: 5.5, th: 0.95, tw: 0.4, W: 2.95 }), null,
+  (g, tur) => { crossDecal(g, 1.47, 1.35, -0.6, 0.65); numDecal(tur, '' + (300 + (Math.random() * 99 | 0)), 0.96, 0.45, -0.3); });
+// Panzer 38(t) — tcheco, rebitado
+VEH.panzer38t = () => vehicleShell('panzer38t', { L: 4.6, W: 2.15, tw: 0.29, th: 0.95, paint: GRAY, camo: null, tur: [0, 1.65, 0.15], gy: 0.36, gz: 0.72 },
+  (B, s) => {
+    const P0 = s.paint;
+    B.add(sideProfile([[2.25, 0.45], [2.35, 0.9], [2.15, 1.05], [-2.2, 1.05], [-2.3, 0.5]], s.W - 0.6, 2), P0, 1, 1, 1, 0, 0, 0);
+    B.add(G.box, P0, s.W - 0.1, 0.62, 4.2, 0, 1.33, -0.05);
+    for (let r = 0; r < 3; r++) rivets(B, -0.95, 0.95, 1.12 + r * 0.22, 2.06, 8);
+    runGear(B, s, 4, 0.42, { rollers: 2, ww: 0.22 });
+    B.add(G.box, DARK, 0.45, 0.12, 0.05, -0.45, 1.45, 2.07);
+    tarpRoll(B, 0, 1.75, -1.85, 1.1, 0x5d5a48);
+  },
+  (B, s) => { boxTurret(B, s, 1.25, 1.45, 0.75); for (let r = 0; r < 2; r++) rivets(B, -0.5, 0.5, 0.25 + r * 0.3, 0.74, 5); },
+  simpleGun(1.3, 0.05, 0x45473e),
+  1.95, trackSpec({ L: 4.6, th: 0.95, tw: 0.29, W: 2.15 }), null,
+  (g) => { crossDecal(g, 1.06, 1.3, -0.6, 0.55); });
+// 7TP — tanque leve polonês
+VEH.tp7 = () => vehicleShell('tp7', { L: 4.6, W: 2.4, tw: 0.28, th: 0.8, paint: 0x6a6a44, camo: [0x8a7044, 0x4a5a3a], tur: [0.1, 1.65, -0.1], gy: 0.32, gz: 0.68 },
+  (B, s) => {
+    const P0 = s.paint;
+    B.add(sideProfile([[2.25, 0.4], [2.35, 0.9], [1.6, 1.12], [-2.2, 1.12], [-2.3, 0.45]], s.W - 0.6, 2), P0, 1, 1, 1, 0, 0, 0);
+    B.add(G.box, P0, 1.6, 0.55, 2.3, 0, 1.38, -0.2);
+    runGear(B, s, 8, 0.2, { bogie: true, rollers: 4, ww: 0.18 });
+    B.add(G.box, METAL, 1.0, 0.25, 0.8, 0, 1.25, -1.9);
+  },
+  (B, s) => boxTurret(B, s, 1.3, 1.5, 0.75, { crew: 'us' }),
+  simpleGun(1.3, 0.05, 0x40423a),
+  1.95, trackSpec({ L: 4.6, th: 0.8, tw: 0.28, W: 2.4 }), null, null);
+// Char B1 bis — francês pesado, obus de 75 mm no casco
+VEH.charb1 = () => vehicleShell('charb1', { L: 6.4, W: 2.5, tw: 0.5, th: 1.75, paint: FR_PAINT, camo: FR_CAMO, tur: [0, 2.25, -0.2], gy: 0.38, gz: 0.72 },
+  (B, s) => {
+    const P0 = s.paint;
+    B.add(sideProfile([[3.1, 0.6], [3.2, 1.3], [2.9, 1.75], [-2.9, 1.75], [-3.15, 1.2], [-3.0, 0.55]], s.W - 0.9, 3), P0, 1, 1, 1, 0, 0, 0);
+    B.add(G.box, P0, s.W - 0.95, 0.5, 4.6, 0, 2.0, -0.4);
+    for (const sx of [-1, 1]) { B.add(sideProfile([[3.2, 0.3], [3.3, 1.2], [2.9, 1.75], [-3.0, 1.75], [-3.2, 0.9], [-3.0, 0.3]], 0.12, 1), P0, 1, 1, 1, sx * (s.W / 2 + 0.02), 0, 0); for (let i = 0; i < 6; i++) B.add(G.box, DARK, 0.04, 0.25, 0.4, sx * (s.W / 2 + 0.1), 1.45, -2.3 + i * 0.9); }
+    B.add(G.box, P0, 0.6, 0.6, 0.5, 0.45, 1.05, 3.05); B.add(G.cyl12, 0x3c3e34, 0.13, 0.9, 0.13, 0.45, 1.05, 3.6, Math.PI / 2, 0, 0);
+    B.add(G.box, DARK, 0.8, 0.5, 0.6, -0.3, 1.45, -3.0);
+  },
+  (B, s) => { B.add(G.cyl12, P0Of(s), 0.62, 0.95, 0.62, 0, 0.47, 0); B.add(G.dome, P0Of(s), 0.35, 0.25, 0.35, 0, 0.95, -0.15); crewBust(B, 0, 1.45, -0.15, 'us'); },
+  simpleGun(1.1, 0.055, 0x3c3e34),
+  1.75, { L: 6.3, h: 1.75, rs: 0.5, ri: 0.5, w: 0.5, x: 1.0 }, null, null);
+function P0Of(s) { return s.paint; }
+// Somua S35
+VEH.somua = () => vehicleShell('somua', { L: 5.4, W: 2.1, tw: 0.33, th: 1.0, paint: FR_PAINT, camo: FR_CAMO, tur: [0, 1.85, 0.0], gy: 0.4, gz: 0.62 },
+  (B, s) => {
+    const P0 = s.paint;
+    B.add(sideProfile([[2.65, 0.45], [2.75, 1.0], [2.2, 1.45], [1.0, 1.85], [-1.3, 1.85], [-2.65, 1.25], [-2.7, 0.45]], s.W - 0.1, 4), P0, 1, 1, 1, 0, 0, 0);
+    for (const sx of [-1, 1]) B.add(G.box, P0, 0.1, 0.6, 4.4, sx * (s.W / 2 + 0.06), 0.72, 0.0);
+    runGear(B, s, 8, 0.2, { bogie: true, ww: 0.16 });
+  },
+  (B, s) => { B.add(G.cyl12, s.paint, 0.72, 0.85, 0.85, 0, 0.42, 0); B.add(G.dome, s.paint, 0.4, 0.3, 0.4, 0, 0.85, -0.2); crewBust(B, 0, 1.35, -0.2, 'us'); },
+  simpleGun(1.5, 0.06, 0x3c3e34),
+  2.15, trackSpec({ L: 5.4, th: 1.0, tw: 0.33, W: 2.1 }), null, null);
+// Matilda II — infantaria britânica, saias blindadas
+VEH.matilda = () => vehicleShell('matilda', { L: 5.6, W: 2.6, tw: 0.38, th: 1.05, paint: UK_G, camo: [0x8a8a76, 0x3f4a34], tur: [0, 1.85, -0.2], gy: 0.36, gz: 0.82 },
+  (B, s) => {
+    const P0 = s.paint;
+    B.add(sideProfile([[2.75, 0.45], [2.85, 1.2], [2.3, 1.85], [-2.6, 1.85], [-2.8, 1.3], [-2.8, 0.45]], s.W - 0.8, 3), P0, 1, 1, 1, 0, 0, 0);
+    for (const sx of [-1, 1]) { B.add(sideProfile([[2.6, 0.35], [2.8, 1.25], [-2.7, 1.25], [-2.8, 0.35]], 0.12, 1), P0, 1, 1, 1, sx * (s.W / 2 + 0.03), 0, 0); for (let i = 0; i < 5; i++) B.add(G.box, DARK, 0.04, 0.35, 0.25, sx * (s.W / 2 + 0.1), 0.42, -2.0 + i * 1.0); }
+    B.add(G.box, P0, 0.6, 0.4, 0.8, 0, 1.95, -1.7);
+  },
+  (B, s) => { B.add(G.cyl12, s.paint, 0.8, 0.8, 0.85, 0, 0.4, 0); B.add(G.box, s.paint, 1.0, 0.65, 0.3, 0, 0.42, 0.85); B.add(G.cyl12, s.paint, 0.3, 0.2, 0.3, -0.4, 0.88, -0.2); crewBust(B, -0.4, 1.35, -0.2, 'us'); },
+  simpleGun(1.4, 0.05, 0x3c3e34),
+  1.95, trackSpec({ L: 5.6, th: 1.05, tw: 0.38, W: 2.6 }), null, null);
+// Crusader — tanque cruzador britânico (rodas Christie)
+VEH.crusader = () => vehicleShell('crusader', { L: 6.0, W: 2.65, tw: 0.36, th: 0.95, paint: UK_G, camo: [0x8a8a76, 0x3f4a34], tur: [0, 1.6, 0.0], gy: 0.36, gz: 0.82 },
+  (B, s) => {
+    const P0 = s.paint;
+    B.add(sideProfile([[2.9, 0.45], [3.0, 0.9], [2.4, 1.35], [-2.85, 1.35], [-3.0, 0.9], [-2.9, 0.45]], s.W - 0.1, 3), P0, 1, 1, 1, 0, 0, 0);
+    runGear(B, s, 5, 0.42, { ww: 0.22 });
+    B.add(G.box, P0, 0.5, 0.45, 0.5, -0.65, 1.55, 1.9);
+    tarpRoll(B, 0, 1.55, -2.5, 1.6);
+  },
+  (B, s) => { B.add(planProfile([[-0.6, 1.0], [0.6, 1.0], [1.05, 0.4], [1.05, -1.0], [-1.05, -1.0], [-1.05, 0.4]], 0.7, 1), s.paint, 1, 1, 1, 0, 0.06, 0); crewBust(B, 0.4, 1.2, -0.3, 'us'); },
+  simpleGun(1.6, 0.05, 0x3c3e34),
+  2.25, trackSpec({ L: 6.0, th: 0.95, tw: 0.36, W: 2.65 }), null, null);
+// T-26 — tanque leve soviético
+VEH.t26 = () => vehicleShell('t26', { L: 4.65, W: 2.45, tw: 0.28, th: 0.8, paint: SOV_G, camo: null, tur: [0.1, 1.55, 0.0], gy: 0.36, gz: 0.72 },
+  (B, s) => {
+    const P0 = s.paint;
+    B.add(sideProfile([[2.25, 0.4], [2.35, 0.85], [1.7, 1.15], [-2.2, 1.15], [-2.3, 0.45]], s.W - 0.6, 2), P0, 1, 1, 1, 0, 0, 0);
+    runGear(B, s, 8, 0.2, { bogie: true, rollers: 4, ww: 0.17 });
+  },
+  (B, s) => { B.add(G.cyl12, s.paint, 0.75, 0.7, 0.75, 0, 0.35, 0); B.add(G.box, s.paint, 0.9, 0.55, 0.5, 0, 0.35, -0.85); B.add(G.box, s.paint, 0.55, 0.45, 0.25, 0, 0.35, 0.8); for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; B.add(G.cyl8, 0x333333, 0.02, 0.5, 0.02, Math.sin(a) * 0.7, 0.95, Math.cos(a) * 0.7); } B.add(G.torus, 0x333333, 0.72, 0.72, 0.6, 0, 1.2, 0, Math.PI / 2, 0, 0); crewBust(B, 0.2, 1.1, -0.2, 'us'); },
+  simpleGun(1.6, 0.05, 0x3a3e2c),
+  2.25, trackSpec({ L: 4.65, th: 0.8, tw: 0.28, W: 2.45 }), null,
+  (g, tur) => { numDecalW(tur, 0.76, 0.4, 0); });
+function numDecalW(tur, x, y, z) { const t = TEX.num('' + (10 + (Math.random() * 89 | 0))); for (const sx of [-1, 1]) decal(tur, t, 0.7, sx * x, y, z, 0, sx * Math.PI / 2).scale.set(0.7, 0.35, 1); }
+// BT-7 — tanque rápido soviético (Christie)
+VEH.bt7 = () => vehicleShell('bt7', { L: 5.7, W: 2.3, tw: 0.3, th: 0.9, paint: SOV_G, camo: null, tur: [0, 1.62, 0.2], gy: 0.36, gz: 0.72 },
+  (B, s) => {
+    const P0 = s.paint;
+    B.add(sideProfile([[2.85, 0.45], [2.75, 0.95], [2.2, 1.25], [-2.7, 1.25], [-2.85, 0.6]], s.W - 0.05, 3), P0, 1, 1, 1, 0, 0, 0);
+    runGear(B, s, 4, 0.44, { ww: 0.24 });
+    B.add(G.box, DARK, 1.6, 0.05, 1.2, 0, 1.27, -1.8);
+  },
+  (B, s) => { B.add(G.cyl12, s.paint, 0.78, 0.68, 0.72, 0, 0.34, 0); B.add(G.box, s.paint, 0.9, 0.5, 0.5, 0, 0.32, -0.8); B.add(G.box, s.paint, 0.55, 0.42, 0.25, 0, 0.36, 0.78); crewBust(B, -0.25, 1.1, -0.15, 'us'); },
+  simpleGun(1.65, 0.05, 0x3a3e2c),
+  2.3, trackSpec({ L: 5.7, th: 0.9, tw: 0.3, W: 2.3 }), null,
+  (g, tur) => { numDecalW(tur, 0.79, 0.35, 0); });
+// T-34/76
+VEH.t34 = () => vehicleShell('t34', { L: 5.95, W: 3.0, tw: 0.5, th: 1.0, paint: SOV_G, camo: null, tur: [0, 1.75, 0.45], gy: 0.4, gz: 1.05 },
+  (B, s) => {
+    const P0 = s.paint;
+    B.add(sideProfile([[2.95, 0.5], [2.98, 0.75], [1.65, 1.72], [-2.45, 1.72], [-2.98, 1.05], [-2.95, 0.5]], s.W - 0.05, 4), P0, 1, 1, 1, 0, 0, 0);
+    runGear(B, s, 5, 0.44, { ww: 0.26 });
+    B.add(G.box, DARK, 0.55, 0.45, 0.06, -0.55, 1.35, 2.35, -0.95, 0, 0);
+    B.add(G.sph, METAL, 0.13, 0.13, 0.13, 0.65, 1.2, 2.55);
+    for (const sx of [-1, 1]) { B.add(G.box, P0, 0.4, 0.4, 1.0, sx * 1.15, 1.95, -1.4); B.add(G.cyl12, 0x3a3a34, 0.2, 0.8, 0.2, sx * 1.25, 1.95, -0.2, Math.PI / 2, 0, 0); }
+    for (let i = 0; i < 4; i++) B.add(G.box, DARK, 1.8, 0.04, 0.1, 0, 1.73, -1.2 - i * 0.28);
+    for (let i = 0; i < 6; i++) B.add(G.box, 0x6e4c2c, 0.6, 0.05, 0.1, 0.6, 1.75 + i * 0.03, -0.7);
+  },
+  (B, s) => {
+    const P0 = s.paint;
+    B.add(planProfile([[-0.75, 1.0], [0.75, 1.0], [1.1, 0.2], [1.0, -1.15], [-1.0, -1.15], [-1.1, 0.2]], 0.78, 1), P0, 1, 1, 1, 0, 0.06, 0);
+    B.add(G.box, P0, 0.9, 0.6, 0.35, 0, 0.42, 1.05);
+    for (const sx of [-1, 1]) B.add(G.cyl12, P0, 0.25, 0.12, 0.25, sx * 0.45, 0.92, -0.35);
+    crewBust(B, -0.45, 1.4, -0.35, 'us');
+  },
+  simpleGun(2.4, 0.075, 0x3a3e2c),
+  3.0, trackSpec({ L: 5.95, th: 1.0, tw: 0.5, W: 3.0 }), null,
+  (g, tur) => { numDecalW(tur, 1.11, 0.42, -0.2); });
+// KV-1 — pesado soviético
+VEH.kv1 = () => vehicleShell('kv1', { L: 6.75, W: 3.32, tw: 0.7, th: 1.15, paint: SOV_G, camo: null, tur: [0, 2.05, -0.1], gy: 0.48, gz: 1.15 },
+  (B, s) => {
+    const P0 = s.paint;
+    B.add(sideProfile([[3.3, 0.5], [3.38, 1.15], [2.9, 1.42], [2.7, 2.05], [-3.0, 2.05], [-3.38, 1.6], [-3.3, 0.5]], s.W - 0.05, 4), P0, 1, 1, 1, 0, 0, 0);
+    runGear(B, s, 6, 0.32, { rollers: 3, ww: 0.3 });
+    B.add(G.sph, METAL, 0.14, 0.14, 0.14, 0.7, 1.55, 2.9);
+    for (let i = 0; i < 4; i++) B.add(G.box, DARK, 2.2, 0.04, 0.1, 0, 2.07, -1.5 - i * 0.3);
+    for (const sx of [-1, 1]) B.add(G.box, P0, 0.5, 0.4, 1.4, sx * 1.35, 2.25, -1.6);
+  },
+  (B, s) => { const P0 = s.paint; B.add(planProfile([[-0.95, 1.15], [0.95, 1.15], [1.2, 0.4], [1.2, -1.3], [-1.2, -1.3], [-1.2, 0.4]], 0.95, 1), P0, 1, 1, 1, 0, 0.06, 0); B.add(G.box, P0, 1.2, 0.7, 0.3, 0, 0.5, 1.2); crewBust(B, -0.4, 1.55, -0.3, 'us'); },
+  simpleGun(2.6, 0.08, 0x3a3e2c),
+  3.2, trackSpec({ L: 6.75, th: 1.15, tw: 0.7, W: 3.32 }), null,
+  (g, tur) => { numDecalW(tur, 1.21, 0.5, -0.2); });
+// M3 Stuart — leve americano
+VEH.stuart = () => vehicleShell('stuart', { L: 4.5, W: 2.25, tw: 0.3, th: 1.0, paint: US_PAINT, camo: null, tur: [0, 1.95, -0.05], gy: 0.32, gz: 0.65 },
+  (B, s) => {
+    const P0 = s.paint;
+    B.add(sideProfile([[2.2, 0.45], [2.3, 1.0], [1.4, 1.35], [1.2, 1.95], [-2.0, 1.95], [-2.25, 1.6], [-2.25, 0.5]], s.W - 0.05, 3), P0, 1, 1, 1, 0, 0, 0);
+    runGear(B, s, 4, 0.3, { bogie: true, ww: 0.2, z0: -1.4, z1: 1.3 });
+    for (const sx of [-0.45, 0.45]) B.add(G.box, DARK, 0.35, 0.12, 0.05, sx, 1.65, 1.38);
+    tarpRoll(B, 0, 2.15, -1.8, 1.4);
+  },
+  (B, s) => { boxTurret(B, s, 1.3, 1.4, 0.75, { crew: 'us' }); },
+  simpleGun(1.45, 0.05, 0x45472f),
+  2.0, trackSpec({ L: 4.5, th: 1.0, tw: 0.3, W: 2.25 }), null,
+  (g) => { starPair(g, 1.13, 1.45, -0.6, 0.65); });
+// M3 Lee — canhão de 75 mm no casco e 37 mm na torre
+VEH.lee = () => vehicleShell('lee', { L: 5.65, W: 2.72, tw: 0.42, th: 1.12, paint: US_PAINT, camo: null, tur: [-0.35, 2.75, 0.2], gy: 0.32, gz: 0.65 },
+  (B, s) => {
+    const P0 = s.paint;
+    shermanRunning(B, Object.assign({}, s, { L: 6.0, W: 2.72 }));
+    B.add(sideProfile([[2.8, 1.1], [2.9, 1.5], [2.0, 2.75], [-2.3, 2.75], [-2.8, 2.2], [-2.85, 1.1]], s.W - 0.1, 4), P0, 1, 1, 1, 0, 0, 0);
+    B.add(G.cyl12, P0, 0.5, 0.7, 0.5, 0.8, 1.75, 2.35, Math.PI / 2, 0, 0);
+    B.add(G.cyl12, 0x45472f, 0.1, 2.2, 0.1, 0.8, 1.75, 3.6, Math.PI / 2, 0, 0);
+    tarpRoll(B, 0, 2.95, -2.1, 1.6);
+  },
+  (B, s) => { boxTurret(B, s, 1.25, 1.35, 0.65, { crew: 'us', cupola: false }); B.add(G.box, s.paint, 0.5, 0.3, 0.5, 0.2, 0.8, -0.2); crewBust(B, 0.2, 1.35, -0.2, 'us'); },
+  simpleGun(1.4, 0.045, 0x45472f),
+  1.95, { L: 6.0, h: 1.12, rs: 0.42, ri: 0.38, w: 0.42, x: 1.15 }, null,
+  (g) => { starPair(g, 1.31, 2.0, -0.8, 0.85); });
+// Fiat M13/40 — italiano
+VEH.m1340 = () => vehicleShell('m1340', { L: 4.9, W: 2.2, tw: 0.3, th: 0.85, paint: IT_SAND, camo: null, tur: [0, 1.65, -0.2], gy: 0.32, gz: 0.68 },
+  (B, s) => {
+    const P0 = s.paint;
+    B.add(sideProfile([[2.4, 0.4], [2.5, 0.85], [1.8, 1.4], [-2.3, 1.4], [-2.45, 0.45]], s.W - 0.1, 3), P0, 1, 1, 1, 0, 0, 0);
+    runGear(B, s, 8, 0.2, { bogie: true, rollers: 3, ww: 0.17 });
+    for (let r = 0; r < 2; r++) rivets(B, -0.85, 0.85, 1.05 + r * 0.2, 2.37, 7);
+    for (const x of [-0.6, 0.6]) jerry(B, x, 1.62, -1.9, 0, 0x8a7a50);
+  },
+  (B, s) => boxTurret(B, s, 1.2, 1.4, 0.7, { cx: 0.2 }),
+  simpleGun(1.4, 0.05, 0x5a4e3a),
+  2.0, trackSpec({ L: 4.9, th: 0.85, tw: 0.3, W: 2.2 }), null, null);
+// L3/35 — tanquete italiana com metralhadoras
+VEH.l335 = () => vehicleShell('l335', { L: 3.2, W: 1.45, tw: 0.2, th: 0.6, paint: IT_SAND, camo: null, tur: [0.15, 0.95, 1.35], gy: 0.0, gz: 0.0 },
+  (B, s) => {
+    const P0 = s.paint;
+    B.add(sideProfile([[1.6, 0.35], [1.65, 0.75], [1.1, 1.25], [-1.4, 1.25], [-1.6, 0.4]], s.W - 0.05, 3), P0, 1, 1, 1, 0, 0, 0);
+    runGear(B, s, 6, 0.14, { ww: 0.12 });
+    crewBust(B, -0.3, 1.5, 0.3, 'de');
+  },
+  null, (B) => { for (const sx of [-0.1, 0.1]) B.add(G.cyl8, 0x1e1e1e, 0.035, 0.6, 0.035, sx, 0, 0.3, Math.PI / 2, 0, 0); },
+  0.7, trackSpec({ L: 3.2, th: 0.6, tw: 0.2, W: 1.45 }), null, null);

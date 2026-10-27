@@ -31,6 +31,23 @@ const UT = {
   sdkfz251: { name: 'Sd.Kfz. 251', plural: 'Sd.Kfz. 251', team: 'de', tank: true, light: true, hp: 320, speed: 11, range: 50, dmg: 6, rof: 0.11, acc: 0.3, tracer: true, vision: 80, r: 3.0, turn: 1.5, armor: 1 },
   stug: { name: 'StuG III', plural: 'StuG III', team: 'de', tank: true, casemate: true, hp: 580, speed: 8, range: 66, dmg: 115, rof: 4.2, acc: 0.75, at: true, proj: 'shell', splash: 5, vision: 80, r: 3.4, turn: 1.1, armor: 1.1 },
   tiger: { name: 'Tiger I', plural: 'Tigers', team: 'de', tank: true, hp: 1100, speed: 6.5, range: 72, dmg: 150, rof: 5, acc: 0.78, at: true, proj: 'shell', splash: 7, vision: 90, r: 4.1, turn: 0.8, armor: 1.5, coax: true },
+  // blindados do início da guerra (campanha mundial)
+  panzer2: { name: 'Panzer II', plural: 'Panzer II', team: 'de', tank: true, light: true, hp: 220, speed: 11, range: 46, dmg: 22, rof: 0.9, acc: 0.6, at: true, proj: 'shell', splash: 1.5, vision: 82, r: 2.6, turn: 1.6, armor: 0.7, coax: true },
+  panzer3: { name: 'Panzer III', plural: 'Panzer III', team: 'de', tank: true, hp: 380, speed: 10, range: 54, dmg: 55, rof: 3, acc: 0.7, at: true, proj: 'shell', splash: 3, vision: 84, r: 3.0, turn: 1.4, armor: 0.9, coax: true },
+  panzer38t: { name: 'Panzer 38(t)', plural: 'Panzer 38(t)', team: 'de', tank: true, hp: 300, speed: 10.5, range: 50, dmg: 38, rof: 2.6, acc: 0.7, at: true, proj: 'shell', splash: 2, vision: 82, r: 2.6, turn: 1.5, armor: 0.8, coax: true },
+  tp7: { name: '7TP', plural: '7TP', team: 'us', tank: true, hp: 260, speed: 9.5, range: 48, dmg: 35, rof: 2.6, acc: 0.65, at: true, proj: 'shell', splash: 2, vision: 80, r: 2.6, turn: 1.4, armor: 0.7, coax: true },
+  charb1: { name: 'Char B1 bis', plural: 'Char B1', team: 'us', tank: true, hp: 720, speed: 6.5, range: 58, dmg: 70, rof: 3.4, acc: 0.65, at: true, proj: 'shell', splash: 4, vision: 78, r: 3.4, turn: 0.9, armor: 1.4, coax: true },
+  somua: { name: 'Somua S35', plural: 'Somua S35', team: 'us', tank: true, hp: 480, speed: 9.5, range: 54, dmg: 45, rof: 2.8, acc: 0.68, at: true, proj: 'shell', splash: 2.5, vision: 80, r: 2.9, turn: 1.3, armor: 1.1, coax: true },
+  matilda: { name: 'Matilda II', plural: 'Matildas', team: 'us', tank: true, hp: 650, speed: 6.5, range: 52, dmg: 45, rof: 2.6, acc: 0.7, at: true, proj: 'shell', splash: 2, vision: 78, r: 3.0, turn: 1.0, armor: 1.5, coax: true },
+  crusader: { name: 'Crusader', plural: 'Crusaders', team: 'us', tank: true, hp: 360, speed: 13, range: 54, dmg: 50, rof: 2.6, acc: 0.68, at: true, proj: 'shell', splash: 2, vision: 84, r: 3.0, turn: 1.6, armor: 0.8, coax: true },
+  t26: { name: 'T-26', plural: 'T-26', team: 'us', tank: true, hp: 260, speed: 8.5, range: 50, dmg: 40, rof: 2.8, acc: 0.62, at: true, proj: 'shell', splash: 2, vision: 78, r: 2.6, turn: 1.4, armor: 0.6, coax: true },
+  bt7: { name: 'BT-7', plural: 'BT-7', team: 'us', tank: true, hp: 280, speed: 15, range: 50, dmg: 40, rof: 2.8, acc: 0.62, at: true, proj: 'shell', splash: 2, vision: 82, r: 2.9, turn: 1.8, armor: 0.6, coax: true },
+  t34: { name: 'T-34/76', plural: 'T-34', team: 'us', tank: true, hp: 600, speed: 11, range: 62, dmg: 95, rof: 3.8, acc: 0.7, at: true, proj: 'shell', splash: 5, vision: 82, r: 3.2, turn: 1.4, armor: 1.25, coax: true },
+  kv1: { name: 'KV-1', plural: 'KV-1', team: 'us', tank: true, hp: 900, speed: 7, range: 62, dmg: 95, rof: 4, acc: 0.7, at: true, proj: 'shell', splash: 5, vision: 80, r: 3.6, turn: 0.9, armor: 1.6, coax: true },
+  stuart: { name: 'M3 Stuart', plural: 'Stuarts', team: 'us', tank: true, hp: 300, speed: 14, range: 50, dmg: 40, rof: 2.4, acc: 0.68, at: true, proj: 'shell', splash: 2, vision: 86, r: 2.6, turn: 1.8, armor: 0.75, coax: true },
+  lee: { name: 'M3 Lee', plural: 'M3 Lee', team: 'us', tank: true, hp: 540, speed: 9, range: 58, dmg: 90, rof: 3.8, acc: 0.68, at: true, proj: 'shell', splash: 5, vision: 82, r: 3.2, turn: 1.2, armor: 1.05, coax: true },
+  m1340: { name: 'Fiat M13/40', plural: 'M13/40', team: 'de', tank: true, hp: 320, speed: 8, range: 50, dmg: 45, rof: 3, acc: 0.65, at: true, proj: 'shell', splash: 2, vision: 78, r: 2.6, turn: 1.3, armor: 0.8, coax: true },
+  l335: { name: 'L3/35', plural: 'L3/35', team: 'de', tank: true, light: true, casemate: true, hp: 140, speed: 13, range: 40, dmg: 5, rof: 0.1, acc: 0.28, tracer: true, vision: 80, r: 1.8, turn: 2.0, armor: 0.5 },
   // veículos novos (1944–1945)
   jeep: { name: 'Jeep Willys', plural: 'Jeeps', team: 'us', tank: true, light: true, hp: 130, speed: 18, range: 42, dmg: 4, rof: 0.13, acc: 0.28, tracer: true, vision: 115, cost: 120, time: 6, r: 1.8, turn: 2.4, armor: 0.5 },
   m24: { name: 'M24 Chaffee', plural: 'M24 Chaffees', team: 'us', tank: true, hp: 380, speed: 13, range: 58, dmg: 80, rof: 3.3, acc: 0.7, at: true, proj: 'shell', splash: 4, vision: 92, cost: 380, time: 14, r: 3.0, turn: 1.7, armor: 0.8, coax: true },
@@ -130,7 +147,6 @@ function applyScenarioLook() {
   ca.needsUpdate = true;
   snow.visible = !!SC.snow;
 }
-try { const sv = localStorage.getItem('diad-scenario'); if (sv && SCENARIOS[sv]) SC = SCENARIOS[sv]; } catch (e) { /* sem armazenamento */ }
 const FREE0 = { res: false, fog: false, nowaves: false };
 try { Object.assign(FREE0, JSON.parse(localStorage.getItem('diad-free') || '{}')); } catch (e) { /* sem armazenamento */ }
 buildWorld(scene);
@@ -277,6 +293,7 @@ function explosion(x, y, z, size, small) {
   sfx(size > 1.2 ? 'bigboom' : 'boom', x, z);
   const d = Math.hypot(x - cam.x, z - cam.z);
   if (d < 140) cam.shake = Math.max(cam.shake, size * 0.9 * (1 - d / 140));
+  if (d < 120) padRumble(size * 0.45 * (1 - d / 120), 180);
   for (const c of civs) if (Math.hypot(c.x - x, c.z - z) < 45) c.flee = { x: c.x + (c.x - x) * 3, z: c.z + (c.z - z) * 3, t: S.time + 6 };
 }
 function muzzleFlash(p, size) {
@@ -360,11 +377,11 @@ function addEnt(o) {
 function spawnUnit(kind, x, z, o) {
   o = o || {};
   if (SC.unitMap && SC.unitMap[kind]) kind = SC.unitMap[kind];
-  const d = UT[kind];
-  const mesh = d.inf ? makeSoldier(d.team, kind) : kind === 'dozer' ? makeDozer() : d.naval ? makeShip(kind) : makeTank(kind);
+  const d = UT[kind], team = o.team || d.team;
+  const mesh = d.inf ? makeSoldier(d.team, kind, o.pal) : kind === 'dozer' ? makeDozer() : d.naval ? makeShip(kind) : makeTank(kind);
   const u = addEnt({
-    kind, def: d, team: d.team, unit: true, inf: !!d.inf, tank: !!d.tank, armored: !d.inf, armor: d.armor || 1,
-    x, z, y: groundH(x, z), heading: o.heading !== undefined ? o.heading : (d.team === 'us' ? Math.PI : 0),
+    kind, def: d, team, unit: true, inf: !!d.inf, tank: !!d.tank, armored: !d.inf, armor: d.armor || 1,
+    x, z, y: groundH(x, z), heading: o.heading !== undefined ? o.heading : (team === 'us' ? Math.PI : 0),
     hp: d.hp, maxHp: d.hp, r: d.r, mesh, order: o.order || 'idle', dest: null, target: null, forced: null,
     home: { x, z }, ph: rand() * 6, speedNow: 0, turretYaw: 0, cool: rand() * 1.5, mgCool: 0, gcool: 3 + rand() * 3,
     cover: 0, coverT: -9, retarget: rand() * 0.4, fireT: -9, recoil: 0,
@@ -1354,17 +1371,17 @@ function makeCP(t) {
   return { town: t, x: t.x, z: t.z, owner: 'de', prog: -1, cloth, ring, g };
 }
 function updCPs() {
-  if (S.phase !== 'base') return;
+  if (S.phase !== 'base' && S.phase !== 'battle') return;
   for (const c of S.cps) {
     if (SC.big) { const dx = c.x - cam.x, dz = c.z - cam.z, v = dx * dx + dz * dz < 1900 * 1900; c.g.visible = v; c.ring.visible = v; }
     let us = 0, de = 0;
     for (const e of ents) if (e.alive && e.unit && !e.downed && Math.abs(e.x - c.x) < 30 && Math.abs(e.z - c.z) < 30 && Math.hypot(e.x - c.x, e.z - c.z) < 30) { if (e.team === 'us') us++; else de++; }
     if (us && !de) c.prog = Math.min(1, c.prog + 0.5 / 7);
     else if (de && !us) c.prog = Math.max(-1, c.prog - 0.5 / 7);
-    if (c.prog >= 1 && c.owner !== 'us') { c.owner = 'us'; if (c.place) c.place.left = []; toast(c.town.name + (c.place ? ' conquistado(a)! +3 suprimentos/s' : ' libertada! +6 suprimentos/s'), 'good'); }
-    if (c.prog <= -1 && c.owner !== 'de') { c.owner = 'de'; toast(c.town.name + ' foi retomada pelos ' + foe().pl + '!', 'bad'); }
+    if (c.prog >= 1 && c.owner !== 'us') { c.owner = 'us'; if (c.place) c.place.left = []; toast(c.town.name + (SC.battle ? ' tomada!' : c.place ? ' conquistado(a)! +3 suprimentos/s' : ' libertada! +6 suprimentos/s'), 'good'); }
+    if (c.prog <= -1 && c.owner !== 'de') { c.owner = 'de'; toast(c.town.name + ' foi tomada pelos ' + foe().pl + '!', 'bad'); }
     const k = Math.abs(c.prog);
-    c.cloth.material = decalMat(c.prog >= 0 ? TEX.usflag : foeFlag());
+    c.cloth.material = decalMat(c.prog >= 0 ? (SC.ourFlag || TEX.usflag) : foeFlag());
     c.cloth.position.y = 2 + k * 8.6;
     c.ring.material.color.setHex(c.owner === 'us' ? 0x8fd16f : 0xe0573f);
   }
@@ -1540,7 +1557,7 @@ const AIR_ROCKET = { dmg: 170, splash: 5, at: true };
 const AIR_BOMB = { dmg: 230, splash: 11, at: true };
 
 function spawnPlane(kind, tx, tz, dx, dz, role, side, lead) {
-  const a = AIR[kind], mesh = makePlane(kind); scene.add(mesh);
+  const a = AIR[kind], mesh = makePlane(a.model || kind); scene.add(mesh);
   side = side || 0; lead = lead || 750;
   const ox = -dz * side, oz = dx * side;
   const base = Math.max(22, groundH(tx, tz));
@@ -1739,7 +1756,7 @@ function germanRaid(tx, tz, dx, dz) {
   const k = foe().air;
   spawnPlane(k, tx, tz, dx, dz, 'strafe', -5, 650);
   spawnPlane(k, tx, tz, dx, dz, 'strafe', 5, 760);
-  toast(k === 'zero' ? 'Caças Zero japoneses atacando!' : 'Caças Fw 190 da Luftwaffe atacando!', 'bad');
+  toast(SC.battle ? 'Aviões ' + foe().pl + ' atacando!' : k === 'zero' ? 'Caças Zero japoneses atacando!' : 'Caças Fw 190 da Luftwaffe atacando!', 'bad');
 }
 // kamikazes: caças Zero mergulham contra os navios
 function kamikazeRaid(n) {
@@ -1769,6 +1786,9 @@ function updAir(dt) {
       const beach = ents.filter(e => e.alive && e.team === 'us' && e.z > 200);
       if (beach.length) { S.prillerDone = true; const v = beach[(rand() * beach.length) | 0]; germanRaid(v.x, v.z, rand() < 0.5 ? 1 : -1, 0.15); }
     }
+  } else if (S.phase === 'battle') {
+    S.airT -= dt;
+    if (S.airT <= 0) { S.airT = 75 + rand() * 50; const t = raidTarget(); if (t) { const a = rr(-0.6, 0.6); germanRaid(t.x, t.z, Math.sin(a), Math.cos(a)); } }
   } else if (S.phase === 'base') {
     if (seaCoast()) {
       S.sbootT = (S.sbootT === undefined ? 200 : S.sbootT) - dt;
@@ -1788,7 +1808,7 @@ function updAir(dt) {
     }
   }
 }
-function strikeAvail(k) { return STRIKES[k].phases.includes(S.phase) && (k !== 'naval' || SC.coast); }
+function strikeAvail(k) { if (SC.battle) return S.phase === 'battle' && SC.strikes.includes(k); return STRIKES[k].phases.includes(S.phase) && (k !== 'naval' || SC.coast); }
 function supportReady(k) { return S.cd[k] <= 0 && strikeAvail(k); }
 
 /* ---------- apoio naval ---------- */
@@ -1924,6 +1944,7 @@ let gest = null;
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('pointerdown', (e) => {
   try { canvas.setPointerCapture(e.pointerId); } catch (er) { /* ignorar */ }
+  if (worldPointer('down', e)) return;
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (ptrs.size === 1) gest = { type: 'tap', sx: e.clientX, sy: e.clientY, lx: e.clientX, ly: e.clientY, box: S.boxMode || e.shiftKey, right: e.button === 2 };
   else if (ptrs.size === 2) {
@@ -1933,6 +1954,7 @@ canvas.addEventListener('pointerdown', (e) => {
   }
 });
 canvas.addEventListener('pointermove', (e) => {
+  if (worldPointer('move', e)) return;
   const p = ptrs.get(e.pointerId); if (!p) return;
   p.x = e.clientX; p.y = e.clientY;
   if (!gest || S.phase === 'menu') return;
@@ -1951,6 +1973,7 @@ canvas.addEventListener('pointermove', (e) => {
   }
 });
 function endPtr(e) {
+  if (worldPointer('up', e)) return;
   if (!ptrs.has(e.pointerId)) return;
   ptrs.delete(e.pointerId);
   if (!gest) return;
@@ -1961,7 +1984,7 @@ function endPtr(e) {
 }
 canvas.addEventListener('pointerup', endPtr);
 canvas.addEventListener('pointercancel', (e) => { ptrs.delete(e.pointerId); if (!ptrs.size) { gest = null; $('boxrect').hidden = true; } });
-canvas.addEventListener('wheel', (e) => { e.preventDefault(); cam.tDist = null; cam.dist = clamp(cam.dist * (e.deltaY > 0 ? 1.12 : 0.89), 22, 420); }, { passive: false });
+canvas.addEventListener('wheel', (e) => { e.preventDefault(); if (MODE === 'world') { worldZoom(e.deltaY > 0 ? 1.12 : 0.89); return; } cam.tDist = null; cam.dist = clamp(cam.dist * (e.deltaY > 0 ? 1.12 : 0.89), 22, 420); }, { passive: false });
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase(); cam.keys[k] = true;
   if (k === 'escape') { if (S.placing) cancelPlacing(); else { S.strike = null; S.supportOpen = false; setSel([]); updSide(); } }
@@ -2049,7 +2072,7 @@ function refreshPanel(force) {
     } else {
       title = 'Apoio de fogo'; info = 'Escolha o tipo de ataque e depois toque no alvo.';
       for (const k of Object.keys(STRIKES)) {
-        if (k === 'naval' && !SC.coast) continue;
+        if (SC.battle ? !SC.strikes.includes(k) : k === 'naval' && !SC.coast) continue;
         const st = STRIKES[k], ok = supportReady(k), avail = strikeAvail(k);
         btns += '<button class="pb' + (ok ? ' go' : '') + '" data-act="strike:' + k + '"' + (ok ? '' : ' disabled') + '>' + strikeName(k) + '<small>' + (!avail ? 'após montar a base' : ok ? st.desc : 'recarga ' + Math.ceil(S.cd[k]) + 's') + '</small></button>';
       }
@@ -2178,8 +2201,14 @@ function drawMini() {
   void W; void H;
 }
 function updHUD() {
-  $('sup').textContent = S.free.res ? '∞' : Math.floor(S.supplies);
-  $('inc').textContent = S.phase === 'base' ? '+' + income() + '/s' : 'sem base';
+  if (SC.battle) {
+    document.querySelector('#res .lbl').textContent = 'FORÇAS';
+    $('sup').textContent = Math.round(sideStrength('us') / Math.max(1, BAT.p0) * 100) + '%';
+    $('inc').textContent = 'inimigo ' + Math.round(sideStrength('de') / Math.max(1, BAT.e0) * 100) + '%';
+  } else {
+    $('sup').textContent = S.free.res ? '∞' : Math.floor(S.supplies);
+    $('inc').textContent = S.phase === 'base' ? '+' + income() + '/s' : 'sem base';
+  }
   let inf = 0, tk = 0;
   for (const e of ents) if (e.alive && e.team === 'us' && e.unit) { if (e.inf) inf++; else if (e.tank) tk++; }
   $('count').textContent = inf + ' soldados · ' + tk + ' tanques';
@@ -2203,7 +2232,7 @@ function endGame(win, text) {
     $('end').hidden = false; $('hud').hidden = true;
   }, 2600);
 }
-$('again').addEventListener('click', () => location.reload());
+$('again').onclick = () => location.reload();
 
 /* ---------- laço principal ---------- */
 let visT = 0, cpT = 0, uiT = 0, miniT = 0;
@@ -2219,6 +2248,7 @@ function update(dt) {
     }
   } else if (S.phase === 'landing') updateLanding(dt);
   else if (S.phase === 'base') updateBase(dt);
+  else if (S.phase === 'battle') updateBattle(dt);
   if (S.free.res && S.phase !== 'menu') S.supplies = Math.max(S.supplies, 99999);
   updFront(dt);
   for (let i = S.pings.length - 1; i >= 0; i--) { S.pings[i].t -= dt; if (S.pings[i].t <= 0) S.pings.splice(i, 1); }
@@ -2241,6 +2271,8 @@ function frame(now) {
   requestAnimationFrame(frame);
   let dt = (now - lastT) / 1000; lastT = now;
   if (dt <= 0) return; if (dt > 0.05) dt = 0.05;
+  pollPad(dt);
+  if (MODE !== 'tactical') { worldFrame(dt); return; }
   S.time += dt;
   update(dt);
   updateCamera(dt);
@@ -2255,45 +2287,213 @@ $('gfx').addEventListener('click', () => {
   try { localStorage.setItem('diad-gfx', GFX); } catch (e) { /* sem armazenamento */ }
   applyGfx();
 });
-$('start').addEventListener('click', () => { initAudio(); startLanding(); });
+// menu inicial: escolha da nação para a campanha mundial
+let pickNat = 'GER';
+try { pickNat = localStorage.getItem('diad-nacao') || 'GER'; } catch (e) { /* sem armazenamento */ }
+const NAT_DESC = {
+  GER: 'Começa em guerra com a Polônia. Exército forte e Panzers, mas o mundo inteiro vai se voltar contra você.',
+  ENG: 'Declara guerra à Alemanha em 3 de setembro. Império enorme, ilha protegida pelo mar.',
+  FRA: 'O maior exército do Ocidente atrás da Linha Maginot. Resista a 1940.',
+  SOV: 'Território imenso e reservas sem fim. Prepare-se para 1941.',
+  ITA: 'Ainda neutra em 1939. Entre na guerra quando quiser e domine o Mediterrâneo.',
+  JAP: 'Já em guerra com a China. Pearl Harbor está no horizonte.',
+  USA: 'Neutros e com indústria gigantesca que cresce a cada mês.',
+  POL: 'Invadida no primeiro dia. Desafio difícil: aguente até a ajuda chegar.',
+  CHN: 'Em guerra com o Japão desde 1937. Muitos homens, pouca indústria.',
+};
 function renderIntro() {
-  $('scEyebrow').textContent = SC.eyebrow; $('scTitle').textContent = SC.title; $('scSub').textContent = SC.subtitle;
-  $('scB1').textContent = SC.brief[0]; $('scB2').textContent = SC.brief[1];
-  $('start').textContent = SC.coast ? 'INICIAR DESEMBARQUE' : 'INICIAR OPERAÇÃO';
   for (const b of document.querySelectorAll('#free button')) b.setAttribute('aria-pressed', String(!!S.free[b.dataset.free]));
-  $('scen').innerHTML = Object.values(SCENARIOS).map(c => '<button type="button" role="radio" aria-checked="' + (c === SC) + '" data-sc="' + c.id + '"><b>' + c.card + '</b><span>' + c.when + '</span></button>').join('');
+  $('nations').innerHTML = ['GER', 'ENG', 'FRA', 'SOV', 'ITA', 'JAP', 'USA', 'POL', 'CHN'].map(t => '<button type="button" role="radio" aria-checked="' + (t === pickNat) + '" data-nat="' + t + '"><b><i class="sw" style="background:' + NAT[t].c + '"></i>' + NAT[t].n + '</b><span>' + (NAT[t].fac ? FAC_NAME[NAT[t].fac] : 'Neutro') + '</span></button>').join('');
+  $('natDesc').textContent = NAT_DESC[pickNat];
+  let saved = null; try { saved = JSON.parse(localStorage.getItem('diad-mundo') || 'null'); } catch (e) { /* */ }
+  $('cont').hidden = !saved || saved.over;
+  if (saved && !saved.over) $('cont').textContent = 'CONTINUAR · ' + (NAT[saved.player] ? NAT[saved.player].n : saved.player) + ', ' + dateStr(saved.day);
 }
-// troca de cenário no menu: refaz o mapa, as guarnições e a aparência
-function selectScenario(id) {
-  if (S.phase !== 'menu' || !SCENARIOS[id] || SCENARIOS[id] === SC) return;
-  SC = SCENARIOS[id];
-  try { localStorage.setItem('diad-scenario', id); } catch (e) { /* sem armazenamento */ }
-  $('loading').textContent = 'Preparando o terreno…';
+$('nations').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; pickNat = b.dataset.nat; try { localStorage.setItem('diad-nacao', pickNat); } catch (er) { /* */ } renderIntro(); });
+$('start').addEventListener('click', () => { initAudio(); try { localStorage.removeItem('diad-mundo'); } catch (e) { /* */ } startWorld(pickNat, false); });
+$('cont').addEventListener('click', () => { initAudio(); startWorld(null, true); });
+$('free').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  const k = b.dataset.free; S.free[k] = !S.free[k];
+  try { localStorage.setItem('diad-free', JSON.stringify(S.free)); } catch (er) { /* sem armazenamento */ }
+  renderIntro();
+});
+$('wStyle').addEventListener('click', () => setMapStyle(mapStyle === 'globo' ? 'plano' : 'globo'));
+$('wMenu').addEventListener('click', () => { if (W) { W.paused = true; saveWorld(); } $('whud').hidden = true; $('intro').hidden = false; renderIntro(); });
+$('bRetreat').addEventListener('click', () => { if (S.phase === 'battle') finishBattle(false, 'Você ordenou a retirada.'); });
+
+/* ---------- batalhas da campanha mundial no modo tático ---------- */
+const NAT_PLANE = { GER: ['fw190', 'Ju 87 Stuka'], ITA: ['fw190', 'Macchi C.202'], JAP: ['zero', 'Mitsubishi Zero'], MAN: ['zero', 'Zero'], SOV: ['p47', 'Il-2 Sturmovik'], ENG: ['p47', 'Hawker Typhoon'], USA: ['p47', 'P-47 Thunderbolt'], FRA: ['p47', 'Dewoitine D.520'], POL: ['p47', 'PZL P.11'], CHN: ['p47', 'Polikarpov I-16'] };
+const NAT_PAL = {
+  GER: {}, ITA: { jacket: 0x6b6a4f, pants: 0x63624a, helm: 0x5e604c, collar: 0x5a5a44 }, HUN: { jacket: 0x6f6a48, pants: 0x66603f, helm: 0x5e5f48 }, ROM: { jacket: 0x7a7556, pants: 0x6f6a4c }, FIN: { jacket: 0x63685a, pants: 0x5a5f52 },
+  SOV: { jacket: 0x7d7250, pants: 0x6e6446, helm: 0x4d5a36, band: 0x4d5a36, web: 0x6a5a3c, legging: 0x3a3026, pack: 0x6e6446 }, ENG: { jacket: 0x76694a, pants: 0x6e6244, helm: 0x5c5c3c, web: 0xa59a74, legging: 0xa09670 },
+  FRA: { jacket: 0x8a7d58, pants: 0x7e7252, helm: 0x58685e, band: 0x58685e }, POL: { jacket: 0x6c6c4c, pants: 0x626246, helm: 0x5a6040 }, CHN: { jacket: 0x6b7072, pants: 0x63686a, helm: 0x4f5658, legging: 0x7a7a70 },
+  USA: {}, JAP: {}, YUG: { jacket: 0x6e6a4c, pants: 0x646046 }, GRE: { jacket: 0x7d7454, pants: 0x736a4c },
+};
+function battleKinds(div, side) {
+  const n = W.nat[div.tag], look = n.look, ti = n.tech.inf, out = [];
+  const R = look === 'de' ? 'gren' : look === 'jp' ? 'jinf' : 'rifle', AT = look === 'de' ? (ti >= 3 ? 'pzschreck' : null) : look === 'jp' ? 'jat' : (ti >= 3 ? 'bazooka' : null), MED = look === 'de' ? 'sani' : look === 'jp' ? 'jmedic' : 'medic';
+  const s = div.str, k = (v) => Math.max(1, Math.round(v * (0.4 + 0.6 * s)));
+  if (div.type === 'tank') { for (let i = 0; i < k(4); i++) out.push(eraKind('tank', div.tag)); for (let i = 0; i < k(2); i++) out.push(eraKind('light', div.tag)); for (let i = 0; i < k(5); i++) out.push(R); out.push(MED); }
+  else if (div.type === 'mot') { for (let i = 0; i < k(3); i++) out.push(eraKind('light', div.tag)); for (let i = 0; i < k(7); i++) out.push(R); if (AT) out.push(AT, AT); out.push(MED); }
+  else { for (let i = 0; i < k(10); i++) out.push(R); if (AT) out.push(AT, AT); else out.push(R, R); out.push(MED); }
+  void side; return out.filter(x => UT[x]);
+}
+function battleScenario(cfg) {
+  const t = cfg.prov.terr, m = cfg.month, cold = t === 'W' || (cfg.prov.lat > 46 && (m >= 10 || m <= 2));
+  const base = cold && t !== 'D' && t !== 'T' ? SCENARIOS.ardenas : t === 'D' ? SCENARIOS.africa : t === 'S' ? SCENARIOS.italia : t === 'T' ? SCENARIOS.pacifico : SCENARIOS.omaha;
+  const pn = cfg.player.nat, en = cfg.enemy.nat, early = cfg.year < 1943 || (cfg.year === 1943 && m < 3);
+  const gerIn = [cfg.player.tag, cfg.enemy.tag].includes('GER');
+  const jp = pn.look === 'jp' || en.look === 'jp';
+  const pp = NAT_PLANE[cfg.player.tag] || ['p47', 'caças'], ep = NAT_PLANE[cfg.enemy.tag] || ['p47', 'caças'];
+  AIR.p47.model = pp[0]; AIR.foeair = { name: ep[1], team: 'de', hp: 110, speed: 100, alt: 62, model: ep[0] };
+  const strikes = ['naval', 'p47'];
+  if (['USA', 'ENG'].includes(cfg.player.tag) && cfg.year >= 1942) strikes.push('b26', 'para');
+  return {
+    id: 'bat_' + base.id + (early && gerIn ? '_c' : '') + (jp ? '_j' : '') + '_' + cfg.player.tag + cfg.enemy.tag,
+    battle: true, biome: base.biome, coast: false, bluff: t === 'M' ? 22 : 11, hills: t === 'M' ? 2.8 : (base.hills || 1.2), seed: 3000 + cfg.prov.id,
+    trenches: t === 'M' || t === 'W' ? ['wn'] : [], mountain: null,
+    title: cfg.prov.name, towns: [cfg.prov.name, 'Fazenda de ' + cfg.prov.name, 'Estação de ' + cfg.prov.name, 'Bosque de ' + cfg.prov.name, 'Igreja de ' + cfg.prov.name],
+    sky: base.sky, fog: base.fog, sun: base.sun, sunI: base.sunI, hemi: base.hemi, skyTop: base.skyTop, skyHor: base.skyHor, snow: cold && t !== 'D' && t !== 'T', water: base.water,
+    pal: { A: NAT_PAL[cfg.player.tag] || {}, B: NAT_PAL[cfg.enemy.tag] || {} },
+    paint: early && gerIn ? { de: { paint: 0x4b5054, camo: null } } : base.id === 'ardenas' ? base.paint : base.id === 'africa' ? base.paint : undefined,
+    jp, foe: { adj: en.adj[0], adjF: en.adj[1], pl: en.adj[2], air: 'foeair' },
+    ourFlag: flagTex(cfg.player.tag), foeFlagTex: flagTex(cfg.enemy.tag),
+    strikes, strikeNames: { naval: 'Artilharia', p47: 'Apoio aéreo (' + pp[1] + ')', b26: 'Bombardeiros', para: 'Paraquedistas' },
+    airNames: { p47: pp[1] },
+  };
+}
+const _flagTex = {};
+function flagTex(t) {
+  if (_flagTex[t]) return _flagTex[t];
+  const n = W.nat[t], c = n.color;
+  const tex = canvasTex(96, 64, (g) => {
+    g.fillStyle = c; g.fillRect(0, 0, 96, 64);
+    if (t === 'GER') { g.fillStyle = '#fff'; g.beginPath(); g.arc(48, 32, 20, 0, 6.29); g.fill(); g.fillStyle = '#111'; g.fillRect(44, 16, 8, 32); g.fillRect(32, 28, 32, 8); }
+    else if (t === 'SOV') { g.fillStyle = '#b8141b'; g.fillRect(0, 0, 96, 64); g.fillStyle = '#f2c230'; starPath(g, 22, 18, 10, 4); g.fill(); }
+    else if (t === 'JAP' || t === 'MAN') { g.fillStyle = '#f3f0e6'; g.fillRect(0, 0, 96, 64); g.fillStyle = '#c0141c'; g.beginPath(); g.arc(48, 32, 17, 0, 6.29); g.fill(); }
+    else if (t === 'USA') { for (let i = 0; i < 7; i++) { g.fillStyle = i % 2 ? '#f2f2f2' : '#b22234'; g.fillRect(0, i * 64 / 7, 96, 64 / 7 + 1); } g.fillStyle = '#3c3b6e'; g.fillRect(0, 0, 42, 34); }
+    else if (t === 'ENG') { g.fillStyle = '#1f3a7a'; g.fillRect(0, 0, 96, 64); g.strokeStyle = '#fff'; g.lineWidth = 12; g.beginPath(); g.moveTo(0, 0); g.lineTo(96, 64); g.moveTo(96, 0); g.lineTo(0, 64); g.stroke(); g.strokeStyle = '#c8102e'; g.lineWidth = 5; g.stroke(); g.fillStyle = '#fff'; g.fillRect(38, 0, 20, 64); g.fillRect(0, 22, 96, 20); g.fillStyle = '#c8102e'; g.fillRect(42, 0, 12, 64); g.fillRect(0, 26, 96, 12); }
+    else if (t === 'FRA' || t === 'ITA') { const cs = t === 'FRA' ? ['#1f3f99', '#f2f2f2', '#d22b2b'] : ['#2a8a3e', '#f2f2f2', '#c8202c']; cs.forEach((cc, i) => { g.fillStyle = cc; g.fillRect(i * 32, 0, 33, 64); }); }
+    else if (t === 'POL') { g.fillStyle = '#f2f2f2'; g.fillRect(0, 0, 96, 32); g.fillStyle = '#d4213d'; g.fillRect(0, 32, 96, 32); }
+    else if (t === 'CHN') { g.fillStyle = '#d22b2b'; g.fillRect(0, 0, 96, 64); g.fillStyle = '#1f3f99'; g.fillRect(0, 0, 48, 32); g.fillStyle = '#fff'; g.beginPath(); g.arc(24, 16, 8, 0, 6.29); g.fill(); }
+    else { g.fillStyle = 'rgba(255,255,255,0.85)'; g.fillRect(0, 22, 96, 20); }
+  });
+  _flagTex[t] = tex; return tex;
+}
+const BAT = { cfg: null, p0: 0, e0: 0, t: 0, aiT: 0, holdT: 0, limit: 540 };
+function clearTactical() {
   for (const e of ents.slice()) removeEnt(e);
   for (const c of civs) scene.remove(c.mesh); civs.length = 0;
   for (const c of S.cps) { scene.remove(c.g); scene.remove(c.ring); } S.cps = [];
   for (const w of S.wrecks) scene.remove(w); S.wrecks = [];
-  S.bunkers = []; S.deHQ = null; S.places = []; S.hqPlace = null; FX.emitters.length = 0;
-  for (const m of FX.craters) m.visible = false;
-  buildWorld(scene); applyScenarioLook(); syncMini(); spawnGermans(); updVisibility();
-  scene.traverse(o => { if (o.material && o.material.needsUpdate !== undefined && GFX === 'low') o.material.needsUpdate = true; });
-  renderIntro();
-  $('loading').textContent = 'Terreno pronto. Boa sorte, soldado.';
+  for (const p of S.planes.slice()) removePlane(p);
+  for (const b of S.bombs) scene.remove(b.mesh); S.bombs = [];
+  for (const c of S.chutes) scene.remove(c.g); S.chutes = [];
+  for (const b of S.boats) scene.remove(b.mesh); S.boats = [];
+  for (const sh of shouts) scene.remove(sh.sp); shouts.length = 0;
+  for (const pr of FX.proj) { pr.mesh.visible = false; scene.remove(pr.mesh); } FX.proj.length = 0;
+  S.bunkers = []; S.deHQ = null; S.usHQ = null; S.places = []; S.hqPlace = null; S.timers = []; FX.emitters.length = 0;
+  for (const m of FX.craters) m.visible = false; for (const m of bloods) m.visible = false;
+  setSel([]); cancelPlacing(); S.strike = null; S.supportOpen = false;
 }
-$('scen').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { b.disabled = true; setTimeout(() => selectScenario(b.dataset.sc), 30); } });
-$('free').addEventListener('click', (e) => {
-  const b = e.target.closest('button'); if (!b || S.phase !== 'menu') return;
-  const k = b.dataset.free; S.free[k] = !S.free[k];
-  try { localStorage.setItem('diad-free', JSON.stringify(S.free)); } catch (er) { /* sem armazenamento */ }
-  if (k === 'fog') { applyScenarioLook(); updVisibility(); }
-  renderIntro();
-});
+function sideStrength(team) { let s = 0; for (const e of ents) if (e.alive && e.unit && e.team === team && !e.downed) s += e.hp / e.maxHp * (e.inf ? 1 : 4); return s; }
+function startBattle(cfg) {
+  MODE = 'tactical';
+  $('whud').hidden = true; $('intro').hidden = true; $('end').hidden = true;
+  $('loading').textContent = 'Preparando o campo de batalha…';
+  $('toasts').innerHTML = '';
+  clearTactical();
+  SC = battleScenario(cfg);
+  buildWorld(scene); applyScenarioLook(); syncMini();
+  BAT.cfg = cfg; BAT.t = 0; BAT.aiT = 4; BAT.holdT = 0;
+  const pAtt = cfg.attacker === 'player';
+  // posições: atacante ao sul, defensor na crista e nas vilas
+  const attZ = () => rr(268, 318), attX = () => rr(-330, 330);
+  const defSpot = (i) => {
+    if (i % 3 === 0) { const t = MAP.towns[(i / 3 | 0) % 3]; return { x: t.x + rr(-22, 22), z: t.z + rr(-22, 22) }; }
+    const x = rr(-380, 380), z = rr(176, 205), c = findCover(x, z, x, z - 1, x, z + 60, 14, -20); return c || { x, z };
+  };
+  const spawnSide = (side, divs, attacker) => {
+    const team = side === 'player' ? 'us' : 'de', pal = side === 'player' ? 'A' : 'B';
+    let kinds = []; for (const d of divs) kinds = kinds.concat(battleKinds(d, side));
+    if (kinds.length > 40) { const k = kinds.length / 40; kinds = kinds.filter((_, i) => Math.floor(i / k) !== Math.floor((i - 1) / k) || i === 0); }
+    kinds.forEach((k, i) => {
+      const p = attacker ? { x: attX(), z: attZ() } : defSpot(i);
+      const u = spawnUnit(k, p.x, p.z, { team, pal, order: attacker ? 'idle' : 'guard', heading: attacker ? Math.PI : 0 });
+      if (team === 'de' && attacker) { u.order = 'amove'; u.dest = { x: rr(-300, 300), z: rr(180, 200) }; }
+    });
+    if (!attacker) {
+      const nests = team === 'us' ? ['mgnest', 'mgnest', 'atgun'] : ['nest_de', 'nest_de'];
+      nests.forEach((k, i) => { const x = -240 + i * 240 + rr(-40, 40), z = 196; spawnBuilding(k, x, z, { complete: true, heading: team === 'us' ? Math.PI : 0 }); });
+      if (SC.trenches.length && team === 'de') for (const [x, z] of MAP.bunkerSpots.slice(0, 2)) spawnBuilding('bunker', x, z, { complete: true });
+    }
+  };
+  spawnSide('player', cfg.player.divs, pAtt);
+  spawnSide('enemy', cfg.enemy.divs, !pAtt);
+  for (let i = 0; i < 3; i++) { const c = makeCP(MAP.towns[i]); c.owner = pAtt ? 'de' : 'us'; c.prog = pAtt ? -1 : 1; S.cps.push(c); }
+  BAT.p0 = sideStrength('us'); BAT.e0 = sideStrength('de');
+  S.phase = 'battle'; S.t = 0; S.startedAt = S.time; S.kills = 0; S.lost = 0; S.airT = 60 + rand() * 40;
+  for (const k in S.cd) S.cd[k] = 10;
+  $('hud').hidden = false; $('bBuild').hidden = true; $('bRetreat').hidden = false;
+  cam.follow = null; cam.x = 0; cam.z = pAtt ? 300 : 200; cam.dist = 120; cam.pitch = 0.62; cam.yaw = 0; cam.tDist = null; cam.tPitch = null;
+  setPhaseText('BATALHA · ' + cfg.prov.name.toUpperCase(), '');
+  toast((pAtt ? 'Ataque! Tome as três posições ' : 'Defenda as três posições contra os ') + (pAtt ? 'dos ' : '') + foe().pl + '.', 'good');
+  updVisibility(); updSide();
+  $('loading').textContent = '';
+}
+function updateBattle(dt) {
+  BAT.t += dt;
+  const pAtt = BAT.cfg.attacker === 'player';
+  // IA inimiga: atacantes avançam para as posições; defensores contra-atacam posições perdidas
+  BAT.aiT -= dt;
+  if (BAT.aiT <= 0) {
+    BAT.aiT = 7;
+    const want = S.cps.filter(c => c.owner === (pAtt ? 'us' : 'us'));
+    for (const u of ents) {
+      if (!u.alive || u.team !== 'de' || !u.unit || u.downed || u.target) continue;
+      if (!pAtt && (u.order === 'guard' || u.order === 'idle')) {
+        const goal = S.cps.filter(c => c.owner !== 'de').sort((a, b) => Math.hypot(a.x - u.x, a.z - u.z) - Math.hypot(b.x - u.x, b.z - u.z))[0];
+        if (goal) { u.order = 'amove'; u.dest = { x: goal.x + rr(-15, 15), z: goal.z + rr(-15, 15) }; }
+      } else if (pAtt && u.order === 'guard' && rand() < 0.3 && want.length) {
+        const goal = want.sort((a, b) => Math.hypot(a.x - u.x, a.z - u.z) - Math.hypot(b.x - u.x, b.z - u.z))[0];
+        if (Math.hypot(goal.x - u.x, goal.z - u.z) < 260) { u.order = 'amove'; u.dest = { x: goal.x + rr(-12, 12), z: goal.z + rr(-12, 12) }; }
+      }
+    }
+  }
+  const ps = sideStrength('us') / Math.max(1, BAT.p0), es = sideStrength('de') / Math.max(1, BAT.e0);
+  const held = S.cps.filter(c => c.owner === (pAtt ? 'us' : 'de')).length;
+  BAT.holdT = held === 3 ? BAT.holdT + dt : 0;
+  const left = Math.max(0, BAT.limit - BAT.t);
+  setPhaseText(null, (pAtt ? 'Tome as posições: ' : 'Segure as posições: ') + S.cps.filter(c => c.owner === 'us').length + '/3 · suas forças ' + Math.round(ps * 100) + '% · inimigo ' + Math.round(es * 100) + '% · ' + Math.floor(left / 60) + ':' + String(Math.floor(left % 60)).padStart(2, '0'));
+  if (ps < 0.2) finishBattle(false, 'Suas tropas foram destroçadas e recuaram.');
+  else if (es < 0.2) finishBattle(true, 'As tropas ' + foe().pl + ' foram destroçadas.');
+  else if (BAT.holdT > 20) finishBattle(pAtt, pAtt ? 'Todas as posições foram tomadas.' : 'O inimigo tomou todas as posições.');
+  else if (left <= 0) { const atkWins = held >= 2; finishBattle(pAtt ? atkWins : !atkWins, 'O tempo acabou. ' + (atkWins ? 'O atacante controla o campo.' : 'O defensor segurou a linha.')); }
+}
+function finishBattle(win, text) {
+  if (S.phase !== 'battle') return;
+  S.phase = win ? 'won' : 'lost';
+  const res = { win, playerLoss: clamp(1 - sideStrength('us') / Math.max(1, BAT.p0), 0, 1), enemyLoss: clamp(1 - sideStrength('de') / Math.max(1, BAT.e0), 0, 1) };
+  toast(win ? 'VITÓRIA!' : 'DERROTA', win ? 'good' : 'bad');
+  setTimeout(() => {
+    $('endEyebrow').textContent = 'BATALHA DE ' + BAT.cfg.prov.name.toUpperCase() + ' · ' + dateStr(W.day).toUpperCase();
+    $('endTitle').textContent = win ? 'VITÓRIA' : 'DERROTA';
+    $('endText').textContent = text + ' Perdas: suas ' + Math.round(res.playerLoss * 100) + '%, do inimigo ' + Math.round(res.enemyLoss * 100) + '%.';
+    const secs = Math.floor(BAT.t);
+    $('stTime').textContent = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+    $('stKills').textContent = S.kills; $('stLost').textContent = S.lost;
+    $('stTowns').textContent = S.cps.filter(c => c.owner === 'us').length + '/3';
+    $('again').textContent = 'VOLTAR AO MAPA';
+    $('again').onclick = () => { $('end').hidden = true; $('hud').hidden = true; $('bRetreat').hidden = true; clearTactical(); S.phase = 'menu'; const cb = BAT.cfg.onEnd; BAT.cfg = null; cb(res); };
+    $('end').hidden = false; $('hud').hidden = true;
+    setTimeout(() => $('again').focus(), 60);
+  }, 1800);
+}
 function syncMini() { mini.width = MAP.MMW; mini.height = MAP.MMH; mini.style.aspectRatio = MAP.MMW + ' / ' + MAP.MMH; }
 syncMini();
 renderIntro();
-spawnGermans();
 applyGfx();
-updVisibility();
 requestAnimationFrame(frame);
 $('start').disabled = false;
-$('loading').textContent = 'Terreno pronto. Boa sorte, soldado.';
+$('loading').textContent = '';

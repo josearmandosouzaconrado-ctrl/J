@@ -335,7 +335,7 @@ function soldierBody(B, team, pal, variant) {
     B.add(G.cyl8, 0x5e4a30, 0.02, 0.22, 0.02, 0, 1.42, -0.36);
     B.add(G.cyl8, 0x5f6040, 0.075, 0.17, 0.075, 0.28, 1.03, -0.1);
     B.add(G.box, 0x3a3a34, 0.04, 0.3, 0.03, -0.27, 1.0, -0.06);
-  } else if (de && SC.biome === 'tropical') {
+  } else if (de && jpGear()) {
     B.add(G.dome16, pal.helm, 0.235, 0.2, 0.255, 0, 2.05, 0);
     B.add(G.cyl12, pal.helm, 0.245, 0.035, 0.265, 0, 2.05, 0);
     B.add(G.box, 0xd9b52a, 0.06, 0.06, 0.02, 0, 2.17, 0.27);
@@ -388,7 +388,7 @@ const WEAPONS = {
     B.add(G.cyl8, met, 0.022, team === 'de' ? 0.42 : 0.34, 0.022, 0, 0.01, team === 'de' ? 0.8 : 0.76, Math.PI / 2, 0, 0);
     B.add(G.box, met, 0.02, 0.05, 0.02, 0, 0.05, 0.62);
     if (team === 'de') B.add(G.cyl8, met, 0.015, 0.1, 0.015, 0.06, 0.03, 0.04, 0, 0, Math.PI / 2);
-    if (team === 'de' && SC.biome === 'tropical') B.add(G.box, 0xb0b4b4, 0.02, 0.05, 0.5, 0, -0.02, 1.25);
+    if (team === 'de' && jpGear()) B.add(G.box, 0xb0b4b4, 0.02, 0.05, 0.5, 0, -0.02, 1.25);
     B.add(G.box, 0x4a3f2a, 0.015, 0.02, 0.6, -0.04, -0.07, 0.05);
   },
   thompson: (B) => {
@@ -421,14 +421,15 @@ const WEAPONS = {
     B.add(G.cyl12, 0x45473b, 0.11, 0.06, 0.11, 0, 0, -0.7, Math.PI / 2, 0, 0);
   },
 };
-function makeSoldier(team, kind) {
+function jpGear() { return SC.jp !== undefined ? SC.jp : SC.biome === 'tropical'; }
+function makeSoldier(team, kind, palKey) {
   const civ = team === 'civ';
   const variant = civ ? (Math.random() * CIV_PALS.length) | 0 : (Math.random() * 3) | 0;
   const skin = civ ? 0 : (Math.random() * SKINS.length) | 0;
   const role = kind === 'medic' || kind === 'sani' ? 'med' : kind === 'para' ? 'para' : '';
   const base = civ ? CIV_PALS[variant] : SOLDIER_PAL[team];
-  const pal = Object.assign({}, base, civ ? {} : (SC.pal && SC.pal[team]) || {}, role === 'para' ? PARA_PAL : {}, { skin: civ ? base.skin : SKINS[skin] });
-  const key = team + variant + 's' + skin + role + (civ ? '' : SC.id);
+  const pal = Object.assign({}, base, civ ? {} : (SC.pal && SC.pal[palKey || team]) || {}, role === 'para' ? PARA_PAL : {}, { skin: civ ? base.skin : SKINS[skin] });
+  const key = team + (palKey || '') + variant + 's' + skin + role + (civ ? '' : SC.id);
   const g = new THREE.Group(); g.rotation.order = 'YXZ';
   VM(merged('body' + key, B => { soldierBody(B, team, pal, variant); roleExtras(B, team, role); }), g, 0, 0, 0, true);
   const thighG = merged('thigh' + key, B => {
@@ -438,7 +439,7 @@ function makeSoldier(team, kind) {
     B.add(G.box, pal.pants, 0.05, 0.15, 0.12, 0.11, -0.26, 0.02);
   });
   const shinG = merged('shin' + key, B => {
-    const jb = team === 'de' && SC.biome !== 'tropical';
+    const jb = team === 'de' && !jpGear();
     B.add(G.sph16, pal.pants, 0.1, 0.1, 0.11, 0, 0, 0.01);
     B.add(G.limbT, pal.pants, 0.098, 0.3, 0.108, 0, -0.15, 0);
     B.add(G.limb, jb ? pal.boot : pal.legging, 0.1, jb ? 0.34 : 0.2, 0.11, 0, jb ? -0.3 : -0.35, 0);
@@ -479,7 +480,7 @@ function makeSoldier(team, kind) {
     let wk = kind === 'bazooka' ? 'bazooka' : kind === 'pzschreck' ? 'pzschreck' : 'rifle';
     if (wk === 'rifle' && variant === 2) wk = team === 'us' ? 'thompson' : 'mp40';
     rifle = new THREE.Group(); g.add(rifle);
-    VM(merged('wpn' + wk + team + (SC.biome === 'tropical' ? 'jp' : ''), B => WEAPONS[wk](B, team)), rifle, 0, 0, 0, false);
+    VM(merged('wpn' + wk + team + (jpGear() ? 'jp' : ''), B => WEAPONS[wk](B, team)), rifle, 0, 0, 0, false);
     if (wk === 'bazooka' || wk === 'pzschreck') { tube = true; rifle.position.set(0.27, 1.84, 0.12); }
   }
   blob(g, 1.4);
@@ -1672,7 +1673,7 @@ const BUILD_SIZE = { naval: [16, 12, 6], coastgun: [8, 8, 2.5], hq: [16, 14, 7],
 
 function makeBuilding(kind) {
   const g = new THREE.Group(); const ud = {};
-  const gk = SC.biome === 'tropical' && BUILD_GEO[kind + '_jp'] ? kind + '_jp' : kind;
+  const gk = jpGear() && BUILD_GEO[kind + '_jp'] ? kind + '_jp' : kind;
   VM(merged('bld' + gk, B => { B.cf = paintFn(-1, kind === 'bunker' && gk === kind ? [0x6f7258, 0x7d6a52] : null, 0); BUILD_GEO[gk](B); }), g, 0, 0, 0, true);
   const SLOPE = Math.PI / 2 - Math.atan2(2.4, 3.95);
   switch (kind) {
@@ -1786,7 +1787,7 @@ function makeBuilding(kind) {
 /* ---------- Pacífico: tanques japoneses, caça Zero, navios ---------- */
 TEX.jpflag = canvasTex(96, 64, (g) => { g.fillStyle = '#f4f2ea'; g.fillRect(0, 0, 96, 64); g.fillStyle = '#bc002d'; g.beginPath(); g.arc(48, 32, 19, 0, 7); g.fill(); });
 TEX.hinomaru = canvasTex(64, 64, (g) => { g.fillStyle = '#f4f2ea'; g.beginPath(); g.arc(32, 32, 30, 0, 7); g.fill(); g.fillStyle = '#bc002d'; g.beginPath(); g.arc(32, 32, 25, 0, 7); g.fill(); });
-function foeFlag() { return SC.biome === 'tropical' ? TEX.jpflag : TEX.deflag; }
+function foeFlag() { return SC.foeFlagTex || (SC.biome === 'tropical' ? TEX.jpflag : TEX.deflag); }
 
 // Chi-Ha Tipo 97: casco rebitado, torre deslocada com antena em arco (hachimaki)
 VEH.chiha = () => vehicleShell('chiha', { L: 6.2, W: 2.8, tw: 0.42, th: 0.95, paint: 0x7d6c45, camo: [0x4f5a35, 0x9a8a5a], tur: [0.3, 1.95, -0.1], gy: 0.4, gz: 0.85 },

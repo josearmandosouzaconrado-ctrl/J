@@ -170,7 +170,7 @@ function groundColor(x, z, h, c) {
     const wet = smooth((z - 296) / 30), sand = bio === 'med' ? [0.74, 0.69, 0.57] : bio === 'tropical' ? [0.88, 0.84, 0.72] : [0.8, 0.72, 0.53];
     r = sand[0] - wet * 0.2; g = sand[1] - wet * 0.18; b = sand[2] - wet * 0.13;
     if (z < 251) { if (bio === 'tropical') { r = 0.8; g = 0.76; b = 0.64; } else { r = 0.55; g = 0.53; b = 0.5; } }
-  } else if (bio === 'tropical' && z > 150) {
+  } else if (bio === 'tropical' && z > 150 && SC.coast) {
     const gr = smooth((236 - z) / 34);
     r = lerp(0.78, 0.3, gr); g = lerp(0.74, 0.46, gr); b = lerp(0.6, 0.18, gr);
   } else if (bio === 'desert') {
@@ -182,7 +182,7 @@ function groundColor(x, z, h, c) {
     r = F[0]; g = F[1]; b = F[2];
     const thin = Math.sin(x * 0.07 + 0.4) * Math.cos(z * 0.06) + (z < 232 && z > 160 ? 0.4 : 0);
     if (thin > 0.8) { r = 0.6; g = 0.6; b = 0.56; } else if (thin > 0.6) { r = 0.76; g = 0.77; b = 0.76; }
-  } else if (z > 150) {
+  } else if (z > 150 && SC.coast) {
     const gr = smooth((236 - z) / 34);
     r = lerp(0.6, 0.40, gr); g = lerp(0.56, 0.46, gr); b = lerp(0.40, 0.24, gr);
     if (Math.sin(x * 0.08) * Math.cos(z * 0.13) > 0.55) { r = 0.47; g = 0.41; b = 0.29; }
