@@ -276,76 +276,12 @@ const Sprites = {};
     const r = new RNG(id * 7919 + v * 104729 + 13);
     let c, oy = 0;
     switch (id) {
-      case O.OAK: case O.AUTUMN: {
-        const cols = id === O.OAK ? ['#3f8a32', '#47913a', '#3a8030'] : ['#d07020', '#c04a20', '#d8a020'];
-        const base = cols[v % 3];
-        const sz = [0, 1, 2][v % 3];
-        c = mk(20, 30 + sz * 2, p => {
-          trunk(p, 8, 18 + sz * 2, 4, 11, '#6a4a2a'); p(7, 28 + sz * 2, '#5a3a1a', 6, 1);
-          blob(p, r, 10, 10 + sz, 7 + sz * 0.4, base); blob(p, r, 6, 13 + sz, 4.5, base); blob(p, r, 14, 13 + sz, 4.5, base);
-          for (let i = 0; i < 6; i++) p(r.int(4, 15), r.int(4, 17), shade(base, 0.3));
-          if (id === O.AUTUMN && r.chance(0.5)) p(r.int(4, 15), 28, '#d07020');
-        });
-        oy = 2; break;
-      }
-      case O.PINE: case O.SNOWPINE: {
-        const snow = id === O.SNOWPINE; const h = 30 + (v % 3) * 3;
-        c = mk(18, h, p => {
-          trunk(p, 8, h - 6, 2, 6, '#5a3a20');
-          const tiers = 4;
-          for (let t = 0; t < tiers; t++) {
-            const ty = 2 + t * ((h - 8) / tiers), wd = 2 + t * 2;
-            for (let y = 0; y < (h - 8) / tiers + 2; y++) {
-              const half = Math.min(wd, Math.floor(y * 0.9) + 1);
-              for (let x = -half; x <= half; x++) {
-                let col = x < -half / 3 ? '#3a7a4a' : x > half / 3 ? '#1e4a2e' : '#2a5e3a';
-                if (snow && y < 2) col = '#f0f4f8';
-                if (snow && y === 2 && r.chance(0.5)) col = '#e0e8f0';
-                p(9 + x, ty + y, col);
-              }
-            }
-          }
-          if (snow) for (let i = 0; i < 6; i++) p(r.int(4, 13), r.int(6, h - 8), '#ffffff');
-        });
-        oy = 2; break;
-      }
-      case O.PALM: {
-        c = mk(24, 32, p => {
-          let x = 11; for (let y = 31; y > 10; y--) { p(x, y, (y % 3) ? '#a08050' : '#80603a', 3, 1); if (y % 6 === 0) x += (v % 2 ? 1 : -1); }
-          const tx = x + 1, ty = 10;
-          for (let a = 0; a < 6; a++) {
-            const ang = -Math.PI + a * Math.PI / 5 + 0.1;
-            for (let i = 0; i < 10; i++) { const px = tx + Math.cos(ang) * i, py = ty + Math.sin(ang) * i * 0.6 + i * i * 0.05; p(px, py, i < 3 ? '#3a8a3a' : '#4aa040', 1, 2); }
-          }
-          p(tx - 1, ty, '#6a4a20', 3, 2);
-        });
-        oy = 2; break;
-      }
-      case O.DEADTREE: {
-        c = mk(18, 26, p => {
-          trunk(p, 8, 10, 3, 16, '#5a4a3a');
-          const br = (x, y, dx, n) => { for (let i = 0; i < n; i++) { p(x, y, '#5a4a3a'); x += dx; y -= 1; if (r.chance(0.4)) x += dx; } };
-          br(8, 14, -1, 6); br(10, 12, 1, 6); br(9, 10, 0, 6); br(7, 8, -1, 3); br(11, 7, 1, 3);
-        });
-        oy = 2; break;
-      }
-      case O.WILLOW: {
-        c = mk(24, 30, p => {
-          trunk(p, 10, 18, 4, 12, '#4a3a2a');
-          blob(p, r, 12, 10, 9, '#5a7a3a');
-          for (let x = 4; x < 21; x += 2) { const len = r.int(6, 14); for (let y = 12; y < 12 + len; y++) p(x, y, y % 2 ? '#4a6a30' : '#5a7a3a'); }
-        });
-        oy = 2; break;
-      }
-      case O.ELFTREE: {
-        c = mk(28, 44, p => {
-          trunk(p, 11, 22, 6, 22, '#d8d0c0'); p(9, 42, '#c0b8a8', 10, 2);
-          for (let i = 0; i < 6; i++) p(12 + r.int(0, 3), 24 + i * 3, '#a8a090', 1, 2);
-          blob(p, r, 14, 13, 11, '#2aa08a'); blob(p, r, 7, 17, 6, '#2a9a80'); blob(p, r, 21, 17, 6, '#2a9a80');
-          for (let i = 0; i < 12; i++) p(r.int(4, 24), r.int(3, 22), r.chance(0.5) ? '#a0fff0' : '#e0fff8');
-        });
-        oy = 3; break;
-      }
+      case O.OAK: case O.AUTUMN: { const t = Trees.broadleaf(v, id === O.AUTUMN); c = t.c; oy = t.oy; break; }
+      case O.PINE: case O.SNOWPINE: { const t = Trees.pine(v, id === O.SNOWPINE); c = t.c; oy = t.oy; break; }
+      case O.PALM: { const t = Trees.palm(v); c = t.c; oy = t.oy; break; }
+      case O.DEADTREE: { const t = Trees.dead(v); c = t.c; oy = t.oy; break; }
+      case O.WILLOW: { const t = Trees.willow(v); c = t.c; oy = t.oy; break; }
+      case O.ELFTREE: { const t = Trees.elf(v); c = t.c; oy = t.oy; break; }
       case O.CACTUS: {
         c = mk(14, 20, p => {
           p(5, 2, '#3a8a3a', 4, 18); p(5, 2, '#5aaa4a', 1, 18); p(8, 2, '#2a6a2a', 1, 18);

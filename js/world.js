@@ -6,7 +6,7 @@ for (let i = 0; i < OBJ_DEFS.length; i++) if (OBJ_DEFS[i]) OSOLID[i] = OBJ_DEFS[
 // objetos "chatos" pintados direto no chão do chunk
 const OBJ_BAKED = new Uint8Array(128);
 [O.FLOWERS, O.TALLGRASS, O.BONES, O.LILY, O.ROCK, O.SKULLS, O.CROP].forEach(o => OBJ_BAKED[o] = 1);
-const OBJ_VARIANTS = { [O.COUNTER]: 2, [O.BEDSMALL]: 2, [O.PAINTING]: 4, [O.OAK]: 3, [O.AUTUMN]: 3, [O.PINE]: 3, [O.SNOWPINE]: 3, [O.PALM]: 2, [O.BIGSHROOM]: 3, [O.BUSH]: 3, [O.FLOWERS]: 4, [O.STALL]: 4, [O.TENT]: 3, [O.CRYSTAL]: 4, [O.BANNER]: 5, [O.LILY]: 2, [O.CACTUS]: 2, [O.LAMP]: 2, [O.BROKEN_PILLAR]: 3 };
+const OBJ_VARIANTS = { [O.COUNTER]: 2, [O.BEDSMALL]: 2, [O.PAINTING]: 4, [O.OAK]: 6, [O.AUTUMN]: 6, [O.PINE]: 6, [O.SNOWPINE]: 6, [O.PALM]: 4, [O.DEADTREE]: 3, [O.WILLOW]: 3, [O.ELFTREE]: 3, [O.BIGSHROOM]: 3, [O.BUSH]: 3, [O.FLOWERS]: 4, [O.STALL]: 4, [O.TENT]: 3, [O.CRYSTAL]: 4, [O.BANNER]: 5, [O.LILY]: 2, [O.CACTUS]: 2, [O.LAMP]: 2, [O.BROKEN_PILLAR]: 3 };
 const TREE_OBJS = new Set([O.OAK, O.PINE, O.SNOWPINE, O.PALM, O.DEADTREE, O.WILLOW, O.AUTUMN]);
 const QUARRY_OBJS = new Set([O.BOULDER, O.ICEROCK, O.SANDROCK]);
 const OBJ_ANIM = new Uint8Array(128);

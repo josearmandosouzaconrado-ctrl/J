@@ -58,7 +58,7 @@ WASD/setas andar • Shift correr • J/Espaço atacar • K magia • Q trocar 
 | Arquivo | Conteúdo |
 |---|---|
 | `js/data.js` | Raças, classes, itens, magias, inimigos, guildas, regiões, história |
-| `js/sprites.js`, `js/sprites2.js` | Toda a pixel art gerada por código (tiles, objetos, personagens, criaturas, construções, ícones) |
+| `js/sprites.js`, `js/sprites2.js`, `js/trees.js` | Toda a pixel art gerada por código (tiles, objetos, árvores com luz e volume, personagens, criaturas, construções, ícones) |
 | `js/world.js` | Geração do mundo aberto, cidades, estradas, masmorras e locais |
 | `js/dungeon.js` | Geração das masmorras |
 | `js/entities.js`, `js/player.js` | Combate, IA dos monstros, NPCs e jogador |
