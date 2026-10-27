@@ -182,6 +182,186 @@ def icone_pedir():
     return img
 
 
+# ------------------------------------------------------------------ ícones dos menus (32x32)
+
+def _base(cor):
+    img = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle((1, 1, 30, 30), radius=7, fill=cor + (255,), outline=escurecer(cor, 0.6) + (255,), width=2)
+    return img, d
+
+
+def icones_ui():
+    B = (250, 250, 250, 255)
+    P = (30, 30, 35, 255)
+    out = {}
+
+    img, d = _base((46, 160, 67))
+    d.polygon([(12, 8), (24, 16), (12, 24)], fill=B)
+    out["jogar"] = img
+
+    img, d = _base((52, 120, 210))
+    d.polygon([(7, 9), (16, 16), (7, 23)], fill=B)
+    d.polygon([(16, 9), (25, 16), (16, 23)], fill=B)
+    out["simular"] = img
+
+    img, d = _base((90, 95, 110))
+    d.rectangle((8, 6, 24, 26), fill=B)
+    d.rectangle((12, 4, 20, 8), fill=(180, 180, 190, 255))
+    for y in (11, 15, 19, 23):
+        d.line([(11, y), (21, y)], fill=P, width=1)
+    out["tabela"] = img
+
+    img, d = _base((200, 150, 30))
+    d.polygon([(9, 7), (23, 7), (21, 16), (11, 16)], fill=(255, 225, 90, 255))
+    d.arc((4, 7, 12, 15), 90, 270, fill=(255, 225, 90, 255), width=2)
+    d.arc((20, 7, 28, 15), 270, 90, fill=(255, 225, 90, 255), width=2)
+    d.rectangle((14, 16, 18, 21), fill=(255, 225, 90, 255))
+    d.rectangle((10, 21, 22, 25), fill=(120, 80, 30, 255))
+    out["copa"] = img
+
+    img, d = _base((25, 110, 170))
+    d.ellipse((6, 6, 26, 26), fill=(70, 160, 230, 255), outline=B, width=1)
+    d.polygon([(10, 10), (16, 9), (17, 14), (12, 17)], fill=(60, 170, 70, 255))
+    d.polygon([(18, 17), (23, 15), (22, 22), (18, 23)], fill=(60, 170, 70, 255))
+    d.line([(6, 16), (26, 16)], fill=(200, 230, 255, 255))
+    d.arc((11, 6, 21, 26), 0, 360, fill=(200, 230, 255, 255))
+    out["mundo"] = img
+
+    img, d = _base((120, 120, 130))
+    d.rectangle((6, 11, 9, 21), fill=P)
+    d.rectangle((23, 11, 26, 21), fill=P)
+    d.rectangle((9, 14, 23, 18), fill=(200, 200, 210, 255))
+    d.rectangle((4, 13, 6, 19), fill=P)
+    d.rectangle((26, 13, 28, 19), fill=P)
+    out["treino"] = img
+
+    img, d = _base((230, 120, 40))
+    d.rectangle((8, 12, 24, 26), fill=B)
+    d.arc((11, 5, 21, 17), 180, 360, fill=B, width=2)
+    d.ellipse((14, 17, 18, 21), fill=(230, 120, 40, 255))
+    out["loja"] = img
+
+    img, d = _base((40, 90, 190))
+    d.polygon([(10, 6), (14, 8), (18, 8), (22, 6), (28, 11), (25, 15), (23, 13), (23, 27), (9, 27), (9, 13), (7, 15), (4, 11)], fill=B)
+    d.text((12, 13), "10", fill=(40, 90, 190, 255))
+    out["perfil"] = img
+
+    img, d = _base((35, 35, 45))
+    d.rounded_rectangle((10, 4, 22, 28), radius=3, fill=(20, 20, 25, 255), outline=(150, 150, 160, 255))
+    d.rectangle((12, 7, 20, 23), fill=(90, 200, 255, 255))
+    d.ellipse((15, 24, 17, 26), fill=(150, 150, 160, 255))
+    d.rectangle((13, 9, 19, 11), fill=(255, 255, 255, 255))
+    d.rectangle((13, 13, 17, 14), fill=(255, 120, 160, 255))
+    out["celular"] = img
+
+    img, d = _base((95, 95, 105))
+    d.ellipse((9, 9, 23, 23), outline=B, width=4)
+    for x, y in ((16, 5), (16, 27), (5, 16), (27, 16), (8, 8), (24, 24), (8, 24), (24, 8)):
+        d.ellipse((x - 2, y - 2, x + 2, y + 2), fill=B)
+    out["config"] = img
+
+    img, d = _base((190, 40, 40))
+    d.line([(10, 10), (22, 22)], fill=B, width=4)
+    d.line([(22, 10), (10, 22)], fill=B, width=4)
+    out["apagar"] = img
+
+    img, d = _base((110, 110, 120))
+    d.polygon([(8, 16), (16, 8), (16, 13), (24, 13), (24, 19), (16, 19), (16, 24)], fill=B)
+    out["voltar"] = img
+
+    img, d = _base((40, 140, 60))
+    d.rectangle((5, 8, 26, 23), outline=B, width=1)
+    d.line([(16, 8), (16, 23)], fill=B)
+    d.ellipse((13, 13, 19, 19), outline=B)
+    d.rectangle((5, 12, 8, 19), outline=B)
+    d.rectangle((23, 12, 26, 19), outline=B)
+    out["estadio"] = img
+
+    img, d = _base((220, 170, 30))
+    d.text((12, 8), "?", fill=P)
+    d.text((13, 8), "?", fill=P)
+    out["ajuda"] = img
+
+    img, d = _base((170, 50, 70))
+    d.rounded_rectangle((12, 5, 20, 18), radius=4, fill=(60, 60, 70, 255))
+    d.arc((9, 9, 23, 22), 0, 180, fill=B, width=2)
+    d.rectangle((15, 22, 17, 26), fill=B)
+    d.rectangle((11, 26, 21, 27), fill=B)
+    out["entrevista"] = img
+
+    img, d = _base((210, 205, 190))
+    d.rectangle((6, 7, 26, 25), fill=B, outline=P)
+    d.rectangle((8, 9, 24, 12), fill=P)
+    d.rectangle((8, 14, 15, 21), fill=(150, 150, 150, 255))
+    for y in (14, 17, 20, 23):
+        d.line([(17, y), (24, y)], fill=P)
+    out["noticias"] = img
+
+    img, d = _base((60, 170, 90))
+    d.rectangle((6, 9, 26, 24), fill=B)
+    d.line([(6, 9), (16, 18), (26, 9)], fill=(60, 170, 90, 255), width=2)
+    out["mensagens"] = img
+
+    img, d = _base((220, 70, 140))
+    d.ellipse((7, 9, 16, 18), fill=B)
+    d.ellipse((16, 9, 25, 18), fill=B)
+    d.polygon([(7, 14), (25, 14), (16, 25)], fill=B)
+    out["rede"] = img
+
+    img, d = _base((200, 60, 60))
+    d.rectangle((6, 8, 26, 26), fill=B)
+    d.rectangle((6, 8, 26, 12), fill=(200, 60, 60, 255))
+    for i in range(3):
+        for j in range(3):
+            d.rectangle((9 + i * 6, 15 + j * 4, 11 + i * 6, 16 + j * 4), fill=P)
+    out["agenda"] = img
+
+    img, d = _base((60, 140, 70))
+    d.ellipse((7, 7, 25, 25), fill=(250, 210, 60, 255), outline=(170, 130, 20, 255), width=2)
+    d.text((13, 10), "$", fill=(140, 100, 10, 255))
+    out["banco"] = img
+
+    img, d = _base((70, 70, 80))
+    d.ellipse((8, 12, 22, 24), fill=(200, 200, 210, 255))
+    d.rectangle((15, 10, 27, 16), fill=(200, 200, 210, 255))
+    d.ellipse((12, 15, 17, 20), fill=(70, 70, 80, 255))
+    out["apito"] = img
+
+    img, d = _base((120, 70, 190))
+    d.ellipse((8, 6, 24, 22), fill=(255, 215, 80, 255), outline=(180, 130, 20, 255), width=2)
+    d.polygon([(10, 20), (13, 28), (16, 24), (19, 28), (22, 20)], fill=(200, 40, 40, 255))
+    out["premio"] = img
+
+    img, d = _base((46, 160, 67))
+    d.ellipse((6, 6, 26, 26), fill=B, outline=P)
+    d.polygon([(16, 11), (20, 14), (19, 19), (13, 19), (12, 14)], fill=P)
+    out["bola"] = img
+    return out
+
+
+def icone_drible():
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.arc((1, 3, 15, 15), 200, 340, fill=(200, 80, 220, 255), width=2)
+    d.polygon([(13, 6), (15, 10), (11, 9)], fill=(200, 80, 220, 255))
+    d.ellipse((5, 9, 10, 14), fill=(245, 245, 245, 255), outline=(30, 30, 30, 255))
+    for x in (2, 4):
+        d.line([(x, 2), (x + 3, 2)], fill=(250, 250, 250, 255))
+    return img
+
+
+def icone_celular():
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle((4, 1, 11, 14), radius=1, fill=(25, 25, 30, 255), outline=(160, 160, 170, 255))
+    d.rectangle((5, 3, 10, 11), fill=(90, 200, 255, 255))
+    d.rectangle((6, 4, 9, 5), fill=(255, 255, 255, 255))
+    d.rectangle((6, 7, 8, 8), fill=(255, 120, 160, 255))
+    d.point((7, 12), fill=(160, 160, 170, 255))
+    return img
+
+
 def salvar(img, *partes):
     caminho = os.path.join(RP, *partes)
     os.makedirs(os.path.dirname(caminho), exist_ok=True)
@@ -207,6 +387,10 @@ def main():
     salvar(icone_dividida(), "textures", "items", "fut_dividida.png")
     salvar(icone_pedir(), "textures", "items", "fut_pedir.png")
     salvar(icone_bola(), "textures", "items", "fut_menu.png")
+    salvar(icone_drible(), "textures", "items", "fut_drible.png")
+    salvar(icone_celular(), "textures", "items", "fut_celular.png")
+    for nome, img in icones_ui().items():
+        salvar(img, "textures", "ui", "fut", f"{nome}.png")
 
     pack = icone_bola(64, (40, 140, 60, 255))
     pack.save(os.path.join(RP, "pack_icon.png"))

@@ -10,11 +10,14 @@ export function getPartida() {
 }
 
 const NOMES_ITENS = {
-  "fut:chute": ["§eChutar", "§7Use perto da bola para chutar na direção da mira.", "§7Olhe para cima para chutar mais alto."],
-  "fut:passe": ["§aPassar", "§7Passa para o companheiro na direção da mira.", "§7Agachado: lançamento pelo alto."],
-  "fut:dividida": ["§cDividida", "§7Tenta roubar a bola do adversário próximo."],
-  "fut:pedir": ["§6Pedir a Bola", "§7Seu companheiro com a bola toca para você."],
+  "fut:chute": ["§e§lCHUTE", "§7Toque: chute normal. §fSegure§7 para carregar a força.", "§7Mire no gol; olhe para cima para chutar alto."],
+  "fut:passe": ["§a§lPASSE", "§7Toque: passe rasteiro para quem está na mira.", "§fSegure§7: lançamento pelo alto."],
+  "fut:drible": ["§d§lDRIBLE", "§7Arrancada rápida. Com a bola, fica imune a desarmes por 1s."],
+  "fut:dividida": ["§c§lDESARME", "§7Dá um bote para roubar a bola do adversário."],
+  "fut:pedir": ["§6§lPEDIR", "§7O companheiro com a bola toca para você."],
 };
+
+const CARGA_MAX = 30; // ticks para a barra de força encher
 
 /** Verifica se o jogador tem espaço para guardar os itens da barra rápida. */
 export function temEspacoInventario(player) {
@@ -127,6 +130,10 @@ export class Partida {
     this.eventos = [];
     this.atores = [];
     this.saidaTime = 0;
+    // seleções podem ter uniformes iguais: o visitante usa o reserva
+    const [ta, tb] = o.times;
+    const kitA = ta.kit ?? ta.timeId;
+    if ((tb.kit ?? tb.timeId) === kitA) tb.kit = kitA === 6 ? 9 : 6;
     this.bola = {
       entity: null, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0,
       dono: null, ultimo: null, chute: null, passe: null, semCaptura: 0, giro: 0, giroProp: -1,
@@ -162,12 +169,12 @@ export class Partida {
       }
 
       const papeis = slots.filter((_, i) => livres[i]).map((s) => s[0]);
-      const elenco = gerarElenco(info.timeId, info.temporada ?? 1, papeis);
+      const elenco = gerarElenco(info.semente ?? info.timeId, info.temporada ?? 1, papeis, info.nomes);
       let k = 0;
       slots.forEach((s, i) => {
         if (!livres[i]) return;
         const pessoa = elenco[k++];
-        const kit = s[0] === "GOL" ? KIT_GOLEIRO[timeIdx] : info.timeId;
+        const kit = s[0] === "GOL" ? KIT_GOLEIRO[timeIdx] : info.kit ?? info.timeId;
         this.atores.push(this.novoAtor({
           tipo: "npc", time: timeIdx, papel: s[0], fx: s[1], fz: s[2],
           nome: pessoa.nome, numero: pessoa.numero,
@@ -183,7 +190,7 @@ export class Partida {
       id: `${d.time}_${this.atores.length}`,
       x: 0, z: 0, y: 0, vx: 0, vz: 0, dirX: 1, dirZ: 0,
       alvoX: 0, alvoZ: 0, velAlvo: 0,
-      cdChute: 0, cdDividida: 0, protecao: 0, segurando: 0,
+      cdChute: 0, cdDividida: 0, cdDrible: 0, arrancadaAte: 0, carga: null, protecao: 0, segurando: 0,
       assistDe: null, assistTick: 0, forcarPasse: false, pediuTick: -9999,
       anim: 0, animProp: -1, animTimer: 0, entity: null, efeitoTick: 0,
       est: { gols: 0, assist: 0, passes: 0, passesTent: 0, desarmes: 0, chutes: 0, defesas: 0 },
@@ -344,6 +351,7 @@ export class Partida {
     for (const a of this.atores) {
       if (a.cdChute > 0) a.cdChute--;
       if (a.cdDividida > 0) a.cdDividida--;
+      if (a.cdDrible > 0) a.cdDrible--;
       if (a.protecao > 0) a.protecao--;
       if (a.animTimer > 0) a.animTimer--;
     }
@@ -375,7 +383,7 @@ export class Partida {
     }
     if (this.encerrada) return;
     this.renderizar();
-    if (this.t % 5 === 0) this.hud();
+    if (this.t % 5 === 0 || (this.t % 2 === 0 && this.atores.some((a) => a.carga))) this.hud();
   }
 
   tickJogo() {
@@ -494,7 +502,7 @@ export class Partida {
 
   efeitosHumanos() {
     for (const h of this.humanos()) {
-      if (this.t < h.efeitoTick) continue;
+      if (this.t < h.efeitoTick || this.t < h.arrancadaAte) continue;
       h.efeitoTick = this.t + 200;
       const p = h.player;
       const vel = h.stats.vel;
@@ -508,8 +516,23 @@ export class Partida {
     }
   }
 
-  /** Ações dos itens e ataques do jogador real. */
-  acaoHumano(player, acao) {
+  /** Começa a carregar um chute/passe (item segurado). */
+  iniciarCarga(player, tipo) {
+    const a = this.atorDoJogador(player);
+    if (a) a.carga = { tipo, inicio: this.t };
+  }
+
+  /** Solta o item segurado: executa a ação com a força acumulada (0..1). */
+  soltarCarga(player) {
+    const a = this.atorDoJogador(player);
+    if (!a || !a.carga) return;
+    const { tipo, inicio } = a.carga;
+    a.carga = null;
+    this.acaoHumano(player, tipo, clamp((this.t - inicio) / CARGA_MAX, 0, 1));
+  }
+
+  /** Ações dos itens e ataques do jogador real. carga: 0..1 (undefined = toque). */
+  acaoHumano(player, acao, carga) {
     const a = this.atorDoJogador(player);
     if (!a || (this.estado !== "jogando" && this.estado !== "parado")) return;
     const b = this.bola;
@@ -518,10 +541,12 @@ export class Partida {
 
     if (acao === "chute") {
       if (!alcanca) return this.msgJogador(player, "§7Chegue mais perto da bola para chutar.");
-      this.chuteHumano(a);
+      this.chuteHumano(a, carga ?? 0.75);
     } else if (acao === "passe") {
       if (!alcanca) return this.msgJogador(player, "§7Você precisa estar com a bola para passar.");
-      this.passeHumano(a);
+      this.passeHumano(a, player.isSneaking || (carga ?? 0) > 0.4);
+    } else if (acao === "drible") {
+      this.dribleHumano(a);
     } else if (acao === "dividida") {
       this.divididaHumano(a, dBola);
     } else if (acao === "pedir") {
@@ -531,19 +556,53 @@ export class Partida {
     }
   }
 
-  chuteHumano(a) {
+  chuteHumano(a, carga) {
     const d = a.player.getViewDirection();
     const h = hyp(d.x, d.z) || 1;
-    const forca = 0.95 + (a.stats.chu / 99) * 0.7;
-    const erro = (1 - a.stats.chu / 99) * 0.12 * (Math.random() * 2 - 1);
-    const ang = Math.atan2(d.z / h, d.x / h) + erro;
+    const forca = (0.75 + carga * 0.8) * (0.8 + (a.stats.chu / 99) * 0.3);
+    // chute cheio perde um pouco de precisão
+    const erro = (1 - a.stats.chu / 99) * (0.08 + carga * 0.1) * (Math.random() * 2 - 1);
+    const ang = this.mirarGol(a, Math.atan2(d.z / h, d.x / h)) + erro;
     const subida = clamp(d.y + 0.1, 0.03, 0.85) * forca * 0.55;
     this.chutar(a, Math.cos(ang) * forca, subida, Math.sin(ang) * forca, "chute");
     a.est.chutes++;
     this.som("random.bow", 0.7, a.player);
   }
 
-  passeHumano(a) {
+  /** Mira assistida: se o jogador olha mais ou menos para o gol, corrige o ângulo para dentro dele. */
+  mirarGol(a, ang) {
+    const gx = this.atacaDir(a.time) * CAMPO.LINHA_X;
+    const dx = Math.cos(ang);
+    const dz = Math.sin(ang);
+    const dist = gx - this.bola.x;
+    if (dist * dx <= 0 || Math.abs(dist) > 30) return ang;
+    const zCruza = this.bola.z + (dz / dx) * dist;
+    if (Math.abs(zCruza) > CAMPO.GOL_Z + 3) return ang;
+    const zAlvo = clamp(zCruza, -(CAMPO.GOL_Z - 0.6), CAMPO.GOL_Z - 0.6);
+    const angGol = Math.atan2(zAlvo - this.bola.z, dist);
+    return ang + (angGol - ang) * 0.6;
+  }
+
+  dribleHumano(a) {
+    if (a.cdDrible > 0) return this.msgJogador(a.player, `§7Arrancada recarregando (${Math.ceil(a.cdDrible / 20)}s)`);
+    a.cdDrible = 80;
+    a.arrancadaAte = this.t + 30;
+    a.efeitoTick = 0;
+    try {
+      a.player.addEffect("speed", 30, { amplifier: 3, showParticles: false });
+    } catch {
+      // efeito indisponível
+    }
+    if (this.bola.dono === a) {
+      a.protecao = Math.max(a.protecao, 22);
+      this.msgJogador(a.player, "§d§lDRIBLE!");
+    } else {
+      this.msgJogador(a.player, "§dArrancada!");
+    }
+    this.som("mob.horse.gallop", 1.4, a.player);
+  }
+
+  passeHumano(a, lob = false) {
     const d = a.player.getViewDirection();
     const h = hyp(d.x, d.z) || 1;
     const vx = d.x / h;
@@ -564,7 +623,6 @@ export class Partida {
         melhor = m;
       }
     }
-    const lob = a.player.isSneaking;
     if (melhor) {
       this.passar(a, melhor, lob);
     } else {
@@ -707,7 +765,9 @@ export class Partida {
     const b = this.bola;
     const dono = b.dono;
     if (dono) {
-      const perto = dono.tipo === "humano" && dono.player.isSneaking ? 0.55 : 0.75;
+      let perto = 0.75;
+      if (dono.tipo === "humano" && dono.player.isSneaking) perto = 0.55;
+      else if (this.t < dono.arrancadaAte) perto = 1.05;
       b.x = dono.x + dono.dirX * perto;
       b.z = dono.z + dono.dirZ * perto;
       b.y = 0;
@@ -1364,11 +1424,23 @@ export class Partida {
       base = `${this.placarTexto()}  §7| §f${this.minuto()}' §7${this.tempo}ºT`;
     }
     for (const h of this.humanos()) {
-      let extra = "";
-      if (this.bola.dono === h) extra = h.player.isSneaking ? "  §b● Protegendo" : "  §a● Com a bola";
-      else if (this.bola.dono && this.bola.dono.time === h.time) extra = "  §7Seu time ataca";
+      const dono = this.bola.dono;
+      let dica;
+      if (h.carga) {
+        const n = Math.round(clamp((this.t - h.carga.inicio) / CARGA_MAX, 0, 1) * 15);
+        const cor = n > 12 ? "§c" : n > 7 ? "§6" : "§e";
+        dica = `${h.carga.tipo === "chute" ? "§lFORÇA" : "§lPASSE"} ${cor}${"|".repeat(n)}§8${"|".repeat(15 - n)}`;
+      } else if (dono === h) {
+        dica = h.player.isSneaking ? "§b● Protegendo a bola" : "§a● Sua bola  §e[1] Chute  §a[2] Passe  §d[3] Drible";
+      } else if (dono && dono.time !== h.time) {
+        dica = "§c[4] Desarme  §d[3] Arrancada";
+      } else if (dono) {
+        dica = "§6[5] Pedir a bola  §d[3] Arrancada";
+      } else {
+        dica = "§7Bola livre: encoste para dominar";
+      }
       try {
-        h.player.onScreenDisplay.setActionBar(base + extra);
+        h.player.onScreenDisplay.setActionBar(`${base}\n${dica}`);
       } catch {
         // tela indisponível
       }

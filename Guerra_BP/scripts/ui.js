@@ -52,7 +52,7 @@ async function menu(player, titulo, corpo, botoes) {
   }
   const r = await mostrar(player, f);
   if (r.canceled || r.selection === undefined) return;
-  const acao = botoes[r.selection][2];
+  const acao = botoes[r.selection]?.[2];
   if (acao) await acao();
 }
 

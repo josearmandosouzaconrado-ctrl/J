@@ -1,5 +1,6 @@
 import { TIMES, time } from "./data.js";
 import { clamp, embaralhar, poisson, rand, randInt, escolher } from "./util.js";
+import { midiaInicial } from "./midia.js";
 
 const CHAVE = "fut:carreira";
 const VERSAO = 1;
@@ -33,10 +34,27 @@ export function carregar(player) {
   if (typeof s !== "string") return null;
   try {
     const c = JSON.parse(s);
-    return c && c.v === VERSAO ? c : null;
+    return c && c.v === VERSAO ? migrar(c) : null;
   } catch {
     return null;
   }
+}
+
+/** Completa carreiras salvas antes das novidades (mídia, nacionalidade, Copa do Mundo). */
+function migrar(c) {
+  c.nacionalidade ??= "BRA";
+  c.midia = { ...midiaInicial(), ...(c.midia ?? {}) };
+  c.mundial ??= null;
+  c.selecaoTotal ??= { jogos: 0, gols: 0 };
+  return c;
+}
+
+/** Atributos usados em campo: a moral dá até ±5 em tudo. */
+export function statsEmCampo(c) {
+  const bonus = Math.round((c.midia.moral - 50) / 10);
+  const s = {};
+  for (const k in c.attr) s[k] = clamp(c.attr[k] + bonus, 1, 99);
+  return s;
 }
 
 export function salvar(player, c) {
@@ -68,10 +86,14 @@ function estatVazia() {
   return { jogos: 0, gols: 0, assist: 0, notaSoma: 0, vitorias: 0 };
 }
 
-export function novaCarreira({ nome, posicao, numero, clube, dificuldade, duracao, tamanho }) {
+export function novaCarreira({ nome, posicao, numero, clube, dificuldade, duracao, tamanho, nacionalidade = "BRA" }) {
   const c = {
     v: VERSAO,
     nome,
+    nacionalidade,
+    midia: midiaInicial(),
+    mundial: null,
+    selecaoTotal: { jogos: 0, gols: 0 },
     posicao,
     numero,
     idade: 17,
@@ -362,9 +384,15 @@ export function simularJogoDoJogador(c, ajusteDificuldade = 0) {
   const prox = proximoJogo(c);
   const rClube = ratingEfetivo(c, c.clube);
   const rAdv = c.ratings[prox.adversario] + ajusteDificuldade * 0.5;
-  const [gp, gc] = simularPlacar(rClube, rAdv, prox.casa);
-  const pGol = { ATA: 0.3, MEI: 0.16, ZAG: 0.06 }[c.posicao] * (c.attr.chu / 70);
-  const pAss = { ATA: 0.2, MEI: 0.33, ZAG: 0.1 }[c.posicao] * (c.attr.pas / 70);
+  return simularDesempenho(c, rClube, rAdv, prox.casa);
+}
+
+/** Simula placar e desempenho individual do jogador num jogo entre forças rMeu e rAdv. */
+export function simularDesempenho(c, rMeu, rAdv, casa = true) {
+  const [gp, gc] = simularPlacar(rMeu, rAdv, casa);
+  const st = statsEmCampo(c);
+  const pGol = { ATA: 0.3, MEI: 0.16, ZAG: 0.06 }[c.posicao] * (st.chu / 70);
+  const pAss = { ATA: 0.2, MEI: 0.33, ZAG: 0.1 }[c.posicao] * (st.pas / 70);
   let gols = 0;
   let assist = 0;
   for (let i = 0; i < gp; i++) {

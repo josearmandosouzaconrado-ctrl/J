@@ -60,4 +60,4 @@ export const ATRIBUTOS = {
   fis: "Físico",
 };
 
-export const ITENS_PARTIDA = ["fut:chute", "fut:passe", "fut:dividida", "fut:pedir"];
+export const ITENS_PARTIDA = ["fut:chute", "fut:passe", "fut:drible", "fut:dividida", "fut:pedir"];

@@ -1,25 +1,34 @@
 import { world, system, ItemStack } from "@minecraft/server";
-import { abrirMenu } from "./ui.js";
+import { abrirMenu, abrirCelular } from "./ui.js";
 import { getPartida, limparEntidadesOrfas } from "./match.js";
 
 const ACOES = {
   "fut:chute": "chute",
   "fut:passe": "passe",
+  "fut:drible": "drible",
   "fut:dividida": "dividida",
   "fut:pedir": "pedir",
 };
+// chute e passe podem ser segurados para carregar; um toque rápido age na hora
+const CARREGAVEIS = new Set(["fut:chute", "fut:passe"]);
+const pendentes = new Map(); // playerId -> { carregando }
 
-function temItemMenu(player) {
+function temItem(player, typeId) {
   const inv = player.getComponent("inventory")?.container;
   if (!inv) return true;
-  for (let i = 0; i < inv.size; i++) if (inv.getItem(i)?.typeId === "fut:menu") return true;
+  for (let i = 0; i < inv.size; i++) if (inv.getItem(i)?.typeId === typeId) return true;
   return false;
 }
 
 function darItemMenu(player, forcar = false) {
-  if (!forcar && temItemMenu(player)) return;
   const inv = player.getComponent("inventory")?.container;
   if (!inv) return;
+  if (forcar || !temItem(player, "fut:celular")) {
+    const cel = new ItemStack("fut:celular", 1);
+    cel.setLore(["§7Redes sociais, mensagens e notícias da sua carreira."]);
+    inv.addItem(cel);
+  }
+  if (!forcar && temItem(player, "fut:menu")) return;
   const item = new ItemStack("fut:menu", 1);
   item.nameTag = "§bMenu do Futebol";
   item.setLore(["§7Use para abrir o menu do Futebol Craft."]);
@@ -34,12 +43,43 @@ world.afterEvents.itemUse.subscribe((ev) => {
   const id = ev.itemStack?.typeId;
   const player = ev.source;
   if (id === "fut:menu") return abrir(player);
+  if (id === "fut:celular") return abrirCelular(player).catch((e) => console.warn(`[Futebol] celular: ${e}`));
   const acao = ACOES[id];
   if (!acao) return;
   const partida = getPartida();
-  if (partida) partida.acaoHumano(player, acao);
-  else player.onScreenDisplay.setActionBar("§7Nenhuma partida em andamento.");
+  if (!partida) return player.onScreenDisplay.setActionBar("§7Nenhuma partida em andamento.");
+  if (!CARREGAVEIS.has(id)) return partida.acaoHumano(player, acao);
+  // espera alguns ticks: se o item começar a ser segurado, a ação sai ao soltar
+  const pend = { carregando: false };
+  pendentes.set(player.id, pend);
+  system.runTimeout(() => {
+    if (pendentes.get(player.id) !== pend || pend.carregando) return;
+    pendentes.delete(player.id);
+    getPartida()?.acaoHumano(player, acao);
+  }, 3);
 });
+
+world.afterEvents.itemStartUse.subscribe((ev) => {
+  const id = ev.itemStack?.typeId;
+  if (!CARREGAVEIS.has(id)) return;
+  const partida = getPartida();
+  if (!partida) return;
+  const pend = pendentes.get(ev.source.id) ?? { carregando: false };
+  pend.carregando = true;
+  pendentes.set(ev.source.id, pend);
+  partida.iniciarCarga(ev.source, ACOES[id]);
+});
+
+function soltar(ev) {
+  if (!CARREGAVEIS.has(ev.itemStack?.typeId)) return;
+  const pend = pendentes.get(ev.source.id);
+  if (!pend?.carregando) return;
+  pendentes.delete(ev.source.id);
+  getPartida()?.soltarCarga(ev.source);
+}
+world.afterEvents.itemReleaseUse.subscribe(soltar);
+world.afterEvents.itemStopUse.subscribe(soltar);
+world.afterEvents.itemCompleteUse.subscribe(soltar);
 
 world.afterEvents.entityHitEntity.subscribe((ev) => {
   const player = ev.damagingEntity;

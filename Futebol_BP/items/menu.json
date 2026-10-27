@@ -8,14 +8,14 @@
       }
     },
     "components": {
-      "minecraft:icon": {
-        "texture": "fut_menu"
-      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:can_destroy_in_creative": false,
       "minecraft:display_name": {
         "value": "§bMenu do Futebol"
       },
-      "minecraft:max_stack_size": 1,
-      "minecraft:can_destroy_in_creative": false,
+      "minecraft:icon": {
+        "texture": "fut_menu"
+      },
       "minecraft:glint": true
     }
   }

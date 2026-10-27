@@ -32,19 +32,21 @@ Dica: jogue de dia ou no modo pacífico para que monstros não atrapalhem a part
 
 ## Controles na partida
 
-Durante a partida os itens abaixo ocupam os slots 1–4 da barra (seus itens vão para a mochila e
-continuam lá quando a partida acaba).
+Durante a partida os itens abaixo ocupam os slots 1–5 da barra (seus itens vão para a mochila e
+continuam lá quando a partida acaba). A barra de ação mostra o placar e, embaixo, **os botões úteis
+naquele momento** (com a bola, marcando, ou esperando o passe).
 
-| Item | O que faz |
-|---|---|
-| **Chutar** | Chuta na direção da mira. Olhe para cima para chutar mais alto. Bater na bola também chuta. |
-| **Passar** | Toca para o companheiro na direção em que você olha. **Agachado** = lançamento pelo alto. |
-| **Dividida** | Dá um bote e tenta roubar a bola do adversário (depende de Defesa e Físico). |
-| **Pedir a Bola** | O companheiro NPC com a bola passa para você. |
+| Slot | Item | Toque | Segurar |
+|---|---|---|---|
+| 1 | **CHUTE** | Chute normal na direção da mira | Enche a **barra de força**; solte para chutar |
+| 2 | **PASSE** | Passe rasteiro para o companheiro na mira | Lançamento pelo alto |
+| 3 | **DRIBLE** | Arrancada; com a bola fica imune a desarmes por 1s | — |
+| 4 | **DESARME** | Bote para roubar a bola do adversário | — |
+| 5 | **PEDIR** | O companheiro com a bola toca para você | — |
 
+- A **mira assistida** corrige chutes que iam passar perto da trave para dentro do gol.
 - Encostar na bola solta faz você dominá-la; correr com ela conduz automaticamente.
-- **Agachar** com a bola protege contra desarmes.
-- Placar, cronômetro e avisos aparecem na barra de ação.
+- **Agachar** com a bola protege contra desarmes. Bater na bola também chuta.
 
 ## Regras simuladas
 
@@ -54,7 +56,7 @@ saem do gol, fazem defesas, espalmam e repõem a bola. Disputas de pênaltis dec
 
 ## Modo Carreira
 
-- Crie seu jogador: nome, posição (Atacante, Meia ou Zagueiro), número e clube inicial.
+- Crie seu jogador: nome, **nacionalidade**, posição (Atacante, Meia ou Zagueiro), número e clube inicial.
 - **Liga Craft**: 10 clubes, turno e returno (18 rodadas). Os outros jogos da rodada são simulados.
 - **Copa Craft**: mata-mata com quartas, semifinal e final entre as rodadas da liga.
 - Jogue cada partida ou **simule** (mais rápido, rende menos pontos).
@@ -65,11 +67,40 @@ saem do gol, fazem defesas, espalmam e repõem a bola. Disputas de pênaltis dec
 - Fim de temporada: troféus (Liga, Copa, Artilheiro, Seleção da Temporada, Bola de Ouro),
   histórico, evolução dos clubes e **janela de transferências** com propostas de acordo com sua reputação.
 - Envelhecimento: jovens evoluem sozinhos, veteranos perdem físico; aposentadoria aos 38 anos.
-- Configurações por carreira: dificuldade (Fácil a Lendário), duração das partidas e formato.
+- Configurações por carreira: dificuldade (Fácil a Lendário), duração das partidas, formato e nacionalidade.
+
+### Entrevistas
+
+Depois dos jogos a imprensa (Gazeta da Bola, TV Gol, Rádio Arquibancada...) pode querer falar com
+você. As perguntas dependem do que aconteceu: gols, vitória, derrota, vaias, rumores de transferência,
+Copa do Mundo. Você responde de forma **humilde**, **confiante** ou **polêmica** (ou recusa), e isso
+mexe com sua **moral**, a **torcida**, o **técnico**, a reputação e os seguidores. A resposta vira
+manchete e repercute na rede social.
+
+### Celular
+
+O item **Celular** (ou o botão no menu da carreira) abre o Craftphone:
+
+- **BolaGram**: rede social com feed gerado a partir dos seus jogos — torcedores, jornalistas,
+  rivais, perfil oficial do clube e páginas de memes. Publique uma vez por rodada (comemorar,
+  agradecer a torcida, vídeo do treino, provocar o rival, post patrocinado que rende dinheiro...).
+- **Mensagens** do técnico, empresário, presidente, família e da federação (convocação).
+- **Notícias** da liga, do mercado e das suas entrevistas.
+- **Agenda** dos próximos jogos e **Banco e Status** (saldo, moral, torcida, técnico, reputação).
+
+A **moral** vale em campo: muda todos os seus atributos em até ±5.
+
+### Copa do Mundo
+
+A cada 4 temporadas (temporadas 2, 6, 10...) acontece a Copa do Mundo com 16 seleções: fase de
+grupos, quartas, semifinal e final, com pênaltis no mata-mata. Com OVR 70 ou reputação 40 você é
+**convocado** e joga (ou simula) as partidas pela sua seleção, com uniformes e nomes de jogadores do
+país. Prêmios: Campeão da Copa do Mundo, Chuteira de Ouro e Bola de Ouro da Copa. As seleções também
+aparecem na Partida Rápida.
 
 Seus atributos valem em campo: Velocidade vira efeito de velocidade; Finalização define força e
 precisão do chute; Passe, Drible, Defesa e Físico influenciam passes, proteção da bola e desarmes.
-O progresso fica salvo no próprio mundo.
+O progresso fica salvo no próprio mundo (carreiras antigas são atualizadas automaticamente).
 
 ## Estrutura do projeto
 
@@ -81,11 +112,13 @@ Futebol_BP/            pacote de comportamento
     main.js            eventos (itens, ataques, entrada/saída de jogadores)
     match.js           motor da partida: física da bola, IA dos NPCs, goleiros, regras, HUD
     career.js          liga, copa, simulação, temporadas, propostas, loja, treino
-    ui.js              menus (server-ui)
+    midia.js           entrevistas, rede social, notícias e mensagens procedurais
+    mundial.js         Copa do Mundo (grupos, mata-mata, convocação, prêmios)
+    ui.js              menus (server-ui) e o celular
     stadium.js         construção do estádio
     data.js, config.js, util.js
 Futebol_RP/            pacote de recursos (modelos, animações, texturas, textos)
-tools/gerar_recursos.py  gera uniformes (12 kits × 3 tons de pele), bola e ícones
+tools/gerar_recursos.py  gera uniformes (12 kits × 3 tons de pele), bola, ícones dos itens e dos menus
 tools/build.py           valida os JSONs e gera dist/FutebolCraft.mcaddon
 ```
 

@@ -4,14 +4,26 @@
     "name": "Futebol Craft (Recursos)",
     "description": "Texturas, modelos e animações do Futebol Craft",
     "uuid": "f3927782-7aea-4a5e-8563-faae8eec8b6a",
-    "version": [1, 0, 0],
-    "min_engine_version": [1, 21, 0]
+    "version": [
+      1,
+      1,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      0
+    ]
   },
   "modules": [
     {
       "type": "resources",
       "uuid": "0ab0b45c-c7ed-487a-b858-774d6f6dc28c",
-      "version": [1, 0, 0]
+      "version": [
+        1,
+        0,
+        0
+      ]
     }
   ]
 }

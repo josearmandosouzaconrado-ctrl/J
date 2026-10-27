@@ -8,15 +8,14 @@
       }
     },
     "components": {
-      "minecraft:icon": {
-        "texture": "fut_dividida"
-      },
-      "minecraft:display_name": {
-        "value": "§cDividida"
-      },
       "minecraft:max_stack_size": 1,
       "minecraft:can_destroy_in_creative": false,
-      "minecraft:glint": false
+      "minecraft:display_name": {
+        "value": "§c§lDESARME"
+      },
+      "minecraft:icon": {
+        "texture": "fut_dividida"
+      }
     }
   }
 }
