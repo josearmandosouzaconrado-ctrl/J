@@ -5,7 +5,11 @@ const CHUNK = 32;
 const CHUNK_PX = TILE * CHUNK;
 const WORLD_TILES = 4096; // altura do mundo e largura do continente de Eldoria
 const WORLD_W = 6144;      // largura total: Eldoria + Mar das Brumas + Kaeloria
+const WORLD_H = 10496;     // altura total: Eldoria/Kaeloria no norte + Oceano do Sul + Valtheria
 const MAP_W = WORLD_W / 16; // largura do mapa-múndi / névoa (células de 16 tiles)
+const MAP_H = WORLD_H / 16;
+const VALTHERIA_Y = 4400;  // abaixo desta linha começa o continente de Valtheria
+function contAt(x, y) { return y >= VALTHERIA_Y ? 2 : x >= WORLD_TILES ? 1 : 0; }
 
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;

@@ -77,7 +77,7 @@ const Quests = {
       q.desc = `Um ${p.name.toLowerCase()} foi visto em ${p.region.short}. Elimine todos lá.`;
       reward(50 + p.lvl * 22, 70 + p.lvl * 20, 2);
     } else if (kind === 'deliver') {
-      const cands = W.settlements.filter(o => o !== s && dist(o.x, o.y, s.x, s.y) > 150 && dist(o.x, o.y, s.x, s.y) < 1300 && !o.region.hostile && (o.x >= WORLD_TILES) === (s.x >= WORLD_TILES) && !o.academy);
+      const cands = W.settlements.filter(o => o !== s && dist(o.x, o.y, s.x, s.y) > 150 && dist(o.x, o.y, s.x, s.y) < 1300 && !o.region.hostile && contAt(o.x, o.y) === contAt(s.x, s.y) && !o.academy);
       if (!cands.length) return this.generate('kill', s, rng, guildId, key);
       const dst = rng.pick(cands);
       const dd = dist(dst.x, dst.y, s.x, s.y);

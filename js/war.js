@@ -23,10 +23,15 @@ const KSTYLE = {
   ssarak: { metal: '#5a7a4a', helm1: 'kettle', helm2: 'full', crest: true, weapons: ['spear', 'sword', 'spear'], wItem: 'sword', mat2: 'aco' },
   talassa: { metal: '#7ab0c8', helm1: 'leaf', helm2: 'full', crest: true, weapons: ['spear', 'spear', 'sword'], wItem: 'sword', mat2: 'elfico' },
   azhkar: { metal: '#5a2a30', helm1: 'spike', helm2: 'spike', weapons: ['sword', 'great', 'axe'], wItem: 'sword', mat2: 'orc' },
-  shirokai: { metal: '#3a4a3a', helm1: 'kettle', helm2: 'full', crest: true, weapons: ['sword', 'spear', 'sword'], wItem: 'sword', mat2: 'aco', archers: 0.3 }
+  shirokai: { metal: '#3a4a3a', helm1: 'kettle', helm2: 'full', crest: true, weapons: ['sword', 'spear', 'sword'], wItem: 'sword', mat2: 'aco', archers: 0.3 },
+  aurelion: { metal: '#d0d8e8', helm1: 'kettle', helm2: 'full', crest: true, weapons: ['sword', 'spear', 'sword'], wItem: 'sword', mat2: 'aco' },
+  gromhald: { metal: '#7a8088', helm1: 'kettle', helm2: 'full', horns: true, fur: true, weapons: ['hammer', 'axe', 'great'], wItem: 'hammer', mat2: 'anao', archers: 0.08 },
+  lunethar: { metal: '#c0c8e8', helm1: 'leaf', helm2: 'leaf', weapons: ['sword', 'spear', 'sword'], wItem: 'sword', mat2: 'elfico', archers: 0.4 },
+  rodafina: { metal: '#c09050', helm1: 'kettle', helm2: 'kettle', weapons: ['mace', 'sword', 'spear'], wItem: 'mace', mat2: 'aco', archers: 0.3 },
+  kumari: { metal: '#d8b070', helm1: 'turban', helm2: 'turban', cloth: true, weapons: ['spear', 'sword', 'spear'], wItem: 'sword', mat2: 'elfico' }
 };
 // simpatias e rivalidades históricas (relação de base)
-const KBIAS = { 'colinas|valdoria': 35, 'sylvaris|valdoria': 15, 'khazdurim|valdoria': 15, 'khazdurim|sylvaris': -25, 'gorthak|nordheim': -55, 'gorthak|khazdurim': -40, 'gorthak|valdoria': -30, 'ssarak|zahrim': -45, 'gorthak|zahrim': -20, 'nordheim|valdoria': 0, 'colinas|sylvaris': 20, 'azhkar|talassa': -50, 'azhkar|shirokai': -35, 'shirokai|talassa': 10 };
+const KBIAS = { 'colinas|valdoria': 35, 'sylvaris|valdoria': 15, 'khazdurim|valdoria': 15, 'khazdurim|sylvaris': -25, 'gorthak|nordheim': -55, 'gorthak|khazdurim': -40, 'gorthak|valdoria': -30, 'ssarak|zahrim': -45, 'gorthak|zahrim': -20, 'nordheim|valdoria': 0, 'colinas|sylvaris': 20, 'azhkar|talassa': -50, 'azhkar|shirokai': -35, 'shirokai|talassa': 10, 'aurelion|kumari': -40, 'aurelion|gromhald': -20, 'gromhald|rodafina': -30, 'lunethar|rodafina': 25, 'aurelion|lunethar': 5, 'kumari|lunethar': -10, 'aurelion|rodafina': 15 };
 const WAR_EVENTS = {
   bad: ['Patrulhas de {a} e {b} trocaram golpes na fronteira.', 'Um emissário de {a} foi insultado na corte de {b}.', 'Caravanas de {b} foram saqueadas em terras de {a}.', '{a} acusa {b} de espionagem.', 'Uma disputa por uma mina de ouro opõe {a} e {b}.'],
   good: ['{a} e {b} assinaram um acordo comercial.', 'Um casamento real uniu nobres de {a} e {b}.', '{a} enviou ajuda a {b} depois de uma colheita ruim.', 'Bardos de {a} foram aclamados em {b}.']

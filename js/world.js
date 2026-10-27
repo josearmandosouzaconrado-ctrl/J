@@ -17,7 +17,8 @@ const ORE_BY_REGION = {
   khazdurim: [O.ORE_FERRO, O.ORE_OURO, O.ORE_PRATA, O.ORE_OURO], nordheim: [O.ORE_MALAQUITA, O.ORE_FERRO, O.ORE_MALAQUITA],
   gorthak: [O.ORE_OBSIDIANA, O.ORE_FERRO, O.ORE_OBSIDIANA], zahrim: [O.ORE_OURO, O.ORE_FERRO], ssarak: [O.ORE_FERRO, O.ORE_PRATA],
   morvath: [O.ORE_EBANO, O.ORE_OBSIDIANA, O.ORE_EBANO],
-  talassa: [O.ORE_PRATA, O.ORE_FERRO, O.ORE_PRATA], azhkar: [O.ORE_OBSIDIANA, O.ORE_EBANO, O.ORE_OURO], shirokai: [O.ORE_FERRO, O.ORE_MALAQUITA, O.ORE_PRATA]
+  talassa: [O.ORE_PRATA, O.ORE_FERRO, O.ORE_PRATA], azhkar: [O.ORE_OBSIDIANA, O.ORE_EBANO, O.ORE_OURO], shirokai: [O.ORE_FERRO, O.ORE_MALAQUITA, O.ORE_PRATA],
+  aurelion: [O.ORE_FERRO, O.ORE_PRATA, O.ORE_OURO], gromhald: [O.ORE_MALAQUITA, O.ORE_EBANO, O.ORE_FERRO], lunethar: [O.ORE_PRATA, O.ORE_MALAQUITA], rodafina: [O.ORE_FERRO, O.ORE_FERRO, O.ORE_OURO], kumari: [O.ORE_OURO, O.ORE_FERRO, O.ORE_OBSIDIANA], umbraval: [O.ORE_EBANO, O.ORE_OBSIDIANA, O.ORE_EBANO]
 };
 
 class World {
@@ -27,7 +28,7 @@ class World {
     this.nE = new Simplex(seed * 7 + 1); this.nM = new Simplex(seed * 7 + 2); this.nW = new Simplex(seed * 7 + 3);
     this.nR = new Simplex(seed * 7 + 4); this.nD = new Simplex(seed * 7 + 5); this.nL = new Simplex(seed * 7 + 6);
     this.regions = REGIONS.map(r => Object.assign({}, r, { cx: r.fx * WORLD_TILES, cy: r.fy * WORLD_TILES }));
-    this.regC = [[], []]; this.regions.forEach((r, i) => this.regC[r.cont || 0].push(i));
+    this.regC = [[], [], []]; this.regions.forEach((r, i) => this.regC[r.cont || 0].push(i));
     this.volcano = { x: VOLCANO.fx * WORLD_TILES, y: VOLCANO.fy * WORLD_TILES };
     this.chunks = new Map(); this.canvases = new Map();
     this.tick = 0;
@@ -44,13 +45,13 @@ class World {
   regionAt(x, y) {
     const wx = x + 150 * this.nW.noise(x / 520, y / 520), wy = y + 150 * this.nW.noise(x / 520 + 91.3, y / 520 + 47.1);
     let best = 0, bd = Infinity;
-    for (const i of this.regC[x >= WORLD_TILES ? 1 : 0]) { const r = this.regions[i]; const dx = wx - r.cx, dy = wy - r.cy, d = dx * dx + dy * dy; if (d < bd) { bd = d; best = i; } }
+    for (const i of this.regC[contAt(x, y)]) { const r = this.regions[i]; const dx = wx - r.cx, dy = wy - r.cy, d = dx * dx + dy * dy; if (d < bd) { bd = d; best = i; } }
     return best;
   }
   baseTile(x, y) {
     const W = WORLD_TILES;
-    if (x < 0 || y < 0 || x >= WORLD_W || y >= W) { this._r = 0; this._e = 0; return T.DEEP; }
-    const cont = x >= W ? 1 : 0;
+    if (x < 0 || y < 0 || x >= WORLD_W || y >= WORLD_H) { this._r = 0; this._e = 0; return T.DEEP; }
+    const cont = contAt(x, y);
     const wx = x + 150 * this.nW.noise(x / 520, y / 520), wy = y + 150 * this.nW.noise(x / 520 + 91.3, y / 520 + 47.1);
     const R = this.regions;
     let best = 0, bd = Infinity, mb = 0, ws = 0;
@@ -66,6 +67,11 @@ class World {
       const nx = x / W * 2 - 1, ny = y / W * 2 - 1;
       const d = Math.max(Math.abs(nx), Math.abs(ny)) * 0.65 + Math.sqrt(nx * nx + ny * ny) * 0.35;
       if (d > 0.8) { const f = (d - 0.8) / 0.2; e -= f * f * 0.75; }
+    } else if (cont === 2) {
+      // Valtheria: o Grande Continente do sul, maior que Eldoria
+      const nx = (x - 3080) / 2900, ny = (y - 7480) / 2850;
+      const d = Math.sqrt(nx * nx + ny * ny) * 0.7 + Math.max(Math.abs(nx), Math.abs(ny)) * 0.3 + this.nW.noise(x / 420, y / 420) * 0.09;
+      if (d > 0.76) { const f = (d - 0.76) / 0.24; e -= f * f * 0.85; }
     } else {
       // Kaeloria: continente alongado do outro lado do Mar das Brumas
       const nx = (x - 5180) / 760, ny = (y - 2048) / 1780;
@@ -271,15 +277,15 @@ class World {
     return { cx, cy, tiles, objs, reg, t: 0 };
   }
   tileAt(tx, ty) {
-    if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_TILES) return T.DEEP;
+    if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_H) return T.DEEP;
     return this.getChunk(tx >> 5, ty >> 5).tiles[((ty & 31) << 5) | (tx & 31)];
   }
   objAt(tx, ty) {
-    if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_TILES) return 0;
+    if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_H) return 0;
     return this.getChunk(tx >> 5, ty >> 5).objs[((ty & 31) << 5) | (tx & 31)];
   }
   regAt(tx, ty) {
-    if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_TILES) return 0;
+    if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_H) return 0;
     return this.getChunk(tx >> 5, ty >> 5).reg[((ty & 31) << 5) | (tx & 31)];
   }
   setObj(tx, ty, o) {
@@ -288,7 +294,7 @@ class World {
     if (OBJ_BAKED[old] || OBJ_BAKED[o]) this.canvases.delete(this.ckey(tx >> 5, ty >> 5));
   }
   solidAt(tx, ty) {
-    if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_TILES) return true;
+    if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_H) return true;
     const ch = this.getChunk(tx >> 5, ty >> 5); const i = ((ty & 31) << 5) | (tx & 31);
     return TSOLID[ch.tiles[i]] || OSOLID[ch.objs[i]];
   }
@@ -318,7 +324,7 @@ class World {
     const cx0 = Math.floor(camX / CHUNK_PX), cy0 = Math.floor(camY / CHUNK_PX);
     const cx1 = Math.floor((camX + vw) / CHUNK_PX), cy1 = Math.floor((camY + vh) / CHUNK_PX);
     for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) {
-      if (cx < 0 || cy < 0 || cx >= WORLD_W / 32 || cy >= WORLD_TILES / 32) { ctx.fillStyle = '#1f4a8a'; ctx.fillRect(cx * CHUNK_PX - camX, cy * CHUNK_PX - camY, CHUNK_PX, CHUNK_PX); continue; }
+      if (cx < 0 || cy < 0 || cx >= WORLD_W / 32 || cy >= WORLD_H / 32) { ctx.fillStyle = '#1f4a8a'; ctx.fillRect(cx * CHUNK_PX - camX, cy * CHUNK_PX - camY, CHUNK_PX, CHUNK_PX); continue; }
       ctx.drawImage(this.chunkCanvas(cx, cy), cx * CHUNK_PX - camX, cy * CHUNK_PX - camY);
     }
   }
@@ -345,7 +351,7 @@ class World {
       const rr = radius * Math.sqrt(i / 400 + 0.02);
       const a = rng.range(0, Math.PI * 2);
       const x = Math.round(cx + Math.cos(a) * rr * rng.next()), y = Math.round(cy + Math.sin(a) * rr * rng.next());
-      if (x < 80 || y < 80 || x > WORLD_W - 80 || y > WORLD_TILES - 80) continue;
+      if (x < 80 || y < 80 || x > WORLD_W - 80 || y > WORLD_H - 80) continue;
       if (test(x, y)) return { x, y };
     }
     return null;
@@ -453,6 +459,7 @@ class World {
     this.buildRoads(rng);
     this.placeDestiny();
     this.generateKaeloria();
+    this.generateValtheria();
     // placas
     for (const s of this.settlements) {
       for (const g of s.gates) {
@@ -530,6 +537,124 @@ class World {
       this.extendGate(ga, e.w); this.extendGate(gb, e.w);
     }
     this.roadEdges = this.roadEdges.concat(edges);
+  }
+  generateValtheria() {
+    const rng = new RNG(this.seed * 71 + 13);
+    const regs = this.regions.filter(r => r.cont === 2);
+    const made = [];
+    let sid = 0;
+    for (const reg of regs) {
+      const names = SETTLEMENT_NAMES[reg.id], pool = rng.shuffle(names.list.slice());
+      const types = reg.hostile ? [] : ['capital'];
+      for (let i = 0; i < reg.towns; i++) types.push('town');
+      for (let i = 0; i < reg.villages; i++) types.push('village');
+      for (const type of types) {
+        const size = type === 'capital' ? 50 : type === 'town' ? 34 : 24, half = size / 2 + 4;
+        const ok = (x, y) => {
+          if (this.regionAt(x, y) !== reg.index || y < VALTHERIA_Y + 40) return false;
+          const pts = [[0, 0], [-half, -half], [half, -half], [-half, half], [half, half], [0, -half], [0, half], [-half, 0], [half, 0]];
+          let bad = 0;
+          for (const [dx, dy] of pts) { const t = this.baseTile(x + dx, y + dy); if (t === T.DEEP || t === T.LAVA) return false; if (TSOLID[t] || TWATER[t]) bad++; }
+          return bad <= 2 && this.farFrom(x, y, made, type === 'village' ? 80 : 120);
+        };
+        const pos = this.findLand(reg.cx, reg.cy, rng, type === 'capital' || (reg.hostile && !made.some(m => m.region === reg)) ? 260 : type === 'town' ? 900 : 1100, ok);
+        if (!pos) continue;
+        const first = reg.hostile && !made.some(m => m.region === reg);
+        const st = { id: 'v' + (sid++), name: type === 'capital' || first ? names.cap : (pool.pop() || ('Vila ' + sid)), type, region: reg, x: pos.x, y: pos.y, cx: pos.x, cy: pos.y };
+        made.push(st); this.settlements.push(st);
+      }
+    }
+    for (const st of made) this.layoutSettlement(st);
+    let uid = this.dungeons.reduce((m, d) => Math.max(m, d.uid), 0) + 1;
+    const dl = [];
+    const campName = { umbraval: 'Acampamento de Cultistas', gromhald: 'Acampamento de Gigantes', rodafina: 'Oficina Abandonada', aurelion: 'Acampamento de Desertores' };
+    for (const R of regs) {
+      const types = REGION_DUNGEONS[R.id];
+      for (let i = 0; i < R.dungeons; i++) {
+        const pos = this.findLand(R.cx, R.cy, rng, 1100, (x, y) => this.regionAt(x, y) === R.index && this.isLand(x, y) && this.isLand(x, y + 1) && this._e < 0.69 && this.farFrom(x, y, made, 36) && this.farFrom(x, y, dl, 34));
+        if (!pos) continue;
+        const type = rng.pick(types), dt = DUNGEON_TYPES[type];
+        const d = { id: 'vd' + uid, uid: uid++, name: dt.name + ' ' + rng.pick(DUNGEON_NOUNS), type, boss: dt.boss, lvl: rng.int(R.lvl[0], R.lvl[1]), size: rng.int(48, 64), x: pos.x, y: pos.y, region: R };
+        dl.push(d); this.stampDungeon(d); this.dungeons.push(d); this.dungeonById[d.id] = d;
+      }
+      for (let i = 0; i < 3; i++) {
+        const pos = this.findLand(R.cx, R.cy, rng, 1000, (x, y) => this.regionAt(x, y) === R.index && this.isLand(x, y) && this._e < 0.66 && this.farFrom(x, y, made, 60) && this.farFrom(x, y, dl, 25) && this.farFrom(x, y, this.pois, 40));
+        if (!pos) continue;
+        const pc = { id: 'vcamp' + R.id + i, kind: 'camp', x: pos.x, y: pos.y, region: R, lvl: rng.int(R.lvl[0], R.lvl[1]), name: campName[R.id] || 'Acampamento Bandido' };
+        this.stampCamp(pc, rng); this.pois.push(pc);
+      }
+      for (let i = 0; i < 2; i++) {
+        const pos = this.findLand(R.cx, R.cy, rng, 900, (x, y) => this.regionAt(x, y) === R.index && this.isLand(x, y) && this.isLand(x, y + 1) && this.farFrom(x, y, made, 40) && this.farFrom(x, y, this.pois, 40) && this.farFrom(x, y, dl, 20));
+        if (pos) { const pc = { id: 'vshrine' + R.id + i, kind: 'shrine', x: pos.x, y: pos.y, region: R, name: 'Santuário' }; this.stampSmall(pc, O.SHRINE, rng); this.pois.push(pc); }
+      }
+    }
+    // portos nas costas: sul de Eldoria e de Kaeloria, norte de Valtheria
+    const before = this.ports.length;
+    const specs = [
+      [0, 1700, 'Porto do Sul'], [0, 2900, 'Porto das Gaivotas'], [1, 5150, 'Porto da Âncora'],
+      [2, 1500, 'Porto do Norte'], [2, 3100, 'Porto Imperial'], [2, 4950, 'Porto Leste de Valtheria']
+    ];
+    specs.forEach(([cont, x0, name], n) => this.placePortV(cont, x0, name, n, rng));
+    const nv = this.ports.slice(before);
+    this.buildRoads(rng, made.concat(nv.filter(p => p.port.cont === 2)), false);
+    const edges = [];
+    for (const pt of nv.filter(p => p.port.cont !== 2)) {
+      let near = null, nd = Infinity;
+      for (const st of this.settlements) { if (st.port || st.academy || contAt(st.x, st.y) !== pt.port.cont) continue; const d = dist(st.x, st.y, pt.x, pt.y); if (d < nd) { nd = d; near = st; } }
+      if (near) edges.push({ a: pt, b: near, w: 2 });
+    }
+    for (const e of edges) {
+      const ga = this.closestGate(e.a, e.b), gb = this.closestGate(e.b, e.a);
+      const path = this.wiggle([ga.x, ga.y], [gb.x, gb.y], rng, 0);
+      for (let i = 0; i < path.length - 1; i++) this.rasterRoad(path[i][0], path[i][1], path[i + 1][0], path[i + 1][1], e.w);
+      this.extendGate(ga, e.w); this.extendGate(gb, e.w);
+    }
+    this.roadEdges = this.roadEdges.concat(edges);
+  }
+  // porto em costa norte/sul: varre na vertical a partir do mar
+  placePortV(cont, x0, name, n, rng) {
+    const dir = cont === 2 ? -1 : 1;                 // dir>0: o mar fica ao sul
+    const seaAt = (x, y) => { const t = this.baseTile(x, y); return TWATER[t] || t === T.DEEP; };
+    for (let dx = 0; dx < 900; dx += 10) for (const xx of [x0 + dx, x0 - dx]) {
+      let y = cont === 2 ? VALTHERIA_Y + 20 : VALTHERIA_Y - 20;
+      const lim = cont === 2 ? VALTHERIA_Y + 1600 : 2600;
+      while (cont === 2 ? y < lim : y > lim) { if (this.isLand(xx, y)) break; y += dir > 0 ? -1 : 1; }
+      if (cont === 2 ? y >= lim : y <= lim) continue;
+      if (contAt(xx, y) !== cont) continue;
+      let land = 0, sea = 0;
+      for (let k = 1; k <= 12; k++) { if (this.isLand(xx, y - dir * k) && this.isLand(xx - 3, y - dir * k) && this.isLand(xx + 3, y - dir * k)) land++; if (seaAt(xx, y + dir * k) && seaAt(xx - 3, y + dir * k) && seaAt(xx + 4, y + dir * k)) sea++; }
+      const R = this.regions[this.regionAt(xx, y)];
+      if (land < 11 || sea < 11 || R.hostile || !this.farFrom(xx, y, this.settlements, 40) || !this.farFrom(xx, y, this.dungeons, 20)) continue;
+      this.layoutPortV({ x: xx, y, R }, cont, dir, name, n, rng);
+      return;
+    }
+  }
+  layoutPortV(f, cont, dir, name, n, rng) {
+    const W = 14, H = 24, coast = 13;
+    const st = { id: 'portv' + cont + n, name, type: 'port', region: f.R, x: f.x, y: f.y, cx: f.x, cy: f.y, port: { cont, dir, axis: 'y' } };
+    st.w = W; st.h = H;
+    st.x0 = f.x - 7;
+    st.y0 = dir > 0 ? f.y - coast + 1 : f.y - (H - coast);
+    const ly = u => dir > 0 ? u : H - 1 - u;                    // u = distância ao longo do píer
+    const at = (u, v) => ly(u) * W + v;
+    const tiles = new Uint8Array(W * H).fill(255), objs = new Uint8Array(W * H), occ = new Uint8Array(W * H);
+    const cul = CULTURES[f.R.culture];
+    for (let u = 0; u < coast; u++) for (let v = 0; v < W; v++) { const i = at(u, v); const t = this.baseTile(st.x0 + v, st.y0 + ly(u)); tiles[i] = (TSOLID[t] || TWATER[t] || t === T.LAVA) ? T.SAND : (v >= 5 && v <= 8) || u >= coast - 3 ? T.WOOD : 255; }
+    for (let u = coast - 3; u < H; u++) for (let v = 6; v <= 7; v++) tiles[at(u, v)] = T.BRIDGE;
+    for (let u = H - 4; u < H; u++) for (let v = 4; v <= 9; v++) tiles[at(u, v)] = T.BRIDGE;
+    st.buildings = []; st.npcSpots = []; st.lamps = []; st.gates = [];
+    for (let i = 0; i < W * H; i++) if (tiles[i] === T.WOOD || tiles[i] === T.BRIDGE) occ[i] = 2;
+    const b = this.placeBuilding(st, 'inn', 8, dir > 0 ? 1 : H - 1 - 4 - 1, rng, objs, occ, W, cul);
+    b.name = 'Taverna do ' + name;
+    for (const [u, v, o] of [[coast - 2, 4, O.CRATE], [coast - 2, 9, O.BARREL], [coast - 1, 10, O.CRATE], [H - 1, 4, O.LAMP], [H - 1, 9, O.LAMP], [coast - 3, 10, O.LAMP], [3, 2, O.BARREL], [4, 3, O.CRATE]]) { const i = at(u, v); if (!occ[i] || occ[i] === 2) objs[i] = o; }
+    st.lamps.push({ x: st.x0 + 4, y: st.y0 + ly(H - 1) });
+    st.npcSpots.push({ role: 'captain', x: st.x0 + 7, y: st.y0 + ly(H - 3) }, { role: 'citizen', x: st.x0 + 6, y: st.y0 + ly(coast - 4) }, { role: 'citizen', x: st.x0 + 3, y: st.y0 + ly(5) }, { role: 'guard', x: st.x0 + 7, y: st.y0 + ly(1) });
+    st.gates.push({ x: st.x0 + 7, y: dir > 0 ? st.y0 - 1 : st.y0 + H, dir: dir > 0 ? 'n' : 's' });
+    st.mid = { x: st.x0 + 7, y: st.y0 + ly(coast - 2) };
+    st.port.ship = { x: (st.x0 + 7) * 16 + 8, y: (st.y0 + ly(H - 1) + dir * 4) * 16 + 8 };
+    st.port.dock = { x: st.x0 + 7, y: st.y0 + ly(H - 3) };
+    this.addStamp({ x0: st.x0, y0: st.y0, w: W, h: H, tiles, objs });
+    this.settlements.push(st); this.ports.push(st);
   }
   placePorts(rng) {
     this.ports = [];
@@ -841,7 +966,7 @@ class World {
     for (let y = by; y < by + B.h; y++) for (let x = bx; x < bx + B.w; x++) { objs[y * size + x] = O.BLOCK; occ[y * size + x] = 1; }
     for (let y = by - 1; y <= by + B.h; y++) for (let x = bx - 1; x <= bx + B.w; x++) if (x >= 0 && y >= 0 && x < size && y < size && !occ[y * size + x]) occ[y * size + x] = 4;
     const reg = s.region;
-    const styleMap = { human: 'timber', halfling: 'round', elf: 'elven', dwarf: 'stone', nordic: 'log', orc: 'hide', desert: 'adobe', swamp: 'stilt', fort: 'stone', tide: 'adobe', infernal: 'stone', jade: 'elven' };
+    const styleMap = { human: 'timber', halfling: 'round', elf: 'elven', dwarf: 'stone', nordic: 'log', orc: 'hide', desert: 'adobe', swamp: 'stilt', fort: 'stone', tide: 'adobe', infernal: 'stone', jade: 'elven', imperial: 'stone', giant: 'log', gnome: 'round' };
     let style = styleMap[reg.culture];
     let type = bt;
     if (bt === 'castle' || bt === 'palace') { if (style === 'hide') style = 'log'; if (style === 'round' || style === 'stilt') style = 'timber'; if (reg.culture === 'human') style = 'castle'; }
@@ -1015,7 +1140,7 @@ class World {
     }
   }
   markRoad(x, y) {
-    if (x < 1 || y < 1 || x >= WORLD_W - 1 || y >= WORLD_TILES - 1) return;
+    if (x < 1 || y < 1 || x >= WORLD_W - 1 || y >= WORLD_H - 1) return;
     const k = this.ckey(x >> 5, y >> 5);
     let s = this.roadTiles.get(k);
     if (!s) { s = new Set(); this.roadTiles.set(k, s); }
@@ -1074,7 +1199,7 @@ class World {
   }
   // Imagem do mapa-múndi gerada aos poucos
   startMapImage() {
-    const R = 256, step = WORLD_TILES / R;
+    const R = MAP_H, step = 16;
     this.mapCanvas = Sprites.cv(MAP_W, R);
     this.mapCtx = this.mapCanvas.getContext('2d');
     this.mapImg = this.mapCtx.createImageData(MAP_W, R);
@@ -1083,7 +1208,7 @@ class World {
   }
   stepMapImage(rows = 8) {
     if (this.mapDone || !this.mapImg) return;
-    const R = 256, step = this.mapStep, d = this.mapImg.data;
+    const R = MAP_H, step = this.mapStep, d = this.mapImg.data;
     for (let k = 0; k < rows && this.mapRow < R; k++, this.mapRow++) {
       const y = this.mapRow;
       for (let x = 0; x < MAP_W; x++) {

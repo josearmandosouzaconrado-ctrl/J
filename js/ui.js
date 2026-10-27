@@ -417,7 +417,7 @@ const UI = {
     const lines = {
       valdoria: 'Valdoria precisa de heróis. Fale com a Ordem da Aurora e a Guilda dos Heróis.', sylvaris: 'A floresta sussurra seu nome, Portador.', khazdurim: 'Hah! Volte quando tiver minério de verdade!',
       nordheim: 'Bem-vindo ao salão de Nordheim. Hidromel e honra para todos!', gorthak: 'Fale rápido, forasteiro.', zahrim: 'As areias contam histórias... e você será uma delas.',
-      ssarak: 'Sssseja bem-vindo, sangue-quente.', colinas: 'Aceita um segundo café da manhã?', talassa: 'As marés trouxeram você até nós, viajante de Eldoria.', azhkar: 'Ajoelhe-se diante do Império... ou saia.', shirokai: 'Seja bem-vindo. Que as cerejeiras guiem seus passos.', morvath: 'Cada espada conta neste bastião. Os mortos não dormem!'
+      ssarak: 'Sssseja bem-vindo, sangue-quente.', colinas: 'Aceita um segundo café da manhã?', talassa: 'As marés trouxeram você até nós, viajante de Eldoria.', aurelion: 'Todo caminho leva a Aurélion. Ajoelhe-se diante do Império.', gromhald: 'HAH! Tão pequeno! Sente-se, coma um javali inteiro.', lunethar: 'A lua nos contou que você viria.', rodafina: 'Cuidado onde pisa! Este chão é uma invenção minha.', kumari: 'A savana respeita quem tem coragem. Você tem?', azhkar: 'Ajoelhe-se diante do Império... ou saia.', shirokai: 'Seja bem-vindo. Que as cerejeiras guiem seus passos.', morvath: 'Cada espada conta neste bastião. Os mortos não dormem!'
     };
     const extra = st ? `<br><br><span class="dim">História atual: ${esc(st.title)}</span>` : '';
     const wtxt = War.castleOptions(b, opts);
@@ -740,29 +740,29 @@ const UI = {
     const W = Game.world, P = Game.player, M = Game.mods;
     const f = this.reg();
     const el = this.show('map', `<div class="mapwrap"><canvas id="mapcv"></canvas>
-      <div class="map-ui"><button class="sbtn" ${f(() => { this.mz = Math.min(12, this.mz * 1.5); this.drawMap(); })}>+</button><button class="sbtn" ${f(() => { this.mz = Math.max(1, this.mz / 1.5); this.drawMap(); })}>−</button><button class="sbtn" ${f(() => { this.mox = P.x / 256; this.moy = P.y / 256; this.drawMap(); })}>◎</button><button class="sbtn" ${f(() => this.close())}>✕</button></div>
+      <div class="map-ui"><button class="sbtn" ${f(() => { this.mz = Math.min(12, this.mz * 1.5); this.drawMap(); })}>+</button><button class="sbtn" ${f(() => { this.mz = Math.max(0.5, this.mz / 1.5); this.drawMap(); })}>−</button><button class="sbtn" ${f(() => { this.mox = P.x / 256; this.moy = P.y / 256; this.drawMap(); })}>◎</button><button class="sbtn" ${f(() => this.close())}>✕</button></div>
       <div class="map-info" id="mapinfo"></div></div>`, { cls: 'full' });
     this.bind(el, f);
     const cv = document.getElementById('mapcv');
     cv.width = window.innerWidth; cv.height = window.innerHeight;
     this.mcv = cv; this.mctx = cv.getContext('2d');
-    if (!this.mz) this.mz = Math.max(1.5, Math.min(cv.width / MAP_W, cv.height / 256) * 1.1);
+    if (!this.mz) this.mz = Math.max(1.2, Math.min(cv.width / MAP_W, cv.height / 256) * 1.1);
     const wp0 = Game.level.isWorld ? P : (Game.worldPos || P);
     this.mox = wp0.x / 256; this.moy = wp0.y / 256;
     // névoa
-    const fog = Sprites.cv(MAP_W, 256), fx = fog.getContext('2d'), img = fx.createImageData(MAP_W, 256);
-    for (let i = 0; i < MAP_W * 256; i++) { img.data[i * 4 + 3] = M.explored[i] ? 0 : 205; img.data[i * 4] = 20; img.data[i * 4 + 1] = 16; img.data[i * 4 + 2] = 28; }
+    const fog = Sprites.cv(MAP_W, MAP_H), fx = fog.getContext('2d'), img = fx.createImageData(MAP_W, MAP_H);
+    for (let i = 0; i < MAP_W * MAP_H; i++) { img.data[i * 4 + 3] = M.explored[i] ? 0 : 205; img.data[i * 4] = 20; img.data[i * 4 + 1] = 16; img.data[i * 4 + 2] = 28; }
     fx.putImageData(img, 0, 0);
     this.fog = fog;
     // interação: arrastar/pinçar/tocar
     let drag = null, pinch = null, moved = false;
     const pt = e => e.touches ? [...e.touches].map(t => [t.clientX, t.clientY]) : [[e.clientX, e.clientY]];
     const start = e => { e.preventDefault(); const p = pt(e); moved = false; if (p.length >= 2) pinch = { d: Math.hypot(p[0][0] - p[1][0], p[0][1] - p[1][1]), z: this.mz }; else drag = { x: p[0][0], y: p[0][1], ox: this.mox, oy: this.moy }; };
-    const move = e => { e.preventDefault(); const p = pt(e); if (pinch && p.length >= 2) { this.mz = clamp(pinch.z * Math.hypot(p[0][0] - p[1][0], p[0][1] - p[1][1]) / pinch.d, 1, 12); moved = true; this.drawMap(); } else if (drag) { const dx = p[0][0] - drag.x, dy = p[0][1] - drag.y; if (Math.abs(dx) + Math.abs(dy) > 6) moved = true; this.mox = drag.ox - dx / this.mz; this.moy = drag.oy - dy / this.mz; this.drawMap(); } };
+    const move = e => { e.preventDefault(); const p = pt(e); if (pinch && p.length >= 2) { this.mz = clamp(pinch.z * Math.hypot(p[0][0] - p[1][0], p[0][1] - p[1][1]) / pinch.d, 0.5, 12); moved = true; this.drawMap(); } else if (drag) { const dx = p[0][0] - drag.x, dy = p[0][1] - drag.y; if (Math.abs(dx) + Math.abs(dy) > 6) moved = true; this.mox = drag.ox - dx / this.mz; this.moy = drag.oy - dy / this.mz; this.drawMap(); } };
     const end = e => { if (drag && !moved && !pinch) this.mapTap(drag.x, drag.y); drag = null; if (!e.touches || e.touches.length < 2) pinch = null; };
     cv.addEventListener('touchstart', start, { passive: false }); cv.addEventListener('touchmove', move, { passive: false }); cv.addEventListener('touchend', end);
     cv.addEventListener('mousedown', start); cv.addEventListener('mousemove', e => { if (drag) move(e); }); cv.addEventListener('mouseup', end);
-    cv.addEventListener('wheel', e => { e.preventDefault(); this.mz = clamp(this.mz * (e.deltaY < 0 ? 1.2 : 1 / 1.2), 1, 12); this.drawMap(); }, { passive: false });
+    cv.addEventListener('wheel', e => { e.preventDefault(); this.mz = clamp(this.mz * (e.deltaY < 0 ? 1.2 : 1 / 1.2), 0.5, 12); this.drawMap(); }, { passive: false });
     this.mapSel = null;
     this.drawMap();
   },
@@ -781,11 +781,11 @@ const UI = {
     ctx.fillStyle = '#10182a'; ctx.fillRect(0, 0, cw, ch);
     ctx.imageSmoothingEnabled = false;
     if (!W.mapDone) { while (!W.mapDone) W.stepMapImage(32); }
-    ctx.drawImage(W.mapCanvas, ox, oy, MAP_W * z, 256 * z);
-    ctx.drawImage(this.fog, ox, oy, MAP_W * z, 256 * z);
+    ctx.drawImage(W.mapCanvas, ox, oy, MAP_W * z, MAP_H * z);
+    ctx.drawImage(this.fog, ox, oy, MAP_W * z, MAP_H * z);
     const toS = (tx, ty) => [ox + tx / 16 * z, oy + ty / 16 * z];
     ctx.font = 'bold 22px VT323, monospace'; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,240,200,0.4)';
-    { let [x, y] = toS(2048, 120); ctx.fillText('ELDORIA', x, y); [x, y] = toS(5180, 120); ctx.fillText('KAELORIA', x, y); [x, y] = toS(4250, 2048); ctx.font = 'italic 16px VT323, monospace'; ctx.fillStyle = 'rgba(200,230,255,0.45)'; ctx.fillText('Mar das Brumas', x, y); }
+    { let [x, y] = toS(2048, 120); ctx.fillText('ELDORIA', x, y); [x, y] = toS(5180, 120); ctx.fillText('KAELORIA', x, y); [x, y] = toS(4250, 2048); ctx.font = 'italic 16px VT323, monospace'; ctx.fillStyle = 'rgba(200,230,255,0.45)'; ctx.fillText('Mar das Brumas', x, y); [x, y] = toS(3000, 4250); ctx.fillText('Oceano do Sul', x, y); ctx.font = 'bold 22px VT323, monospace'; ctx.fillStyle = 'rgba(255,240,200,0.4)'; [x, y] = toS(3080, 4700); ctx.fillText('VALTHERIA', x, y); }
     ctx.font = 'bold 14px VT323, monospace'; ctx.textAlign = 'center';
     for (const r of W.regions) { const [x, y] = toS(r.cx, r.cy); ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillText(r.name.toUpperCase(), x + 1, y - 30 + 1); ctx.fillStyle = 'rgba(255,240,200,0.75)'; ctx.fillText(r.name.toUpperCase(), x, y - 30); }
     ctx.font = '15px VT323, monospace';
@@ -966,7 +966,7 @@ const UI = {
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
       const tx = ptx + x - N / 2, ty = pty + y - N / 2;
       let c;
-      if (L.isWorld && (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_TILES)) c = [20, 40, 80];
+      if (L.isWorld && (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_H)) c = [20, 40, 80];
       else if (L.isWorld && !L.chunks.has(L.ckey(tx >> 5, ty >> 5))) c = [16, 14, 24];
       else {
         c = this.tileRGB[L.tileAt(tx, ty)];

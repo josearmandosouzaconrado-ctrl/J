@@ -302,31 +302,32 @@ Object.assign(Game, {
       const sh = s.port.ship;
       if (sh.x < camX - 80 || sh.x > camX + this.vw + 80 || sh.y < camY - 80 || sh.y > camY + this.vh + 80) continue;
       const own = War.ownerOf(s), col = own && War.K[own] ? War.K[own].color : s.region.color;
-      const img = this.shipImg(col, s.port.dir < 0);
+      const img = this.shipImg(col, s.port.axis !== 'y' && s.port.dir < 0);
       const bob = Math.round(Math.sin(this.t * 1.5) * 1.5);
-      D.push({ y: sh.y + 10, img, x: sh.x - 36 + s.port.dir * 6, yy: sh.y - 52 + bob });
+      D.push({ y: sh.y + 10, img, x: sh.x - 36 + (s.port.axis === 'y' ? 0 : s.port.dir * 6), yy: sh.y - 52 + bob });
     }
   },
   captainTalk(a) {
     const P = this.player, here = a.s, W = this.world;
-    const others = (W.ports || []).filter(p => p.port.cont !== here.port.cont);
+    const others = (W.ports || []).filter(p => p.port.cont !== here.port.cont).sort((x, y) => x.port.cont - y.port.cont);
     const fee = 120;
     const look = a.look;
     const opts = others.map(o => ({ label: `⛵ Viajar para ${o.name} (${CONTINENTS[o.port.cont]}) — ${fee} ouro`, cls: 'gold', fn: () => { if (P.gold < fee) return this.toast('Ouro insuficiente.', '#ff8080'); P.gold -= fee; this.voyage(here, o, a); } }));
-    opts.push({ label: 'Como é o outro lado do mar?', fn: () => UI.dialog(a.name, look, here.port.cont === 0 ? 'Do outro lado do Mar das Brumas fica <b>Kaeloria</b>: o Reino de Talassa dos tritões, o Império de Azhkar dos tieflings e o Reino de Shirokai das kitsunes. Terras perigosas, mas cheias de riquezas!' : 'A oeste fica <b>Eldoria</b>, a terra dos nove reinos: humanos, elfos, anões, orcs, pequeninos, nórdicos, felinos e draconatos.', [{ label: 'Voltar', fn: () => this.captainTalk(a) }]) });
+    const lands = ['<b>Eldoria</b>: a terra dos nove reinos de humanos, elfos, anões, orcs, pequeninos, nórdicos, felinos e draconatos.', '<b>Kaeloria</b>, a leste do Mar das Brumas: Talassa dos tritões, Azhkar dos tieflings e Shirokai das kitsunes.', '<b>Valtheria</b>, o Grande Continente ao sul, maior que Eldoria: o Império de Aurélion, os meio-gigantes de Gromhald, os elfos da lua de Lunethar, os gnomos de Rodafina, os felinos de Kumari e o terrível Abismo de Umbraval.'];
+    opts.push({ label: 'Como são as outras terras?', fn: () => UI.dialog(a.name, look, lands.filter((_, i) => i !== here.port.cont).join('<br><br>'), [{ label: 'Voltar', fn: () => this.captainTalk(a) }]) });
     opts.push({ label: 'Tchau' });
-    UI.dialog(a.name, look, `Ahoy! Sou o capitão do <b>${esc(here.name)}</b>. Meu navio cruza o Mar das Brumas. A viagem leva meio dia.${P.horse ? '<br><span class="dim">Seu cavalo pode ir no porão.</span>' : ''}`, opts);
+    UI.dialog(a.name, look, `Ahoy! Sou o capitão do <b>${esc(here.name)}</b>. Meu navio leva você para além-mar. A viagem leva meio dia.${P.horse ? '<br><span class="dim">Seu cavalo pode ir no porão.</span>' : ''}`, opts);
   },
   voyage(from, to, cap) {
     const P = this.player;
     UI.close(); UI.fade();
     Academy.scene([
       { n: cap.name, look: cap.look, t: 'Levantar âncora! Içar as velas! Rumo ao Mar das Brumas!', fx: () => Sfx.play('quest') },
-      { n: 'Mar das Brumas', t: '<i>O navio corta as ondas. Gaivotas acompanham o casco e a névoa cobre o horizonte...</i>' },
-      { n: 'Mar das Brumas', t: '<i>À noite, o céu se enche de estrelas. Os marinheiros cantam velhas canções sobre serpentes marinhas.</i>' },
+      { n: to.port.cont === 2 || from.port.cont === 2 ? 'Oceano do Sul' : 'Mar das Brumas', t: '<i>O navio corta as ondas. Gaivotas acompanham o casco e a névoa cobre o horizonte...</i>' },
+      { n: to.port.cont === 2 || from.port.cont === 2 ? 'Oceano do Sul' : 'Mar das Brumas', t: '<i>À noite, o céu se enche de estrelas. Os marinheiros cantam velhas canções sobre serpentes marinhas.</i>' },
       { n: cap.name, look: cap.look, t: `Terra à vista! Bem-vindo(a) a ${esc(to.name)}.` }
     ], () => {
-      const d = to.port.dock, land = { x: to.mid.x * 16 + 8 - to.port.dir * 32, y: to.mid.y * 16 + 8 };
+      const d = to.port.dock, land = to.port.axis === 'y' ? { x: to.mid.x * 16 + 8, y: (to.mid.y - to.port.dir * 2) * 16 + 8 } : { x: to.mid.x * 16 + 8 - to.port.dir * 32, y: to.mid.y * 16 + 8 };
       P.mounted = false;
       P.x = land.x; P.y = land.y; this.findFree(P);
       if (P.horse) { P.horse.x = P.x - 20; P.horse.y = P.y + 8; }
@@ -338,7 +339,7 @@ Object.assign(Game, {
       this.mods.discovered.add(to.id);
       UI.fade();
       const first = !P.visitedCont || !P.visitedCont.includes(to.port.cont);
-      if (first) { P.visitedCont = (P.visitedCont || [0]).concat(to.port.cont); this.centerMsg(CONTINENTS[to.port.cont].toUpperCase(), 'Você atravessou o Mar das Brumas!'); this.chron(`Atravessei o Mar das Brumas e cheguei a ${CONTINENTS[to.port.cont]}, desembarcando em ${to.name}.`); P.addXP(150); }
+      if (first) { P.visitedCont = (P.visitedCont || [0]).concat(to.port.cont); this.centerMsg(CONTINENTS[to.port.cont].toUpperCase(), 'Você atravessou o mar!'); this.chron(`Atravessei o mar e cheguei a ${CONTINENTS[to.port.cont]}, desembarcando em ${to.name}.`); P.addXP(150); }
       else this.toast(`Você desembarcou em ${to.name}.`, '#a0e0ff');
       void d;
     });

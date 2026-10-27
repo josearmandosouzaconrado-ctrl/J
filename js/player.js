@@ -541,6 +541,19 @@ class Player extends Actor {
       case 'garras': this.addBuff('garras', 1, 20, A.name); this.addBuff('speed', 0.4, 20); break;
       case 'sangue_gelo': this.heal(this.stat.maxHp * 0.5); this.addBuff('sangue_gelo', 1, 15, A.name); break;
       case 'mare': this.heal(this.stat.maxHp * 0.35); this.fx = this.fx.filter(e => e.k !== 'poison'); this.addBuff('speed', 0.3, 15, A.name); Game.burst(this.x, this.y - 8, '#60c0ff', 24, 70); break;
+      case 'pisao': {
+        Game.shake = 8; Sfx.play('boom');
+        Game.fx.push({ kind: 'ring', x: this.x, y: this.y, r0: 6, r1: 75, t: 0, dur: 0.45, color: '#c0a070' });
+        for (let i = 0; i < 26; i++) { const a = Math.random() * Math.PI * 2, s = 50 + Math.random() * 90; Game.particle(this.x, this.y, Math.cos(a) * s, Math.sin(a) * s * 0.6, '#a08860', 0.6, 2, 60); }
+        for (const a of Combat.targetsOf(this)) if (dist(this.x, this.y, a.x, a.y) < 75) Combat.damage(a, 25 + this.level * 6, { src: this, stun: 1.6, kb: { x: Math.sign(a.x - this.x) * 120, y: Math.sign(a.y - this.y) * 120 } });
+        break;
+      }
+      case 'engenhoca': {
+        const bx = this.x + Math.cos(this.face) * 60, by = this.y + Math.sin(this.face) * 60;
+        Game.fx.push({ kind: 'telegraph', x: bx, y: by, r: 50, t: 0, dur: 0.6, color: '#ffa030', friendly: true });
+        Game.later(0.6, () => { Combat.explode(bx, by, 50, 30 + this.level * 7, this, { color: '#ff9030', kb: 120 }); Game.shake = 6; Sfx.play('boom'); });
+        break;
+      }
       case 'ilusao': this.invisible = 8; this.addBuff('sorte', 1, 8, A.name); Game.burst(this.x, this.y - 8, '#f0a060', 20, 50); break;
       case 'chama_infernal': {
         Game.fx.push({ kind: 'ring', x: this.x, y: this.y - 4, r0: 6, r1: 80, t: 0, dur: 0.5, color: '#ff4020' });
