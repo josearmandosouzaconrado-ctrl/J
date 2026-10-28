@@ -307,6 +307,7 @@ const Game = {
     War.update(dt);
     Naval.update(dt);
     if (this.level.isShip) this.level.update(dt);
+    Work.update(dt);
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();
@@ -909,7 +910,7 @@ const Game = {
       const o = L.objAt(tx, ty);
       const od = OBJ_DEFS[o];
       if (!o || !od.interact) continue;
-      const labels = { sleep: 'Dormir', destiny: 'Tocar', wardrobe: 'Baú', crib: 'Ver bebê', chest: 'Abrir', harvest: o >= O.ORE_FERRO && o <= O.ORE_EBANO ? 'Minerar' : 'Coletar', cook: 'Cozinhar', forge: 'Forjar', alchemy: 'Alquimia', runestone: 'Ler', shrine: 'Orar', dungeon: 'Entrar', exit: 'Sair', sign: 'Ler', hatch: L.isShip && L.floor ? 'Subir' : 'Descer', helm: 'Timão', shipbed: 'Dormir', maptable: 'Ver rota' };
+      const labels = { sleep: 'Dormir', destiny: 'Tocar', wardrobe: 'Baú', crib: 'Ver bebê', chest: 'Abrir', harvest: o >= O.ORE_FERRO && o <= O.ORE_EBANO ? 'Minerar' : 'Coletar', cook: 'Cozinhar', forge: 'Forjar', alchemy: 'Alquimia', runestone: 'Ler', shrine: 'Orar', dungeon: 'Entrar', exit: 'Sair', sign: 'Ler', minecart: 'Despejar', hatch: L.isShip && L.floor ? 'Subir' : 'Descer', helm: 'Timão', shipbed: 'Dormir', maptable: 'Ver rota' };
       let name = od.name;
       if (od.interact === 'dungeon' && L.isWorld) { const dd = this.world.entrances.get(tkey(tx, ty)); if (dd) name = `${dd.name} (Nv ${dd.lvl})`; }
       bd = d; best = { kind: od.interact, tx, ty, o, label: labels[od.interact] || 'Usar', name };
@@ -933,6 +934,10 @@ const Game = {
         else if (o === O.CROP && L.isWorld) best = { kind: 'reap', tx, ty, o, label: 'Colher', name: 'Trigo' };
       }
     }
+    // trabalhos: barril, lareira, canteiros, entrada da mina
+    const wi = Work.findInteract(fx, fy);
+    if (wi && (!best || best.kind !== 'npc' || wi.d < bd)) best = wi;
+    if (best && best.kind === 'npc' && best.a.workCust) best.label = best.a.workCust.state === 'wait' ? 'Servir' : 'Falar';
     if (!best && P.carrying) best = { kind: 'drop', label: 'Soltar', name: ENEMIES[P.carrying.eid].name };
     if (!best && L.isWorld && P.count('vara_pesca')) {
       for (const d of [10, 20]) {
@@ -979,6 +984,7 @@ const Game = {
       case 'sign': UI.sign(it.s); break;
       case 'chest': this.openChest(it.tx, it.ty, it.o); break;
       case 'harvest': {
+        if (L.isMine && Work.mineHit(it)) break;
         const h = OBJ_DEFS[it.o].harvest;
         const n = h.n[0] + Math.floor(Math.random() * (h.n[1] - h.n[0] + 1)) + (P.skill(h.skill) > 50 && Math.random() < 0.4 ? 1 : 0);
         P.addItem(Items.make(h.item, n));
@@ -998,6 +1004,8 @@ const Game = {
       case 'dungeon': { const d = this.world.entrances.get(tkey(it.tx, it.ty)); if (d) UI.confirm(`Entrar em <b>${esc(d.name)}</b>?<br><span class="dim">Nível recomendado: ${d.lvl}${this.mods.cleared[d.id] ? ' • Conquistada' : ''}</span>`, () => this.enterDungeon(d)); break; }
       case 'exit': this.exitDungeon(); break;
       case 'hatch': if (this.level.isShip) Ship.switchFloor(); break;
+      case 'work': Work.interact(it); break;
+      case 'minecart': Work.unload(); break;
       case 'shipbed': Ship.sleepPrompt(); break;
       case 'maptable': UI.openMap(); break;
       case 'helm': this.toast(this.level.isShip ? `O capitão segura o timão firme. Rumo: ${this.level.to.name} (${Math.round(this.level.progress() * 100)}%)` : 'Timão', '#c0e0ff'); break;
@@ -1162,6 +1170,7 @@ const Game = {
     const L = this.level;
     L.drawGround(ctx, camX, camY, vw, vh);
     if (L.isInterior) L.drawSunbeams(ctx, camX, camY);
+    Work.drawGround(ctx, camX, camY);
     // nuvens venenosas no chão
     for (const c of this.clouds) { ctx.fillStyle = 'rgba(120,220,60,0.18)'; ctx.beginPath(); ctx.ellipse(c.x - camX, c.y - camY, c.r, c.r * 0.6, 0, 0, Math.PI * 2); ctx.fill(); }
     // telegrafias no chão
@@ -1201,7 +1210,7 @@ const Game = {
     if (!P.dead || true) D.push({ y: P.y, a: P });
     for (const k of this.pickups) D.push({ y: k.y, pk: k });
     this.drawMountsCart(D); this.drawCarcasses(D);
-    if (L.isWorld) { War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); }
+    if (L.isWorld) { War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); }
     D.sort((a, b) => a.y - b.y);
     for (const d of D) {
       if (d.a) d.a.draw(ctx, camX, camY);
@@ -1217,6 +1226,7 @@ const Game = {
     for (const f of this.fx) this.drawFx(ctx, f, camX, camY);
     // clima
     if (L.drawOverlay) L.drawOverlay(ctx, camX, camY);
+    Work.drawOverlay(ctx, camX, camY);
     if (L.isWorld || (L.isShip && !L.floor)) this.drawWeather(ctx, vw, vh);
     // iluminação
     this.drawLighting(ctx, camX, camY);
@@ -1240,12 +1250,13 @@ const Game = {
   },
   trackedQuest() {
     const P = this.player; if (!P) return null;
+    if (Work.cur && Work.target()) return 'work';
     if (this.track === 'treasure') return this.mods.treasures.length ? 'treasure' : null;
     if (this.track === 'war') return War.orderTarget() ? 'war' : (Quests.mainStep() ? 'main' : null);
     if (this.track === 'main') return Quests.mainStep() ? 'main' : null;
     return P.quests.find(q => q.id === this.track) || (Quests.mainStep() ? 'main' : null);
   },
-  trackTarget(q) { return q === 'treasure' ? this.treasureTarget() : q === 'war' ? War.orderTarget() : q ? Quests.targetPos(q) : null; },
+  trackTarget(q) { return q === 'work' ? Work.target() : q === 'treasure' ? this.treasureTarget() : q === 'war' ? War.orderTarget() : q ? Quests.targetPos(q) : null; },
   treasureTarget() { const t = this.mods.treasures[this.mods.treasures.length - 1]; return t ? { x: t.x, y: t.y, name: 'Tesouro' } : null; },
   drawPickup(ctx, k, camX, camY) {
     const x = Math.round(k.x - camX), y = Math.round(k.y - camY + k.z + Math.sin(this.t * 4 + k.x) * 1.5 - 4);

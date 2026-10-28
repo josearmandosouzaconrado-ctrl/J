@@ -227,7 +227,8 @@ Object.assign(UI, {
     for (const [id, J] of here) {
       if (P.job && P.job.id === id && P.job.sid === s.id) {
         const rank = JOB_RANKS[Game.jobRank(P.job)][0];
-        opts.push({ label: `💼 Trabalhar um turno: ${J.name} (4h, ~${Game.jobPay(id)} ouro)`, cls: 'gold', fn: () => { if (Game.workShift(b)) this.building(b); } });
+        if (Work.isActive(id)) opts.push({ label: `💼 Começar turno: ${J.name} <span class="dim">(${{ taverneiro: 'servir as mesas', fazendeiro: 'plantar e colher', minerador: 'minerar na mina' }[id]}, ~${Math.round(Game.jobPay(id) * 1.4)} ouro + gorjetas)</span>`, cls: 'gold', fn: () => Work.start(b, id) });
+        else opts.push({ label: `💼 Trabalhar um turno: ${J.name} (4h, ~${Game.jobPay(id)} ouro)`, cls: 'gold', fn: () => { if (Game.workShift(b)) this.building(b); } });
         opts.push({ label: `Pedir demissão (${rank}, ${P.job.shifts} turnos)`, cls: 'danger', fn: () => this.confirm(`Pedir demissão do cargo de ${J.name}?`, () => { Game.chron(`Deixei o emprego de ${J.name} em ${s.name}.`); P.job = null; this.building(b); }, () => this.building(b)) });
       } else {
         opts.push({ label: `💼 Pedir emprego: ${J.name} <span class="dim">(${J.desc} ~${Game.jobPay(id)} ouro/turno)</span>`, fn: () => {

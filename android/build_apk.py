@@ -28,8 +28,8 @@ OUT = os.path.join(ROOT, 'CronicasDeEldoria.apk')
 PACKAGE = 'com.eldoria.cronicas'
 ACTIVITY = PACKAGE + '.MainActivity'
 APP_NAME = 'Crônicas de Eldoria'
-VERSION_CODE = 9
-VERSION_NAME = '0.9.0-beta'
+VERSION_CODE = 10
+VERSION_NAME = '0.9.1-beta'
 MIN_SDK, TARGET_SDK = 24, 34
 WEB_FILES = ['index.html', 'manifest.json', 'css', 'js', 'icons']
 

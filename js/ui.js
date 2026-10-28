@@ -260,6 +260,7 @@ const UI = {
   talkNPC(a) {
     const P = Game.player;
     if (a.shipCrew) return Ship.talk(a);
+    if (a.workCust) return Work.serve(a);
     if (a.guard) {
       const s = a.guardOf;
       const lines = GUARD_LINES.concat(s ? RUMORS[s.region.id] : []);
@@ -946,10 +947,12 @@ const UI = {
     // rastreador e bússola
     const q = Game.trackedQuest();
     let tt = '', tgt = null;
-    if (q === 'main') { const st = Quests.mainStep(); tt = `<b class="gold">★ ${esc(st.title)}</b>`; tgt = Quests.targetPos('main'); }
+    if (q === 'work') { tgt = Work.target(); }
+    else if (q === 'main') { const st = Quests.mainStep(); tt = `<b class="gold">★ ${esc(st.title)}</b>`; tgt = Quests.targetPos('main'); }
     else if (q === 'treasure') { tt = '<b class="gold">✖ Tesouro escondido</b>'; tgt = Game.treasureTarget(); }
     else if (q === 'war') { tgt = War.orderTarget(); tt = `<b class="gold">⚔ Ordens</b><br><small>Junte-se ao exército ${esc(tgt ? tgt.name : '')}</small>`; }
     else if (q) { tt = `<b>${esc(q.title)}</b><br><small>${esc(Quests.progressText(q))}</small>`; tgt = Quests.targetPos(q); }
+    if (Work.cur) tt = Work.trackerText();
     this.setText('tracker', tt);
     if (tgt && Game.level.isWorld) {
       const dx = tgt.x * 16 + 8 - P.x, dy = tgt.y * 16 - P.y;

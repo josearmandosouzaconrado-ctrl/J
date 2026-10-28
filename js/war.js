@@ -488,7 +488,7 @@ const War = {
     // inimigo colado: calar baionetas e lutar corpo a corpo
     const close = this.nearFoe(m, 34);
     if (close) {
-      if (!m.fixed) { m.fixed = true; if (Math.random() < 0.35) Game.floater(m.x, m.y - 28, 'Baionetas!', '#ffd0a0', 0.8); }
+      if (!m.fixed) { m.fixed = true; if (Math.random() < 0.35) Game.floater(m.x, m.y - 28, 'Baionetas!', '#ffd0a0'); }
       m.target = close; m.fireDelay = undefined;
       const dd = dist(m.x, m.y, close.x, close.y), reach = m.r + close.r + 15;
       if (dd > reach) m.moveToward(close.x, close.y, m.spd * 0.9 * sf, dt);
@@ -509,7 +509,7 @@ const War = {
     const g = this.volleys[key] || (this.volleys[key] = { t: 2 + Math.random() * 1.5, said: false, fireT: -9, stamp: -1 });
     if (g.stamp !== Game.t) {
       g.stamp = Game.t; g.t -= dt;
-      if (g.t < 1.3 && !g.said) { g.said = true; Game.floater(m.x, m.y - 30, 'Apontar!', '#ffe0a0', 0.8); }
+      if (g.t < 1.3 && !g.said) { g.said = true; Game.floater(m.x, m.y - 30, 'Apontar!', '#ffe0a0'); }
       if (g.t <= 0) { g.t = 4 + Math.random() * 1.2; g.said = false; g.fireT = Game.t; Game.floater(m.x, m.y - 30, 'FOGO!', '#ff9060', 1); }
     }
     const ready = off <= 14 && d < 380;
