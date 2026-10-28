@@ -130,7 +130,7 @@ Object.assign(UI, {
     if (!P.houses.length) { this.dialog(b.owner.name, this.ownerLook(b), 'Para adotar uma criança você precisa ter uma casa. Casas são vendidas nas capitais.', [{ label: 'Voltar', fn: () => this.building(b) }]); return; }
     if ((P.children || []).length >= 4) { this.dialog(b.owner.name, this.ownerLook(b), 'Sua família já é grande! Cuide bem deles.', [{ label: 'Voltar', fn: () => this.building(b) }]); return; }
     const rng = new RNG(Date.now() & 0xffffff);
-    const kids = [0, 1, 2].map(() => { const race = rng.pick(Object.keys(RACES)), sex = rng.chance(0.5) ? 'm' : 'f'; const look = npcLook(race, sex, rng, 'kid'); look.short = 3; look.blush = true; delete look.beard; return { id: 'k' + uid(), name: rng.pick(NAMES[race][sex]), race, sex, look, born: Game.day - 5 }; });
+    const kids = [0, 1, 2].map(() => { const race = rng.pick(playableRaces()), sex = rng.chance(0.5) ? 'm' : 'f'; const look = npcLook(race, sex, rng, 'kid'); look.short = 3; look.blush = true; delete look.beard; return { id: 'k' + uid(), name: rng.pick(NAMES[race][sex]), race, sex, look, born: Game.day - 5 }; });
     const f = this.reg();
     const el = this.show('adopt', `<div class="panel"><div class="ptitle">Orfanato do Templo</div><p>Estas crianças esperam por uma família. Custo de 100 ouro (doação ao templo).</p>
       <div class="adopt">${kids.map(k => `<div class="choice">${this.portrait(k.look)}<span>${esc(k.name)}</span><small class="dim">${RACES[k.race].name}</small><button class="sbtn gold" ${f(() => {

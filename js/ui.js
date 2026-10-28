@@ -37,7 +37,7 @@ const UI = {
     if (!look) return '';
     const k = JSON.stringify(look);
     let u = this.portraitCache.get(k);
-    if (!u) { const S = Sprites.actor(look); const img = S.down ? S.down[0] : S.right[0]; const c = Sprites.scale(img, 4); u = c.toDataURL(); this.portraitCache.set(k, u); }
+    if (!u) { const S = Sprites.actor(look); const img = S.down ? S.down[0] : S.right[0]; const c = Sprites.scale(img, 4); u = c.toDataURL(); if (!S.placeholder) this.portraitCache.set(k, u); }
     return `<img class="portrait" src="${u}">`;
   },
   // ---------- gerenciamento de telas ----------
@@ -110,7 +110,7 @@ const UI = {
           <button class="mbtn" ${f(() => this.help())}>Como Jogar</button>
           ${IS_APK ? '' : `<a class="mbtn apk hidden" id="apk-dl" href="CronicasDeEldoria.apk" download="CronicasDeEldoria.apk">📱 Baixar para Android (APK)<small>joga com a tela deitada</small></a>`}
         </div>
-        <div class="ver">Versão Beta ${GAME_VERSION} • 3 continentes • 18 reinos • 14 raças • guerras em terra e no mar</div>
+        <div class="ver">Versão Beta ${GAME_VERSION} • 3 continentes e uma ilha • 19 reinos • 15 raças • guerras em terra e no mar</div>
       </div>`, { cls: 'transparent' });
     this.bind(el, f);
     // só mostra o botão do APK se o arquivo existir neste servidor
@@ -154,7 +154,7 @@ const UI = {
             </div>
             <div class="create-right">
               <label>Raça</label>
-              <div class="choice-grid">${Object.entries(RACES).map(([k, r]) => `<button class="choice ${c.race === k ? 'on' : ''}" ${f(() => { c.race = k; c.name = ''; render(); })}>${this.portrait(this.previewLook(Object.assign({}, c, { race: k, skin: 0, hair: 0 })))}<span>${r.name}</span></button>`).join('')}</div>
+              <div class="choice-grid">${Object.entries(RACES).filter(([k, r]) => !r.npcOnly).map(([k, r]) => `<button class="choice ${c.race === k ? 'on' : ''}" ${f(() => { c.race = k; c.name = ''; render(); })}>${this.portrait(this.previewLook(Object.assign({}, c, { race: k, skin: 0, hair: 0 })))}<span>${r.name}</span></button>`).join('')}</div>
               <div class="desc"><b>${R.name}:</b> ${R.desc}<br><span class="dim">Habilidade: ${RACE_ABILITIES[R.ability].name} — ${RACE_ABILITIES[R.ability].desc}</span></div>
               <div class="desc"><b>Sem classe fixa.</b> Você começa como Aventureiro e decide jogando: quem usa espadas vira Guerreiro, quem lança magias vira Mago, quem atira flechas vira Arqueiro... Você também pode escolher uma bênção nas <b>Pedras do Destino</b> perto da capital.</div>
             </div>
@@ -800,7 +800,7 @@ const UI = {
     ctx.drawImage(this.fog, ox, oy, MAP_W * z, MAP_H * z);
     const toS = (tx, ty) => [ox + tx / 16 * z, oy + ty / 16 * z];
     ctx.font = 'bold 22px VT323, monospace'; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,240,200,0.4)';
-    { let [x, y] = toS(2048, 120); ctx.fillText('ELDORIA', x, y); [x, y] = toS(5180, 120); ctx.fillText('KAELORIA', x, y); [x, y] = toS(4250, 2048); ctx.font = 'italic 16px VT323, monospace'; ctx.fillStyle = 'rgba(200,230,255,0.45)'; ctx.fillText('Mar das Brumas', x, y); [x, y] = toS(3000, 4250); ctx.fillText('Oceano do Sul', x, y); ctx.font = 'bold 22px VT323, monospace'; ctx.fillStyle = 'rgba(255,240,200,0.4)'; [x, y] = toS(3080, 4700); ctx.fillText('VALTHERIA', x, y); }
+    { let [x, y] = toS(2048, 120); ctx.fillText('ELDORIA', x, y); [x, y] = toS(5180, 120); ctx.fillText('KAELORIA', x, y); [x, y] = toS(4250, 2048); ctx.font = 'italic 16px VT323, monospace'; ctx.fillStyle = 'rgba(200,230,255,0.45)'; ctx.fillText('Mar das Brumas', x, y); [x, y] = toS(3000, 4250); ctx.fillText('Oceano do Sul', x, y); ctx.font = 'bold 22px VT323, monospace'; ctx.fillStyle = 'rgba(255,240,200,0.4)'; [x, y] = toS(3080, 4700); ctx.fillText('VALTHERIA', x, y); ctx.fillStyle = 'rgba(200,160,255,0.55)'; [x, y] = toS(ISLE.x, ISLE.y - ISLE.ry * 1.5); ctx.fillText('NYXHAL', x, y); }
     ctx.font = 'bold 14px VT323, monospace'; ctx.textAlign = 'center';
     for (const r of W.regions) { const [x, y] = toS(r.cx, r.cy); ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillText(r.name.toUpperCase(), x + 1, y - 30 + 1); ctx.fillStyle = 'rgba(255,240,200,0.75)'; ctx.fillText(r.name.toUpperCase(), x, y - 30); }
     ctx.font = '15px VT323, monospace';

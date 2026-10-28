@@ -748,5 +748,5 @@ const Sprites = {};
     return c;
   }
 
-  S.init = function () { initTiles(); Sombra.load(); };
+  S.init = function () { initTiles(); Sombra.load(); Nyxar.load(); };
 })(Sprites);

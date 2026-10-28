@@ -119,6 +119,7 @@ class Actor {
   }
   frameIndex() { return this.moving ? 1 + (Math.floor(this.anim * 7) % 2) : 0; }
   drawBody(ctx, camX, camY, S) {
+    if (S.placeholder && S.real) { const r = S.real(); if (r) { S = this.S = r; this.h = r.h; } }
     let dk;
     if (S.type === 'hum') dk = this.dir; else dk = this.dir === 'left' || this.dir === 'right' ? this.dir : this.lastH;
     let f = S.type === 'hum' ? this.frameIndex() : (this.moving || this.fly ? 1 + (Math.floor(this.anim * 6) % 2) : 0);
@@ -583,6 +584,7 @@ class Monster extends Actor {
 // ---------- NPCs ----------
 function npcLook(race, sex, rng, role) {
   const R = RACES[race];
+  if (R.sheet) return Nyxar.look(sex, rng, role);
   const L = { k: 'hum', skin: rng.pick(R.skins), hair: rng.pick(R.hairs), hairStyle: sex === 'f' ? rng.pick([1, 1, 4, 0]) : rng.pick([0, 0, 2, 3, 0]) };
   if (R.ears) L.ears = R.ears;
   if (R.tall) L.tall = 1; if (R.short) L.short = R.short; if (R.bulky) L.bulky = true;
@@ -604,7 +606,7 @@ class NPC extends Actor {
     super(spot.x * 16 + 8, spot.y * 16 + 12);
     this.team = 'npc'; this.role = spot.role; this.s = s; this.home = { x: this.x, y: this.y };
     const cul = CULTURES[s.region.culture];
-    this.race = (s.type === 'capital' && rng.chance(0.3)) ? rng.pick(Object.keys(RACES)) : cul.race;
+    this.race = RACES[cul.race].npcOnly ? cul.race : (s.type === 'capital' && rng.chance(0.3)) ? rng.pick(playableRaces()) : cul.race;
     this.sex = rng.chance(0.5) ? 'm' : 'f';
     const N = NAMES[this.race];
     this.name = rng.pick(N[this.sex]) + ' ' + rng.pick(N.s);

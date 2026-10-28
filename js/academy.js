@@ -30,7 +30,7 @@ const Academy = {
       const t = R.id === 'colinas' ? (sex === 'f' ? 'Herdeira' : 'Herdeiro') : R.id === 'gorthak' ? (sex === 'f' ? 'Filha do Chefe' : 'Filho do Chefe') : (sex === 'f' ? 'Princesa' : 'Príncipe');
       add({ rank: 'royal', race, sex, name: `${t} ${first}`, title: `${t} de ${R.name}`, from: R.name, color: R.color });
     }
-    const races = Object.keys(RACES);
+    const races = playableRaces();
     for (let i = 0; i < 8; i++) {
       const race = rng.pick(races), sex = rng.chance(0.5) ? 'm' : 'f';
       const house = rng.pick(NAMES[race].s), first = rng.pick(NAMES[race][sex]);

@@ -496,6 +496,7 @@ const Game = {
             const look = Object.assign({}, ENEMIES.guarda.look, { body: shade(col, -0.25), helm: '#a0a8b0', shield: col, skin: rng.pick(RACES[CULTURES[s.region.culture].race].skins) });
             const cr = RACES[CULTURES[s.region.culture].race];
             if (cr.ears) look.ears = cr.ears; if (cr.tusks) look.tusks = true; if (cr.short) look.short = cr.short; if (cr.snout) look.snout = true; if (cr.tail) { look.tail = true; look.tailC = look.skin; } if (cr.catears) look.catears = true; if (cr.bulky) look.bulky = true;
+            if (cr.sheet) Object.keys(look).forEach(k => delete look[k]), Object.assign(look, Nyxar.look('m', rng, 'guard'));  // guardas Nyxar
             const own = War.ownerOf(s);
             if (own && War.K[own] && (own !== s.region.id || KSTYLE[own].musket)) { const lk = War.look(own, own === s.region.id ? rng.pick(['soldado', 'mosqueteiro']) : 'soldado', rng); a = new Monster('guarda', spot.x * 16 + 8, spot.y * 16 + 12, Math.max(10, P.level + 5), { look: lk, name: own === s.region.id ? 'Guarda de ' + s.name : 'Ocupante de ' + War.K[own].short }); }
             else a = new Monster('guarda', spot.x * 16 + 8, spot.y * 16 + 12, Math.max(10, P.level + 5), { look, name: 'Guarda de ' + s.name });
@@ -631,7 +632,7 @@ const Game = {
     const rng = new RNG(hashStr(s.id + ':' + b.tx + ',' + b.ty) + this.world.seed);
     const cul = CULTURES[s.region.culture];
     const n = b.kind === 'house3' ? rng.int(1, 2) : rng.int(1, 4);
-    const races = Object.keys(RACES);
+    const races = RACES[cul.race].npcOnly ? [cul.race] : playableRaces();  // na ilha de Nyxhal só vivem Nyxar
     const baseRace = rng.chance(0.85) ? cul.race : rng.pick(races);
     const fam = rng.pick(NAMES[baseRace].s);
     const res = [];
@@ -673,7 +674,7 @@ const Game = {
     for (const sp of L.spots) {
       let a;
       if (sp.role === 'guard') {
-        const look = Object.assign({}, ENEMIES.guarda.look, { body: shade(s.region.color, -0.25), shield: s.region.color });
+        const look = RACES[CULTURES[s.region.culture].race].sheet ? Nyxar.look('m', rng, 'guard') : Object.assign({}, ENEMIES.guarda.look, { body: shade(s.region.color, -0.25), shield: s.region.color });
         a = new Monster('guarda', sp.x * 16 + 8, sp.y * 16 + 12, Math.max(10, P.level + 5), { look, name: 'Guarda Real' });
         a.guardOf = s; const own = War.ownerOf(s); if (own) a.faction = own;
       } else {

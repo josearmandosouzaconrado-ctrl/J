@@ -13,6 +13,7 @@ const OBJ_ANIM = new Uint8Array(256);
 [O.CAMPFIRE, O.TORCH, O.RUNESTONE, O.FOUNTAIN, O.PORTAL, O.ALTAR, O.SHRINE, O.FORGE, O.FIREPLACE, O.CANDLE, O.CAULDRON, O.DESTINY, O.DESTINY2, O.DESTINY3, O.STOVE, O.OVEN, O.CLOCK, O.MACHINE, O.BOILER, O.GASLAMP, O.LANTERN].forEach(o => OBJ_ANIM[o] = 1);
 
 const ORE_BY_REGION = {
+  nyxhal: [O.ORE_OBSIDIANA, O.ORE_EBANO, O.ORE_OBSIDIANA],
   valdoria: [O.ORE_FERRO, O.ORE_FERRO, O.ORE_PRATA], colinas: [O.ORE_FERRO, O.ORE_PRATA], sylvaris: [O.ORE_PRATA, O.ORE_FERRO],
   khazdurim: [O.ORE_FERRO, O.ORE_OURO, O.ORE_PRATA, O.ORE_OURO], nordheim: [O.ORE_MALAQUITA, O.ORE_FERRO, O.ORE_MALAQUITA],
   gorthak: [O.ORE_OBSIDIANA, O.ORE_FERRO, O.ORE_OBSIDIANA], zahrim: [O.ORE_OURO, O.ORE_FERRO], ssarak: [O.ORE_FERRO, O.ORE_PRATA],
@@ -28,7 +29,7 @@ class World {
     this.nE = new Simplex(seed * 7 + 1); this.nM = new Simplex(seed * 7 + 2); this.nW = new Simplex(seed * 7 + 3);
     this.nR = new Simplex(seed * 7 + 4); this.nD = new Simplex(seed * 7 + 5); this.nL = new Simplex(seed * 7 + 6);
     this.regions = REGIONS.map(r => Object.assign({}, r, { cx: r.fx * WORLD_TILES, cy: r.fy * WORLD_TILES }));
-    this.regC = [[], [], []]; this.regions.forEach((r, i) => this.regC[r.cont || 0].push(i));
+    this.regC = [[], [], [], []]; this.regions.forEach((r, i) => this.regC[r.cont || 0].push(i));
     this.volcano = { x: VOLCANO.fx * WORLD_TILES, y: VOLCANO.fy * WORLD_TILES };
     this.chunks = new Map(); this.canvases = new Map();
     this.tick = 0;
@@ -73,6 +74,11 @@ class World {
       const d = Math.sqrt(nx * nx + ny * ny) * 0.72 + Math.max(Math.abs(nx), Math.abs(ny)) * 0.28 + this.nW.noise(x / 520, y / 520) * 0.07;
       if (d > 0.76) { const f = (d - 0.76) / 0.24; e -= f * f * 0.85; }
       if (y < VALTHERIA_Y + 500) { const f = (VALTHERIA_Y + 500 - y) / 500; e -= f * f; }   // oceano largo ao norte
+    } else if (cont === 3) {
+      // Ilha de Nyxhal: pequena, recortada e cercada de mar profundo
+      const nx = (x - ISLE.x) / ISLE.rx, ny = (y - ISLE.y) / ISLE.ry;
+      const d = Math.sqrt(nx * nx + ny * ny) + this.nW.noise(x / 160, y / 160) * 0.16;
+      if (d > 0.6) { const f = (d - 0.6) / 0.4; e -= f * f * 0.9 + (d > 1 ? 1 : 0); }
     } else {
       // Kaeloria: continente alongado do outro lado do Mar das Brumas
       const nx = (x - 5180) / 760, ny = (y - 2048) / 1780;
@@ -502,6 +508,7 @@ class World {
     this.placeDestiny();
     this.generateKaeloria();
     this.generateValtheria();
+    this.generateIsland();
     // placas
     for (const s of this.settlements) {
       for (const g of s.gates) {
@@ -579,6 +586,50 @@ class World {
       this.extendGate(ga, e.w); this.extendGate(gb, e.w);
     }
     this.roadEdges = this.roadEdges.concat(edges);
+  }
+  // Ilha de Nyxhal: capital, vila, porto ao sul, masmorras e santuário (só do povo Nyxar)
+  generateIsland() {
+    const rng = new RNG(this.seed * 71 + 13);
+    const R = this.regions.find(r => r.cont === 3); if (!R) return;
+    const names = SETTLEMENT_NAMES[R.id], pool = rng.shuffle(names.list.slice());
+    const made = [];
+    ['capital', 'village', 'village'].forEach((type, n) => {
+      const half = (type === 'capital' ? 50 : 24) / 2 + 4;
+      const ok = (x, y) => {
+        if (contAt(x, y) !== 3) return false;
+        let bad = 0;
+        for (const [dx, dy] of [[0, 0], [-half, -half], [half, -half], [-half, half], [half, half], [0, -half], [0, half], [-half, 0], [half, 0]]) { const t = this.baseTile(x + dx, y + dy); if (t === T.DEEP || t === T.LAVA) return false; if (TSOLID[t] || TWATER[t]) bad++; }
+        return bad <= 2 && this.farFrom(x, y, made, type === 'capital' ? 70 : 55);
+      };
+      const pos = this.findLand(ISLE.x, ISLE.y - 20, rng, type === 'capital' ? 70 : 170, ok) || this.findLand(ISLE.x, ISLE.y, rng, 230, ok);
+      if (!pos) return;
+      const st = { id: 'n' + n, name: type === 'capital' ? names.cap : (pool.pop() || 'Vila Nyxar'), type, region: R, x: pos.x, y: pos.y, cx: pos.x, cy: pos.y };
+      made.push(st); this.settlements.push(st);
+    });
+    for (const st of made) this.layoutSettlement(st);
+    let uid = this.dungeons.reduce((m, d) => Math.max(m, d.uid), 0) + 1;
+    const dl = [];
+    for (let i = 0; i < R.dungeons; i++) {
+      const pos = this.findLand(ISLE.x, ISLE.y, rng, 200, (x, y) => contAt(x, y) === 3 && this.isLand(x, y) && this.isLand(x, y + 1) && this._e < 0.69 && this.farFrom(x, y, made, 34) && this.farFrom(x, y, dl, 30));
+      if (!pos) continue;
+      const type = rng.pick(REGION_DUNGEONS[R.id]), dt = DUNGEON_TYPES[type];
+      const d = { id: 'nd' + uid, uid: uid++, name: dt.name + ' ' + rng.pick(DUNGEON_NOUNS), type, boss: dt.boss, lvl: rng.int(R.lvl[0], R.lvl[1]), size: rng.int(44, 56), x: pos.x, y: pos.y, region: R };
+      dl.push(d); this.stampDungeon(d); this.dungeons.push(d); this.dungeonById[d.id] = d;
+    }
+    const sp = this.findLand(ISLE.x, ISLE.y, rng, 180, (x, y) => contAt(x, y) === 3 && this.isLand(x, y) && this.isLand(x, y + 1) && this.farFrom(x, y, made, 40) && this.farFrom(x, y, dl, 20));
+    if (sp) { const pc = { id: 'nshrine', kind: 'shrine', x: sp.x, y: sp.y, region: R, name: 'Santuário dos Chifres' }; this.stampSmall(pc, O.SHRINE, rng); this.pois.push(pc); }
+    // porto na costa sul, para os navios dos outros continentes
+    const seaAt = (x, y) => { const t = this.baseTile(x, y); return TWATER[t] || t === T.DEEP; };
+    outer: for (let dx = 0; dx < 220; dx += 6) for (const xx of [ISLE.x + dx, ISLE.x - dx]) {
+      let y = ISLE.y; if (!this.isLand(xx, y)) continue;
+      while (y < ISLE.y + ISLE.ry * 1.3 && this.isLand(xx, y + 1)) y++;
+      let land = 0, sea = 0;
+      for (let k = 1; k <= 12; k++) { if (this.isLand(xx, y - k) && this.isLand(xx - 3, y - k) && this.isLand(xx + 3, y - k)) land++; if (seaAt(xx, y + k) && seaAt(xx - 3, y + k) && seaAt(xx + 4, y + k)) sea++; }
+      if (land < 11 || sea < 11 || !this.farFrom(xx, y, this.settlements, 30) || !this.farFrom(xx, y, this.dungeons, 16)) continue;
+      this.layoutPortV({ x: xx, y, R }, 3, 1, 'Porto de Nyxhal', 30, rng);
+      break outer;
+    }
+    this.buildRoads(rng, made.concat(this.ports.filter(p => p.port.cont === 3)), false);
   }
   generateValtheria() {
     const rng = new RNG(this.seed * 71 + 13);
@@ -992,7 +1043,7 @@ class World {
       else if (h < 0.09 && reg.culture === 'halfling') setO(x, y, O.BUSH);
     }
     // NPCs
-    const nCit = s.type === 'capital' ? 16 : s.type === 'town' ? 9 : 5;
+    const nCit = Math.ceil((s.type === 'capital' ? 16 : s.type === 'town' ? 9 : 5) * (RACES[cul.race] && RACES[cul.race].npcOnly ? 0.5 : 1));  // os Nyxar são grandes: menos gente na rua
     for (let i = 0; i < nCit; i++) s.npcSpots.push({ role: 'citizen', x: s.x0 + mid + rng.int(-pr, pr), y: s.y0 + mid + rng.int(-pr, pr) });
     const nGuard = (cul.guard || s.type === 'capital' || walled) ? (s.type === 'capital' ? 8 : s.type === 'town' ? 4 : 1) : 0;
     for (let i = 0; i < nGuard; i++) {

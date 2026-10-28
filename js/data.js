@@ -288,9 +288,13 @@ const REGIONS = [
     desc: 'Pântanos e templos afundados dos draconatos do sul.' },
   { id: 'umbraval', name: 'Abismo de Umbraval', short: 'Umbraval', race: null, fx: 0.757, fy: 2.527, biome: 'dead', lvl: [28, 40], mount: 0.03, culture: 'fort', cont: 2,
     ruler: null, towns: 2, villages: 0, dungeons: 16, color: '#604878', hostile: true,
-    desc: 'Uma ferida na terra de onde saem horrores antigos. Só os mais fortes voltam.' }
+    desc: 'Uma ferida na terra de onde saem horrores antigos. Só os mais fortes voltam.' },
+  // ----- Ilha de Nyxhal: território do povo Nyxar -----
+  { id: 'nyxhal', name: 'Domínio de Nyxhal', short: 'Nyxhal', race: 'nyxar', fx: 7350 / 4096, fy: 1500 / 4096, biome: 'dead', lvl: [18, 28], mount: 0.02, culture: 'nyx', cont: 3,
+    ruler: { title: 'Soberano', name: "Vhar'Zul, o Chifre Eterno", race: 'nyxar' }, towns: 1, villages: 1, dungeons: 2, color: '#7a3ac8',
+    desc: 'Ilha isolada do povo Nyxar: seres chifrudos de veias brilhantes que vivem entre cinzas e árvores mortas. Estrangeiros são tolerados, não bem-vindos.' }
 ];
-const CONTINENTS = ['Eldoria', 'Kaeloria', 'Valtheria'];
+const CONTINENTS = ['Eldoria', 'Kaeloria', 'Valtheria', 'Nyxhal'];
 const REGION_BY_ID = {}; REGIONS.forEach((r, i) => { r.index = i; REGION_BY_ID[r.id] = r; });
 const VOLCANO = { fx: 0.91, fy: 0.29 };
 
@@ -334,8 +338,13 @@ const RACES = {
     mods: { hp: 40, melee: 0.12, speed: -0.04 }, tall: 1, bulky: true, beard: true },
   gnomo: { name: 'Gnomo', desc: 'Inventores engenhosos. +30 Magia, +10% dano mágico e +15% ouro.', ability: 'engenhoca',
     skins: ['#f1c9a0', '#e0ac69', '#f8dcc8'], hairs: ['#e04080', '#40a0e0', '#f0f0f0', '#e0a020', '#60c060'],
-    mods: { mp: 30, magic: 0.1, gold: 0.15 }, short: 3 }
+    mods: { mp: 30, magic: 0.1, gold: 0.15 }, short: 3 },
+  // povo da Ilha de Nyxhal (não é escolhível na criação: só aparece como moradores)
+  nyxar: { name: 'Nyxar', desc: 'Povo chifrudo das sombras, de veias brilhantes, que vive só na Ilha de Nyxhal.', npcOnly: true, sheet: true,
+    skins: ['#2a2236'], hairs: ['#3a2050'], mods: {}, res: { dark: 0.3 }, horns: true }
 };
+// raças que o jogador pode escolher (e que aparecem misturadas nas cidades)
+function playableRaces() { return Object.keys(RACES).filter(k => !RACES[k].npcOnly); }
 const RACE_ABILITIES = {
   coragem: { name: 'Coragem Humana', desc: '+30% dano e -30% dano recebido por 30s.', cd: 120 },
   graca: { name: 'Graça Élfica', desc: 'Restaura toda a magia e regenera rapidamente por 20s.', cd: 120 },
@@ -777,6 +786,7 @@ const SPAWNS = {
   lunethar: { day: [['aranha', 3], ['lobo', 2], ['cervo', 3], ['urso', 2], ['espectro', 1], ['coelho', 2]], night: [['aranha', 3], ['espectro', 2], ['lobo', 2], ['cavaleiro_morto', 0.4], ['criatura_sombras', 1.2]] },
   rodafina: { day: [['automato', 3], ['goblin', 2], ['goblin_arqueiro', 1], ['javali', 2], ['coelho', 3], ['slime', 2]], night: [['automato', 2], ['goblin_xama', 1], ['esqueleto', 2], ['lobo', 2], ['criatura_sombras', 0.5]] },
   kumari: { day: [['escorpiao', 3], ['lobo', 2], ['javali', 2], ['cervo', 2], ['bandido', 1], ['mumia', 0.6]], night: [['escorpiao', 2], ['mumia', 2], ['esqueleto', 2], ['lobo', 2], ['criatura_sombras', 0.8]] },
+  nyxhal: { day: [['lobo', 2], ['aranha', 3], ['espectro', 1], ['javali', 1], ['cervo', 1]], night: [['aranha', 3], ['espectro', 2], ['esqueleto', 2], ['lobo', 2]] },
   umbraval: { day: [['cavaleiro_morto', 2], ['espectro', 3], ['troll', 2], ['cultista', 2], ['golem_pedra', 1]], night: [['cavaleiro_morto', 3], ['espectro', 3], ['esqueleto_arqueiro', 2], ['necromante', 0.3], ['criatura_sombras', 2.0]] },
   talassa: { day: [['pirata', 3], ['pirata_arqueiro', 1.5], ['lobo', 2], ['javali', 2], ['cervo', 3], ['coelho', 2], ['slime', 1], ['lagarto', 1]], night: [['pirata', 2], ['esqueleto', 2], ['zumbi', 1], ['lobo', 2]] },
   azhkar: { day: [['diabrete', 3], ['cultista_infernal', 2], ['salamandra', 2], ['slime_fogo', 2], ['escorpiao', 1], ['oni', 0.4]], night: [['diabrete', 3], ['esqueleto', 2], ['cultista_infernal', 2], ['elemental_fogo', 0.6], ['oni', 0.5]] },
@@ -819,6 +829,7 @@ const REGION_DUNGEONS = {
   rodafina: ['mina_ana', 'caverna', 'covil_goblin', 'covil_bandido'],
   kumari: ['tumba_deserto', 'tumba_deserto', 'caverna', 'covil_bandido'],
   umbraval: ['cripta_sombria', 'cripta_sombria', 'caverna_lava', 'cripta'],
+  nyxhal: ['cripta_sombria', 'caverna'],
   talassa: ['caverna', 'covil_bandido', 'ruina_afundada', 'cripta'],
   azhkar: ['caverna_lava', 'caverna_lava', 'cripta_sombria', 'covil_bandido'],
   shirokai: ['ruina_elfica', 'caverna', 'cripta', 'covil_bandido'],
@@ -883,6 +894,7 @@ const GUILDS = {
 // ---------- Nomes ----------
 const NAMES = {
   gigante: { m: ['Ulfgar', 'Brakk', 'Torvald', 'Hrodmar', 'Grom', 'Bjarki', 'Stigr', 'Orrin'], f: ['Hilda', 'Brunna', 'Ragna', 'Sigrun', 'Tova', 'Gerda', 'Astra'], s: ['Pedra-Viva', 'Ombro-de-Montanha', 'Passo-Trovão', 'Punho-de-Rocha', 'Barba-de-Neve'] },
+  nyxar: { m: ["Vhar'Zul", 'Kragnar', "Ozh'Ral", 'Thurvak', 'Nyxor', 'Zhaal', 'Mordrak', "Vex'Thar", 'Ulgoth'], f: ['Nyxa', "Zhae'Ra", 'Vorana', 'Ishkha', 'Mor\'Veth', 'Sylvhar', 'Kaelith', 'Vashra'], s: ['Chifre-Negro', 'Veia-de-Luz', 'Garra-Antiga', 'da Cinza', 'Olho-Violeta', 'Sombra-Viva', 'Osso-Pálido'] },
   gnomo: { m: ['Fizbo', 'Tinkel', 'Bimbo', 'Zook', 'Pipo', 'Gimble', 'Nim', 'Wizzle'], f: ['Pimpa', 'Tilly', 'Zinnia', 'Bixie', 'Lulu', 'Fifi', 'Mirra'], s: ['Engrenagem', 'Parafuso', 'Mola-Torta', 'Faísca', 'Chaleira', 'Vapor-Doce'] },
   tritao: { m: ['Nerion', 'Thalos', 'Coralim', 'Marek', 'Pelágio', 'Ondino', 'Tritonel', 'Abissal', 'Netuno', 'Doris'], f: ['Nerissa', 'Maris', 'Ondina', 'Pérola', 'Coralina', 'Thalassa', 'Sirene', 'Anfitrite', 'Brisa'], s: ['das Ondas', 'Maré-Alta', 'Escama-Azul', 'Concha-Branca', 'do Recife', 'Espuma-do-Mar'] },
   tiefling: { m: ['Malakar', 'Zevrah', 'Kael', 'Morthis', 'Azazir', 'Belath', 'Vexor', 'Draven', 'Asmon'], f: ['Lilith', 'Nyxa', 'Seraxa', 'Velka', 'Morrigan', 'Zariel', 'Ishara', 'Kassia', 'Vesper'], s: ['Chama-Negra', 'do Abismo', 'Pacto-Rubro', 'Cinza-Eterna', 'Coração-de-Brasa', 'Sangue-Antigo'] },
@@ -916,6 +928,7 @@ const SETTLEMENT_NAMES = {
   rodafina: { cap: 'Rodafina', list: ['Engrenópolis', 'Vila Parafuso', 'Moinho Giratório', 'Chaleira Alta', 'Faísca Verde', 'Torre do Relógio', 'Mola Feliz', 'Colina Vapor', 'Caldeirão Doce', 'Toca Inventiva', 'Bobina'] },
   kumari: { cap: 'Kumari', list: ['Cânion Dourado', 'Oásis do Leão', 'Pedra do Sol', 'Rio Seco', 'Juba Vermelha', 'Baobá Velho', 'Savana Alta', 'Toca da Leoa', 'Vale das Hienas', 'Duna Rubra'] },
   umbraval: { cap: 'Bastião de Umbraval', list: ['Último Farol', 'Posto da Vigília'] },
+  nyxhal: { cap: 'Vhar Nyxhal', list: ['Garra do Crepúsculo', 'Vale das Cinzas Frias', 'Chifre Partido', 'Ninho de Osso'] },
   talassa: { cap: 'Talassa', list: ['Porto Coral', 'Enseada Azul', 'Recife Branco', 'Baía das Pérolas', 'Farol do Norte', 'Vila Concha', 'Maré Baixa', 'Rochedo das Sereias', 'Areia Clara'] },
   azhkar: { cap: 'Azhkar', list: ['Forja Rubra', 'Cinzaval', 'Torre do Pacto', 'Vale do Enxofre', 'Brasa Negra', 'Pedra Sangrenta', 'Fenda Ardente'] },
   shirokai: { cap: 'Shirokai', list: ['Vila Sakura', 'Monte Kaze', 'Ponte da Lua', 'Templo do Bambu', 'Vale das Lanternas', 'Rio Jade', 'Aldeia Kitsune', 'Colina do Chá'] },
@@ -937,6 +950,7 @@ const CULTURES = {
   giant: { plaza: T.DCOBBLE, street: T.DCOBBLE, wall: T.PALISADE, walls: ['capital', 'town'], houseWall: 'log', roof: ['#e8eef4', '#d8e0e8'], wallC: '#7a5a3a', race: 'gigante', snowroof: true, guard: true },
   gnome: { plaza: T.COBBLE, street: T.COBBLE, wall: null, walls: [], houseWall: 'round', roof: ['#e04080', '#40a0e0', '#e0c030', '#60c060', '#a060e0'], wallC: '#f0e0c0', race: 'gnomo', flowers: true },
   tide: { plaza: T.SANDSTONE, street: T.SANDSTONE, wall: T.WALL, walls: ['capital'], houseWall: 'adobe', roof: ['#f0f0f0', '#3a7ac0', '#e8e0d0'], wallC: '#f0ece0', race: 'tritao', domes: true, guard: true },
+  nyx: { plaza: T.DCOBBLE, street: T.DCOBBLE, wall: T.WALL, walls: ['capital', 'town'], houseWall: 'stone', roof: ['#2a1a3a', '#3a2050', '#1a1a24'], wallC: '#3a3448', race: 'nyxar', guard: true },
   infernal: { plaza: T.DCOBBLE, street: T.DCOBBLE, wall: T.WALL, walls: ['capital', 'town'], houseWall: 'stone', roof: ['#3a1a1a', '#5a1a2a', '#2a2a2a'], wallC: '#5a4040', race: 'tiefling', guard: true },
   jade: { plaza: T.COBBLE, street: T.COBBLE, wall: T.WALL, walls: ['capital', 'town'], houseWall: 'timber', roof: ['#c03030', '#2a6a4a', '#3a3a3a'], wallC: '#f0e8d8', race: 'kitsune', flowers: true, guard: true },
   human: { plaza: T.COBBLE, street: T.COBBLE, wall: T.WALL, walls: ['capital', 'town'], houseWall: 'timber', roof: ['#a03a2a', '#8a4a2a', '#6a3a2a', '#9a5a3a'], wallC: '#e8dcc0', race: 'humano', guard: true },
@@ -1038,6 +1052,7 @@ const RUMORS = {
   lunethar: ['As árvores de Lunethar brilham na lua cheia.', 'Os elfos da lua não falam com os elfos de Sylvaris há mil anos.', 'Uma coruja branca guia os perdidos no bosque.', 'Aranhas gigantes guardam as ruínas antigas.'],
   rodafina: ['A Grão-Inventora construiu um pássaro de metal que voa!', 'Cuidado com os autômatos desregulados nas colinas.', 'Um gnomo inventou uma chaleira que faz chá sozinha.', 'Os moinhos de Rodafina giram até sem vento.'],
   kumari: ['A Rainha-Leoa caça sozinha nas savanas.', 'Hienas e escorpiões tornam a savana perigosa à noite.', 'Os cânions dourados escondem tumbas antigas.', 'Aurélion quer nossas minas de ouro.'],
+  nyxhal: ['Os estrangeiros podem ficar até o amanhecer. Depois disso, depende do Soberano.', 'Nossas veias brilham mais quando estamos com raiva. Cuidado.', 'Somos o povo mais antigo deste mar. Os outros chegaram depois.', "Vhar'Zul governa esta ilha há trezentos anos.", 'A Criatura das Sombras de Valtheria? Não é parente nossa, por mais que pareça.', 'A cinza da ilha é boa para o nosso couro e para nada mais.'],
   umbraval: ['O Abismo cresce um pouco a cada ano.', 'Nenhum explorador que desceu ao Abismo voltou inteiro.', 'Dizem que algo enorme respira lá embaixo.'],
   talassa: ['Os navios de Eldoria chegam ao nosso porto toda semana.', 'Dizem que piratas escondem tesouros nas cavernas do litoral.', 'A Rainha Nerissa canta para acalmar as tempestades.', 'Azhkar cobiça nossos portos há séculos.', 'As pérolas de Talassa valem mais que ouro em Eldoria.'],
   azhkar: ['O Imperador Malakar não perdoa traidores.', 'Os diabretes saem das fendas de lava à noite.', 'Um pacto antigo protege as muralhas da capital.', 'Os onis das montanhas são mais fortes que dez soldados.', 'Nossas lâminas são forjadas no fogo do abismo.'],
