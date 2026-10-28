@@ -1,7 +1,8 @@
 """Modelos e texturas detalhados da Guerra Moderna (estilo "boneco de Minecraft bem acabado").
 
-- Soldados com rosto (pele, olhos, cabelo), uniforme em camadas, cinto, coldre, correias,
-  dragonas, botas altas e chapéu/capacete próprio de cada facção.
+- Soldados: o corpo é o modelo do jogador (tools/modelos/soldado_base.geo.json, cubos e UV intactos);
+  aqui só entram a pintura (rosto, túnica, cinto, botas...) e os acessórios nos ossos vazios
+  (chapéu/capacete em "helmet", arma em "rightItem", coldre e sabre no corpo).
 - Tanque e blindado com saias laterais, faróis, escapamento, tambores, blindagem reativa e número pintado.
 - Texturas pintadas em resolução dobrada (2 pixels por unidade de UV).
 """
@@ -14,6 +15,11 @@ PELES = [
     {"pele": (190, 136, 96), "sombra": (160, 108, 74), "cabelo": (40, 28, 20), "olho": (70, 50, 30)},
     {"pele": (118, 78, 52), "sombra": (92, 60, 40), "cabelo": (20, 14, 10), "olho": (40, 28, 20)},
 ]
+
+
+def tam_uv_cubo(cu):
+    w, h, d = (int(round(v)) for v in cu["s"])
+    return 2 * (w + d), d + h
 
 
 def k(o, s, cor, inflate=0, rot=None, piv=None):
@@ -115,66 +121,6 @@ def chapeu(tipo_chapeu):
     if tipo_chapeu == "capuz":
         return [k([-4, 24, -4], [8, 8, 8], {"*": "capuz", "north": "capuz_frente"}, 0.6)]
     return []
-
-
-def soldado(f, tipo):
-    tipo_chapeu, rosto, saia = visual(f, tipo)
-    moderno = f != "caveira"
-    corpo = [
-        k([-4, 12, -2], [8, 12, 4], {"*": "casaco", "north": "casaco_frente", "south": "casaco_costas"}),
-        k([-4, 12 - saia, -2], [8, saia, 4], {"*": "saia", "up": "vazio", "north": "saia_frente"}, 0.5),
-        k([-4, 12, -2], [8, 1, 4], {"*": "cinto", "north": "cinto_frente"}, 0.62),
-        k([2, 9, -3.2], [2, 3, 1], "coldre", 0.15),
-        k([-4, 23, -2], [8, 1, 4], "gola", 0.4),
-        k([-3, 14, 2], [6, 8, 3], {"*": "mochila", "south": "cruz" if tipo == "medico" else "mochila_costas"}),
-    ]
-    if moderno:
-        corpo += [
-            k([-4, 15, -2], [8, 8, 4], {"*": "colete", "north": "colete_frente", "south": "colete_costas"}, 0.58),
-            k([-3.5, 13.5, -3.3], [2, 3, 1], "bolsa", 0.1),
-            k([-1, 13.5, -3.3], [2, 3, 1], "bolsa", 0.1),
-            k([1.5, 13.5, -3.3], [2, 3, 1], "bolsa", 0.1),
-            k([-5.2, 9, 0], [2, 3, 2], "cantil"),
-        ]
-        if tipo == "fuzileiro" or tipo == "metralhador":
-            corpo.append(k([1.5, 21, 2.5], [1, 9, 1], "antena"))
-    else:
-        # sabre pendurado no quadril esquerdo, como os oficiais de casaco longo
-        corpo += [
-            k([4.6, 1, -0.5], [1, 10, 1], "bainha", 0, [0, 0, -10], [5, 11, 0]),
-            k([4.2, 10.5, -1], [2, 2, 2], "dourado", 0, [0, 0, -10], [5, 11, 0]),
-        ]
-    cabeca = [k([-4, 24, -4], [8, 8, 8], {"north": f"rosto:{rosto}", "east": "lado_cabeca", "west": "lado_cabeca",
-                                           "south": "nuca", "up": "topo_cabeca", "down": "pele", "*": "pele"})]
-    cabeca += chapeu(tipo_chapeu)
-    if tipo_chapeu == "capacete" and f in ("oliva", "corvo"):
-        cabeca.append(k([-3, 30.2, -5.2], [6, 1, 1], "oculos", 0.25))
-
-    def braco(x):
-        return [
-            k([x, 12, -2], [4, 12, 4], {"*": "manga", "down": "mao"}),
-            k([x, 23, -2], [4, 1, 4], "dragona", 0.45),
-        ]
-
-    def perna(x):
-        cubos = [
-            k([x, 0, -2], [4, 12, 4], {"*": "calca", "down": "sola"}),
-            k([x, 0, -2], [4, 6, 4], {"*": "bota", "north": "bota_frente", "down": "sola"}, 0.25),
-        ]
-        if moderno:
-            cubos.append(k([x, 6.5, -2.6], [4, 3, 1], "joelheira", 0.15))
-        return cubos
-
-    return [
-        {"name": "root", "pivot": [0, 0, 0]},
-        {"name": "body", "parent": "root", "pivot": [0, 24, 0], "cubes": corpo},
-        {"name": "head", "parent": "body", "pivot": [0, 24, 0], "cubes": cabeca},
-        {"name": "rightArm", "parent": "body", "pivot": [-5, 22, 0], "cubes": braco(-8)},
-        {"name": "arma", "parent": "rightArm", "pivot": [-6, 12, 0], "cubes": ARMAS[tipo]},
-        {"name": "leftArm", "parent": "body", "pivot": [5, 22, 0], "cubes": braco(4)},
-        {"name": "rightLeg", "parent": "root", "pivot": [-1.9, 12, 0], "cubes": perna(-3.9)},
-        {"name": "leftLeg", "parent": "root", "pivot": [1.9, 12, 0], "cubes": perna(-0.1)},
-    ]
 
 
 ESTEIRA = {"*": "esteira", "east": "rodas", "west": "rodas"}
@@ -480,6 +426,45 @@ class Pintor:
                     if abs((i - 1) - j * (W - 3) / H) < 1.2 or abs((W - 2 - i) - j * (W - 3) / H) < 1.2:
                         return ruido(p["couro"], gx, gy, 0.05)
             return c
+        if chave == "tunica_frente":
+            # túnica com botões, bolsos e correia cruzada; facções modernas usam colete por cima
+            c = self.cor("casaco_frente", i, j, W, H, gx, gy, face)
+            if p.get("colete_visivel") and 3 <= j < int(H * 0.62):
+                c = self.cor("colete_frente", i, j - 3, W, H, gx, gy, face)
+                if j == 3 or i in (0, W - 1):
+                    c = esc(c, 0.8)
+            if H - 6 <= j < H - 3:
+                c = ruido(p["couro"], gx, gy, 0.07)  # cinto
+                if W // 2 - 2 <= i <= W // 2 + 1:
+                    c = p["fivela"]
+                if j == H - 6:
+                    c = esc(c, 0.85)
+            if j >= H - 3:
+                c = self.tecido(self.base_uniforme(gx, gy), i, j, W, H, gx, gy)
+            return c
+        if chave == "perna_bota":
+            meio = H // 2
+            if j < meio:
+                c = self.cor("calca", i, j, W, H, gx, gy, face)
+                if p.get("joelheira_metal") and face == "north" and meio - 6 <= j < meio - 1:
+                    return esc(ruido(p["metal"], gx, gy, 0.05), 0.9)
+                if p.get("colete_visivel") and face == "north" and meio - 6 <= j < meio - 1 and 1 <= i <= W - 2:
+                    return esc(ruido(p["colete"], gx, gy, 0.05), 0.72)  # joelheira
+                return c
+            return self.cor("bota_frente" if face == "north" else "bota", i, j - meio, W, H - meio, gx, gy, face)
+        if chave == "capa":
+            if p.get("colete_visivel"):
+                # mochila presa às costas
+                c = self.tecido(esc(p["colete"], 0.85) if not p.get("colete_camo") else self.camo(gx, gy), i, j, W, H, gx, gy)
+                if j in (3, 4) or i in (1, W - 2):
+                    return esc(c, 0.72)
+                if 8 <= j <= 12 and 3 <= i <= W - 4:
+                    return esc(c, 0.9)
+                return c
+            c = self.tecido(self.base_uniforme(gx, gy), i, j, W, H, gx, gy)  # aba do casaco longo
+            if i in (W // 2 - 1, W // 2) and j > H // 2:
+                return esc(c, 0.78)
+            return c
         if chave in ("colete", "colete_costas"):
             return self.tecido(p["colete"], i, j, W, H, gx, gy) if not p.get("colete_camo") else self.camo(gx, gy)
         if chave == "colete_frente":
@@ -746,10 +731,17 @@ def pintar(bones, larg, alt, paleta, pele=None):
 
     for b in bones:
         for cu in b.get("cubes", []):
-            w, h, d = (int(round(v)) for v in cu["s"])
-            u, v = cu["uv"]
             cores = cu["cor"]
             pega = lambda f: cores.get(f, cores.get("*"))  # noqa: E731
+            if isinstance(cu["uv"], dict):
+                # UV por face: (u, v, largura, altura), tamanhos negativos espelham a mesma região
+                for face, r in cu["uv"].items():
+                    (u, v), (w, h) = r["uv"], r["uv_size"]
+                    x0, y0 = min(u, u + w), min(v, v + h)
+                    area(int(x0), int(y0), int(abs(w)), int(abs(h)), pega(face), face)
+                continue
+            w, h, d = (int(round(v)) for v in cu["s"])
+            u, v = cu["uv"]
             area(u + d, v, w, d, pega("up"), "up")
             area(u + d + w, v, w, d, pega("down"), "down")
             area(u, v + d, d, h, pega("east"), "east")
@@ -800,3 +792,94 @@ PALETAS = {
         "colete_visivel": True, "faixa_braco": True, "dragona": (90, 160, 225),
     },
 }
+
+
+# ------------------------------------------------------------------ soldado a partir do modelo do jogador
+
+import copy as _copy
+import json as _json
+import os as _os
+
+_BASE = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "modelos", "soldado_base.geo.json")
+
+PINTURA_BASE = {
+    "body": {"*": "casaco", "north": "tunica_frente", "south": "casaco_costas"},
+    "rightArm": {"*": "manga", "down": "mao"},
+    "leftArm": {"*": "manga", "down": "mao"},
+    "rightLeg": {"*": "perna_bota", "down": "sola"},
+    "leftLeg": {"*": "perna_bota", "down": "sola"},
+    "cape": {"*": "capa"},
+}
+
+
+def modelo_base():
+    with open(_BASE, encoding="utf-8") as fh:
+        return _json.load(fh)["minecraft:geometry"][0]
+
+
+def soldado_do_jogador(f, tipo):
+    """Usa os cubos do modelo do jogador como estão e acrescenta acessórios nos ossos vazios.
+
+    Devolve (ossos, cubos_acessorios, largura_base, altura_base).
+    """
+    g = modelo_base()
+    tipo_chapeu, rosto, _ = visual(f, tipo)
+    ossos = []
+    for b in g["bones"]:
+        nb = {k: _copy.deepcopy(v) for k, v in b.items() if k != "cubes"}
+        nb["cubes"] = []
+        for cu in b.get("cubes", []):
+            if b["name"] == "head":
+                cor = {"north": f"rosto:{rosto}", "east": "lado_cabeca", "west": "lado_cabeca", "south": "nuca",
+                       "up": "topo_cabeca", "down": "pele", "*": "pele"}
+            else:
+                cor = PINTURA_BASE.get(b["name"], {"*": "casaco"})
+            nb["cubes"].append({"o": cu["origin"], "s": cu["size"], "uv": cu["uv"], "cor": dict(cor),
+                                "inflate": cu.get("inflate", 0), "fixo": True})
+        ossos.append(nb)
+    por_nome = {b["name"]: b for b in ossos}
+    acessorios = []
+
+    def por(osso, cubos):
+        por_nome[osso]["cubes"].extend(cubos)
+        acessorios.extend(cubos)
+
+    por("helmet", chapeu(tipo_chapeu))
+    if tipo_chapeu == "capacete" and f in ("oliva", "corvo"):
+        por("helmet", [k([-3, 30.2, -5.2], [6, 1, 1], "oculos", 0.25)])
+    por("rightItem", _copy.deepcopy(ARMAS[tipo]))
+    cinto = [k([2, 9.5, -3], [2, 3, 1], "coldre", 0.1)]
+    if f == "caveira":
+        cinto += [
+            k([4.6, 1, -0.5], [1, 10, 1], "bainha", 0, [0, 0, -10], [5, 11, 0]),
+            k([4.2, 10.5, -1], [2, 2, 2], "dourado", 0, [0, 0, -10], [5, 11, 0]),
+        ]
+    por("body", cinto)
+    d = g["description"]
+    return ossos, acessorios, d["texture_width"], d["texture_height"]
+
+
+def geo_do_jogador(ident, ossos, larg, alt):
+    """JSON de geometria preservando o UV original (inclusive o UV por face da capa)."""
+    saida = []
+    for b in ossos:
+        nb = {k: v for k, v in b.items() if k != "cubes"}
+        if b["cubes"]:
+            nb["cubes"] = []
+            for cu in b["cubes"]:
+                cj = {"origin": cu["o"], "size": cu["s"], "uv": cu["uv"]}
+                if cu["inflate"]:
+                    cj["inflate"] = cu["inflate"]
+                if cu.get("rot"):
+                    cj["rotation"] = cu["rot"]
+                    cj["pivot"] = cu["piv"]
+                nb["cubes"].append(cj)
+        saida.append(nb)
+    base = modelo_base()["description"]
+    return {
+        "format_version": "1.12.0",
+        "minecraft:geometry": [{
+            "description": {**base, "identifier": ident, "texture_width": larg, "texture_height": alt},
+            "bones": saida,
+        }],
+    }

@@ -17,13 +17,15 @@
       "animations": {
         "olhar": "animation.gm.olhar",
         "andar": "animation.gm.andar",
-        "mirar": "animation.gm.mirar"
+        "mirar": "animation.gm.mirar",
+        "capa": "animation.gm.capa"
       },
       "scripts": {
         "animate": [
           "olhar",
           "andar",
-          "mirar"
+          "mirar",
+          "capa"
         ]
       },
       "render_controllers": [

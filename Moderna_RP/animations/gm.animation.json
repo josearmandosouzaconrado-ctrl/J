@@ -32,6 +32,18 @@
         }
       }
     },
+    "animation.gm.capa": {
+      "loop": true,
+      "bones": {
+        "cape": {
+          "rotation": [
+            "6 + query.modified_move_speed * 28 + math.sin(query.life_time * 200) * 2",
+            0,
+            0
+          ]
+        }
+      }
+    },
     "animation.gm.mirar": {
       "loop": true,
       "bones": {

@@ -213,10 +213,12 @@ ao entrar (ou `/scriptevent gm:item`, ou receita: ferro + redstone + linha).
 Cada uma tem Fuzileiro, Atirador, Metralhador, Antitanque (lança-foguetes), Médico, **Blindado**,
 **Tanque** e um **Posto de Comando** na base. Todos têm ovos no criativo.
 
-Os modelos são detalhados no estilo "boneco de Minecraft bem acabado": rosto com olhos e cabelo
-(3 tons de pele sorteados para cada soldado), casaco com botões, bolsos e saia, cinto com fivela e
-coldre, correias, dragonas, botas altas, quepes, boinas, capuzes e capacetes por facção, armas com
-coronha, pente e luneta, e texturas em resolução dobrada. Tanques e blindados têm saias laterais,
+Os soldados usam o **modelo 3D do jogador** (`tools/modelos/soldado_base.geo.json`) com os cubos e o
+UV originais. O gerador pinta por cima rosto com olhos e cabelo (3 tons de pele sorteados para cada
+soldado), túnica com botões, bolsos e correia cruzada, colete nas facções modernas, cinto com fivela,
+calça e botas altas, e transforma a capa em aba do casaco ou mochila. Nos ossos vazios do modelo entram
+os acessórios: quepe, boina, capuz ou capacete em `helmet`, a arma em `rightItem`, coldre e sabre no
+corpo. Texturas em resolução dobrada. Tanques e blindados têm saias laterais,
 faróis, escotilhas, tambores, blindagem reativa e número pintado na torre.
 
 ## Batalha

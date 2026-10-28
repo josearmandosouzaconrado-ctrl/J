@@ -657,6 +657,9 @@ def animacoes():
                 "rightLeg": {"rotation": [f"{andar} * 70", 0, 0]},
                 "leftLeg": {"rotation": [f"-{andar} * 70", 0, 0]},
             }},
+            "animation.gm.capa": {"loop": True, "bones": {
+                "cape": {"rotation": ["6 + query.modified_move_speed * 28 + math.sin(query.life_time * 200) * 2", 0, 0]},
+            }},
             "animation.gm.mirar": {"loop": True, "bones": {
                 "rightArm": {"rotation": ["-85 + query.target_x_rotation", "-5 + query.target_y_rotation", 0]},
                 "leftArm": {"rotation": ["-80 + query.target_x_rotation", "35 + query.target_y_rotation", 0]},
@@ -728,8 +731,17 @@ def main():
 
     for f in FACCOES:
         for tipo in SOLDADOS:
-            bones = V.soldado(f, tipo)
-            larg, alt = gerar_modelo(f"geometry.gm_{f}_{tipo}", bones, f"{f}_{tipo}")
+            # modelo do jogador (tools/modelos/soldado_base.geo.json) + acessórios num espaço de UV abaixo dele
+            bones, acessorios, larg_base, alt_base = V.soldado_do_jogador(f, tipo)
+            larg_ac, _ = empacotar([{"cubes": acessorios}])
+            total_ac = max((cu["uv"][1] + V.tam_uv_cubo(cu)[1] for cu in acessorios), default=0)
+            for cu in acessorios:
+                cu["uv"] = [cu["uv"][0], cu["uv"][1] + alt_base]
+            larg = max(larg_base, larg_ac)
+            alt = alt_base
+            while alt < alt_base + total_ac:
+                alt *= 2
+            salvar_json(V.geo_do_jogador(f"geometry.gm_{f}_{tipo}", bones, larg, alt), RP, "models", "entity", f"{f}_{tipo}.geo.json")
             for n, pele in enumerate(V.PELES):
                 salvar_img(V.pintar(bones, larg, alt, V.PALETAS[f], pele), RP, "textures", "entity", "gm", f"{f}_{tipo}_{n}.png")
     for nome, fabrica in (("tanque", V.tanque), ("blindado", V.blindado), ("comando", V.comando)):
@@ -767,7 +779,8 @@ def main():
             desc["spawn_egg"] = {"base_color": ovo[0], "overlay_color": ovo[1]}
         return {"format_version": "1.10.0", "minecraft:client_entity": {"description": desc}}
 
-    anim_humano = ({"olhar": "animation.gm.olhar", "andar": "animation.gm.andar", "mirar": "animation.gm.mirar"}, ["olhar", "andar", "mirar"])
+    anim_humano = ({"olhar": "animation.gm.olhar", "andar": "animation.gm.andar", "mirar": "animation.gm.mirar", "capa": "animation.gm.capa"},
+                   ["olhar", "andar", "mirar", "capa"])
     anim_ia = ({"torre": "animation.gm.torre_ia", "chacoalhar": "animation.gm.chacoalhar"}, ["torre", "chacoalhar"])
     anim_piloto = ({"torre": "animation.gm.torre_piloto", "chacoalhar": "animation.gm.chacoalhar"}, ["torre", "chacoalhar"])
 
