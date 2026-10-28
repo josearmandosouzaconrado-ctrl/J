@@ -10,8 +10,10 @@
   :root[data-theme="dark"] { --bg: #1b2026; --fg: #f1ecd9; --acc: #e6c35c; --btn: #2c333b; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: system-ui, sans-serif; overflow: hidden; }
   #c { position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; display: block; }
-  #ui { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; background: linear-gradient(transparent, rgba(0,0,0,.55)); }
-  button { background: var(--btn); color: var(--fg); border: 1px solid #485260; border-radius: 8px; padding: 10px 14px; font-size: 15px; }
+  #ui { position: fixed; left: 0; right: 0; bottom: 0; padding: 8px 16px calc(8px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 6px; background: linear-gradient(transparent, rgba(0,0,0,.6) 25%); }
+  .row { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; justify-content: safe center; }
+  .row::-webkit-scrollbar { display: none; }
+  button { flex: none; background: var(--btn); color: var(--fg); border: 1px solid #485260; border-radius: 8px; padding: 9px 12px; font-size: 14px; }
   button.on { background: var(--acc); color: #1b1b1b; border-color: var(--acc); font-weight: 700; }
   #top { position: fixed; top: 0; left: 0; right: 0; padding: 12px 16px; font-size: 14px; background: linear-gradient(rgba(0,0,0,.5), transparent); pointer-events: none; }
   #top b { color: var(--acc); }
@@ -19,16 +21,19 @@
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="top"><b>Soldado novo (protótipo)</b> · arraste para girar, pinça para zoom · <span id="tri"></span></div>
+<div id="top"><b>Soldados novos</b> · <span id="who"></span> · arraste para girar, pinça para zoom · <span id="tri"></span></div>
 <div id="ui">
-  <button data-p="idle" class="on">Parado</button>
-  <button data-p="walk">Andando</button>
-  <button data-p="run">Correndo</button>
-  <button data-p="aim">Mirando</button>
-  <button data-p="kneel">Ajoelhado</button>
-  <button data-p="kneelaim">Ajoelhado mirando</button>
-  <button id="spin">Girar</button>
-  <button id="grp">Esquadrão</button>
+  <div class="row">
+    <button data-n="USA" class="on">EUA</button><button data-n="GER">Alemanha</button><button data-n="ENG">Reino Unido</button><button data-n="SOV">URSS</button>
+    <button data-n="JAP">Japão</button><button data-n="ITA">Itália</button><button data-n="FRA">França</button><button data-n="POL">Polônia</button><button data-n="CHN">China</button><button data-n="ALL">Todas</button>
+  </div>
+  <div class="row">
+    <button data-k="rifle" class="on">Fuzileiro</button><button data-k="smg">Submetralhadora</button><button data-k="at">Antitanque</button><button data-k="medic">Médico</button><button data-k="para">Paraquedista</button>
+  </div>
+  <div class="row">
+    <button data-p="idle" class="on">Parado</button><button data-p="walk">Andando</button><button data-p="run">Correndo</button><button data-p="aim">Mirando</button>
+    <button data-p="kneel">Ajoelhado</button><button data-p="kneelaim">Ajoelhado mirando</button><button id="spin">Girar</button><button id="grp">Esquadrão</button>
+  </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="js/soldado3d.js"></script>
@@ -46,20 +51,31 @@ sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -4,
 const ground = new THREE.Mesh(new THREE.CircleGeometry(30, 48), new THREE.MeshLambertMaterial({ color: 0x6f7d43 }));
 ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
 const men = [];
-function addMan(x, z, ry, o) { const s = Soldado3.make(o); s.position.set(x, 0, z); s.rotation.y = ry; scene.add(s); men.push(s); return s; }
-const main = addMan(0, 0, 0, { variant: 0, skin: 0 });
-document.getElementById('tri').textContent = Math.round(Soldado3.triangles(main)) + ' triângulos';
-let squad = false;
-document.getElementById('grp').onclick = (e) => {
-  squad = !squad; e.target.classList.toggle('on', squad);
-  if (squad && men.length === 1) { addMan(-1.3, -1.1, 0.15, { variant: 1, skin: 1 }); addMan(1.3, -1.3, -0.1, { variant: 0, skin: 2 }); addMan(0.4, -2.6, 0.05, { variant: 1, skin: 3 }); }
-  men.forEach((m, i) => { if (i) m.visible = squad; });
-  cam.dist = squad ? 7.5 : 4.2;
-};
+const NAMES = { USA: 'EUA', GER: 'Alemanha', ENG: 'Reino Unido', SOV: 'URSS', JAP: 'Japão', ITA: 'Itália', FRA: 'França', POL: 'Polônia', CHN: 'China' };
+const KINDS = { rifle: 'rifle', smg: 'rifle', at: 'bazooka', medic: 'medic', para: 'para' };
+let nat = 'USA', cls = 'rifle', squad = false;
+function addMan(x, z, ry, o) { const s = Soldado3.make(Object.assign({ scale: 1 }, o)); s.position.set(x, 0, z); s.rotation.y = ry; scene.add(s); men.push(s); return s; }
+function rebuild() {
+  for (const m of men) scene.remove(m); men.length = 0;
+  const kind = KINDS[cls], v = cls === 'smg' ? 2 : 0;
+  if (nat === 'ALL') {
+    Object.keys(NAMES).forEach((n, i) => addMan((i - 4) * 0.95, -Math.abs(i - 4) * 0.25, 0, { nat: n, kind, variant: v, skin: i }));
+  } else {
+    addMan(0, 0, 0, { nat, kind, variant: v, skin: 0 });
+    if (squad) [[-1.3, -1.1, 0.15, 1], [1.3, -1.3, -0.1, 0], [0.4, -2.6, 0.05, 1]].forEach(([x, z, r, vv], i) => addMan(x, z, r, { nat, kind, variant: cls === 'smg' ? 2 : vv, skin: i + 1 }));
+  }
+  cam.dist = nat === 'ALL' ? 9.5 : squad ? 7.5 : 4.2;
+  document.getElementById('tri').textContent = Math.round(Soldado3.triangles(men[0])) + ' triângulos';
+  document.getElementById('who').textContent = nat === 'ALL' ? 'todas as facções' : NAMES[nat];
+}
+for (const b of document.querySelectorAll('[data-n]')) b.onclick = () => { nat = b.dataset.n; document.querySelectorAll('[data-n]').forEach(x => x.classList.toggle('on', x === b)); rebuild(); };
+for (const b of document.querySelectorAll('[data-k]')) b.onclick = () => { cls = b.dataset.k; document.querySelectorAll('[data-k]').forEach(x => x.classList.toggle('on', x === b)); rebuild(); };
+document.getElementById('grp').onclick = (e) => { squad = !squad; e.target.classList.toggle('on', squad); rebuild(); };
 let poseName = 'idle';
 for (const b of document.querySelectorAll('[data-p]')) b.onclick = () => { poseName = b.dataset.p; document.querySelectorAll('[data-p]').forEach(x => x.classList.toggle('on', x === b)); };
 let spin = false; document.getElementById('spin').onclick = (e) => { spin = !spin; e.target.classList.toggle('on', spin); };
 const cam = { yaw: 0.5, pitch: 0.12, dist: 4.2 };
+rebuild();
 let drag = null, pinch = null;
 cv.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, id: e.pointerId }; cv.setPointerCapture(e.pointerId); });
 cv.addEventListener('pointermove', (e) => { if (!drag || pinch || e.pointerId !== drag.id) return; cam.yaw -= (e.clientX - drag.x) * 0.008; cam.pitch = Math.max(-0.2, Math.min(1.2, cam.pitch + (e.clientY - drag.y) * 0.006)); drag.x = e.clientX; drag.y = e.clientY; });
@@ -78,12 +94,12 @@ function frame(now) {
   for (const m of men) if (m.visible) Soldado3.pose(m, ST[poseName], dt);
   const ty = poseName.startsWith('kneel') ? 0.75 : 1.05;
   camera.position.set(Math.sin(cam.yaw) * Math.cos(cam.pitch) * cam.dist, ty + Math.sin(cam.pitch) * cam.dist, Math.cos(cam.yaw) * Math.cos(cam.pitch) * cam.dist);
-  camera.lookAt(0, ty, squad ? -1 : 0);
+  camera.lookAt(0, ty, squad && nat !== 'ALL' ? -1 : 0);
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-window.__test = { men, cam, ST, setPose: (p) => { poseName = p; }, step: (n, dt) => { for (let i = 0; i < n; i++) for (const m of men) if (m.visible) Soldado3.pose(m, ST[poseName], dt || 0.05); } };
+window.__test = { men, cam, ST, setPose: (p) => { poseName = p; }, set: (n, c) => { nat = n; cls = c; rebuild(); }, step: (n, dt) => { for (let i = 0; i < n; i++) for (const m of men) if (m.visible) Soldado3.pose(m, ST[poseName], dt || 0.05); } };
 </script>
 </body>
 </html>

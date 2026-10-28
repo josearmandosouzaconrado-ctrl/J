@@ -633,6 +633,7 @@ function updateDowned(u, dt) {
   if (u.bleed <= 0) { u.downed = false; kill(u); return; }
   u.y = groundH(u.x, u.z);
   m.position.set(u.x, u.y + 0.25, u.z); m.rotation.y = u.heading; m.rotation.x = -Math.PI / 2 * 0.92;
+  if (ud.s3) { Soldado3.downed(m, !!u.dragged, S.time, u.id); return; }
   ud.armR.rotation.x = u.dragged ? -2.9 : -2.5 + Math.sin(S.time * 3 + u.id) * 0.5; ud.foreR.rotation.x = -0.3;
   ud.armL.rotation.x = u.dragged ? -2.9 : -0.3; ud.legL.rotation.x = 0.15; ud.legR.rotation.x = -0.2 + Math.sin(S.time * 1.7 + u.id) * 0.15;
   ud.shinL.rotation.x = 0.3; ud.shinR.rotation.x = 0.5;
@@ -837,8 +838,8 @@ function updateUnit(u, dt) {
   if (u.inf) {
     let y = gh - (u.cover === 2 ? 0.95 : 0);
     animSoldier(u, dt, moving, !!t);
-    if (u.crouch) y -= 0.5;
-    m.position.set(u.x, y + (moving ? Math.abs(Math.cos(u.ph)) * 0.08 : 0), u.z); m.rotation.y = u.heading;
+    if (u.crouch && !m.userData.s3) y -= 0.5;
+    m.position.set(u.x, y + (moving && !m.userData.s3 ? Math.abs(Math.cos(u.ph)) * 0.08 : 0), u.z); m.rotation.y = u.heading;
   } else {
     const sx = Math.sin(u.heading), cz = Math.cos(u.heading), L = (m.userData.L || 6) / 2;
     const hf = groundH(u.x + sx * L, u.z + cz * L), hb = groundH(u.x - sx * L, u.z - cz * L);
@@ -890,7 +891,7 @@ function updChutes(dt) {
     c.vx += (1.4 - c.vx) * dt * 0.8; c.vz += (0.4 - c.vz) * dt * 0.8;
     c.x += c.vx * dt; c.y += c.vy * dt; c.z += c.vz * dt;
     c.g.position.set(c.x, c.y, c.z); c.g.rotation.z = Math.sin(S.time * 1.3 + i) * 0.08;
-    const ud = c.s.userData; ud.legL.rotation.x = Math.sin(S.time * 2 + i) * 0.2; ud.legR.rotation.x = -ud.legL.rotation.x; ud.armL.rotation.x = -2.8; ud.armR.rotation.x = -2.8;
+    const ud = c.s.userData; if (ud.s3) Soldado3.chute(c.s, S.time + i); else { ud.legL.rotation.x = Math.sin(S.time * 2 + i) * 0.2; ud.legR.rotation.x = -ud.legL.rotation.x; ud.armL.rotation.x = -2.8; ud.armR.rotation.x = -2.8; }
     const h = groundH(c.x, c.z);
     if (c.y <= Math.max(h, 0) + 0.05) {
       scene.remove(c.g); S.chutes.splice(i, 1);
@@ -920,6 +921,7 @@ function animSoldier(u, dt, moving, aiming) {
   const ud = u.mesh.userData, k = Math.min(1, dt * 12);
   u.crouch = (!moving && u.cover === 1) || !!u.kneel;
   const aim = (aiming && !moving) || S.time - u.fireT < 1.0;
+  if (ud.s3) { Soldado3.animate(u, dt, moving, aim); return; }
   let tL = 0, tR = 0, sL = 0.08, sR = 0.08;
   if (moving) {
     u.ph += dt * Math.max(2, u.speedNow) * 1.45;
@@ -2355,7 +2357,7 @@ function battleScenario(cfg) {
     trenches: t === 'M' || t === 'W' ? ['wn'] : [], mountain: null,
     title: cfg.prov.name, towns: [cfg.prov.name, 'Fazenda de ' + cfg.prov.name, 'Estação de ' + cfg.prov.name, 'Bosque de ' + cfg.prov.name, 'Igreja de ' + cfg.prov.name],
     sky: base.sky, fog: base.fog, sun: base.sun, sunI: base.sunI, hemi: base.hemi, skyTop: base.skyTop, skyHor: base.skyHor, snow: cold && t !== 'D' && t !== 'T', water: base.water,
-    pal: { A: NAT_PAL[cfg.player.tag] || {}, B: NAT_PAL[cfg.enemy.tag] || {} },
+    pal: { A: NAT_PAL[cfg.player.tag] || {}, B: NAT_PAL[cfg.enemy.tag] || {} }, nat: { A: cfg.player.tag, B: cfg.enemy.tag },
     paint: early && gerIn ? { de: { paint: 0x4b5054, camo: null } } : base.id === 'ardenas' ? base.paint : base.id === 'africa' ? base.paint : undefined,
     jp, foe: { adj: en.adj[0], adjF: en.adj[1], pl: en.adj[2], air: 'foeair' },
     ourFlag: flagTex(cfg.player.tag), foeFlagTex: flagTex(cfg.enemy.tag),

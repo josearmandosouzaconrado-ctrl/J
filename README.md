@@ -33,6 +33,7 @@ Toda batalha com divisões suas pode ser lutada no campo 3D: toque em **LUTAR EM
 
 - O terreno vem da província: temperado, mediterrâneo, deserto, selva, montanha, e neve no inverno do norte.
 - As tropas são as das divisões envolvidas, com os veículos do ano e da pesquisa de cada nação. Uniformes, bandeiras e aviões de apoio mudam por país, e os blindados alemães são cinzentos até 1943.
+- Cada nação tem soldados próprios: capacete M1, Stahlhelm, Brodie, SSh-40, Tipo 90, M33 ou Adrian, além de uniforme, equipamento e armas da época (Garand, Kar98k, Lee-Enfield, Mosin, Arisaka, Thompson, MP40, PPSh, bazuca e Panzerschreck).
 - O atacante precisa tomar 3 posições, e o defensor precisa segurá-las. Ganha também quem destroçar o outro lado, e o botão RETIRAR encerra a batalha a qualquer momento.
 - As perdas e o resultado voltam para o mapa.
 
@@ -83,7 +84,9 @@ Na tela inicial:
 - `js/dados_mundo.js`: províncias do mundo em 1939, geradas a partir do Natural Earth (world-atlas 50m). Contém os contornos como arcos compartilhados, as adjacências e estreitos, o terreno e os nomes de cidades.
 - `js/mundo.js`: a campanha estratégica. Inclui nações, guerras e eventos, movimento, combate, suprimento e cerco, IA, produção e pesquisa, o desenho do mapa (globo e plano), os contadores e a ponte para as batalhas 3D.
 - `js/controle.js`: suporte a controle pela Gamepad API, com cursor virtual, navegação por direcional e vibração.
-- `js/models.js` e `js/veiculos.js`: modelos 3D de soldados, mais de 40 veículos, aviões, navios e construções.
+- `js/soldado3d.js`: soldados de todas as facções, com esqueleto de proporções reais e mãos presas à arma em todas as poses (parado, andando, correndo, mirando, ajoelhado, ferido, paraquedas). Cada nação tem capacete, uniforme, equipamento e armas próprios.
+- `teste_soldado.html`: página para ver os soldados de perto, por facção, tipo e pose.
+- `js/models.js` e `js/veiculos.js`: civis, mais de 40 veículos, aviões, navios e construções.
 - `js/world.js`: terreno tático 3D, vilas, vegetação, coberturas e água.
 - `js/game.js`: o modo tático, com unidades, IA de cobertura, médicos, combate, apoio aéreo e de artilharia, e as batalhas da campanha.
 - `js/campanha.js`: gerador do mapa gigante do Reno, das versões anteriores.
