@@ -5,7 +5,7 @@
 // uma figura por papel: cidadão, guerreiro, arqueiro, mago, clérigo e assassino.
 const ANJO_PAPEIS = ['cidadao', 'guerreiro', 'arqueiro', 'mago', 'clerigo', 'assassino'];
 const Racas = {
-  img: null, ready: false, cache: new Map(),
+  img: null, ready: false, cache: new Map(), sheets: new Map(),
   load() {
     const im = new Image();
     im.onload = () => { this.img = im; this.ready = true; };
@@ -37,8 +37,10 @@ const Racas = {
   sheet(L) {
     if (!this.ready) return this.placeholder(L);
     const sc = L.sz || 1, key = L.r + '|' + (L.v | 0) + '|' + sc;
-    let S = this.cache.get(key);
-    if (S) return S;
+    let S = this.sheets.get(key);
+    if (S) { this.sheets.delete(key); this.sheets.set(key, S); return S; }
+    // no máximo 120 folhas guardadas (as esquecidas há mais tempo saem)
+    while (this.sheets.size >= 120) this.sheets.delete(this.sheets.keys().next().value);
     const front = this.src(L.r, L.v | 0, false), back = this.src(L.r, L.v | 0, true);
     const F = (s, flip, dy, dx) => this.frame(s, flip, dy, dx, sc);
     S = {
@@ -49,7 +51,7 @@ const Racas = {
       up: [F(back, true), F(back, true, 1), F(back, true, 1, 1)]
     };
     S.w = S.down[0].width; S.h = S.down[0].height;
-    this.cache.set(key, S);
+    this.sheets.set(key, S);
     return S;
   },
   placeholder(L) {

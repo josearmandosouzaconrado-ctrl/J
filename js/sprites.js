@@ -272,6 +272,7 @@ const Sprites = {};
     return s;
   };
   S.extraObj = {};
+  S.objCount = () => objCache.size + edgeCache.size;
   function mk(w, h, fn, ol = true) { const c = cv(w, h), p = P(c.getContext('2d')); fn(p, c.getContext('2d')); if (ol) outline(c); return c; }
   function trunk(p, x, y, w, h, c) { p(x, y, c, w, h); p(x, y, shade(c, 0.2), 1, h); p(x + w - 1, y, shade(c, -0.25), 1, h); }
   function makeObj(id, v, f) {
@@ -665,6 +666,7 @@ const Sprites = {};
     return c;
   };
   const urlCache = new Map();
+  S.iconCount = () => iconCache.size + urlCache.size;
   S.iconURL = function (icon) {
     const k = JSON.stringify(icon);
     let u = urlCache.get(k);

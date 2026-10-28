@@ -263,12 +263,19 @@ class World {
     ch = this.genChunk(cx, cy);
     ch.t = this.tick;
     this.chunks.set(k, ch);
-    if (this.chunks.size > 700) this.evictChunks();
+    if (this.chunks.size > 420) this.evictChunks();
     return ch;
   }
   evictChunks() {
     const arr = [...this.chunks.entries()].sort((a, b) => a[1].t - b[1].t);
-    for (let i = 0; i < 200; i++) { this.chunks.delete(arr[i][0]); this.canvases.delete(arr[i][0]); }
+    for (let i = 0; i < 120; i++) { this.chunks.delete(arr[i][0]); this.dropCanvas(arr[i][0]); }
+  }
+  // as imagens do chão (512x512) são reaproveitadas em vez de criar uma nova a cada trecho
+  dropCanvas(k) {
+    const c = this.canvases.get(k); if (!c) return;
+    this.canvases.delete(k);
+    const pool = this.cvPool || (this.cvPool = []);
+    if (pool.length < 4) pool.push(c);
   }
   genChunk(cx, cy) {
     const tiles = new Uint8Array(1024), objs = new Uint8Array(1024), reg = new Uint8Array(1024);
@@ -372,7 +379,7 @@ class World {
   setObj(tx, ty, o) {
     const ch = this.getChunk(tx >> 5, ty >> 5); const i = ((ty & 31) << 5) | (tx & 31);
     const old = ch.objs[i]; ch.objs[i] = o;
-    if (OBJ_BAKED[old] || OBJ_BAKED[o]) { const k = this.ckey(tx >> 5, ty >> 5); this.canvases.delete(k); if (this.pending && this.pending.k === k) this.pending = null; }
+    if (OBJ_BAKED[old] || OBJ_BAKED[o]) { const k = this.ckey(tx >> 5, ty >> 5); this.dropCanvas(k); if (this.pending && this.pending.k === k) this.pending = null; }
     ch.objList = null; ch.lightList = null;
   }
   solidAt(tx, ty) {
@@ -391,7 +398,8 @@ class World {
     return this.finishChunk(job);
   }
   chunkJob(cx, cy) {
-    const ch = this.getChunk(cx, cy), c = Sprites.cv(CHUNK_PX, CHUNK_PX), x0 = cx * 32, y0 = cy * 32;
+    const ch = this.getChunk(cx, cy), c = (this.cvPool && this.cvPool.pop()) || Sprites.cv(CHUNK_PX, CHUNK_PX), x0 = cx * 32, y0 = cy * 32;
+    c.getContext('2d').clearRect(0, 0, CHUNK_PX, CHUNK_PX);
     const getT = (lx, ly) => (lx >= 0 && ly >= 0 && lx < 32 && ly < 32) ? ch.tiles[ly * 32 + lx] : this.tileAt(x0 + lx, y0 + ly);
     return { k: this.ckey(cx, cy), cx, cy, ch, c, ctx: c.getContext('2d'), getT, row: 0 };
   }
@@ -414,7 +422,7 @@ class World {
       ctx.drawImage(s.c, lx * 16 + 8 - (s.w >> 1), ly * 16 + 16 - s.h + s.oy);
     }
     this.canvases.set(k, c);
-    if (this.canvases.size > 28) { const first = this.canvases.keys().next().value; this.canvases.delete(first); }
+    if (this.canvases.size > 20) this.dropCanvas(this.canvases.keys().next().value);
     return c;
   }
   drawGround(ctx, camX, camY, vw, vh) {
@@ -1449,7 +1457,7 @@ class World {
       }
     }
     if (this.mapRow >= R) {
-      this.mapCtx.putImageData(this.mapImg, 0, 0);
+      this.mapCtx.putImageData(this.mapImg, 0, 0); this.mapImg = null;   // já está no canvas: libera a cópia
       // estradas
       this.mapCtx.fillStyle = 'rgba(170,130,80,0.9)';
       for (const [k, set] of this.roadTiles) {

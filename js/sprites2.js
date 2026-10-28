@@ -486,6 +486,10 @@
     return L.size ? S.scale(c, L.size) : c;
   }
 
+  // caches com limite: o usado por último vai para o fim, e os esquecidos há mais tempo saem primeiro
+  // (cada sprite guardado é uma imagem na memória do celular; sem limite elas se acumulavam aos milhares)
+  function lruGet(map, key) { const v = map.get(key); if (v !== undefined) { map.delete(key); map.set(key, v); } return v; }
+  function lruTrim(map, max) { while (map.size > max) map.delete(map.keys().next().value); }
   // Cache de sprites de atores: retorna {down:[3], up:[3], right:[3], left:[3]} ou {right:[2],left:[2]}
   const actorCache = new Map();
   S.actor = function (L) {
@@ -493,9 +497,9 @@
     if (L.k === 'nyxar') return Nyxar.sheet(L);
     if (L.k === 'raca') return Racas.sheet(L);
     const key = JSON.stringify(L);
-    let s = actorCache.get(key);
+    let s = lruGet(actorCache, key);
     if (s) return s;
-    if (actorCache.size > 900) { let n = 0; for (const k of actorCache.keys()) { actorCache.delete(k); if (++n >= 300) break; } }
+    lruTrim(actorCache, 220);
     if (L.k === 'hum') {
       const sc = L.size || 1;
       const mkf = (d, f) => { let c = humanoid(L, d, f); if (sc !== 1) c = S.scale(c, sc); return c; };
@@ -517,6 +521,7 @@
     actorCache.set(key, s);
     return s;
   };
+  S.cacheStats = () => ({ atores: actorCache.size, quadros: [...actorCache.values()].reduce((n, s) => n + ['down', 'up', 'left', 'right'].reduce((m, d) => m + (s[d] ? s[d].length : 0), 0) + Object.keys(s.white).length, 0), construcoes: bCache.size, armas: wCache.size, objetos: S.objCount(), icones: S.iconCount() });
   S.actorWhite = function (s, dirKey, f) {
     const k = dirKey + f;
     if (!s.white[k]) s.white[k] = S.whiteMask(s[dirKey][f]);
@@ -554,10 +559,10 @@
   const bCache = new Map();
   S.building = function (spec) {
     const key = JSON.stringify(spec);
-    let c = bCache.get(key);
+    let c = lruGet(bCache, key);
     if (c) return c;
     c = makeBuilding(spec);
-    bCache.set(key, c);
+    bCache.set(key, c); lruTrim(bCache, 160);
     return c;
   };
   function makeBuilding(sp) {

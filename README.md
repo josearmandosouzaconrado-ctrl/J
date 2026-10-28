@@ -178,3 +178,5 @@ Um botão **ADM** aparece no topo da tela e abre o painel:
 - Limite de 60 FPS (celulares com tela de 120 Hz não gastam bateria em dobro).
 - **Modo leve** nas Opções, para celulares fracos: 30 FPS, menos partículas e iluminação em resolução menor — sem remover nada do jogo.
 - Iluminação noturna, chão do mapa, objetos do mundo, HUD e batalhas foram otimizados para gastar bem menos processamento.
+- **Memória (RAM)**: os sprites de personagens, prédios e raças ficam em caches com limite (os esquecidos há mais tempo saem primeiro), o mundo guarda menos trechos já visitados, as imagens do chão são reaproveitadas e a imagem temporária do mapa-múndi é liberada. Antes a memória crescia sem parar a cada cidade visitada; agora ela para de crescer.
+- O APK tem menos de 1 MB: não há arquivos de áudio (toda música e som são gerados pelo próprio jogo) e as imagens são PNG comprimidas sem perda.
