@@ -651,7 +651,9 @@ class Player extends Actor {
         const a = Math.atan2(m.y, m.x);
         const mm = Math.min(1, m.mag * 1.3);
         const ox = this.x, oy = this.y;
-        moveActor(this, Math.cos(a) * spd * mm * dt, Math.sin(a) * spd * mm * dt);
+        spd *= Adm.speed;
+        if (Adm.noclip) { this.x += Math.cos(a) * spd * mm * dt; this.y += Math.sin(a) * spd * mm * dt; }
+        else moveActor(this, Math.cos(a) * spd * mm * dt, Math.sin(a) * spd * mm * dt);
         this.stats.dist += Math.hypot(this.x - ox, this.y - oy);
         this.moving = true; this.anim += dt * (spd / 70) * mm;
         if (!(this.swing || this.castT > 0)) this.setDir(a);

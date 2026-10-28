@@ -102,4 +102,22 @@ O arquivo **`CronicasDeEldoria.apk`** (na raiz do projeto, e no botão "Baixar p
 - O jogo **salva sozinho** quando você sai do aplicativo.
 - Requer Android 7 ou mais novo. Como o APK não vem da Play Store, o Android pede para permitir "instalar apps desconhecidos".
 
-Para gerar o APK de novo depois de mudar o jogo: `python3 android/build_apk.py` (só precisa de Python 3 e do pacote `cryptography`; não usa o Android SDK). A chave privada de assinatura (`android/signing/key.pem`) **não vai para o repositório**; guarde-a em lugar seguro e use sempre a mesma, senão o Android não deixa atualizar o app por cima da versão instalada (sem ela, o script cria uma chave nova).
+Para gerar o APK de novo depois de mudar o jogo: `python3 android/build_apk.py` (e `python3 android/build_apk.py --adm` para a versão ADM) (só precisa de Python 3 e do pacote `cryptography`; não usa o Android SDK). A chave privada de assinatura (`android/signing/key.pem`) **não vai para o repositório**; guarde-a em lugar seguro e use sempre a mesma, senão o Android não deixa atualizar o app por cima da versão instalada (sem ela, o script cria uma chave nova).
+
+## Versão ADM (painel de testes)
+
+O arquivo **`CronicasDeEldoria-ADM.apk`** instala um segundo aplicativo, **Eldoria ADM** (ícone com faixa vermelha), separado do jogo normal — os dois podem ficar no mesmo celular. No navegador, a versão ADM abre com `?adm` no endereço (ex.: `index.html?adm`).
+
+Um botão **ADM** aparece no topo da tela e abre o painel:
+
+- **Jogador**: modo deus, vida/mana/vigor infinitos, atravessar paredes, invisível, velocidade 1x/2x/4x/8x, +10.000 ouro, +1/+10 níveis, todas as habilidades no 100, todas as magias e gritos, cavalo de guerra, completar o turno de trabalho.
+- **Itens**: busca por qualquer item do jogo e +1/+10 na mochila.
+- **Mundo**: teleporte tocando no mapa, revelar o mapa inteiro, ir para qualquer capital/porto (inclusive em outro continente), mudar a hora, avançar 1/7/30 dias, escolher o clima.
+- **Guerra**: escolha dois reinos e declare guerra ou paz, crie uma **batalha de exércitos aqui**, uma **batalha naval** no mar mais próximo, **duas linhas de mosqueteiros** frente a frente, faça um reino **conquistar a cidade mais próxima**, mande um exército marchar até você, guerra entre todos os vizinhos, paz mundial e avançar a guerra dia a dia.
+- **Inimigos**: criar qualquer criatura ou chefe (1, 5 ou 20, no nível escolhido), chamar um dragão, matar ou remover os inimigos por perto.
+
+## Desempenho
+
+- Limite de 60 FPS (celulares com tela de 120 Hz não gastam bateria em dobro).
+- **Modo leve** nas Opções, para celulares fracos: 30 FPS, menos partículas e iluminação em resolução menor — sem remover nada do jogo.
+- Iluminação noturna, chão do mapa, objetos do mundo, HUD e batalhas foram otimizados para gastar bem menos processamento.

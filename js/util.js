@@ -1,7 +1,9 @@
 'use strict';
 // rodando dentro do aplicativo Android (APK)?
-const GAME_VERSION = '0.9.1';
+const GAME_VERSION = '0.9.2';
 const IS_APK = /EldoriaAPK/.test(navigator.userAgent);
+// versão ADM (painel de testes): APK 'Eldoria ADM' ou o endereço com ?adm
+const IS_ADM = /EldoriaADM/.test(navigator.userAgent) || /[?&]adm\b/.test(location.search);
 // ===================== Constantes e utilitários =====================
 const TILE = 16;
 const CHUNK = 32;

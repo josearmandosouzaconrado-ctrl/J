@@ -321,3 +321,16 @@ label { display: block; color: var(--gold); margin-top: 6px; font-size: 18px; }
 @keyframes betaPulse { 0%, 100% { transform: rotate(-3deg) scale(1); } 50% { transform: rotate(-3deg) scale(1.06); } }
 a.mbtn.apk { text-decoration: none; display: block; box-sizing: border-box; width: 200px; color: #e8ffe0; font-size: 20px; text-align: center; background: linear-gradient(#3a6a34, #24461f); border-color: #8ad070; }
 a.mbtn.apk small { display: block; font-size: 13px; opacity: .8; }
+
+/* painel ADM */
+.tbtn.adm { width: auto; padding: 0 8px; font-size: 18px; color: #fff; background: rgba(150,20,60,.85); border-color: #ff80c0; }
+.adm-badge { background: #b01850; color: #fff; padding: 0 8px; margin-right: 6px; border: 2px solid #ff80c0; }
+.adm-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+.adm-body { overflow-y: auto; max-height: 62vh; }
+.adm-grid { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.adm-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; width: 100%; margin: 3px 0; }
+.adm-sel, .adm-input { font-family: inherit; font-size: 18px; background: #1a1210; color: var(--text); border: 2px solid var(--border2); padding: 2px 6px; }
+.adm-input { width: 100%; box-sizing: border-box; margin-bottom: 6px; user-select: text; -webkit-user-select: text; }
+.adm-list { display: flex; flex-direction: column; gap: 2px; }
+.adm-item { display: flex; align-items: center; gap: 6px; } .adm-item img { width: 22px; height: 22px; image-rendering: pixelated; } .adm-item span { flex: 1; }
+.adm-war { margin: 3px 0; }

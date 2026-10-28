@@ -19,6 +19,7 @@ const Game = {
     Sprites.init();
     Input.init();
     UI.init();
+    Adm.init();
     window.addEventListener('resize', () => this.resize());
     window.addEventListener('orientationchange', () => setTimeout(() => this.resize(), 200));
     this.resize();
@@ -318,6 +319,7 @@ const Game = {
       q.mk(q.s.npcSpots[q.i], q.i); q.i++;
     }
     Work.update(dt);
+    Adm.update();
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();

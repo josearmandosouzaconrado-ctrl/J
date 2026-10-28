@@ -100,7 +100,7 @@ const UI = {
       <div class="title-screen">
         <h1 class="logo">CRÔNICAS<small>de</small>ELDORIA</h1>
         <div class="tagline">Um RPG de fantasia medieval em mundo aberto</div>
-        <div class="beta-tag">BETA</div>
+        <div class="beta-tag">BETA${IS_ADM ? ' • ADM' : ''}</div>
         <div class="menu-col">
           ${saves.length ? `<button class="mbtn gold" ${f(() => Game.loadGame(saves[0].i))}>Continuar<br><small>${esc(saves[0].s ? saves[0].s.name + ' • Nv ' + saves[0].s.level : '')}</small></button>` : ''}
           <button class="mbtn" ${f(() => this.showCreate())}>Novo Jogo</button>
@@ -844,6 +844,7 @@ const UI = {
   mapTap(sx, sy) {
     const z = this.mz, cw = this.mcv.width, ch = this.mcv.height;
     const ox = cw / 2 - this.mox * z, oy = ch / 2 - this.moy * z;
+    if (Adm.mapTap((sx - ox) / z * 16, (sy - oy) / z * 16)) return;
     let best = null, bd = 22;
     for (const m of this.mapMarkers()) { const x = ox + m.x / 16 * z, y = oy + m.y / 16 * z; const d = Math.hypot(sx - x, sy - y); if (d < bd) { bd = d; best = m; } }
     this.mapSel = best;

@@ -9,7 +9,9 @@ normalmente gera:
   - resources.arsc      (tabela com o ícone)
   - assinatura APK v2   (RSA 2048 / SHA-256)
 
-Uso: python3 android/build_apk.py   ->  CronicasDeEldoria.apk na raiz do projeto
+Uso: python3 android/build_apk.py         ->  CronicasDeEldoria.apk (jogo normal)
+     python3 android/build_apk.py --adm   ->  CronicasDeEldoria-ADM.apk (painel de testes,
+                                             instala separado do jogo normal)
 Requer apenas Python 3 e o pacote `cryptography`.
 """
 import datetime
@@ -23,13 +25,15 @@ import zlib
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HERE = os.path.join(ROOT, 'android')
-OUT = os.path.join(ROOT, 'CronicasDeEldoria.apk')
+ADM = '--adm' in sys.argv
+OUT = os.path.join(ROOT, 'CronicasDeEldoria-ADM.apk' if ADM else 'CronicasDeEldoria.apk')
 
-PACKAGE = 'com.eldoria.cronicas'
+PACKAGE = 'com.eldoria.cronicas.adm' if ADM else 'com.eldoria.cronicas'
 ACTIVITY = PACKAGE + '.MainActivity'
-APP_NAME = 'Crônicas de Eldoria'
-VERSION_CODE = 10
-VERSION_NAME = '0.9.1-beta'
+APP_NAME = 'Eldoria ADM' if ADM else 'Crônicas de Eldoria'
+UA_TAG = ' EldoriaAPK EldoriaADM' if ADM else ' EldoriaAPK'
+VERSION_CODE = 11
+VERSION_NAME = '0.9.2-beta'
 MIN_SDK, TARGET_SDK = 24, 34
 WEB_FILES = ['index.html', 'manifest.json', 'css', 'js', 'icons']
 
@@ -120,7 +124,7 @@ M = {
     'str_concat': (T_STRING, 'concat', T_STRING, [T_STRING]),
 }
 F_WEB = (ACT, 'web', T_WEBVIEW)
-CONST_STRINGS = ['file:///android_asset/index.html', ' EldoriaAPK', SAVE_JS, BACK_JS]
+CONST_STRINGS = ['file:///android_asset/index.html', UA_TAG, SAVE_JS, BACK_JS]
 
 
 def shorty(ret, params):
@@ -175,7 +179,7 @@ def build_dex():
         vcall('wv_settings', 0) + move_obj(1) +
         const4(2, 1) + vcall('ws_js', 1, 2) + vcall('ws_dom', 1, 2) +
         const4(3, 0) + vcall('ws_media', 1, 3) +
-        vcall('ws_getua', 1) + move_obj(3) + cstr(4, ' EldoriaAPK') + vcall('str_concat', 3, 4) + move_obj(3) + vcall('ws_setua', 1, 3) +
+        vcall('ws_getua', 1) + move_obj(3) + cstr(4, UA_TAG) + vcall('str_concat', 3, 4) + move_obj(3) + vcall('ws_setua', 1, 3) +
         iput(0, 5) + vcall('act_setContent', 5, 0) +
         cstr(1, 'file:///android_asset/index.html') + vcall('wv_load', 0, 1) +
         direct('my_hide', 5) + ret)
@@ -490,7 +494,7 @@ def add(z, name, data, store=False):
 
 
 def main():
-    icon = os.path.join(ROOT, 'icons', 'icon-192.png')
+    icon = os.path.join(ROOT, 'icons', 'icon-adm-192.png' if ADM else 'icon-192.png')
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'w') as z:
         add(z, 'AndroidManifest.xml', build_manifest())
