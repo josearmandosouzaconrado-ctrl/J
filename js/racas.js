@@ -9,7 +9,7 @@ const Racas = {
   load() {
     const im = new Image();
     im.onload = () => { this.img = im; this.ready = true; };
-    im.src = 'img/racas.png';
+    im.src = imgSrc('img/racas.png');   // embutida: no APK uma imagem de arquivo bloquearia a leitura dos pixels
   },
   // recorta a figura da folha; as costas são a mesma figura espelhada, mais escura e sem brilho
   src(race, v, back) {

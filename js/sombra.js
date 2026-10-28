@@ -8,7 +8,7 @@ const Sombra = {
   load() {
     const im = new Image();
     im.onload = () => { this.img = im; this.build(); };
-    im.src = 'img/criatura_sombras.png';
+    im.src = imgSrc('img/criatura_sombras.png');   // embutida: no APK uma imagem de arquivo bloquearia a leitura dos pixels
   },
   // recorta um quadro deixando os pés no centro da imagem (o jogo desenha pelo centro dos pés)
   frame(k, flip, bob) {

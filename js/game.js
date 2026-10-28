@@ -31,10 +31,12 @@ const Game = {
       if (ts - last < minGap) { requestAnimationFrame(loop); return; }
       let dt = (ts - last) / 1000; last = ts;
       if (dt > 0.1) dt = 0.1; if (dt < 0) dt = 0;
-      this.frame(dt);
+      // o próximo quadro é pedido antes: um erro num quadro nunca mais congela o jogo inteiro
       requestAnimationFrame(loop);
+      try { this.frame(dt); } catch (e) { this.reportError(e); }
     };
     requestAnimationFrame(loop);
+    window.addEventListener('error', e => this.reportError(e.error || e.message));
     UI.showTitle();
     // botão voltar do Android: fecha janelas / abre o menu (o APK chama esta função)
     window.androidBack = () => { Input.press('menu'); setTimeout(() => Input.release('menu'), 60); };
@@ -272,6 +274,15 @@ const Game = {
   },
 
   // ---------- Loop ----------
+  // erro num quadro: o jogo segue rodando; na versão ADM a mensagem aparece na tela para dar para reportar
+  reportError(e) {
+    const msg = (e && e.message) || String(e), where = e && e.stack ? (e.stack.split('\n')[1] || '').trim().replace(/^at /, '').split('/').pop() : '';
+    console.error(e);
+    this.errSeen = this.errSeen || {};
+    if (this.errSeen[msg]) return;
+    this.errSeen[msg] = 1;
+    if (IS_ADM && typeof UI !== 'undefined' && UI.toast) UI.toast(`⚠ Erro: ${msg}${where ? ' (' + where + ')' : ''}`, '#ff6060');
+  },
   frame(dt) {
     this.t += dt;
     this.fpsAcc += dt; this.fpsN++;

@@ -9,7 +9,7 @@ const Nyxar = {
   load() {
     const im = new Image();
     im.onload = () => { this.img = im; this.ready = true; };
-    im.src = 'img/nyxar.png';
+    im.src = imgSrc('img/nyxar.png');   // embutida: no APK uma imagem de arquivo bloquearia a leitura dos pixels
   },
   // pinta as veias turquesa com outra cor (mantendo o brilho de cada pixel)
   recolor(src, col, back) {

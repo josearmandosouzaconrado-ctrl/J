@@ -32,10 +32,11 @@ PACKAGE = 'com.eldoria.cronicas.adm' if ADM else 'com.eldoria.cronicas'
 ACTIVITY = PACKAGE + '.MainActivity'
 APP_NAME = 'Eldoria ADM' if ADM else 'Crônicas de Eldoria'
 UA_TAG = ' EldoriaAPK EldoriaADM' if ADM else ' EldoriaAPK'
-VERSION_CODE = 18
-VERSION_NAME = '0.9.9-beta'
+VERSION_CODE = 19
+VERSION_NAME = '0.9.10-beta'
 MIN_SDK, TARGET_SDK = 24, 34
-WEB_FILES = ['index.html', 'manifest.json', 'css', 'js', 'icons', 'img']
+# img/ não entra: as imagens vão embutidas em js/imgdata.js (tools/gerar_imgdata.py)
+WEB_FILES = ['index.html', 'manifest.json', 'css', 'js', 'icons']
 
 
 # ======================================================================
@@ -494,6 +495,9 @@ def add(z, name, data, store=False):
 
 
 def main():
+    # imagens embutidas sempre em dia com img/
+    import subprocess, sys
+    subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'gerar_imgdata.py')], check=True)
     icon = os.path.join(ROOT, 'icons', 'icon-adm-192.png' if ADM else 'icon-192.png')
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'w') as z:
