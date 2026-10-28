@@ -1137,7 +1137,7 @@ function updVisibility() {
 /* ---------- fase 1: desembarque ---------- */
 function newBoat(x, z, troops) {
   const road = !SC.coast;
-  const mesh = road ? VM(merged('convoyTruck', B => bTruck(B, 0, 0, 0)), null, 0, 0, 0, true) : makeLCVP(troops.length);
+  const mesh = road ? (typeof Blindado3 !== 'undefined' ? Blindado3.make(SC.nat && ['GER', 'ITA', 'HUN', 'ROM', 'FIN'].includes(SC.nat.A) ? 'blitz' : 'gmc') : VM(merged('convoyTruck', B => bTruck(B, 0, 0, 0)), null, 0, 0, 0, true)) : makeLCVP(troops.length);
   if (road) mesh.userData = {};
   mesh.rotation.y = Math.PI; mesh.position.set(x, road ? groundH(x, z) : 0.2, z); scene.add(mesh);
   const b = { mesh, x, z, tz: road ? 296 + rr(-8, 8) : SHORE_Z + 2, state: 'in', t: 0, troops, unloaded: 0, speed: road ? 15 : 13, road };

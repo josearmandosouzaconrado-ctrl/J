@@ -1617,6 +1617,355 @@ float vnoise(vec3 x){ vec3 i = floor(x); vec3 f = fract(x); f = f * f * (3.0 - 2
     decals(g) { mark(g, null, 'JAP', { f: [0.4, 1.38, 1.5, -0.8], s: 0.5 }); },
   };
 
+
+  /* ---------- veículos com rodas ---------- */
+  // pneu e roda centrados na origem; face externa para +x
+  function tyre(B, r, w, style) {
+    const T = once('ty' + style, () => {
+      const knob = style === 'jeep' || style === 'mil';
+      return {
+        tire: lathe(style === 'dual'
+          ? [[0.62, -0.5], [0.94, -0.5], [1, -0.42], [1, -0.06], [0.94, -0.02], [0.94, 0.02], [1, 0.06], [1, 0.42], [0.94, 0.5], [0.62, 0.5]]
+          : [[0.6, -0.5], [0.9, -0.5], [1, -0.32], [1, 0.32], [0.9, 0.5], [0.6, 0.5]], 16),
+        rim: lathe([[0, -0.3], [0.62, -0.36], [0.62, 0.4], [0.5, 0.3], [0.3, 0.38], [0.22, 0.52], [0, 0.54]], 14),
+        knob,
+      };
+    });
+    B.add(T.tire, RUBBER, r, w, r, 0, 0, 0, 0, 0, -Math.PI / 2);
+    B.add(T.rim, PT, r, w, r, 0, 0, 0, 0, 0, -Math.PI / 2);
+    for (let i = 0; i < 6; i++) { const a = i / 6 * TAU; B.add(box, STEEL, w * 0.1, r * 0.06, r * 0.06, w * 0.5, Math.cos(a) * r * 0.36, Math.sin(a) * r * 0.36); }
+    if (T.knob) for (let i = 0; i < 18; i++) { const a = i / 18 * TAU; for (const sx of [-1, 1]) B.add(box, RUBBER, w * 0.36, r * 0.07, r * 0.16, sx * w * 0.22, Math.cos(a) * r * 1.0, Math.sin(a) * r * 1.0, a + sx * 0.35, 0, 0); }
+    else for (let i = 0; i < 20; i++) { const a = i / 20 * TAU; B.add(box, RUBBER, w * 0.85, r * 0.05, r * 0.1, 0, Math.cos(a) * r * 1.0, Math.sin(a) * r * 1.0, a, 0, 0); }
+  }
+  // tripulante em busto (capacete conforme a nação)
+  const UNI = { USA: [0x6a7050, 0x55603a], GER: [0x5d6a5a, 0x5a645c], SOV: [0x857a56, 0x4d5a36], ENG: [0x76694a, 0x5c5c3c], JAP: [0x8a7d4e, 0x6a6440], ITA: [0x6e6d50, 0x5e604c], FRA: [0x8a7d58, 0x58685e] };
+  function crew(B, x, y, z, nat, ry, tank) {
+    const [j, h] = UNI[nat] || UNI.USA, sk = 0xd2a17a, r = ry || 0;
+    B.add(prism([[0.13, -0.4, 0.2], [0.14, 0.0, 0.22], [0.1, 0.12, 0.17], [-0.1, 0.12, 0.17], [-0.13, 0.0, 0.22], [-0.12, -0.4, 0.2]].map(([zz, yy, hw]) => [zz, yy, hw])), tank && nat === 'GER' ? 0x1e1e1e : j, 1, 1, 1, x, y - 0.12, z, 0, r, 0);
+    B.add(C8, sk, 0.055, 0.1, 0.055, x, y + 0.04, z, 0, r, 0);
+    B.add(SPH, sk, 0.09, 0.11, 0.1, x, y + 0.15, z + Math.cos(r) * 0.01);
+    if (tank && nat === 'GER') { B.add(C12, 0x1a1a1a, 0.105, 0.07, 0.11, x, y + 0.24, z); B.add(box, 0x1a1a1a, 0.18, 0.02, 0.08, x + Math.sin(r) * 0.08, y + 0.21, z + Math.cos(r) * 0.08, 0, r, 0); }
+    else if (nat === 'GER') { B.add(HEMI, h, 0.125, 0.12, 0.135, x, y + 0.19, z); B.add(once('flare', () => new THREE.CylinderGeometry(0.75, 1, 1, 12, 1, true)), shade(h, 0.9), 0.15, 0.06, 0.16, x, y + 0.165, z - 0.01); }
+    else if (nat === 'ENG') { B.add(HEMI, h, 0.1, 0.07, 0.11, x, y + 0.23, z); B.add(C16, h, 0.17, 0.012, 0.18, x, y + 0.23, z); }
+    else if (nat === 'SOV' && tank) { B.add(SPH, 0x2a2a26, 0.11, 0.1, 0.12, x, y + 0.21, z); }
+    else { B.add(HEMI, h, 0.125, 0.13, 0.135, x, y + 0.19, z); B.add(C16, shade(h, 0.85), 0.14, 0.012, 0.15, x, y + 0.19, z); }
+    for (const s of [-1, 1]) B.add(box, j, 0.07, 0.3, 0.08, x + Math.cos(r) * s * 0.24, y - 0.05, z - Math.sin(r) * s * 0.24 + Math.cos(r) * 0.06, 0.6, r, 0);
+  }
+  const shade = (hex, k) => { const c = new THREE.Color(hex).multiplyScalar(k); return c.getHex(); };
+  // seções [x, y] empilhadas ao longo de z (lonas em arco, capôs arredondados)
+  function zLoft(prof, zs, smooth) { return loft(zs.map(([z, sx, sy, dy]) => prof.map(([x, y]) => [x * (sx || 1), y * (sy || 1) + (dy || 0), z])), { smooth }); }
+  const ARCH = (() => { const p = []; for (let i = 0; i <= 10; i++) { const a = i / 10 * Math.PI; p.push([Math.cos(a), Math.sin(a) * 0.9 + 0.1]); } p.push([-1, 0], [1, 0]); return p; })();
+  // painel lateral fino (perfil [z, y] com recortes de para-lama)
+  const side = (B, pts, x, t, col) => { for (const s of [-1, 1]) B.add(prism(pts.map(([z, y]) => [z, y, t || 0.025])), col === undefined ? PT : col, 1, 1, 1, s * x, 0, 0); };
+  const arch = (z, r, y0) => { const o = []; for (let i = 0; i <= 6; i++) { const a = i / 6 * Math.PI; o.push([z + Math.cos(a) * r, y0 + Math.sin(a) * r]); } return o; };
+  const mgOnly = (B2, y, kind) => { B2.add(box, DARK, 0.1, 0.12, 0.45, 0, y, 0); B2.add(C8, DARK, kind === '50' ? 0.03 : 0.02, 0.9, kind === '50' ? 0.03 : 0.02, 0, y + 0.01, 0.62, Math.PI / 2, 0, 0); if (kind === '50') B2.add(C8, 0x2a2a28, 0.05, 0.5, 0.05, 0, y + 0.01, 0.42, Math.PI / 2, 0, 0); };
+
+  // Jeep Willys MB com .30 no pedestal
+  SPEC.jeep = {
+    nat: 'USA', L: 3.36, Wd: 1.6,
+    wheels: [{ x: 0.62, z: 1.02, r: 0.37, w: 0.19, style: 'jeep' }, { x: 0.62, z: -1.01, r: 0.37, w: 0.19, style: 'jeep' }],
+    hull(B) {
+      for (const s of [-1, 1]) B.add(box, 0x2c2c26, 0.08, 0.14, 3.1, s * 0.4, 0.48, 0.05);
+      B.add(C8, 0x2c2c26, 0.05, 1.25, 0.05, 0, 0.37, 1.02, 0, 0, Math.PI / 2); B.add(C8, 0x2c2c26, 0.06, 1.25, 0.06, 0, 0.37, -1.01, 0, 0, Math.PI / 2);
+      // capô, grade e para-lamas dianteiros
+      B.add(prism([[1.55, 0.62, 0.46], [1.55, 0.98, 0.44], [0.55, 1.03, 0.48], [0.55, 0.62, 0.5]]), PT);
+      B.add(box, DARK, 0.86, 0.38, 0.03, 0, 0.8, 1.56); for (let i = 0; i < 9; i++) B.add(box, PT, 0.035, 0.36, 0.04, -0.36 + i * 0.09, 0.8, 1.575);
+      for (const s of [-1, 1]) { B.add(C12, PT, 0.07, 0.05, 0.07, s * 0.3, 0.92, 1.58, Math.PI / 2, 0, 0); B.add(C12, 0xb8b4a0, 0.055, 0.01, 0.055, s * 0.3, 0.92, 1.61, Math.PI / 2, 0, 0); }
+      for (const s of [-1, 1]) { B.add(prism([[1.62, 0.66, 0.15], [1.5, 0.8, 0.15], [0.55, 0.82, 0.15], [0.55, 0.78, 0.15], [1.5, 0.76, 0.15], [1.6, 0.62, 0.15]]), PT, 1, 1, 1, s * 0.63, 0, 0); }
+      B.add(box, PT, 1.42, 0.12, 0.08, 0, 0.55, 1.66);
+      // carroceria aberta: laterais com recorte de entrada, piso, traseira
+      side(B, [[0.55, 0.55], [0.55, 1.02], [0.25, 1.02], [-0.02, 0.82], [-0.55, 0.82], [-0.72, 1.0], [-1.62, 1.0], [-1.65, 0.55]], 0.69, 0.025);
+      B.add(box, PT, 1.38, 0.04, 2.2, 0, 0.58, -0.55); B.add(box, PT, 1.4, 0.45, 0.04, 0, 0.8, -1.64);
+      for (const s of [-1, 1]) B.add(box, PT, 0.28, 0.3, 0.9, s * 0.53, 0.72, -1.0);
+      B.add(box, PT, 1.36, 0.4, 0.05, 0, 0.82, 0.54);
+      // bancos, volante, para-brisa
+      for (const s of [-1, 1]) { B.add(box, 0x4a4a36, 0.42, 0.1, 0.42, s * 0.3, 0.75, 0.05); B.add(box, 0x4a4a36, 0.42, 0.4, 0.08, s * 0.3, 0.95, -0.17, -0.15, 0, 0); }
+      B.add(box, 0x4a4a36, 1.2, 0.1, 0.45, 0, 0.78, -1.05);
+      B.add(C8, DARK, 0.02, 0.4, 0.02, 0.3, 0.95, 0.35, -0.5, 0, 0); B.add(C16, DARK, 0.16, 0.02, 0.16, 0.3, 1.13, 0.27, -0.9, 0, 0);
+      for (const s of [-1, 1]) B.add(box, PT, 0.04, 0.48, 0.04, s * 0.66, 1.26, 0.55, -0.12, 0, 0);
+      B.add(box, PT, 1.36, 0.04, 0.04, 0, 1.5, 0.52); B.add(box, 0x5a6a6a, 1.26, 0.42, 0.012, 0, 1.27, 0.55, -0.12, 0, 0);
+      // estepe, galão, pá e machado, antena
+      B.add(once('jsp', () => { const b = new MB(); tyre(b, 0.37, 0.19, 'jeep'); return b.build(); }), PT, 1, 1, 1, 0, 0.92, -1.76, 0, Math.PI / 2, 0);
+      A.jerry(B, 0.5, 0.95, -1.82, 0); A.antenna(B, -0.62, 1.0, -1.45, 2.2);
+      B.add(box, WOOD, 0.03, 0.03, 0.9, -0.72, 0.85, -0.6); B.add(box, STEEL, 0.02, 0.2, 0.16, -0.72, 0.85, -0.12);
+      // pedestal e tripulação
+      B.add(C8, STEEL, 0.04, 0.85, 0.04, 0, 1.0, -0.55);
+      crew(B, 0.3, 1.2, 0.0, 'USA'); crew(B, -0.12, 1.42, -0.85, 'USA');
+      return { tur: [0, -0.55] };
+    },
+    turret() { return { y: 1.48, z: 0.1, len: 0.95, custom: (B2, y) => mgOnly(B2, y) }; },
+    decals(g) { decal(g, dtex('usstar0'), 0.55, 0.55, 0, 1.035, 1.05, 0, -Math.PI / 2); for (const s of [-1, 1]) decal(g, dtex('usstar'), 0.4, 0.4, s * 0.72, 0.8, -1.2, s * Math.PI / 2); },
+  };
+
+  // Kübelwagen Typ 82 com MG 34
+  SPEC.kubel = {
+    nat: 'GER', L: 3.74, Wd: 1.6,
+    wheels: [{ x: 0.66, z: 1.2, r: 0.36, w: 0.2, style: 'mil' }, { x: 0.66, z: -1.2, r: 0.36, w: 0.2, style: 'mil' }],
+    hull(B) {
+      const pf = [[1.9, 0.5], [1.95, 0.78], [1.62, 0.98], ...arch(1.2, 0.46, 0.5).reverse().map(([z, y]) => [z, y]), [0.95, 1.04], [-0.95, 1.04], [-1.9, 0.82], [-1.92, 0.5]];
+      // painel lateral com caixas de roda e frisos
+      const sp = [[1.95, 0.48], [1.98, 0.8], [1.6, 1.0], [0.95, 1.04], [-0.95, 1.04], [-1.9, 0.84], [-1.93, 0.48], ...arch(-1.2, 0.44, 0.48).map(([z, y]) => [z, y]).reverse().reverse(), ...[]];
+      void pf; void sp;
+      const pts = [[1.95, 0.5], [1.98, 0.8], [1.6, 1.0], [0.95, 1.04], [-0.95, 1.04], [-1.9, 0.84], [-1.93, 0.5], [-1.66, 0.5]];
+      for (const [z, y] of arch(-1.2, 0.44, 0.5)) pts.push([z, y]);
+      pts.push([-0.74, 0.5], [0.74, 0.5]);
+      for (const [z, y] of arch(1.2, 0.44, 0.5)) pts.push([z, y]);
+      pts.push([1.66, 0.5]);
+      side(B, pts, 0.76, 0.02);
+      for (const s of [-1, 1]) for (const y of [0.62, 0.86]) B.add(box, PD, 0.02, 0.03, 2.7, s * 0.785, y, 0.0);
+      B.add(prism([[1.95, 0.55, 0.74], [1.98, 0.8, 0.74], [1.6, 1.0, 0.74], [0.95, 1.04, 0.74], [0.95, 0.55, 0.74]]), PT);
+      B.add(prism([[-0.95, 0.55, 0.74], [-0.95, 1.04, 0.74], [-1.9, 0.84, 0.74], [-1.93, 0.55, 0.74]]), PT);
+      for (let i = 0; i < 6; i++) B.add(box, DARK, 0.6, 0.015, 0.05, 0, 0.95 - i * 0.03, -1.15 - i * 0.12, -0.2, 0, 0);
+      B.add(box, PT, 1.5, 0.04, 1.9, 0, 0.6, 0.0);
+      B.add(once('ksp', () => { const b = new MB(); tyre(b, 0.36, 0.2, 'mil'); return b.build(); }), PT, 1, 1, 1, 0, 1.13, 1.45, 0, 0, Math.PI / 2 - 0.35);
+      for (const s of [-1, 1]) A.light(B, s * 0.55, 1.08, 1.55, 0);
+      // bancos, para-brisa, capota recolhida
+      for (const z of [0.35, -0.55]) for (const s of [-1, 1]) { B.add(box, 0x3a3a30, 0.45, 0.12, 0.45, s * 0.3, 0.72, z); B.add(box, 0x3a3a30, 0.45, 0.4, 0.08, s * 0.3, 0.95, z - 0.22, -0.12, 0, 0); }
+      B.add(box, PT, 1.45, 0.04, 0.04, 0, 1.45, 0.95); for (const s of [-1, 1]) B.add(box, PT, 0.04, 0.42, 0.04, s * 0.7, 1.24, 0.95); B.add(box, 0x5a6a6a, 1.36, 0.36, 0.012, 0, 1.25, 0.96);
+      B.add(C12, CANVAS, 0.14, 1.5, 0.14, 0, 1.12, -0.95, 0, 0, Math.PI / 2);
+      A.jerry(B, -0.55, 1.05, -1.6, 0, 0x4a4c3c); B.add(box, WOOD, 0.03, 0.03, 0.9, 0.79, 0.75, 0.0);
+      crew(B, 0.3, 1.2, 0.4, 'GER'); crew(B, -0.3, 1.2, -0.5, 'GER');
+      return { tur: [0.0, -0.1] };
+    },
+    turret(B) { B.add(C8, STEEL, 0.03, 0.55, 0.03, 0, 1.25, 0); return { y: 1.52, z: 0.0, len: 0.95, custom: (B2, y) => mgOnly(B2, y) }; },
+    decals(g) { for (const s of [-1, 1]) decal(g, dtex('cross'), 0.32, 0.32, s * 0.8, 0.75, -1.3, s * Math.PI / 2); },
+  };
+
+  // M8 Greyhound (seis rodas, torre aberta de 37 mm)
+  SPEC.greyhound = {
+    nat: 'USA', L: 5.0, Wd: 2.54,
+    wheels: [{ x: 1.0, z: 1.52, r: 0.47, w: 0.26, style: 'mil' }, { x: 1.0, z: -0.4, r: 0.47, w: 0.26, style: 'mil' }, { x: 1.0, z: -1.62, r: 0.47, w: 0.26, style: 'mil' }],
+    hull(B) {
+      H2(B, [[2.45, 0.62], [2.55, 0.95], [1.65, 1.42], [-1.3, 1.5], [-2.4, 1.42], [-2.5, 0.62]], 0.82);
+      B.add(prism([[2.2, 0.95, 0.85], [1.55, 1.42, 0.85], [1.55, 1.42, 1.08], [2.2, 0.95, 1.0]].map(p => p)), PT);
+      for (const s of [-1, 1]) {
+        B.add(box, PT, 0.42, 0.04, 4.6, s * 1.08, 1.05, -0.1);
+        for (const z of [0.55, -1.0]) { B.add(box, PT, 0.32, 0.38, 0.75, s * 1.08, 1.25, z); B.add(box, PD, 0.34, 0.04, 0.77, s * 1.08, 1.45, z); }
+        A.light(B, s * 0.6, 1.12, 2.5, 0);
+      }
+      A.vis(B, 0.4, 1.3, 1.95, 0, 0.3); A.vis(B, -0.4, 1.3, 1.95, 0, 0.3);
+      A.grille(B, 0, 1.51, -1.6, 1.4, 0.8, 7);
+      B.add(C8, CANVAS, 0.16, 1.4, 0.16, 0, 1.62, -2.2, 0, 0, Math.PI / 2);
+      return { tur: [0, -0.2] };
+    },
+    turret(B) {
+      const y0 = 1.5;
+      openTurret(B, superPlan(1.75, 1.75, 18, 2.2), [[y0, 1, 1], [y0 + 0.5, 0.96, 0.96]]);
+      B.add(box, PT, 0.55, 0.38, 0.22, 0, y0 + 0.26, 0.9);
+      const ring = []; for (let i = 0; i <= 16; i++) { const a = i / 16 * TAU; ring.push([Math.cos(a) * 0.75, y0 + 0.75, Math.sin(a) * 0.75]); }
+      A.rail(B, ring); for (const a of [0.5, 2.6, 4.7]) B.add(C6, STEEL, 0.02, 0.28, 0.02, Math.cos(a) * 0.75, y0 + 0.62, Math.sin(a) * 0.75);
+      A.mg(B, -0.75, y0 + 0.82, 0.0, 0, -0.1, '50');
+      crew(B, 0.35, y0 + 0.5, -0.2, 'USA', 0, true); crew(B, -0.35, y0 + 0.45, -0.35, 'USA', 0, true);
+      return { y: y0 + 0.26, z: 1.0, len: 1.9, r0: 0.04, r1: 0.032, brake: 'none', sleeve: [0.07, 0.3] };
+    },
+    decals(g, tur) { mark(g, tur, 'USA', { h: [0.83, 1.15, -0.2], t: [0.86, 1.75, 0], s: 0.45 }); },
+  };
+
+  // Sd.Kfz. 234/2 Puma (oito rodas, 50 mm)
+  SPEC.puma = {
+    nat: 'GER', L: 6.8, Wd: 2.4, zim: false,
+    wheels: [2.0, 0.66, -0.66, -2.0].map(z => ({ x: 0.95, z, r: 0.48, w: 0.27, style: 'mil' })),
+    hull(B) {
+      B.add(prism([[3.3, 0.75, 0.55], [3.0, 1.15, 0.85], [2.2, 1.65, 0.85], [-2.2, 1.65, 0.85], [-3.1, 1.35, 0.85], [-3.3, 0.75, 0.7], [-2.6, 0.55, 0.8], [2.6, 0.55, 0.8]]), PT);
+      for (const s of [-1, 1]) {
+        B.add(prism([[3.0, 1.12, 0.02], [2.4, 1.2, 0.02], [-2.4, 1.2, 0.02], [-3.0, 1.12, 0.02], [-3.0, 1.1, 0.02], [3.0, 1.1, 0.02]]), PT, 1, 1, 1, 0, 0, 0);
+        B.add(box, PT, 0.42, 0.03, 6.0, s * 1.08, 1.18, 0);
+        for (const z of [1.33, -1.33]) { B.add(box, PT, 0.34, 0.42, 0.95, s * 1.1, 1.42, z); B.add(box, PD, 0.36, 0.04, 0.97, s * 1.1, 1.64, z); }
+        A.light(B, s * 0.55, 1.25, 3.0, 0);
+      }
+      A.vis(B, 0.3, 1.45, 2.65, 0, 0.32); A.grille(B, 0, 1.66, -1.9, 1.3, 1.0, 8);
+      for (const s of [-1, 1]) A.antenna(B, s * 0.7, 1.65, -2.4, 1.6);
+      return { tur: [0, -0.3] };
+    },
+    turret(B) {
+      const y0 = 1.65;
+      B.add(tloft([[0.5, 0.9], [0.85, 0.35], [0.85, -0.55], [0.65, -0.85], [-0.65, -0.85], [-0.85, -0.55], [-0.85, 0.35], [-0.5, 0.9]], [[y0, 1, 1], [y0 + 0.62, 0.78, 0.86, -0.04]]), PT);
+      B.add(SAU(), PT, 0.28, 0.3, 0.28, 0, y0 + 0.3, 0.88, Math.PI / 2, 0, 0);
+      A.smoke(B, 0.72, y0 + 0.36, 0.3, 1, 3); A.smoke(B, -0.72, y0 + 0.36, 0.3, -1, 3); A.hatch(B, 0.2, y0 + 0.62, -0.3, 0.24, 0);
+      return { y: y0 + 0.3, z: 1.1, len: 2.85, r0: 0.05, r1: 0.04, brake: 'double', sleeve: [0.08, 0.2] };
+    },
+    decals(g, tur) { mark(g, tur, 'GER', { h: [0.86, 1.4, -0.4], t: [0.8, 1.95, -0.2], s: 0.45, ta: 0.24 }); },
+  };
+
+  // corpo de meia-lagarta M3 (dianteira, cabine, compartimento)
+  function halftrackUS(B, wallH) {
+    for (const s of [-1, 1]) B.add(box, 0x2c2c26, 0.1, 0.18, 5.6, s * 0.45, 0.62, 0.3);
+    B.add(C12, PD, 0.16, 1.9, 0.16, 0, 0.72, 3.0, 0, 0, Math.PI / 2);                                 // rolo para-choque
+    B.add(box, PT, 1.3, 0.75, 0.08, 0, 1.12, 2.72); for (let i = 0; i < 7; i++) B.add(box, DARK, 1.1, 0.04, 0.05, 0, 0.85 + i * 0.09, 2.77);
+    B.add(prism([[2.72, 0.75, 0.65], [2.72, 1.52, 0.6], [1.35, 1.6, 0.68], [1.35, 0.75, 0.7]]), PT);
+    for (const s of [-1, 1]) { B.add(prism([[2.75, 0.95, 0.16], [2.5, 1.12, 0.16], [1.4, 1.12, 0.16], [1.1, 0.75, 0.16], [1.18, 0.72, 0.16], [1.45, 1.06, 0.16], [2.45, 1.06, 0.16], [2.7, 0.9, 0.16]]), PT, 1, 1, 1, s * 0.86, 0, 0); A.light(B, s * 0.75, 1.25, 2.55, 0); }
+    // cabine e para-brisa blindado
+    side(B, [[1.35, 0.75], [1.35, 1.65], [0.65, 1.65], [0.65, 1.95], [-2.65, 1.95], [-2.65, 0.75]], 1.0, 0.03);
+    B.add(box, PT, 2.0, 0.55, 0.05, 0, 1.92, 1.35, -0.35, 0, 0); for (const s of [-1, 1]) B.add(box, GLASS, 0.5, 0.06, 0.02, s * 0.45, 1.92, 1.39, -0.35, 0, 0);
+    B.add(box, PT, 2.0, 1.2, 0.05, 0, 1.35, -2.65); B.add(box, PD, 0.6, 0.9, 0.06, 0, 1.3, -2.68);
+    B.add(box, 0x3a3a30, 1.94, 0.05, 4.0, 0, 0.98, -0.65);
+    for (const s of [-1, 1]) B.add(box, 0x4a4a36, 0.35, 0.4, 2.8, s * 0.78, 1.18, -1.1);
+    for (const s of [-1, 1]) { B.add(C8, CANVAS, 0.15, 1.4, 0.15, s * 1.12, 1.6, -0.6, Math.PI / 2, 0, 0); B.add(box, STEEL, 0.04, 0.04, 2.2, s * 1.05, 1.82, -0.8); }
+    for (let i = 0; i < 3; i++) A.jerry(B, -0.55 + i * 0.55, 1.2, -2.78, 0);
+    void wallH;
+  }
+  const G_M3 = { tw: 0.3, x: 0.85, wr: 0.25, style: 'spoke', wheels: [-0.55, -1.0, -1.45, -1.9], bogie: 'vvss', bogies: [-1.22],
+    front: { z: -0.05, y: 0.5, r: 0.3, sprocket: true, teeth: 12 }, rear: { z: -2.45, y: 0.42, r: 0.3, style: 'spoke' }, rollers: [{ z: -1.2, y: 0.78, r: 0.08 }], sag: 0.02 };
+
+  // M3 Half-track com .50 no púlpito
+  SPEC.halftrack = {
+    nat: 'USA', L: 6.18, Wd: 2.22, gear: G_M3, track: 'chevron',
+    wheels: [{ x: 0.86, z: 1.85, r: 0.45, w: 0.24, style: 'mil' }],
+    hull(B) {
+      halftrackUS(B);
+      B.add(C16, PT, 0.36, 0.55, 0.36, -0.55, 1.95, 1.0); B.add(C16, DARK, 0.33, 0.05, 0.33, -0.55, 2.22, 1.0);
+      crew(B, 0.42, 1.55, 1.0, 'USA'); crew(B, 0.45, 1.6, -1.2, 'USA'); crew(B, -0.4, 1.6, -1.8, 'USA');
+      return { tur: [-0.55, 1.0] };
+    },
+    turret() { return { y: 2.4, z: 0.1, len: 1.0, custom: (B2, y) => { mgOnly(B2, y, '50'); B2.add(box, PT, 0.5, 0.35, 0.03, 0, y - 0.05, 0.25); } }; },
+    decals(g) { mark(g, null, 'USA', { h: [1.03, 1.45, -0.9], s: 0.5 }); decal(g, dtex('usstar0'), 0.6, 0.6, 0, 1.61, 2.0, 0, -Math.PI / 2); },
+  };
+
+  // M16 (reparo quádruplo de .50)
+  SPEC.m16 = Object.assign({}, SPEC.halftrack, {
+    hull(B) { halftrackUS(B); crew(B, 0.42, 1.55, 1.0, 'USA'); return { tur: [0, -1.0] }; },
+    turret(B) {
+      B.add(C16, PT, 0.55, 0.25, 0.55, 0, 1.2, 0); B.add(box, PT, 1.4, 0.55, 0.05, 0, 1.9, 0.35);
+      for (const s of [-1, 1]) B.add(box, PT, 0.05, 0.5, 0.5, s * 0.7, 1.85, 0.1);
+      crew(B, 0, 1.75, -0.25, 'USA', 0, true);
+      return { y: 1.75, z: 0.2, len: 1.5, custom(B2, y) {
+        B2.add(box, DARK, 0.9, 0.25, 0.5, 0, y, 0);
+        for (const sx of [-1, 1]) for (const sy of [-1, 1]) { B2.add(box, DARK, 0.12, 0.14, 0.5, sx * 0.32, y + sy * 0.16, 0.0); B2.add(C8, 0x2a2a28, 0.035, 0.55, 0.035, sx * 0.32, y + sy * 0.16, 0.45, Math.PI / 2, 0, 0); B2.add(C8, DARK, 0.022, 0.6, 0.022, sx * 0.32, y + sy * 0.16, 1.0, Math.PI / 2, 0, 0); }
+        for (const sx of [-1, 1]) B2.add(box, 0x4a4f2e, 0.18, 0.3, 0.3, sx * 0.62, y - 0.05, -0.1);
+      } };
+    },
+  });
+
+  // Sd.Kfz. 251 Ausf. D
+  SPEC.sdkfz251 = {
+    nat: 'GER', L: 5.8, Wd: 2.1, track: 'ger',
+    gear: { tw: 0.28, x: 0.82, wr: 0.32, style: 'disc', inter: true, wheels: [0.75, 0.27, -0.21, -0.69, -1.17, -1.65],
+      front: { z: 1.22, y: 0.5, r: 0.3, sprocket: true, teeth: 14 }, rear: { z: -2.35, y: 0.46, r: 0.3, style: 'steel' }, sag: 0.03 },
+    wheels: [{ x: 0.8, z: 2.05, r: 0.42, w: 0.2, style: 'mil' }],
+    hull(B) {
+      // casco blindado de chapas inclinadas, aberto em cima
+      B.add(prism([[2.9, 0.62, 0.38], [2.95, 0.85, 0.42], [2.6, 1.3, 0.62], [1.2, 1.5, 0.72], [1.2, 0.6, 0.78], [2.4, 0.55, 0.6]]), PT);
+      for (const s of [-1, 1]) {
+        B.add(prism([[1.2, 0.95, 0.02], [1.2, 1.75, 0.02], [-2.5, 1.75, 0.02], [-2.9, 1.3, 0.02], [-2.9, 0.95, 0.02]]), PT, 1, 1, 1, s * 0.9, 0, 0, 0, 0, 0);
+        B.add(prism([[1.2, 0.95, 0.03], [1.2, 1.75, 0.03], [-2.5, 1.75, 0.03], [-2.9, 1.3, 0.03], [-2.9, 0.95, 0.03]]), PT, 1, 1, 1, s * 0.88, 0, 0, 0, 0, s * -0.18);
+        B.add(box, PT, 0.4, 0.03, 4.6, s * 1.0, 0.98, -0.75);
+        B.add(prism([[2.5, 0.9, 0.17], [2.3, 1.05, 0.17], [1.75, 1.05, 0.17], [1.5, 0.6, 0.17], [1.6, 0.58, 0.17], [1.82, 0.98, 0.17], [2.25, 0.98, 0.17], [2.45, 0.85, 0.17]]), PT, 1, 1, 1, s * 0.82, 0, 0);
+        A.light(B, s * 0.55, 1.3, 2.45, 0);
+      }
+      B.add(box, PT, 1.6, 0.52, 0.05, 0, 1.72, 1.2, -0.45, 0, 0); for (const s of [-1, 1]) A.vis(B, s * 0.4, 1.73, 1.23, 0, 0.26);
+      B.add(box, PT, 1.6, 0.85, 0.05, 0, 1.38, -2.88, 0.35, 0, 0);
+      B.add(box, 0x3a3a30, 1.6, 0.05, 3.8, 0, 0.98, -0.75);
+      for (const s of [-1, 1]) B.add(box, 0x3a3a30, 0.32, 0.35, 2.8, s * 0.6, 1.15, -1.0);
+      A.tools(B, 0.98, 1.0, -1.2, 1.2, -1); A.antenna(B, -0.8, 1.75, 0.9, 1.8);
+      crew(B, 0.35, 1.5, 0.75, 'GER'); crew(B, -0.4, 1.5, -1.3, 'GER'); crew(B, 0.4, 1.5, -1.9, 'GER');
+      return { tur: [0, 1.05] };
+    },
+    turret(B) { B.add(box, PT, 0.55, 0.42, 0.03, 0, 1.95, 0.15, -0.15, 0, 0); return { y: 1.98, z: 0.05, len: 0.95, custom: (B2, y) => mgOnly(B2, y) }; },
+    decals(g) { mark(g, null, 'GER', { h: [0.95, 1.4, -1.3], s: 0.45 }); },
+  };
+
+  // Panzerwerfer 42 "Maultier" (10 tubos de 150 mm)
+  SPEC.maultier = {
+    nat: 'GER', L: 6.0, Wd: 2.2, track: 'ger',
+    gear: { tw: 0.28, x: 0.8, wr: 0.2, style: 'disc', single: true, wheels: [-0.35, -0.75, -1.15, -1.55], bogie: 'leaf', bogies: [-0.55, -1.35],
+      front: { z: 0.12, y: 0.45, r: 0.26, sprocket: true, teeth: 12 }, rear: { z: -2.0, y: 0.38, r: 0.25, style: 'steel' }, sag: 0.02 },
+    wheels: [{ x: 0.82, z: 1.95, r: 0.42, w: 0.22, style: 'mil' }],
+    hull(B) {
+      B.add(prism([[2.75, 0.62, 0.55], [2.8, 1.0, 0.55], [2.35, 1.45, 0.6], [1.3, 1.5, 0.75], [1.3, 0.6, 0.78]]), PT);
+      B.add(prism([[1.3, 0.62, 1.0], [1.3, 1.8, 0.95], [0.95, 2.1, 0.9], [-2.4, 2.1, 0.9], [-2.55, 1.6, 0.95], [-2.55, 0.62, 1.0]]), PT);
+      for (const s of [-1, 1]) { B.add(prism([[2.55, 0.92, 0.16], [2.3, 1.05, 0.16], [1.6, 1.05, 0.16], [1.4, 0.6, 0.16], [1.5, 0.58, 0.16], [1.65, 0.98, 0.16], [2.25, 0.98, 0.16], [2.5, 0.85, 0.16]]), PT, 1, 1, 1, s * 0.82, 0, 0); A.light(B, s * 0.5, 1.2, 2.6, 0); }
+      for (const s of [-1, 1]) A.vis(B, s * 0.4, 1.85, 1.16, 0, 0.3);
+      B.add(C16, PT, 0.85, 0.1, 0.85, 0, 2.15, -0.9);
+      return { tur: [0, -0.9] };
+    },
+    turret(B) {
+      B.add(box, PT, 1.0, 0.25, 0.9, 0, 2.35, 0);
+      return { y: 2.75, z: -0.3, len: 1.35, custom(B2, y) {
+        for (let r = 0; r < 2; r++) for (let c = 0; c < 5; c++) { B2.add(C12, 0x4a4c3c, 0.09, 1.5, 0.09, (c - 2) * 0.2, y + r * 0.2, 0.7, Math.PI / 2 - 0.25, 0, 0); B2.add(C12, DARK, 0.07, 0.02, 0.07, (c - 2) * 0.2, y + r * 0.2 + 0.18, 1.43, Math.PI / 2 - 0.25, 0, 0); }
+        for (const z of [0.2, 1.1]) B2.add(box, STEEL, 1.1, 0.5, 0.06, 0, y + 0.1 + (z - 0.2) * 0.25, z, -0.25, 0, 0);
+      } };
+    },
+    decals(g) { mark(g, null, 'GER', { h: [0.97, 1.4, -1.2], s: 0.5 }); },
+  };
+
+  // trator blindado Caterpillar D7 do Dia D
+  SPEC.dozer = {
+    nat: 'USA', L: 6.2, Wd: 3.0, track: 'ger',
+    gear: { tw: 0.51, x: 0.95, wr: 0.22, style: 'steel', single: true, wheels: [1.05, 0.55, 0.05, -0.45, -0.95],
+      front: { z: 1.75, y: 0.52, r: 0.38, style: 'steel' }, rear: { z: -1.7, y: 0.64, r: 0.42, sprocket: true, teeth: 16 },
+      rollers: [{ z: 0.9, y: 0.92, r: 0.09 }, { z: -0.6, y: 0.94, r: 0.09 }], sag: 0.01 },
+    hull(B) {
+      for (const s of [-1, 1]) B.add(box, PT, 0.25, 0.25, 3.4, s * 0.62, 0.62, 0.0);
+      B.add(prism([[1.8, 0.9, 0.55], [1.8, 1.72, 0.52], [0.15, 1.78, 0.55], [0.15, 0.9, 0.58]]), PT);
+      B.add(box, DARK, 0.95, 0.75, 0.04, 0, 1.3, 1.82); for (let i = 0; i < 8; i++) B.add(box, PT, 0.04, 0.72, 0.05, -0.42 + i * 0.12, 1.3, 1.84);
+      B.add(C8, 0x2b2b25, 0.08, 0.9, 0.08, 0.35, 2.15, 1.35); B.add(C8, 0x2b2b25, 0.1, 0.06, 0.1, 0.35, 2.62, 1.35);
+      B.add(C8, STEEL, 0.13, 0.5, 0.13, -0.32, 1.98, 1.0);
+      for (const s of [-1, 1]) B.add(box, PT, 0.55, 0.04, 3.4, s * 0.95, 1.12, 0.0);
+      // posto do operador com blindagem e tanque de combustível
+      B.add(box, 0x3a3a30, 0.6, 0.15, 0.55, 0, 1.25, -0.5); B.add(box, 0x3a3a30, 0.6, 0.5, 0.1, 0, 1.5, -0.8);
+      B.add(C12, PT, 0.32, 1.3, 0.32, 0, 1.45, -1.35, 0, 0, Math.PI / 2);
+      B.add(box, PT, 1.9, 1.1, 0.06, 0, 1.7, 0.1); B.add(box, GLASS, 0.6, 0.08, 0.02, 0, 2.0, 0.14);
+      for (const s of [-1, 1]) B.add(box, PT, 0.06, 1.1, 1.5, s * 0.95, 1.7, -0.65);
+      crew(B, 0, 1.75, -0.45, 'USA');
+      // lâmina curva e braços de empuxo
+      B.add(prism([[2.75, 0.05], [2.6, 0.4], [2.55, 0.8], [2.6, 1.2], [2.72, 1.42], [2.62, 1.44], [2.47, 1.2], [2.42, 0.8], [2.47, 0.4], [2.6, 0.05]].map(([z, y]) => [z, y, 1.9])), PT);
+      B.add(box, 0x6a6a60, 3.8, 0.12, 0.2, 0, 0.08, 2.78);
+      for (const s of [-1, 1]) { B.add(box, PT, 0.18, 0.22, 2.2, s * 1.35, 0.72, 1.5, -0.06, 0, 0); B.add(box, PT, 0.08, 1.4, 0.4, s * 1.9, 0.75, 2.55); }
+      B.add(box, STEEL, 0.5, 0.6, 0.4, 0, 2.0, 2.0); for (const s of [-1, 1]) B.add(box, STEEL, 0.08, 1.4, 0.08, s * 0.5, 1.65, 2.2, 0.35, 0, 0);
+      return { tur: [0, 0] };
+    },
+    decals(g) { for (const s of [-1, 1]) decal(g, dtex('usstar'), 0.7, 0.7, s * 0.985, 1.7, -0.6, s * Math.PI / 2); },
+  };
+
+  // caminhões de comboio
+  function truckBed(B, z0, z1, hw, y0) {
+    B.add(box, PT, hw * 2, 0.08, z0 - z1, 0, y0, (z0 + z1) / 2);
+    side(B, [[z0, y0], [z0, y0 + 0.55], [z1, y0 + 0.55], [z1, y0]], hw, 0.03, WOOD);
+    B.add(box, WOOD, hw * 2, 0.55, 0.05, 0, y0 + 0.28, z1);
+    B.add(zLoft(ARCH, [[z0, hw, 0.85, y0 + 0.5], [z1 + 0.02, hw, 0.85, y0 + 0.5]], true), CANVAS);
+    for (let i = 0; i < 4; i++) B.add(box, shade(CANVAS, 0.8), hw * 2.02, 0.03, 0.06, 0, y0 + 1.3, z0 - (i + 0.5) * (z0 - z1) / 4);
+  }
+  SPEC.gmc = {
+    nat: 'USA', L: 6.86, Wd: 2.24,
+    wheels: [{ x: 0.86, z: 2.35, r: 0.48, w: 0.25, style: 'truck' }, { x: 0.82, z: -0.92, r: 0.48, w: 0.42, style: 'dual' }, { x: 0.82, z: -2.15, r: 0.48, w: 0.42, style: 'dual' }],
+    hull(B) {
+      for (const s of [-1, 1]) B.add(box, 0x2c2c26, 0.1, 0.22, 6.5, s * 0.45, 0.78, -0.1);
+      B.add(prism([[3.25, 0.95, 0.42], [3.25, 1.5, 0.4], [1.75, 1.6, 0.45], [1.75, 0.95, 0.45]]), PT);
+      B.add(box, DARK, 0.75, 0.55, 0.03, 0, 1.22, 3.27); for (let i = 0; i < 6; i++) B.add(box, STEEL, 0.75, 0.025, 0.04, 0, 1.0 + i * 0.1, 3.3);
+      for (const s of [-1, 1]) { B.add(prism([[3.3, 1.0, 0.22], [2.85, 1.28, 0.22], [1.85, 1.28, 0.22], [1.6, 0.95, 0.22], [1.7, 0.92, 0.22], [1.95, 1.22, 0.22], [2.8, 1.22, 0.22], [3.25, 0.96, 0.22]]), PT, 1, 1, 1, s * 0.85, 0, 0); A.light(B, s * 0.62, 1.35, 3.2, 0); }
+      B.add(box, PT, 2.1, 0.14, 0.1, 0, 0.82, 3.4);
+      // cabine aberta com capota de lona
+      B.add(prism([[1.75, 0.95, 0.95], [1.75, 1.65, 0.95], [1.6, 1.75, 0.95], [0.6, 1.75, 0.95], [0.6, 0.95, 0.95]]), PT);
+      B.add(box, 0x5a6a6a, 1.75, 0.55, 0.02, 0, 2.05, 1.72, -0.08, 0, 0); for (const s of [-1, 1]) B.add(box, PT, 0.05, 0.6, 0.05, s * 0.9, 2.05, 1.72);
+      B.add(box, CANVAS, 1.95, 0.06, 1.2, 0, 2.38, 1.15); for (const s of [-1, 1]) B.add(box, CANVAS, 0.03, 0.55, 1.1, s * 0.96, 2.1, 1.1);
+      crew(B, 0.42, 2.0, 1.15, 'USA');
+      B.add(once('gsp', () => { const b = new MB(); tyre(b, 0.48, 0.25, 'truck'); return b.build(); }), PT, 1, 1, 1, -1.0, 1.25, 0.3, 0, 0, 0);
+      truckBed(B, 0.45, -3.3, 1.08, 1.2);
+      for (const s of [-1, 1]) B.add(box, PT, 0.5, 0.05, 1.8, s * 0.82, 1.08, -1.55);
+      A.jerry(B, 0.75, 1.0, 0.3, Math.PI / 2);
+      return { tur: [0, 0] };
+    },
+    decals(g) { decal(g, dtex('usstar0'), 0.55, 0.55, 0, 1.585, 2.5, 0, -Math.PI / 2); for (const s of [-1, 1]) decal(g, dtex('usstar'), 0.55, 0.55, s * 0.955, 1.35, 1.15, s * Math.PI / 2); },
+  };
+  SPEC.blitz = {
+    nat: 'GER', L: 6.02, Wd: 2.26,
+    wheels: [{ x: 0.82, z: 1.85, r: 0.46, w: 0.24, style: 'mil' }, { x: 0.8, z: -1.35, r: 0.46, w: 0.42, style: 'dual' }],
+    hull(B) {
+      for (const s of [-1, 1]) B.add(box, 0x2c2c26, 0.1, 0.2, 5.8, s * 0.45, 0.75, -0.1);
+      B.add(prism([[2.85, 0.92, 0.4], [2.85, 1.42, 0.36], [1.45, 1.62, 0.42], [1.45, 0.92, 0.44]]), PT);
+      B.add(box, DARK, 0.62, 0.45, 0.03, 0, 1.15, 2.87); for (let i = 0; i < 8; i++) B.add(box, STEEL, 0.03, 0.42, 0.04, -0.28 + i * 0.08, 1.15, 2.89);
+      for (const s of [-1, 1]) { B.add(prism([[2.95, 0.95, 0.22], [2.55, 1.28, 0.22], [1.45, 1.28, 0.22], [1.3, 0.95, 0.22], [1.4, 0.92, 0.22], [1.55, 1.22, 0.22], [2.5, 1.22, 0.22], [2.9, 0.92, 0.22]]), PT, 1, 1, 1, s * 0.85, 0, 0); A.light(B, s * 0.75, 1.4, 2.6, 0); }
+      // cabine fechada (Einheitsfahrerhaus)
+      B.add(prism([[1.45, 0.95, 0.98], [1.45, 1.75, 0.98], [1.3, 2.25, 0.95], [0.35, 2.3, 0.95], [0.3, 0.95, 0.98]]), PT);
+      B.add(box, 0x5a6a6a, 1.6, 0.42, 0.02, 0, 2.0, 1.4, -0.3, 0, 0);
+      for (const s of [-1, 1]) B.add(box, 0x5a6a6a, 0.02, 0.38, 0.55, s * 0.99, 1.95, 0.95);
+      truckBed(B, 0.25, -2.95, 1.1, 1.15);
+      for (const s of [-1, 1]) B.add(box, PT, 0.48, 0.05, 1.2, s * 0.82, 1.02, -1.35);
+      return { tur: [0, 0] };
+    },
+    decals(g) { for (const s of [-1, 1]) decal(g, dtex('cross'), 0.35, 0.35, s * 0.99, 1.45, 0.9, s * Math.PI / 2); },
+  };
+
   /* ---------- montagem ---------- */
   function make(kind) {
     const S = SPEC[kind];
@@ -1629,22 +1978,32 @@ float vnoise(vec3 x){ vec3 i = floor(x); vec3 f = fract(x); f = f * f * (3.0 - 2
     // duas versões de cada malha: perto (detalhada) e longe (leve)
     const build = (key, fn) => [false, true].map(l => once(key + (l ? 'L' : ''), () => { LITE = l; const B = new MB(); const info = fn(B); LITE = false; const geo = B.build(); geo.userData = info || {}; return geo; }));
     const lod = (geos, parent) => { const o = new THREE.LOD(); geos.forEach((geo, i) => { const m = new THREE.Mesh(geo, mat); m.castShadow = true; m.receiveShadow = i === 0; o.addLevel(m, i ? LOD_DIST : 0); }); parent.add(o); return o; };
-    const hullGeos = build('H' + kind + f, (B) => { const i = S.hull(B, f); runningGear(B, S.gear); return i; });
+    const hullGeos = build('H' + kind + f, (B) => { const i = S.hull(B, f); if (S.gear) runningGear(B, S.gear); return i; });
     const info = hullGeos[0].userData;
     lod(hullGeos, g);
-    const tm = trackMat(S.track || 'ger');
-    const tg = once('T' + kind, () => trackGeo(S.gear));
-    for (const s of [-1, 1]) { const t = new THREE.Mesh(tg, tm); t.position.x = s * S.gear.x; t.castShadow = true; g.add(t); }
+    let tm = null;
+    if (S.gear) {
+      tm = trackMat(S.track || 'ger');
+      const tg = once('T' + kind, () => trackGeo(S.gear));
+      for (const s of [-1, 1]) { const t = new THREE.Mesh(tg, tm); t.position.x = s * S.gear.x; t.castShadow = true; g.add(t); }
+    }
+    // rodas que giram (veículos com rodas e meias-lagartas)
+    const ws = [];
+    for (const w of S.wheels || []) {
+      const geo = once('WH' + w.style + w.r + w.w, () => { const B = new MB(); tyre(B, w.r, w.w, w.style); return B.build(); });
+      for (const s of [-1, 1]) { const m = new THREE.Mesh(geo, mat); m.position.set(s * w.x, w.r, w.z); m.rotation.y = s > 0 ? 0 : Math.PI; m.castShadow = true; g.add(m); ws.push(m); }
+    }
     const tur = new THREE.Group(); tur.position.set(info.tur[0] || 0, 0, info.tur[1] || 0); g.add(tur);
-    const turGeos = build('R' + kind + f, (B) => S.turret(B, f));
+    const turGeos = build('R' + kind + f, (B) => (S.turret ? S.turret(B, f) : { y: 1, z: 0, len: 0, custom() {} }));
     const gs = turGeos[0].userData;
     lod(turGeos, tur);
     const gGeo = once('G' + kind, () => { const B = new MB(); if (gs.custom) gs.custom(B, gs.y); else addGun(B, gs); return B.build(); });
     const gun = new THREE.Mesh(gGeo, mat); gun.position.set(0, 0, gs.z); gun.castShadow = true; tur.add(gun);
+    if (!gGeo.attributes.position.count) gun.visible = false;
     const muzzle = new THREE.Object3D(); muzzle.position.set(0, gs.y, gs.z + gs.len + 0.15); tur.add(muzzle);
     if (S.decals) S.decals(g, tur, f);
-    if (typeof blob === 'function') { const sh = blob(root, 1); sh.scale.set(3.1 * K * 1.4, S.L * K * 1.25, 1); }
-    root.userData = { turret: tur, gun, muzzle, trackMat: tm, wheels: [], L: S.L * K, b3: true };
+    if (typeof blob === 'function') { const sh = blob(root, 1); sh.scale.set((S.Wd || 3.1) * K * 1.4, S.L * K * 1.25, 1); }
+    root.userData = { turret: tur, gun, muzzle, trackMat: tm, wheels: ws, L: S.L * K, b3: true };
     return root;
   }
   // triângulos visíveis: nível 0 (perto) ou 1 (longe) dos LODs
@@ -1664,3 +2023,4 @@ if (typeof makeTank === 'function') {
   const _makeTankOld3 = makeTank;
   makeTank = function (kind) { return Blindado3.has(kind) ? Blindado3.make(kind) : _makeTankOld3(kind); };
 }
+if (typeof makeDozer === 'function') makeDozer = function () { return Blindado3.make('dozer'); };

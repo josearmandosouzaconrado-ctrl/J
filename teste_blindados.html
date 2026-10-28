@@ -39,7 +39,8 @@ var SC = { year: 1944, biome: '' };
 const NOMES = { sherman: 'Sherman M4A3', panzer4: 'Panzer IV', tiger: 'Tiger I', t34: 'T-34/76', panzer2: 'Panzer II', panzer3: 'Panzer III', panzer38t: 'Panzer 38(t)', stug: 'StuG III',
   panther: 'Panther', kingtiger: 'Tiger II', jagdpanther: 'Jagdpanther', hetzer: 'Hetzer', wirbelwind: 'Wirbelwind', tp7: '7TP', charb1: 'Char B1 bis', somua: 'Somua S35',
   matilda: 'Matilda II', crusader: 'Crusader', t26: 'T-26', bt7: 'BT-7', kv1: 'KV-1', stuart: 'M3 Stuart', lee: 'M3 Lee', m1340: 'M13/40', l335: 'L3/35', m24: 'M24 Chaffee',
-  m18: 'M18 Hellcat', m10: 'M10 Wolverine', m36: 'M36 Jackson', m26: 'M26 Pershing', m7: 'M7 Priest', calliope: 'Calliope', chiha: 'Chi-Ha', hago: 'Ha-Go' };
+  m18: 'M18 Hellcat', m10: 'M10 Wolverine', m36: 'M36 Jackson', m26: 'M26 Pershing', m7: 'M7 Priest', calliope: 'Calliope', chiha: 'Chi-Ha', hago: 'Ha-Go',
+  jeep: 'Jeep Willys', kubel: 'Kübelwagen', greyhound: 'M8 Greyhound', puma: 'Puma', halftrack: 'Meia-lagarta M3', m16: 'M16', sdkfz251: 'Sd.Kfz. 251', maultier: 'Panzerwerfer 42', dozer: 'Trator D7', gmc: 'Caminhão GMC', blitz: 'Opel Blitz' };
 const cv = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
 renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
@@ -91,7 +92,7 @@ let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   const ud = tank.userData;
-  if (moving) ud.trackMat.map.offset.x -= 6 * dt * 1.15;
+  if (moving) { if (ud.trackMat) ud.trackMat.map.offset.x -= 6 * dt * 1.15; for (const w of ud.wheels) w.rotation.x += 6 * dt * 2.4; }
   if (aiming) { ty += dt * 0.6; ud.turret.rotation.y = Math.sin(ty) * 1.2; } else ud.turret.rotation.y *= 0.9;
   camera.position.set(Math.sin(cam.yaw) * Math.cos(cam.pitch) * cam.dist, 1.8 + Math.sin(cam.pitch) * cam.dist, Math.cos(cam.yaw) * Math.cos(cam.pitch) * cam.dist);
   camera.lookAt(0, 1.6, 0);
