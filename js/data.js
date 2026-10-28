@@ -876,8 +876,8 @@ const ENEMIES = {
   senhor_nevoa: { name: 'Senhor da Névoa', look: { k: 'ghost', c: '#d0e8ff', size: 2.1 }, hp: 2300, dmg: 40, spd: 54, ai: 'boss', proj: 'frost', summon: 'espirito_bruma', xp: 1400, boss: true, undead: true, fly: true, r: 12, dropGear: 1, gold: [500, 900] },
   golem_vivo: { name: 'Golem de Pedra Viva', look: { k: 'golem', c: '#c09050', rune: true }, hp: 340, dmg: 26, spd: 40, ai: 'melee', xp: 110, r: 8, armor: 55, drops: [['minerio_ouro', 0.5], ['cristal_vivo', 0.3], ['diamante', 0.04]] },
   // ----- Anjos (só em Seraphel) -----
-  anjo_guerreiro: { name: 'Anjo Guerreiro', look: { k: 'raca', r: 'anjo', v: 1, sz: 0.95 }, hp: 420, dmg: 30, spd: 66, ai: 'melee', xp: 160, armor: 40, gold: [40, 90] },
-  serafim_quarto: { name: 'Aurelith, o Quarto Serafim', look: { k: 'raca', r: 'anjo', v: 1, sz: 1.2 }, hp: 3400, dmg: 44, spd: 70, ai: 'boss', proj: 'bolt', summon: 'anjo_guerreiro', xp: 2500, boss: true, r: 12, armor: 60, dropGear: 1, gold: [900, 1500] },
+  anjo_guerreiro: { name: 'Anjo Guerreiro', look: null, hp: 420, dmg: 30, spd: 66, ai: 'melee', xp: 160, armor: 40, gold: [40, 90] },
+  serafim_quarto: { name: 'Aurelith, o Quarto Serafim', look: null, hp: 3400, dmg: 44, spd: 70, ai: 'boss', proj: 'bolt', summon: 'anjo_guerreiro', xp: 2500, boss: true, r: 12, armor: 60, dropGear: 1, gold: [900, 1500] },
   criatura_sombras: { name: 'Criatura das Sombras', look: { k: 'sombra' }, hp: 380, dmg: 30, spd: 80, ai: 'charge', cd: 1.0, xp: 260, armor: 24, r: 12, aggro: 250, glowEyes: true, noMeat: true, gold: [40, 120], drops: [['essencia_sombria', 1], ['garra_sombria', 0.7]] },
   pistoleiro: { name: 'Pistoleiro Fora-da-Lei', look: { k: 'hum', skin: '#e0ac69', body: '#4a3a2a', legs: '#2a2a30', hair: '#2a1a10', helm: '#2a2a2a', helmStyle: 'tricorne', crossbelt: true, weapon: 'musket', wc: '#5a4a3a' }, hp: 60, dmg: 22, spd: 60, ai: 'ranged', proj: 'bullet', cd: 2.4, xp: 42, gold: [20, 70], drops: [['bala_arcana', 0.6]], dropGear: 0.15 },
   legionario_renegado: { name: 'Legionário Renegado', look: { k: 'hum', skin: '#e0ac69', body: '#a03030', legs: '#5a4a3a', hair: '#2a1a10', helm: '#c0a050', helmStyle: 'kettle', crest: '#c02020', weapon: 'sword', wc: '#d0d0d8', shield: '#a03030' }, hp: 95, dmg: 16, spd: 62, ai: 'melee', xp: 40, armor: 20, gold: [15, 50], dropGear: 0.2 },
@@ -1132,16 +1132,16 @@ const CULTURES = {
   swamp: { plaza: T.WOOD, street: T.WOOD, wall: null, walls: [], houseWall: 'stilt', roof: ['#8a7a4a', '#6a6a3a', '#7a6a3a'], wallC: '#6a5a3a', race: 'draconato' },
   fort: { plaza: T.DCOBBLE, street: T.DCOBBLE, wall: T.WALL, walls: ['capital', 'town', 'village'], houseWall: 'stone', roof: ['#3a3a4a', '#4a3a3a'], wallC: '#7a7a80', race: 'humano', guard: true },
   // Elyndra
-  abissal: { plaza: T.CORAL, street: T.SANDSTONE, wall: T.WALL, walls: ['capital'], houseWall: 'adobe', roof: ['#28b0c8', '#3a70d0', '#1a8a9a'], wallC: '#c0e8f0', race: 'voralis', domes: true, guard: true },
-  aerea: { plaza: T.COBBLE, street: T.COBBLE, wall: null, walls: [], houseWall: 'timber', roof: ['#f0f0f8', '#a8c8e8', '#e8d8b0'], wallC: '#f4f0e8', race: 'zephyran', flowers: true },
-  cristal: { plaza: T.CRYSTALF, street: T.DCOBBLE, wall: T.WALL, walls: ['capital', 'town'], houseWall: 'stone', roof: ['#8a6ae0', '#6a4ac0', '#b090f0'], wallC: '#5a4a7a', race: 'thaldrim', guard: true, glow: true },
-  arvore: { plaza: T.LIVEMOSS, street: T.RFLOOR, wall: null, walls: [], houseWall: 'elven', roof: ['#3a8a3a', '#5aa040', '#2a6a4a'], wallC: '#c8b888', race: 'silvano', glow: true },
-  magma: { plaza: T.OBSIDIAN, street: T.VFLOOR, wall: T.WALL, walls: ['capital', 'town', 'village'], houseWall: 'stone', roof: ['#5a1a10', '#3a1a1a', '#7a2a10'], wallC: '#3a2a2a', race: 'krazul', guard: true },
-  crepusculo: { plaza: T.DCOBBLE, street: T.DUSKSAND, wall: null, walls: [], houseWall: 'stone', roof: ['#4a2a7a', '#6a3a9a', '#2a1a4a'], wallC: '#6a5a8a', race: 'nimbor', glow: true },
-  tribal: { plaza: T.DIRT, street: T.DIRT, wall: T.PALISADE, walls: ['capital', 'town'], houseWall: 'hide', roof: ['#a07a3a', '#8a5a2a', '#c09a4a'], wallC: '#7a5a3a', race: 'vaelith', tents: true },
-  cosmica: { plaza: T.STARDUST, street: T.DCOBBLE, wall: T.WALL, walls: ['capital'], houseWall: 'adobe', roof: ['#2a1a6a', '#4a2a9a', '#1a1a4a'], wallC: '#3a3060', race: 'xarqin', domes: true, guard: true, glow: true },
-  nevoa: { plaza: T.DCOBBLE, street: T.DCOBBLE, wall: null, walls: [], houseWall: 'stilt', roof: ['#5a7a9a', '#4a6a8a', '#6a8aa0'], wallC: '#5a6a7a', race: 'brumario' },
-  pedra: { plaza: T.SANDSTONE, street: T.LIVESTONE, wall: T.WALL, walls: ['capital', 'town'], houseWall: 'adobe', roof: ['#b08a50', '#8a6a3a', '#c8a060'], wallC: '#c8a878', race: 'terralux', guard: true }
+  abissal: { plaza: T.CORAL, street: T.SANDSTONE, wall: T.WALL, walls: ['capital'], houseWall: 'coral', roof: ['#28b0c8', '#3a70d0', '#1a8a9a'], wallC: '#c0e8f0', race: 'voralis', domes: true, guard: true },
+  aerea: { plaza: T.COBBLE, street: T.COBBLE, wall: null, walls: [], houseWall: 'cloudstone', roof: ['#f0f0f8', '#a8c8e8', '#e8d8b0'], wallC: '#f4f0e8', race: 'zephyran', flowers: true },
+  cristal: { plaza: T.CRYSTALF, street: T.DCOBBLE, wall: T.WALL, walls: ['capital', 'town'], houseWall: 'crystal', roof: ['#8a6ae0', '#6a4ac0', '#b090f0'], wallC: '#5a4a7a', race: 'thaldrim', guard: true, glow: true },
+  arvore: { plaza: T.LIVEMOSS, street: T.RFLOOR, wall: null, walls: [], houseWall: 'treehouse', roof: ['#3a8a3a', '#5aa040', '#2a6a4a'], wallC: '#c8b888', race: 'silvano', glow: true },
+  magma: { plaza: T.OBSIDIAN, street: T.VFLOOR, wall: T.WALL, walls: ['capital', 'town', 'village'], houseWall: 'basalt', roof: ['#5a1a10', '#3a1a1a', '#7a2a10'], wallC: '#3a2a2a', race: 'krazul', guard: true },
+  crepusculo: { plaza: T.DCOBBLE, street: T.DUSKSAND, wall: null, walls: [], houseWall: 'dusk', roof: ['#4a2a7a', '#6a3a9a', '#2a1a4a'], wallC: '#6a5a8a', race: 'nimbor', glow: true },
+  tribal: { plaza: T.DIRT, street: T.DIRT, wall: T.PALISADE, walls: ['capital', 'town'], houseWall: 'bonehut', roof: ['#a07a3a', '#8a5a2a', '#c09a4a'], wallC: '#7a5a3a', race: 'vaelith', tents: true },
+  cosmica: { plaza: T.STARDUST, street: T.DCOBBLE, wall: T.WALL, walls: ['capital'], houseWall: 'observatory', roof: ['#2a1a6a', '#4a2a9a', '#1a1a4a'], wallC: '#3a3060', race: 'xarqin', domes: true, guard: true, glow: true },
+  nevoa: { plaza: T.DCOBBLE, street: T.DCOBBLE, wall: null, walls: [], houseWall: 'mistwood', roof: ['#5a7a9a', '#4a6a8a', '#6a8aa0'], wallC: '#5a6a7a', race: 'brumario' },
+  pedra: { plaza: T.SANDSTONE, street: T.LIVESTONE, wall: T.WALL, walls: ['capital', 'town'], houseWall: 'carved', roof: ['#b08a50', '#8a6a3a', '#c8a060'], wallC: '#c8a878', race: 'terralux', guard: true }
 };
 // chão em volta das casas (interior) de cada bioma inventado
 const BIOME_GROUND = { reef: T.CORAL, windland: T.WINDGRASS, crystal: T.CRYSTALF, liveforest: T.LIVEMOSS, obsidian: T.OBSIDIAN, dusk: T.DUSKSAND, savanna: T.SAVANNA, cosmic: T.STARDUST, mist: T.MISTHEATH, livestone: T.LIVESTONE };

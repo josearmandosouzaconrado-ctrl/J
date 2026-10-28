@@ -436,6 +436,7 @@ const Game = {
       else if (p.kind === 'frost') { if (Math.random() < 0.5) this.particle(p.x, p.y, 0, 0, '#c0f0ff', 0.25); }
       else if (p.kind === 'dark' || p.kind === 'poison' || p.kind === 'bolt') { if (Math.random() < 0.5) this.particle(p.x, p.y, 0, 0, p.kind === 'poison' ? '#80e040' : p.kind === 'bolt' ? (p.color || '#80a0ff') : '#a040e0', 0.25); }
       if (dead) {
+        if (p.kind !== 'arrow' && p.kind !== 'rock') Juice.projImpact(p);
         if (p.aoe && !p.exploded) { p.exploded = true; Combat.explode(p.x, p.y, p.aoe, p.dmg * 0.6, p.src, { elem: p.elem, color: p.kind === 'fireball' ? '#ff8020' : '#a0e0ff', magic: true }); Sfx.play('boom'); }
         else if (p.kind !== 'arrow') this.burst(p.x, p.y, p.kind === 'frost' ? '#c0f0ff' : p.kind === 'poison' ? '#80e040' : p.kind === 'rock' ? '#a09080' : p.kind === 'bolt' ? (p.color || '#80a0ff') : '#ff9030', 5, 40);
         this.projectiles.splice(i, 1);
@@ -835,6 +836,7 @@ const Game = {
     const byPlayer = killer === P || (killer && killer.team === 'ally') || m.provoked === P;
     this.burst(m.x, m.y - 8, m.def.undead ? '#d8d0c0' : '#a02020', 12, 70);
     if (m.team === 'enemy' && byPlayer) {
+      Juice.kill(m);
       P.stats.kills++;
       P.addXP(m.xp);
       this.floater(m.x, m.y - 30, '+' + m.xp, '#c0a0ff');
@@ -1326,6 +1328,7 @@ const Game = {
   },
   drawProjectile(ctx, p, camX, camY) {
     const x = Math.round(p.x - camX), y = Math.round(p.y - camY);
+    if (p.kind !== 'arrow' && p.kind !== 'rock') Juice.projGlow(ctx, p, x, y);
     switch (p.kind) {
       case 'bullet': {
         const L = Math.hypot(p.vx, p.vy) || 1, tx = p.vx / L, ty = p.vy / L;
@@ -1355,6 +1358,7 @@ const Game = {
     }
   },
   drawFx(ctx, f, camX, camY) {
+    if (Juice.drawFx(ctx, f, camX, camY)) return;
     const k = f.t / f.dur;
     switch (f.kind) {
       case 'swing': {

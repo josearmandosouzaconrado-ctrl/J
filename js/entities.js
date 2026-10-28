@@ -223,6 +223,7 @@ const Combat = {
     if (!o.dot) {
       Game.burst(t.x, t.y - 8 - t.z, t.def && (t.def.undead || t.def.k === 'golem') ? '#d8d0c0' : t.def && t.def.look && t.def.look.k === 'slime' ? t.def.look.c : t.def && t.def.look && t.def.look.k === 'elemental' ? t.def.look.c : '#c02020', 4);
       if (t !== P) Sfx.play(o.crit ? 'crit' : 'hit');
+      Juice.hit(t, o, dmg);
     }
     // roubo de vida
     if (o.src === P && !o.dot) {
@@ -253,6 +254,7 @@ const Combat = {
     }
     Game.fx.push({ kind: 'ring', x, y, r0: 4, r1: r, t: 0, dur: 0.35, color: o.color || '#ff9030' });
     Game.burst(x, y, o.color || '#ff9030', 14, 90);
+    Juice.explode(x, y, r, o.color || '#ff9030');
   },
   projectile(src, x, y, ang, kind, dmg, o = {}) {
     const spd = o.spd || (kind === 'arrow' ? 260 : 170);
@@ -330,7 +332,7 @@ class Monster extends Actor {
   }
   release() {
     const t = this.target, d = this.def;
-    this.atkCd = d.cd || (this.boss ? 1.1 : this.ai === 'ranged' || this.ai === 'caster' ? 1.6 : 1.25);
+    this.atkCd = (d.cd || (this.boss ? 1.1 : this.ai === 'ranged' || this.ai === 'caster' ? 1.6 : 1.25)) * COMBAT_TEMPO;
     if (!t || t.dead) return;
     const ang = angleTo(this.x, this.y, t.x, t.y);
     if (this.atkKind === 'melee') {

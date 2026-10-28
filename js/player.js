@@ -367,18 +367,24 @@ class Player extends Actor {
       Sfx.play('zap');
       this.train('destruicao', 0.4);
     } else {
-      const arc = d ? d.arc : 0.9, reach = (d ? d.range : 13) + 6;
+      // combo: 1º e 2º golpes rápidos (um para cada lado), o 3º é a finalização
+      const combo = Juice.combo(this), fin = combo === 3;
+      this.atkT = cd * (fin ? 1.05 : 0.8);
+      const arc = (d ? d.arc : 0.9) * (fin ? 1.3 : 1), reach = (d ? d.range : 13) + 6 + (fin ? 4 : 0);
       this.swing = { t: 0, dur: Math.min(0.2, cd * 0.6), ang, arc: arc * 1.6 };
-      Game.fx.push({ kind: 'swing', x: this.x, y: this.y - 6, ang, arc: arc * 1.6, r: reach + 4, t: 0, dur: 0.16, color: '#ffffff' });
+      const wcol = d && d.icon && d.icon.g ? d.icon.g : fin ? '#ffd060' : '#e8f0ff';
+      Game.fx.push({ kind: 'swing', x: this.x, y: this.y - 6, ang, arc: arc * 1.6, r: reach + 4, t: 0, dur: fin ? 0.2 : 0.15, color: wcol, rev: combo === 2, fin });
+      this.kbx += Math.cos(ang) * (fin ? 90 : 45); this.kby += Math.sin(ang) * (fin ? 90 : 45);   // passo à frente no golpe
       const two = d && d.two;
       const drain = this.drainPct();
       const hits = Combat.melee(this, ang, arc * 1.6, reach, (a) => {
         const pk = this.rollDamage('melee');
-        const ka = angleTo(this.x, this.y, a.x, a.y);
-        Combat.damage(a, pk.dmg, { src: this, crit: pk.crit, drain, kb: { x: Math.cos(ka) * (two ? 150 : 60), y: Math.sin(ka) * (two ? 150 : 60) }, stun: two && pk.crit ? 0.5 : 0 });
+        const ka = angleTo(this.x, this.y, a.x, a.y), kbm = (two ? 150 : 60) * (fin ? 2.2 : 1);
+        Combat.damage(a, pk.dmg * (fin ? 1.6 : 1), { src: this, crit: pk.crit, drain, kb: { x: Math.cos(ka) * kbm, y: Math.sin(ka) * kbm }, stun: (two && pk.crit) || fin ? 0.35 : 0 });
         if (!a.dead) this.applyExtras(a);
       });
-      if (hits) { this.train('combate', 1.2 + hits * 0.4); Game.hitstop = 0.04; }
+      if (fin) Juice.finisher(this, ang, hits);
+      if (hits) { this.train('combate', 1.2 + hits * 0.4); Game.hitstop = Math.max(Game.hitstop, fin ? 0.09 : 0.05); }
       this.st = Math.max(0, this.st - (two ? 3 : 1));
       Sfx.play('swing');
     }
@@ -399,6 +405,7 @@ class Player extends Actor {
     this.setDir(ang);
     const sx = this.x + Math.cos(ang) * 6, sy = this.y - 10;
     Game.burst(sx, sy, sp.color, 6, 40);
+    Juice.cast(this, sp);
     switch (sp.kind) {
       case 'proj': {
         const kind = id === 'bola_fogo' ? 'fireball' : id === 'estilhaco_gelo' ? 'frost' : 'dark';
@@ -426,6 +433,7 @@ class Player extends Actor {
         this.heal(sp.heal * hm);
         if (sp.regen) this.addBuff('regen', sp.regen * hm, 10, sp.name);
         Game.fx.push({ kind: 'ring', x: this.x, y: this.y - 6, r0: 18, r1: 4, t: 0, dur: 0.4, color: sp.color });
+        Juice.heal(this.x, this.y, sp.color);
         // cura aliados próximos também
         for (const a of Game.actors) if (a.team === 'ally' && !a.dead && dist(a.x, a.y, this.x, this.y) < 80) a.hp = Math.min(a.maxHp, a.hp + sp.heal * hm * 0.5);
         break;
@@ -638,6 +646,7 @@ class Player extends Actor {
       const sp = this.stat.speed * (this.rollSpd || 2.7);
       moveActor(this, Math.cos(this.rollAng) * sp * dt, Math.sin(this.rollAng) * sp * dt);
       this.moving = true; this.anim += dt * 2;
+      this.ghostT = (this.ghostT || 0) - dt; if (this.ghostT <= 0) { this.ghostT = 0.035; Juice.ghost(this); }   // rastro de esquiva
       if (Math.random() < 0.5) Game.particle(this.x, this.y, (Math.random() - 0.5) * 20, -8, '#c8b090', 0.3);
     } else {
       const m = Input.move;
@@ -645,7 +654,7 @@ class Player extends Actor {
       if (this.mounted) spd *= ((MOUNTS[this.mount] || MOUNTS.cavalo).speed) * (this.perks.has('cavaleiro') ? 1.25 : 1) * (this.cart && this.cart.hitched ? 0.85 : 1);
       if (this.carrying) spd *= 0.62;
       if (this.sleeping || Game.intro || Academy.cine) spd = 0;
-      if (this.castT > 0 || (this.atkT > 0 && this.swing)) spd *= 0.6;
+      if (this.castT > 0 || (this.atkT > 0 && this.swing)) spd *= 0.8;
       if (m.mag > 0.12) {
         if ((Input.sprint || m.mag > 0.94) && this.st > 1 && !this.carrying) { spd *= 1.45; this.st -= (this.mounted ? 7 : 15) * dt; this.sprinting = true; }
         const a = Math.atan2(m.y, m.x);

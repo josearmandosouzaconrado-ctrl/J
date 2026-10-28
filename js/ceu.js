@@ -161,7 +161,7 @@ const Ceu = {
   },
   makeAngel(x, y, name, sex, v, rng, extra) {
     const a = new NPC({ role: 'resident', x, y, race: 'anjo' }, this.pseudo(), rng);
-    a.sex = sex; a.name = name; a.look = { k: 'raca', r: 'anjo', v, sz: sex === 'f' ? 0.86 : 0.92 }; a.S = Sprites.actor(a.look); a.h = a.S.h;
+    a.sex = sex; a.name = name; a.look = Racas.look('anjo', sex, new RNG(hashStr(name) + v), ANJO_PAPEIS[v] || 'cidadao'); a.S = Sprites.actor(a.look); a.h = a.S.h;
     a.angel = true; a.rid = 'anjo:' + name; a.indoor = true; a.home = { x: a.x, y: a.y };
     Object.assign(a, extra || {});
     return a;
@@ -173,7 +173,7 @@ const Ceu = {
       let x, y;
       if (c.n === 1) { x = 51; y = 40; } else if (c.n === 4) { x = 48; y = 17; } else { const k = [2, 3, 5, 6, 7].indexOf(c.n), a = Math.PI + (k + 0.5) / 5 * Math.PI; x = Math.round(48 + Math.cos(a) * 7); y = Math.round(18 + Math.sin(a) * 5.5); }
       const a = this.makeAngel(x, y, `${c.name}, ${c.title}`, c.sex, c.v, rng, { seraph: c.n });
-      a.rid = 'anjo:' + c.name; a.look = Object.assign({}, a.look, { sz: c.n === 4 ? 1.05 : 0.98 }); a.S = Sprites.actor(a.look); a.h = a.S.h;
+      a.rid = 'anjo:' + c.name; a.look = Object.assign({}, a.look, { size: c.n === 4 ? 1.12 : 1.06, cape: c.n === 4 ? '#a02040' : '#3a5ab0' }); a.S = Sprites.actor(a.look); a.h = a.S.h;
       if (c.n !== 1) a.role = 'guardpost';   // o Coro não sai da arena
       if (c.n === 4 && this.duel) continue;
       G.findFree(a); G.actors.push(a);
@@ -267,7 +267,7 @@ const Ceu = {
     G.projectiles = [];
     const rng = new RNG(G.world.seed * 3 + 1717);
     const c = CORO[3], a = this.makeAngel(Math.floor(m.x / 16), Math.floor(m.y / 16), `${c.name}, ${c.title}`, c.sex, c.v, rng, { seraph: 4 });
-    a.rid = 'anjo:' + c.name; a.role = 'guardpost'; a.look = Object.assign({}, a.look, { sz: 1.05 }); a.S = Sprites.actor(a.look); a.h = a.S.h;
+    a.rid = 'anjo:' + c.name; a.role = 'guardpost'; a.look = Object.assign({}, a.look, { size: 1.12, cape: '#a02040' }); a.S = Sprites.actor(a.look); a.h = a.S.h;
     G.findFree(a); G.actors.push(a);
     if (won) {
       const first = !st.won; st.won = true;

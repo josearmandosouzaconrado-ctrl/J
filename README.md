@@ -78,7 +78,9 @@ WASD/setas andar • Shift correr • J/Espaço atacar • K magia • Q trocar 
 | `js/game.js`, `js/game2.js` | Loop principal, renderização, iluminação, salvamento, montarias, empregos, construção, cena inicial |
 | `js/war.js` | Guerra, diplomacia, exércitos, batalhas, conquistas, alistamento e saque |
 | `js/academy.js` | Academia Real de Astralis: alunos, aulas, matrícula, visitas de amigos e cenas |
-| `js/racas.js`, `js/racas_frames.js`, `img/racas.png` | Sprites das 10 raças de Elyndra e dos Anjos, recortados da arte original por `tools/extrair_racas.py` |
+| `js/racas.js` | As 10 raças de Elyndra e os Anjos: aparência de cada povo (paleta, roupas, homens e mulheres) e os traços desenhados no corpo (asas, auréola, cristais, chifres de galho, magma...) |
+| `js/casas.js` | Arquitetura própria de cada povo de Elyndra |
+| `js/combate.js` | Impacto do combate (combo, pausa no impacto, faíscas, esquiva com rastro) e o brilho das magias |
 | `js/elyndra.js` | Os 10 biomas inventados de Elyndra: chãos, paredes, objetos e clima |
 | `js/ceu.js` | Seraphel, a cidade dos anjos acima das nuvens: o Coro dos Serafins, o duelo e o romance com anjos |
 
@@ -90,7 +92,7 @@ Sem dependências externas além da fonte VT323 (opcional).
 
 Do outro lado do **Mar do Amanhecer**, a leste de Kaeloria e de Valtheria, fica **Elyndra**: cerca de **238 km² de terra** (Valtheria tem uns 144 km²). O mundo ficou mais que duas vezes mais largo para caber ele.
 
-Elyndra tem **10 biomas que não existem em nenhum outro lugar**, cada um com chão, objetos, criaturas, masmorras e clima próprios — e **10 povos novos**, com sprites tirados da arte original (`tools/racas_ref.png`):
+Elyndra tem **10 biomas que não existem em nenhum outro lugar**, cada um com chão, objetos, criaturas, masmorras e clima próprios — e **10 povos novos**, inspirados na arte original (`tools/racas_ref.png`). Cada morador é único: homens e mulheres diferentes, roupas e penteados variados, andando e virando para os quatro lados no mesmo tamanho dos outros personagens, com os traços do seu povo (asas, cristais, chifres de galho, rachaduras de magma, olho cósmico, névoa, pedra viva). Cada povo também tem **arquitetura própria**: conchas de coral, torres brancas com cata-vento, casas de cristal, casas dentro de árvores vivas, fortalezas de basalto com magma, cúpulas do crepúsculo, tendas com presas, observatórios, palafitas na névoa e casas esculpidas na pedra.
 
 | Reino | Povo | Bioma inventado |
 |---|---|---|
@@ -113,7 +115,7 @@ Elyndra tem **10 biomas que não existem em nenhum outro lugar**, cada um com ch
 
 Muito acima das nuvens fica **Seraphel**, a cidade dos **Anjos**. Os reinos **não sabem que ela existe** e os anjos **não fazem diplomacia** com ninguém. O único caminho é o **Pilar de Luz**, um feixe que sobe do Vale Cósmico de Xar'Qin.
 
-- Os anjos vivem numa ilha de nuvem com avenidas de mármore, templos e harpas: cidadãos, guerreiros, arqueiros, magos, clérigos e assassinos (sprites da arte original `tools/anjos_ref.png`).
+- Os anjos vivem numa ilha de nuvem com avenidas de mármore, templos e harpas: cidadãos, guerreiros, arqueiros, magos, clérigos e assassinos (inspirados na arte original `tools/anjos_ref.png`), com asas, auréola e roupa de acordo com o papel.
 - O **Coro dos Serafins** são os sete anjos mais fortes, do 1º ao 7º. Para ter um romance com um anjo é preciso **vencer em duelo a Quarta Serafim, Aurelith**, na arena do Coro (ninguém morre: quem chega a zero se rende).
 - Depois da vitória você **escolhe um anjo** (até a própria Aurelith), que vira sua **namorada/namorado** ou sua **esposa/marido**.
 - **Anjos não gostam de ter filhos**: com um anjo a chance de ter um bebê é muito pequena (cerca de 6% por tentativa, uma tentativa por dia).
@@ -172,6 +174,13 @@ Um botão **ADM** aparece no topo da tela e abre o painel:
 - **Mundo**: teleporte tocando no mapa, revelar o mapa inteiro, ir para qualquer capital/porto (inclusive em outro continente), mudar a hora, avançar 1/7/30 dias, escolher o clima.
 - **Guerra**: escolha dois reinos e declare guerra ou paz, crie uma **batalha de exércitos aqui**, uma **batalha naval** no mar mais próximo, **duas linhas de mosqueteiros** frente a frente, faça um reino **conquistar a cidade mais próxima**, mande um exército marchar até você, guerra entre todos os vizinhos, paz mundial e avançar a guerra dia a dia.
 - **Inimigos**: criar qualquer criatura ou chefe (1, 5 ou 20, no nível escolhido), chamar um dragão, matar ou remover os inimigos por perto.
+
+## Combate
+
+- **Combo de 3 golpes**: os dois primeiros são rápidos (um para cada lado) e o terceiro é a finalização — mais largo, mais forte, empurra longe e atordoa.
+- **Impacto**: pausa rápida a cada acerto, faíscas na direção do golpe, estrela de impacto, "CRÍTICO" e explosão de luz ao derrotar inimigos.
+- **Esquiva com rastro** e um passo à frente a cada golpe; os inimigos atacam mais rápido.
+- **Magias mais bonitas**: círculo mágico girando no chão ao lançar, projéteis com brilho e rastro, raios com brilho, explosões com onda de choque e cura com faíscas douradas.
 
 ## Desempenho
 

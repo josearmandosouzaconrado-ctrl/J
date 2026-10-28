@@ -6,8 +6,11 @@
   // ---------- HUMANOIDES (20x28) ----------
   // L: aparência. dir: 'down'|'up'|'side'. frame 0..2
   function humanoid(L, dir, frame) {
-    const W = 20, H = 28;
-    const c = cv(W, H), ctx = c.getContext('2d'), p = P(ctx);
+    // asas precisam de espaço dos lados: o desenho é deslocado OX pixels para dentro
+    const OX = L.wings ? (L.wings === 'small' ? 3 : L.wings === 'mid' ? 5 : 6) : 0;
+    const W = 20 + OX * 2, H = 28;
+    const c = cv(W, H), ctx = c.getContext('2d'), p0 = P(ctx);
+    const p = OX ? (x, y, col, w = 1, h = 1) => p0(x + OX, y, col, w, h) : p0;
     const skel = !!L.skeleton, mum = !!L.mummy;
     const sk = skel ? '#e8e0c8' : (L.skin || '#e0ac69');
     const skS = shade(sk, -0.16), skD = shade(sk, -0.32), skH = shade(sk, 0.14);
@@ -32,6 +35,9 @@
     const covered = !!(L.helm || L.hood);
     const noHair = skel || mum || hs === 2;
     const ey = L.snout ? hT + 3 : hT + 4;
+    // traços das raças de Elyndra e dos anjos (asas atrás do corpo, marcas, cristais, auréola...)
+    const G = (L.feat || L.wings || L.halo) ? { hT, hB, tT, tB, tx0, tx1, footY, ey, legTop, sk, skS, skH, hair, front: dir === 'down', side: dir !== 'down' && dir !== 'up', frame } : null;
+    if (G && typeof Racas !== 'undefined') Racas.drawBehind(p, L, dir, G);
 
     if (dir === 'down' || dir === 'up') {
       const front = dir === 'down';
@@ -308,7 +314,14 @@
       p(ax, tB, skel ? bone : sk, 2, 1); p(ax, tB + 1, skel ? boneS : skS, 2, 1);
       if (L.pauldron) { p(ax - 1, tT, L.pauldron, 4, 2); p(ax - 1, tT, shade(L.pauldron, 0.35), 3, 1); }
     }
+    if (G && typeof Racas !== 'undefined') Racas.drawFront(p, L, dir, G);
+    // feminino: cílios e lábios (de frente) para dar para distinguir homens e mulheres
+    if (L.fem && !skel && !covered) {
+      if (dir === 'down') { p(7, ey - 1, '#1a1018'); p(12, ey - 1, '#1a1018'); if (!L.snout && !L.muzzle) p(9, hB - 1, L.lips || '#c04a5a', 2, 1); }
+      else if (dir !== 'up') { p(12, ey - 1, '#1a1018'); p(13, ey - 1, '#1a1018'); }
+    }
     outline(c, '#1a1018');
+    if (L.misty) { const x = c.getContext('2d'); x.globalCompositeOperation = 'destination-in'; x.fillStyle = 'rgba(0,0,0,0.78)'; x.fillRect(0, 0, W, H); x.globalCompositeOperation = 'source-over'; }
     return c;
   }
   S.humanoid = humanoid;
@@ -495,7 +508,7 @@
   S.actor = function (L) {
     if (L.k === 'sombra') return Sombra.sheet();
     if (L.k === 'nyxar') return Nyxar.sheet(L);
-    if (L.k === 'raca') return Racas.sheet(L);
+    if (L.k === 'raca') return S.actor(Racas.fromLegacy(L));   // saves antigos (arte recortada)
     const key = JSON.stringify(L);
     let s = lruGet(actorCache, key);
     if (s) return s;
@@ -565,7 +578,10 @@
     bCache.set(key, c); lruTrim(bCache, 160);
     return c;
   };
+  S.extraBuilding = {};
+  S.drawSignIcon = (p, x, y, k) => drawSignIcon(p, x, y, k);
   function makeBuilding(sp) {
+    if (S.extraBuilding[sp.style]) return S.extraBuilding[sp.style](sp);
     const W = sp.w * 16, FH = sp.h * 16;
     const extra = sp.type === 'castle' || sp.type === 'palace' ? 30 : sp.type === 'tower' ? 34 : sp.type === 'temple' ? 18 : sp.type === 'factory' ? 40 : sp.style === 'brick' ? 20 : 14;
     const H = FH + extra;

@@ -754,5 +754,5 @@ const Sprites = {};
     return c;
   }
 
-  S.init = function () { Elyndra.initArt(); initTiles(); Sombra.load(); Nyxar.load(); Racas.load(); };
+  S.init = function () { Elyndra.initArt(); initTiles(); Sombra.load(); Nyxar.load(); };
 })(Sprites);

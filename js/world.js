@@ -1198,9 +1198,10 @@ class World {
     for (let y = by - 1; y <= by + B.h; y++) for (let x = bx - 1; x <= bx + B.w; x++) if (x >= 0 && y >= 0 && x < size && y < size && !occ[y * size + x]) occ[y * size + x] = 4;
     const reg = s.region;
     const styleMap = { industrial: 'brick', human: 'timber', halfling: 'round', elf: 'elven', dwarf: 'stone', nordic: 'log', orc: 'hide', desert: 'adobe', swamp: 'stilt', fort: 'stone', tide: 'adobe', infernal: 'stone', jade: 'elven', imperial: 'brick', giant: 'log', gnome: 'round' };
-    let style = styleMap[reg.culture];
+    let style = styleMap[reg.culture] || cul.houseWall || 'timber';
+    const elyStyle = !styleMap[reg.culture] && !!cul.houseWall;   // povos de Elyndra: arquitetura própria em todos os prédios
     let type = bt;
-    if (bt === 'castle' || bt === 'palace') { if (style === 'hide') style = 'log'; if (style === 'round' || style === 'stilt') style = 'timber'; if (reg.culture === 'human') style = 'castle'; }
+    if (elyStyle) { /* mantém o estilo do povo */ } else if (bt === 'castle' || bt === 'palace') { if (style === 'hide') style = 'log'; if (style === 'round' || style === 'stilt') style = 'timber'; if (reg.culture === 'human') style = 'castle'; }
     if (bt === 'temple' && style === 'hide') style = 'log';
     if ((bt === 'heroes' || bt === 'guildhall') && style === 'hide') style = 'log';
     if (bt === 'magic' && reg.culture === 'elf') type = 'tower';
