@@ -1,0 +1,23 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:item": {
+    "description": {
+      "identifier": "gm:kit_medico",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "textures": {
+          "default": "gm_kit_medico"
+        }
+      },
+      "minecraft:display_name": {
+        "value": "§fKit Médico"
+      },
+      "minecraft:max_stack_size": 4,
+      "minecraft:can_destroy_in_creative": false
+    }
+  }
+}

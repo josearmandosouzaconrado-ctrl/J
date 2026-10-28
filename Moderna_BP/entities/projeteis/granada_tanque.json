@@ -1,0 +1,93 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "gm:granada_tanque",
+      "is_spawnable": false,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "sumir": {
+        "minecraft:instant_despawn": {}
+      },
+      "explodir": {
+        "minecraft:explode": {
+          "fuse_length": 0,
+          "fuse_lit": true,
+          "power": 2.8,
+          "causes_fire": false,
+          "breaks_blocks": false
+        }
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "gm_projetil"
+        ]
+      },
+      "minecraft:collision_box": {
+        "width": 0.2,
+        "height": 0.2
+      },
+      "minecraft:projectile": {
+        "on_hit": {
+          "impact_damage": {
+            "damage": 18,
+            "knockback": true,
+            "destroy_on_hit": true
+          },
+          "definition_event": {
+            "affect_projectile": true,
+            "event_trigger": {
+              "event": "gm:explodir",
+              "target": "self"
+            }
+          }
+        },
+        "power": 3.0,
+        "gravity": 0.0,
+        "inertia": 1.0,
+        "liquid_inertia": 1.0,
+        "uncertainty_base": 1.5,
+        "uncertainty_multiplier": 0.5,
+        "anchor": 1,
+        "offset": [
+          0,
+          -0.1,
+          0
+        ],
+        "reflect_on_hurt": false
+      },
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:timer": {
+        "time": 3,
+        "looping": false,
+        "time_down_event": {
+          "event": "gm:sumir"
+        }
+      }
+    },
+    "events": {
+      "gm:sumir": {
+        "add": {
+          "component_groups": [
+            "sumir"
+          ]
+        }
+      },
+      "gm:explodir": {
+        "add": {
+          "component_groups": [
+            "explodir"
+          ]
+        }
+      }
+    }
+  }
+}

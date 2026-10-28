@@ -1,0 +1,29 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Guerra Moderna (Recursos)",
+    "description": "Modelos, texturas e sons da Guerra Moderna",
+    "uuid": "890c4ef4-4397-4bf2-a60d-49ffa96121f6",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "a1847917-7870-4cdc-a3cd-1a2d7f14bf98",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ]
+}

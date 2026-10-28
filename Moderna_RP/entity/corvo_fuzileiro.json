@@ -1,0 +1,37 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "gm:corvo_fuzileiro",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/gm/corvo_fuzileiro"
+      },
+      "geometry": {
+        "default": "geometry.gm_fuzileiro"
+      },
+      "animations": {
+        "olhar": "animation.gm.olhar",
+        "andar": "animation.gm.andar",
+        "mirar": "animation.gm.mirar"
+      },
+      "scripts": {
+        "animate": [
+          "olhar",
+          "andar",
+          "mirar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ],
+      "enable_attachables": false,
+      "spawn_egg": {
+        "base_color": "#26262C",
+        "overlay_color": "#FF8C1E"
+      }
+    }
+  }
+}

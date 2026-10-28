@@ -1,0 +1,271 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "gm:corvo_bazuca",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "component_groups": {
+      "modo_ataque": {
+        "minecraft:behavior.nearest_attackable_target": {
+          "priority": 2,
+          "within_radius": 64,
+          "reselect_targets": true,
+          "scan_interval": 10,
+          "must_see": false,
+          "must_see_forget_duration": 4,
+          "entity_types": [
+            {
+              "filters": {
+                "any_of": [
+                  {
+                    "all_of": [
+                      {
+                        "test": "is_family",
+                        "subject": "other",
+                        "value": "gm"
+                      },
+                      {
+                        "test": "is_family",
+                        "subject": "other",
+                        "operator": "!=",
+                        "value": "gm_corvo"
+                      }
+                    ]
+                  },
+                  {
+                    "all_of": [
+                      {
+                        "test": "is_family",
+                        "subject": "other",
+                        "value": "player"
+                      },
+                      {
+                        "test": "has_tag",
+                        "subject": "other",
+                        "value": "gm_inimigo_corvo"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "max_dist": 64
+            }
+          ]
+        }
+      },
+      "modo_defesa": {
+        "minecraft:behavior.nearest_attackable_target": {
+          "priority": 2,
+          "within_radius": 24,
+          "reselect_targets": true,
+          "scan_interval": 10,
+          "must_see": true,
+          "must_see_forget_duration": 4,
+          "entity_types": [
+            {
+              "filters": {
+                "any_of": [
+                  {
+                    "all_of": [
+                      {
+                        "test": "is_family",
+                        "subject": "other",
+                        "value": "gm"
+                      },
+                      {
+                        "test": "is_family",
+                        "subject": "other",
+                        "operator": "!=",
+                        "value": "gm_corvo"
+                      }
+                    ]
+                  },
+                  {
+                    "all_of": [
+                      {
+                        "test": "is_family",
+                        "subject": "other",
+                        "value": "player"
+                      },
+                      {
+                        "test": "has_tag",
+                        "subject": "other",
+                        "value": "gm_inimigo_corvo"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "max_dist": 24
+            }
+          ]
+        },
+        "minecraft:home": {
+          "restriction_radius": 16
+        }
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "gm",
+          "gm_unidade",
+          "gm_corvo",
+          "gm_bazuca",
+          "mob"
+        ]
+      },
+      "minecraft:health": {
+        "value": 26,
+        "max": 26
+      },
+      "minecraft:collision_box": {
+        "width": 0.6,
+        "height": 1.9
+      },
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": true,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:movement": {
+        "value": 0.3
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:jump.static": {},
+      "minecraft:navigation.walk": {
+        "avoid_water": true,
+        "avoid_damage_blocks": true,
+        "can_pass_doors": true,
+        "can_path_over_water": true
+      },
+      "minecraft:follow_range": {
+        "value": 64,
+        "max": 64
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "on_damage": {
+              "filters": {
+                "test": "is_family",
+                "subject": "damager",
+                "value": "gm_corvo"
+              }
+            },
+            "deals_damage": false
+          },
+          {
+            "on_damage": {
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "damager",
+                    "value": "player"
+                  },
+                  {
+                    "test": "has_tag",
+                    "subject": "damager",
+                    "value": "gm_aliado_corvo"
+                  }
+                ]
+              }
+            },
+            "deals_damage": false
+          },
+          {
+            "cause": "fall",
+            "deals_damage": false
+          },
+          {
+            "cause": "suffocation",
+            "deals_damage": false
+          }
+        ]
+      },
+      "minecraft:shooter": {
+        "def": "gm:foguete"
+      },
+      "minecraft:behavior.ranged_attack": {
+        "priority": 3,
+        "attack_interval_min": 5.0,
+        "attack_interval_max": 6.0,
+        "attack_radius": 26,
+        "speed_multiplier": 1.0
+      },
+      "minecraft:behavior.hurt_by_target": {
+        "priority": 1,
+        "entity_types": {
+          "filters": {
+            "test": "is_family",
+            "subject": "other",
+            "operator": "!=",
+            "value": "gm_corvo"
+          }
+        }
+      },
+      "minecraft:behavior.float": {
+        "priority": 0
+      },
+      "minecraft:behavior.random_stroll": {
+        "priority": 7,
+        "speed_multiplier": 0.8
+      },
+      "minecraft:behavior.random_look_around": {
+        "priority": 9
+      },
+      "minecraft:nameable": {},
+      "minecraft:conditional_bandwidth_optimization": {},
+      "minecraft:behavior.tempt": {
+        "priority": 2,
+        "speed_multiplier": 1.25,
+        "within_radius": 28,
+        "items": [
+          "gm:bandeira_corvo"
+        ],
+        "can_tempt_vertically": true
+      },
+      "minecraft:behavior.look_at_player": {
+        "priority": 8,
+        "look_distance": 8
+      }
+    },
+    "events": {
+      "minecraft:entity_spawned": {
+        "add": {
+          "component_groups": [
+            "modo_ataque"
+          ]
+        }
+      },
+      "gm:atacar": {
+        "remove": {
+          "component_groups": [
+            "modo_defesa"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "modo_ataque"
+          ]
+        }
+      },
+      "gm:defender": {
+        "remove": {
+          "component_groups": [
+            "modo_ataque"
+          ]
+        },
+        "add": {
+          "component_groups": [
+            "modo_defesa"
+          ]
+        }
+      }
+    }
+  }
+}

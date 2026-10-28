@@ -7,6 +7,7 @@ RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ADDONS = {
     "FutebolCraft.mcaddon": ["Futebol_BP", "Futebol_RP"],
     "GuerraFuturista.mcaddon": ["Guerra_BP", "Guerra_RP"],
+    "GuerraModerna.mcaddon": ["Moderna_BP", "Moderna_RP"],
 }
 
 

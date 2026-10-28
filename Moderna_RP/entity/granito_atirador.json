@@ -1,0 +1,37 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "gm:granito_atirador",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/gm/granito_atirador"
+      },
+      "geometry": {
+        "default": "geometry.gm_atirador"
+      },
+      "animations": {
+        "olhar": "animation.gm.olhar",
+        "andar": "animation.gm.andar",
+        "mirar": "animation.gm.mirar"
+      },
+      "scripts": {
+        "animate": [
+          "olhar",
+          "andar",
+          "mirar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ],
+      "enable_attachables": false,
+      "spawn_egg": {
+        "base_color": "#989898",
+        "overlay_color": "#FFB93C"
+      }
+    }
+  }
+}

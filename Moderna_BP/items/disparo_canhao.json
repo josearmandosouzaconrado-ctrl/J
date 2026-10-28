@@ -1,0 +1,23 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:item": {
+    "description": {
+      "identifier": "gm:disparo_canhao",
+      "menu_category": {
+        "category": "equipment"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "textures": {
+          "default": "gm_disparo_canhao"
+        }
+      },
+      "minecraft:display_name": {
+        "value": "§c§lCANHÃO"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:can_destroy_in_creative": false
+    }
+  }
+}

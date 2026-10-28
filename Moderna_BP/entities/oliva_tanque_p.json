@@ -1,0 +1,144 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "gm:oliva_tanque_p",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false,
+      "properties": {
+        "gm:torre": {
+          "type": "float",
+          "range": [
+            -180,
+            180
+          ],
+          "default": 0,
+          "client_sync": true
+        },
+        "gm:elev": {
+          "type": "float",
+          "range": [
+            -30,
+            30
+          ],
+          "default": 0,
+          "client_sync": true
+        }
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "gm",
+          "gm_pilotavel",
+          "gm_oliva",
+          "gm_veiculo",
+          "gm_tanque_p",
+          "inanimate"
+        ]
+      },
+      "minecraft:health": {
+        "value": 320,
+        "max": 320
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "on_damage": {
+              "filters": {
+                "test": "is_family",
+                "subject": "damager",
+                "value": "gm_oliva"
+              }
+            },
+            "deals_damage": false
+          },
+          {
+            "on_damage": {
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "damager",
+                    "value": "player"
+                  },
+                  {
+                    "test": "has_tag",
+                    "subject": "damager",
+                    "value": "gm_aliado_oliva"
+                  }
+                ]
+              }
+            },
+            "deals_damage": false
+          },
+          {
+            "cause": "fall",
+            "deals_damage": false
+          },
+          {
+            "cause": "suffocation",
+            "deals_damage": false
+          },
+          {
+            "cause": "projectile",
+            "damage_multiplier": 0.12
+          },
+          {
+            "cause": "entity_attack",
+            "damage_multiplier": 0.12
+          }
+        ]
+      },
+      "minecraft:nameable": {},
+      "minecraft:persistent": {},
+      "minecraft:collision_box": {
+        "width": 3.2,
+        "height": 2.4
+      },
+      "minecraft:knockback_resistance": {
+        "value": 1.0
+      },
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:fire_immune": true,
+      "minecraft:variable_max_auto_step": {
+        "base_value": 1.0625,
+        "controlled_value": 1.0625,
+        "jump_prevented_value": 1.0625
+      },
+      "minecraft:rideable": {
+        "seat_count": 1,
+        "family_types": [
+          "player"
+        ],
+        "interact_text": "action.interact.ride.horse",
+        "crouching_skip_interact": true,
+        "pull_in_entities": false,
+        "seats": [
+          {
+            "position": [
+              0,
+              2.6,
+              0.4
+            ],
+            "lock_rider_rotation": 0
+          }
+        ]
+      },
+      "minecraft:input_ground_controlled": {},
+      "minecraft:movement": {
+        "value": 0.28
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:jump.static": {},
+      "minecraft:physics": {},
+      "minecraft:navigation.walk": {
+        "avoid_water": true
+      }
+    }
+  }
+}

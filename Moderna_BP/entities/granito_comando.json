@@ -1,0 +1,92 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "gm:granito_comando",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "is_experimental": false
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "gm",
+          "gm_comando",
+          "gm_granito",
+          "inanimate"
+        ]
+      },
+      "minecraft:health": {
+        "value": 900,
+        "max": 900
+      },
+      "minecraft:collision_box": {
+        "width": 2.0,
+        "height": 1.6
+      },
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:knockback_resistance": {
+        "value": 1.0
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "on_damage": {
+              "filters": {
+                "test": "is_family",
+                "subject": "damager",
+                "value": "gm_granito"
+              }
+            },
+            "deals_damage": false
+          },
+          {
+            "on_damage": {
+              "filters": {
+                "all_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "damager",
+                    "value": "player"
+                  },
+                  {
+                    "test": "has_tag",
+                    "subject": "damager",
+                    "value": "gm_aliado_granito"
+                  }
+                ]
+              }
+            },
+            "deals_damage": false
+          },
+          {
+            "cause": "fall",
+            "deals_damage": false
+          },
+          {
+            "cause": "suffocation",
+            "deals_damage": false
+          },
+          {
+            "cause": "projectile",
+            "damage_multiplier": 0.12
+          },
+          {
+            "cause": "entity_attack",
+            "damage_multiplier": 0.12
+          }
+        ]
+      },
+      "minecraft:nameable": {
+        "always_show": true,
+        "allow_name_tag_renaming": false
+      },
+      "minecraft:fire_immune": true,
+      "minecraft:persistent": {}
+    }
+  }
+}

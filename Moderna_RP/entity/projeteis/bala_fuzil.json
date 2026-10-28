@@ -1,0 +1,25 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "gm:bala_fuzil",
+      "materials": {
+        "default": "entity_emissive_alpha"
+      },
+      "textures": {
+        "default": "textures/entity/gm/bala"
+      },
+      "geometry": {
+        "default": "geometry.gm_bala"
+      },
+      "animations": {},
+      "scripts": {
+        "animate": []
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ],
+      "enable_attachables": false
+    }
+  }
+}

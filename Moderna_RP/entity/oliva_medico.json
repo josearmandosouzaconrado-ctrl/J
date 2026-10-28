@@ -1,0 +1,37 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "gm:oliva_medico",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/gm/oliva_medico"
+      },
+      "geometry": {
+        "default": "geometry.gm_medico"
+      },
+      "animations": {
+        "olhar": "animation.gm.olhar",
+        "andar": "animation.gm.andar",
+        "mirar": "animation.gm.mirar"
+      },
+      "scripts": {
+        "animate": [
+          "olhar",
+          "andar",
+          "mirar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ],
+      "enable_attachables": false,
+      "spawn_egg": {
+        "base_color": "#62623A",
+        "overlay_color": "#E4C628"
+      }
+    }
+  }
+}

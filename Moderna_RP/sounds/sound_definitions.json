@@ -1,0 +1,177 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "gm.tiro.fuzil": {
+      "category": "hostile",
+      "min_distance": 2.0,
+      "max_distance": 96.0,
+      "sounds": [
+        {
+          "name": "sounds/gm/fuzil1",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/gm/fuzil2",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/gm/fuzil3",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "gm.tiro.metralhadora": {
+      "category": "hostile",
+      "min_distance": 2.0,
+      "max_distance": 96.0,
+      "sounds": [
+        {
+          "name": "sounds/gm/metralhadora1",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/gm/metralhadora2",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/gm/metralhadora3",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "gm.tiro.sniper": {
+      "category": "hostile",
+      "min_distance": 2.0,
+      "max_distance": 128.0,
+      "sounds": [
+        {
+          "name": "sounds/gm/sniper1",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/gm/sniper2",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "gm.canhao": {
+      "category": "hostile",
+      "min_distance": 2.0,
+      "max_distance": 160.0,
+      "sounds": [
+        {
+          "name": "sounds/gm/canhao1",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/gm/canhao2",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "gm.explosao": {
+      "category": "hostile",
+      "min_distance": 2.0,
+      "max_distance": 160.0,
+      "sounds": [
+        {
+          "name": "sounds/gm/explosao1",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/gm/explosao2",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "gm.foguete": {
+      "category": "hostile",
+      "min_distance": 2.0,
+      "max_distance": 96.0,
+      "sounds": [
+        {
+          "name": "sounds/gm/foguete",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "gm.recarga": {
+      "category": "hostile",
+      "min_distance": 2.0,
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/gm/recarga",
+          "volume": 0.8,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "gm.motor": {
+      "category": "hostile",
+      "min_distance": 2.0,
+      "max_distance": 40.0,
+      "sounds": [
+        {
+          "name": "sounds/gm/motor",
+          "volume": 0.7,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "gm.assobio": {
+      "category": "hostile",
+      "min_distance": 2.0,
+      "max_distance": 128.0,
+      "sounds": [
+        {
+          "name": "sounds/gm/assobio",
+          "volume": 1.0,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "gm.impacto": {
+      "category": "hostile",
+      "min_distance": 2.0,
+      "max_distance": 24.0,
+      "sounds": [
+        {
+          "name": "sounds/gm/impacto1",
+          "volume": 0.6,
+          "load_on_low_memory": true
+        },
+        {
+          "name": "sounds/gm/impacto2",
+          "volume": 0.6,
+          "load_on_low_memory": true
+        }
+      ]
+    },
+    "gm.radio": {
+      "category": "hostile",
+      "min_distance": 2.0,
+      "max_distance": 16.0,
+      "sounds": [
+        {
+          "name": "sounds/gm/radio",
+          "volume": 0.7,
+          "load_on_low_memory": true
+        }
+      ]
+    }
+  }
+}

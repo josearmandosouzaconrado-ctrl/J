@@ -1,0 +1,181 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.gm_comando",
+        "texture_width": 128,
+        "texture_height": 128,
+        "visible_bounds_width": 4,
+        "visible_bounds_height": 4,
+        "visible_bounds_offset": [
+          0,
+          1.5,
+          0
+        ]
+      },
+      "bones": [
+        {
+          "name": "root",
+          "pivot": [
+            0,
+            0,
+            0
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -16,
+                0,
+                -16
+              ],
+              "size": [
+                32,
+                12,
+                32
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                -18,
+                0,
+                -18
+              ],
+              "size": [
+                36,
+                3,
+                4
+              ],
+              "uv": [
+                34,
+                44
+              ]
+            },
+            {
+              "origin": [
+                -18,
+                0,
+                14
+              ],
+              "size": [
+                36,
+                3,
+                4
+              ],
+              "uv": [
+                0,
+                69
+              ]
+            },
+            {
+              "origin": [
+                10,
+                12,
+                10
+              ],
+              "size": [
+                2,
+                22,
+                2
+              ],
+              "uv": [
+                4,
+                44
+              ]
+            },
+            {
+              "origin": [
+                -12,
+                12,
+                -12
+              ],
+              "size": [
+                1,
+                24,
+                1
+              ],
+              "uv": [
+                0,
+                44
+              ]
+            }
+          ]
+        },
+        {
+          "name": "radar",
+          "pivot": [
+            0,
+            13,
+            0
+          ],
+          "parent": "root",
+          "cubes": [
+            {
+              "origin": [
+                -1,
+                12,
+                -1
+              ],
+              "size": [
+                2,
+                3,
+                2
+              ],
+              "uv": [
+                102,
+                69
+              ]
+            },
+            {
+              "origin": [
+                -5,
+                15,
+                -1
+              ],
+              "size": [
+                10,
+                5,
+                1
+              ],
+              "uv": [
+                80,
+                69
+              ]
+            }
+          ]
+        },
+        {
+          "name": "bandeira",
+          "pivot": [
+            -12,
+            30,
+            -12
+          ],
+          "parent": "root",
+          "cubes": [
+            {
+              "origin": [
+                -11,
+                28,
+                -12
+              ],
+              "size": [
+                10,
+                7,
+                1
+              ],
+              "uv": [
+                12,
+                44
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.gm.olhar": {
+      "loop": true,
+      "bones": {
+        "head": {
+          "rotation": [
+            "query.target_x_rotation",
+            "query.target_y_rotation",
+            0
+          ]
+        }
+      }
+    },
+    "animation.gm.andar": {
+      "loop": true,
+      "bones": {
+        "rightLeg": {
+          "rotation": [
+            "math.cos(query.modified_distance_moved * 38.17) * query.modified_move_speed * 70",
+            0,
+            0
+          ]
+        },
+        "leftLeg": {
+          "rotation": [
+            "-math.cos(query.modified_distance_moved * 38.17) * query.modified_move_speed * 70",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.gm.mirar": {
+      "loop": true,
+      "bones": {
+        "rightArm": {
+          "rotation": [
+            "-85 + query.target_x_rotation",
+            "-5 + query.target_y_rotation",
+            0
+          ]
+        },
+        "leftArm": {
+          "rotation": [
+            "-80 + query.target_x_rotation",
+            "35 + query.target_y_rotation",
+            0
+          ]
+        }
+      }
+    },
+    "animation.gm.torre_ia": {
+      "loop": true,
+      "bones": {
+        "torre": {
+          "rotation": [
+            0,
+            "query.target_y_rotation",
+            0
+          ]
+        },
+        "canhao": {
+          "rotation": [
+            "math.clamp(query.target_x_rotation, -15, 10)",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.gm.torre_piloto": {
+      "loop": true,
+      "bones": {
+        "torre": {
+          "rotation": [
+            0,
+            "query.property('gm:torre')",
+            0
+          ]
+        },
+        "canhao": {
+          "rotation": [
+            "math.clamp(query.property('gm:elev'), -15, 10)",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "animation.gm.chacoalhar": {
+      "loop": true,
+      "bones": {
+        "casco": {
+          "position": [
+            0,
+            "math.sin(query.life_time * 2400) * 0.15 * query.modified_move_speed",
+            0
+          ]
+        }
+      }
+    },
+    "animation.gm.comando": {
+      "loop": true,
+      "bones": {
+        "radar": {
+          "rotation": [
+            0,
+            "query.life_time * 90",
+            0
+          ]
+        },
+        "bandeira": {
+          "rotation": [
+            0,
+            "math.sin(query.life_time * 120) * 12",
+            0
+          ]
+        }
+      }
+    }
+  }
+}

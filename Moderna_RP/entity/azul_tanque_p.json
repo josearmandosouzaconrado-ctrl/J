@@ -1,0 +1,35 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "gm:azul_tanque_p",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/gm/azul_tanque"
+      },
+      "geometry": {
+        "default": "geometry.gm_tanque"
+      },
+      "animations": {
+        "torre": "animation.gm.torre_piloto",
+        "chacoalhar": "animation.gm.chacoalhar"
+      },
+      "scripts": {
+        "animate": [
+          "torre",
+          "chacoalhar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ],
+      "enable_attachables": false,
+      "spawn_egg": {
+        "base_color": "#586842",
+        "overlay_color": "#5AA0E1"
+      }
+    }
+  }
+}

@@ -4,6 +4,7 @@ Este repositório tem dois addons independentes:
 
 - **Futebol Craft** — futebol com NPCs e modo carreira ([`dist/FutebolCraft.mcaddon`](dist/FutebolCraft.mcaddon))
 - **Guerra Futurista** — facções de ficção científica e terreno que vira campo de batalha ([`dist/GuerraFuturista.mcaddon`](dist/GuerraFuturista.mcaddon))
+- **Guerra Moderna** — tanques e blindados pilotáveis, infantaria e sons de tiro realistas ([`dist/GuerraModerna.mcaddon`](dist/GuerraModerna.mcaddon))
 
 # ⚽ Futebol Craft
 
@@ -184,3 +185,60 @@ melhorias no **Arsenal** (dano, escudo, reforços, ataque orbital) e sobem sua *
 de Recruta a Lenda da Guerra.
 
 Para regenerar modelos e texturas: `python3 tools/guerra_gerar.py` (requer Pillow).
+
+---
+
+# Guerra Moderna
+
+Guerra moderna com **tanques e blindados que você pilota**, infantaria com armas de fogo, munição
+e recarga, artilharia e **sons de tiro, canhão, explosão e motor** criados para o addon (sintetizados
+por `tools/moderna_sons.py`, sem áudio de terceiros).
+
+## Instalação
+
+Abra [`dist/GuerraModerna.mcaddon`](dist/GuerraModerna.mcaddon) e ative no mundo **Guerra Moderna**
+e **Guerra Moderna (Recursos)**. Bedrock 1.21+, sem experimentos. Você recebe o **Rádio de Campanha**
+ao entrar (ou `/scriptevent gm:item`, ou receita: ferro + redstone + linha).
+
+## Facções
+
+| Facção | Visual |
+|---|---|
+| **Força Tarefa Oliva** | Verde-oliva, máscara de gás, faixas amarelas |
+| **Divisão Granito** | Exoarmadura cinza com camuflagem, visor laranja |
+| **Unidade Corvo** | Preto e laranja, visor ciano |
+| **Legião Caveira** | Casaco cinza e vermelho, máscara de caveira |
+| **Força de Paz Azul** | Capacete azul, camuflagem de selva, bandana de caveira |
+
+Cada uma tem Fuzileiro, Atirador, Metralhador, Antitanque (lança-foguetes), Médico, **Blindado**,
+**Tanque** e um **Posto de Comando** na base. Todos têm ovos no criativo.
+
+## Batalha
+
+Rádio → *Iniciar Batalha*: escolha facção (ou assistir), 2 a 5 facções, cenário (Cidade em Guerra,
+Deserto, Floresta, Front de Inverno), tamanho, intensidade e **sua classe** (Assalto, Atirador de elite,
+Suporte, Antitanque). O terreno é salvo e "bombardeado" até virar o campo de batalha, com ruas,
+prédios destruídos, trincheiras de sacos de areia, crateras, carros queimados, ouriços antitanque,
+árvores e bases fortificadas. Tropas e veículos chegam em ondas; vence quem destruir os postos de
+comando inimigos. No fim dá para **restaurar o terreno**.
+
+## Armas e veículos
+
+| Item | Uso |
+|---|---|
+| **Fuzil de Assalto** | Segure para rajada. 30 balas |
+| **Metralhadora** | Segure para rajada. 100 balas |
+| **Rifle de Precisão** | Agache para mirar com zoom. 5 balas, dano alto |
+| **Lança-Foguetes** | Explosivo, o melhor contra blindagem |
+| **Granada** / **Kit Médico** | Arremesso explosivo / cura |
+| **Rádio de Campanha** | Ordens, reforços, pedir tanque/blindado, **artilharia** |
+
+- Usar a arma **agachado** recarrega; o pente também recarrega sozinho. A munição aparece na tela.
+- Balas quase não arranham tanques: use foguetes, granadas, artilharia ou outro tanque.
+- **Tanques e blindados**: clique para entrar, ande com os controles normais, **mire com a câmera**
+  (a torre acompanha), use os itens **CANHÃO** e **METRALHADORA**. Agache para sair. O blindado leva
+  mais 3 passageiros. Sua base começa com um tanque esperando no portão.
+- Créditos de batalha compram melhorias no **Arsenal** (munição perfurante, carregadores, reforços,
+  artilharia) e sobem sua patente de Recruta a General.
+
+Para regenerar: `python3 tools/moderna_sons.py` (numpy + ffmpeg) e `python3 tools/moderna_gerar.py`.

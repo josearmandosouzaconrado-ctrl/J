@@ -1,0 +1,35 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "gm:corvo_blindado",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/gm/corvo_blindado"
+      },
+      "geometry": {
+        "default": "geometry.gm_blindado"
+      },
+      "animations": {
+        "torre": "animation.gm.torre_ia",
+        "chacoalhar": "animation.gm.chacoalhar"
+      },
+      "scripts": {
+        "animate": [
+          "torre",
+          "chacoalhar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ],
+      "enable_attachables": false,
+      "spawn_egg": {
+        "base_color": "#26262C",
+        "overlay_color": "#FF8C1E"
+      }
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "resource_pack_name": "guerra_moderna",
+  "texture_name": "atlas.items",
+  "texture_data": {
+    "gm_radio": {
+      "textures": "textures/items/gm_radio"
+    },
+    "gm_fuzil": {
+      "textures": "textures/items/gm_fuzil"
+    },
+    "gm_sniper": {
+      "textures": "textures/items/gm_sniper"
+    },
+    "gm_metralhadora": {
+      "textures": "textures/items/gm_metralhadora"
+    },
+    "gm_bazuca": {
+      "textures": "textures/items/gm_bazuca"
+    },
+    "gm_granada": {
+      "textures": "textures/items/gm_granada"
+    },
+    "gm_kit_medico": {
+      "textures": "textures/items/gm_kit_medico"
+    },
+    "gm_disparo_canhao": {
+      "textures": "textures/items/gm_disparo_canhao"
+    },
+    "gm_disparo_mg": {
+      "textures": "textures/items/gm_disparo_mg"
+    },
+    "gm_bandeira_oliva": {
+      "textures": "textures/items/gm_bandeira_oliva"
+    },
+    "gm_bandeira_granito": {
+      "textures": "textures/items/gm_bandeira_granito"
+    },
+    "gm_bandeira_corvo": {
+      "textures": "textures/items/gm_bandeira_corvo"
+    },
+    "gm_bandeira_caveira": {
+      "textures": "textures/items/gm_bandeira_caveira"
+    },
+    "gm_bandeira_azul": {
+      "textures": "textures/items/gm_bandeira_azul"
+    }
+  }
+}
