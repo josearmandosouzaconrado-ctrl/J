@@ -2351,7 +2351,7 @@ function battleScenario(cfg) {
   if (['USA', 'ENG'].includes(cfg.player.tag) && cfg.year >= 1942) strikes.push('b26', 'para');
   return {
     id: 'bat_' + base.id + (early && gerIn ? '_c' : '') + (jp ? '_j' : '') + '_' + cfg.player.tag + cfg.enemy.tag,
-    battle: true, biome: base.biome, coast: false, bluff: t === 'M' ? 22 : 11, hills: t === 'M' ? 2.8 : (base.hills || 1.2), seed: 3000 + cfg.prov.id,
+    battle: true, year: cfg.year + cfg.month / 12, biome: base.biome, coast: false, bluff: t === 'M' ? 22 : 11, hills: t === 'M' ? 2.8 : (base.hills || 1.2), seed: 3000 + cfg.prov.id,
     trenches: t === 'M' || t === 'W' ? ['wn'] : [], mountain: null,
     title: cfg.prov.name, towns: [cfg.prov.name, 'Fazenda de ' + cfg.prov.name, 'Estação de ' + cfg.prov.name, 'Bosque de ' + cfg.prov.name, 'Igreja de ' + cfg.prov.name],
     sky: base.sky, fog: base.fog, sun: base.sun, sunI: base.sunI, hemi: base.hemi, skyTop: base.skyTop, skyHor: base.skyHor, snow: cold && t !== 'D' && t !== 'T', water: base.water,
