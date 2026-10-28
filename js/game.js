@@ -32,7 +32,10 @@ const Game = {
     };
     requestAnimationFrame(loop);
     UI.showTitle();
-    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => { });
+    // botão voltar do Android: fecha janelas / abre o menu (o APK chama esta função)
+    window.androidBack = () => { Input.press('menu'); setTimeout(() => Input.release('menu'), 60); };
+    if (IS_APK) document.body.classList.add('apk');
+    if (!IS_APK && 'serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => { });
   },
   loadSettings() {
     let s = null;

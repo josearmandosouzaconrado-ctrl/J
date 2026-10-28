@@ -81,3 +81,15 @@ WASD/setas andar • Shift correr • J/Espaço atacar • K magia • Q trocar 
 O modo **Multiplayer** aparece no menu inicial como "em breve".
 
 Sem dependências externas além da fonte VT323 (opcional).
+
+## Versão Android (APK) — Beta
+
+O arquivo **`CronicasDeEldoria.apk`** (na raiz do projeto, e no botão "Baixar para Android" da tela inicial) instala o jogo no celular:
+
+- Abre direto em **tela cheia e deitada (paisagem)**, sem barras do sistema.
+- Funciona **offline** (o jogo e a fonte vão dentro do APK).
+- O botão **Voltar** do Android abre e fecha o menu do jogo.
+- O jogo **salva sozinho** quando você sai do aplicativo.
+- Requer Android 7 ou mais novo. Como o APK não vem da Play Store, o Android pede para permitir "instalar apps desconhecidos".
+
+Para gerar o APK de novo depois de mudar o jogo: `python3 android/build_apk.py` (só precisa de Python 3 e do pacote `cryptography`; não usa o Android SDK). A chave privada de assinatura (`android/signing/key.pem`) **não vai para o repositório**; guarde-a em lugar seguro e use sempre a mesma, senão o Android não deixa atualizar o app por cima da versão instalada (sem ela, o script cria uma chave nova).

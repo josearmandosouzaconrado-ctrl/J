@@ -1,3 +1,5 @@
 node_modules/
 *.log
 .DS_Store
+# chave privada de assinatura do APK (não versionar)
+android/signing/key.pem

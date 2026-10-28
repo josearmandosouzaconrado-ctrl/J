@@ -100,6 +100,7 @@ const UI = {
       <div class="title-screen">
         <h1 class="logo">CRÔNICAS<small>de</small>ELDORIA</h1>
         <div class="tagline">Um RPG de fantasia medieval em mundo aberto</div>
+        <div class="beta-tag">BETA</div>
         <div class="menu-col">
           ${saves.length ? `<button class="mbtn gold" ${f(() => Game.loadGame(saves[0].i))}>Continuar<br><small>${esc(saves[0].s ? saves[0].s.name + ' • Nv ' + saves[0].s.level : '')}</small></button>` : ''}
           <button class="mbtn" ${f(() => this.showCreate())}>Novo Jogo</button>
@@ -107,8 +108,9 @@ const UI = {
           <button class="mbtn" ${f(() => this.multiplayer())}>Multiplayer <small class="soon">EM BREVE</small></button>
           <button class="mbtn" ${f(() => this.options())}>Opções</button>
           <button class="mbtn" ${f(() => this.help())}>Como Jogar</button>
+          ${IS_APK ? '' : `<a class="mbtn apk" href="CronicasDeEldoria.apk" download="CronicasDeEldoria.apk">📱 Baixar para Android (APK)<small>joga com a tela deitada</small></a>`}
         </div>
-        <div class="ver">2 continentes • 12 reinos • 9 raças • guerras entre reinos • 160+ masmorras</div>
+        <div class="ver">Versão Beta ${GAME_VERSION} • 3 continentes • 18 reinos • 14 raças • guerras em terra e no mar</div>
       </div>`, { cls: 'transparent' });
     this.bind(el, f);
     Game.state = 'title';
