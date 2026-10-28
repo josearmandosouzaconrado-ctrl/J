@@ -492,6 +492,7 @@
     const key = JSON.stringify(L);
     let s = actorCache.get(key);
     if (s) return s;
+    if (actorCache.size > 900) { let n = 0; for (const k of actorCache.keys()) { actorCache.delete(k); if (++n >= 300) break; } }
     if (L.k === 'hum') {
       const sc = L.size || 1;
       const mkf = (d, f) => { let c = humanoid(L, d, f); if (sc !== 1) c = S.scale(c, sc); return c; };

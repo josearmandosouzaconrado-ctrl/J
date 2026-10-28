@@ -289,10 +289,34 @@ class World {
     if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_H) return 0;
     return this.getChunk(tx >> 5, ty >> 5).reg[((ty & 31) << 5) | (tx & 31)];
   }
+  // objetos desenhados em pé (árvores, postes...) de um trecho, numa lista pronta
+  objList(cx, cy) {
+    const ch = this.getChunk(cx, cy);
+    if (ch.objList) return ch.objList;
+    const out = [], x0 = cx * 32, y0 = cy * 32;
+    for (let i = 0; i < 1024; i++) {
+      const o = ch.objs[i]; if (!o || OBJ_BAKED[o] || o === O.BLOCK) continue;
+      const tx = x0 + (i & 31), ty = y0 + (i >> 5), nv = OBJ_VARIANTS[o] || 1;
+      out.push([tx, ty, o, nv > 1 ? Math.floor(hash2(tx, ty, 5) * nv) : 0]);
+    }
+    return (ch.objList = out);
+  }
+  lightList(cx, cy) {
+    const ch = this.getChunk(cx, cy);
+    if (ch.lightList) return ch.lightList;
+    const objs = [], lava = [], x0 = cx * 32, y0 = cy * 32;
+    for (let i = 0; i < 1024; i++) {
+      const tx = x0 + (i & 31), ty = y0 + (i >> 5), o = ch.objs[i];
+      if (o && OBJ_DEFS[o].light) objs.push([tx, ty, o]);
+      if (ch.tiles[i] === T.LAVA && (tx + ty) % 2 === 0) lava.push([tx, ty]);
+    }
+    return (ch.lightList = { objs, lava });
+  }
   setObj(tx, ty, o) {
     const ch = this.getChunk(tx >> 5, ty >> 5); const i = ((ty & 31) << 5) | (tx & 31);
     const old = ch.objs[i]; ch.objs[i] = o;
-    if (OBJ_BAKED[old] || OBJ_BAKED[o]) this.canvases.delete(this.ckey(tx >> 5, ty >> 5));
+    if (OBJ_BAKED[old] || OBJ_BAKED[o]) { const k = this.ckey(tx >> 5, ty >> 5); this.canvases.delete(k); if (this.pending && this.pending.k === k) this.pending = null; }
+    ch.objList = null; ch.lightList = null;
   }
   solidAt(tx, ty) {
     if (tx < 0 || ty < 0 || tx >= WORLD_W || ty >= WORLD_H) return true;
@@ -303,12 +327,27 @@ class World {
     const k = this.ckey(cx, cy);
     let c = this.canvases.get(k);
     if (c) { this.canvases.delete(k); this.canvases.set(k, c); return c; }
-    const ch = this.getChunk(cx, cy);
-    c = Sprites.cv(CHUNK_PX, CHUNK_PX);
-    const ctx = c.getContext('2d');
-    const x0 = cx * 32, y0 = cy * 32;
+    // termina na hora um trecho que estava sendo pintado aos poucos (ou pinta um novo inteiro)
+    const job = this.pending && this.pending.k === k ? this.pending : this.chunkJob(cx, cy);
+    if (job === this.pending) this.pending = null;
+    this.paintRows(job, 32);
+    return this.finishChunk(job);
+  }
+  chunkJob(cx, cy) {
+    const ch = this.getChunk(cx, cy), c = Sprites.cv(CHUNK_PX, CHUNK_PX), x0 = cx * 32, y0 = cy * 32;
     const getT = (lx, ly) => (lx >= 0 && ly >= 0 && lx < 32 && ly < 32) ? ch.tiles[ly * 32 + lx] : this.tileAt(x0 + lx, y0 + ly);
-    Sprites.paintTiles(ctx, 32, 32, getT, this.seed, x0, y0);
+    return { k: this.ckey(cx, cy), cx, cy, ch, c, ctx: c.getContext('2d'), getT, row: 0 };
+  }
+  paintRows(job, n) {
+    const r0 = job.row, r1 = Math.min(32, r0 + n); if (r1 <= r0) return;
+    const x0 = job.cx * 32, y0 = job.cy * 32 + r0;
+    job.ctx.setTransform(1, 0, 0, 1, 0, r0 * 16);
+    Sprites.paintTiles(job.ctx, 32, r1 - r0, (lx, ly) => job.getT(lx, ly + r0), this.seed, x0, y0);
+    job.ctx.setTransform(1, 0, 0, 1, 0, 0);
+    job.row = r1;
+  }
+  finishChunk(job) {
+    const { ch, ctx, c, k } = job, x0 = job.cx * 32, y0 = job.cy * 32;
     for (let i = 0; i < 1024; i++) {
       const o = ch.objs[i];
       if (!OBJ_BAKED[o]) continue;
@@ -330,11 +369,13 @@ class World {
     }
   }
   // Pré-gera chunks próximos aos poucos
+  // pinta com antecedência os trechos à frente do jogador, 8 linhas por quadro (sem engasgos)
   pregen(px, py) {
+    if (this.pending) { this.paintRows(this.pending, 8); if (this.pending.row >= 32) { this.finishChunk(this.pending); this.pending = null; } return; }
     const cx = Math.floor(px / CHUNK_PX), cy = Math.floor(py / CHUNK_PX);
     for (let r = 0; r <= 1; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
       const k = this.ckey(cx + dx, cy + dy);
-      if (!this.canvases.has(k) && cx + dx >= 0 && cy + dy >= 0 && cx + dx < WORLD_W / 32 && cy + dy < WORLD_H / 32) { this.chunkCanvas(cx + dx, cy + dy); return; }
+      if (!this.canvases.has(k) && cx + dx >= 0 && cy + dy >= 0 && cx + dx < WORLD_W / 32 && cy + dy < WORLD_H / 32) { this.pending = this.chunkJob(cx + dx, cy + dy); this.paintRows(this.pending, 8); return; }
     }
   }
 
@@ -1200,6 +1241,7 @@ class World {
     if (!h.done) objs[(hh) * W2 + 0] = O.WORKBENCH;
     this.addStamp({ x0: h.x - 1, y0: h.y, w: W2, h: H2, tiles, objs, homeId: h.id });
     for (let cy = (h.y >> 5) - 1; cy <= ((h.y + H2) >> 5) + 1; cy++) for (let cx = ((h.x - 1) >> 5) - 1; cx <= ((h.x + W2) >> 5) + 1; cx++) { this.chunks.delete(this.ckey(cx, cy)); this.canvases.delete(this.ckey(cx, cy)); }
+    this.pending = null;
     if (!this.homes.includes(h)) this.homes.push(h);
     return b;
   }

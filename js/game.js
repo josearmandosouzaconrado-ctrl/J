@@ -13,7 +13,7 @@ const Game = {
 
   init() {
     this.canvas = document.getElementById('cv');
-    this.ctx = this.canvas.getContext('2d');
+    this.ctx = this.canvas.getContext('2d', { alpha: false });
     this.lightC = document.createElement('canvas'); this.lightX = this.lightC.getContext('2d');
     this.loadSettings();
     Sprites.init();
@@ -25,6 +25,9 @@ const Game = {
     document.addEventListener('visibilitychange', () => { if (document.hidden && this.started && !this.player.dead) this.saveGame(0, true); });
     let last = performance.now();
     const loop = (ts) => {
+      // no máximo 60 quadros por segundo (telas de 120 Hz não fazem o jogo trabalhar em dobro); 30 no modo leve
+      const minGap = this.settings && this.settings.lite ? 1000 / 31 : 1000 / 62;
+      if (ts - last < minGap) { requestAnimationFrame(loop); return; }
       let dt = (ts - last) / 1000; last = ts;
       if (dt > 0.1) dt = 0.1; if (dt < 0) dt = 0;
       this.frame(dt);
@@ -57,7 +60,9 @@ const Game = {
     this.vw = Math.ceil(w / scale); this.vh = Math.ceil(h / scale);
     this.canvas.width = this.vw; this.canvas.height = this.vh;
     this.canvas.style.width = w + 'px'; this.canvas.style.height = h + 'px';
-    this.lightC.width = this.vw; this.lightC.height = this.vh;
+    // a escuridão é desenhada em meia resolução (é suave de qualquer jeito) e ampliada
+    this.lightDiv = this.settings && this.settings.lite ? 3 : 2;
+    this.lightC.width = Math.ceil(this.vw / this.lightDiv); this.lightC.height = Math.ceil(this.vh / this.lightDiv);
     this.ctx.imageSmoothingEnabled = false;
     document.documentElement.style.setProperty('--btn-scale', this.settings ? this.settings.btnScale : 1);
   },
@@ -192,7 +197,7 @@ const Game = {
   centerMsg(title, sub) { UI.centerMsg(title, sub); },
   floatText(x, y, text, color, size = 1) { UI.worldText(x, y, text, color, size); },
   floater(x, y, text, color, s = 1) { this.floaters.push({ x, y, text, color, s, t: 0 }); if (this.floaters.length > 60) this.floaters.shift(); },
-  particle(x, y, vx, vy, color, life = 0.6, size = 1, grav = 0) { if (this.particles.length > 450) return; this.particles.push({ x, y, vx, vy, color, life, max: life, size, grav }); },
+  particle(x, y, vx, vy, color, life = 0.6, size = 1, grav = 0) { if (this.particles.length > (this.settings.lite ? 160 : 450)) return; this.particles.push({ x, y, vx, vy, color, life, max: life, size, grav }); },
   burst(x, y, color, n = 8, spd = 60) { for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, s = spd * (0.3 + Math.random() * 0.7); this.particle(x, y, Math.cos(a) * s, Math.sin(a) * s - 20, color, 0.3 + Math.random() * 0.4, Math.random() < 0.3 ? 2 : 1, 120); } },
   later(t, fn) { this.timers.push({ t, fn }); },
   isNight() { return this.time < 5 * 60 || this.time >= 20 * 60; },
@@ -307,6 +312,11 @@ const Game = {
     War.update(dt);
     Naval.update(dt);
     if (this.level.isShip) this.level.update(dt);
+    if (this.npcQ && this.npcQ.length) for (let n = 0; n < 2 && this.npcQ.length; n++) {
+      const q = this.npcQ[0];
+      if (!q.s.active || !q.s.npcs || q.gen !== q.s.npcGen || q.i >= q.s.npcSpots.length || !this.level.isWorld) { this.npcQ.shift(); continue; }
+      q.mk(q.s.npcSpots[q.i], q.i); q.i++;
+    }
     Work.update(dt);
     this.updateMounts(dt);
     // ações do jogador
@@ -393,15 +403,19 @@ const Game = {
         if (!(o && !TSOLID[L.tileAt(Math.floor(p.x / 16), Math.floor(p.y / 16))] && Math.random() < 0.5 && p.kind !== 'arrow')) dead = true;
       }
       if (!dead) {
-        for (const a of Combat.targetsOf(p.src && p.src.faction && !p.src.dead ? p.src : { team: p.team, faction: p.src && p.src.faction })) {
-          if (p.hit.has(a)) continue;
+        // primeiro a distância (barato), só depois quem é inimigo de quem
+        const src = p.src && p.src.faction && !p.src.dead ? p.src : (p._so || (p._so = { team: p.team, faction: p.src && p.src.faction }));
+        const test = (a) => {
+          if (a.dead || a === src || p.hit.has(a)) return false;
           const ay = a.y - 6 - a.z * 0.8;
-          if (Math.abs(a.x - p.x) < a.r + p.r + 2 && Math.abs(ay - p.y) < a.r + p.r + 6 + (a.h || 16) * 0.3) {
-            p.hit.add(a);
-            this.projHit(p, a);
-            if (!p.pierce) { dead = true; break; }
-          }
-        }
+          if (!(Math.abs(a.x - p.x) < a.r + p.r + 2 && Math.abs(ay - p.y) < a.r + p.r + 6 + (a.h || 16) * 0.3)) return false;
+          if (!isHostile(src, a)) return false;
+          p.hit.add(a); this.projHit(p, a);
+          return !p.pierce;
+        };
+        const PL = this.player;
+        if (PL && test(PL)) dead = true;
+        else for (const a of this.actors) if (a !== PL && test(a)) { dead = true; break; }
       }
       if (p.kind === 'bullet') { if (Math.random() < 0.8) this.particle(p.x, p.y, (Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10, Math.random() < 0.5 ? (p.color || '#80c0ff') : '#ffe0a0', 0.18); }
       else if (p.kind === 'fireball' || p.kind === 'breath') { if (Math.random() < 0.7) this.particle(p.x, p.y, (Math.random() - 0.5) * 20, (Math.random() - 0.5) * 20, Math.random() < 0.5 ? '#ff8020' : '#ffd040', 0.3); }
@@ -471,7 +485,8 @@ const Game = {
       if (!s.active && d < 75) {
         s.active = true; s.npcs = [];
         const rng = new RNG(hashStr(s.id) + W.seed);
-        s.npcSpots.forEach((spot, i) => {
+        // os moradores são criados aos poucos (2 por quadro) para não travar na chegada
+        const mk = (spot, i) => {
           let a;
           if (spot.role === 'guard') {
             const col = s.region.color;
@@ -487,7 +502,9 @@ const Game = {
           this.findFree(a);
           a.home = { x: a.x, y: a.y };
           s.npcs.push(a); this.actors.push(a);
-        });
+        };
+        s.npcGen = (s.npcGen || 0) + 1;
+        (this.npcQ = this.npcQ || []).push({ s, i: 0, mk, gen: s.npcGen });
       } else if (s.active && d > 110) {
         s.active = false;
         const set = new Set(s.npcs); s.npcs = null;
@@ -1185,7 +1202,16 @@ const Game = {
     const D = [];
     const tx0 = Math.floor(camX / 16) - 2, ty0 = Math.floor(camY / 16) - 1, tx1 = Math.floor((camX + vw) / 16) + 2, ty1 = Math.floor((camY + vh) / 16) + 3;
     const anim = Math.floor(this.t * 4) % 2;
-    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
+    if (L.isWorld) {
+      // mundo: lista de objetos já pronta por trecho (sem consultar tile por tile)
+      for (let cy = Math.max(0, ty0 >> 5); cy <= Math.min(WORLD_H / 32 - 1, ty1 >> 5); cy++) for (let cx = Math.max(0, tx0 >> 5); cx <= Math.min(WORLD_W / 32 - 1, tx1 >> 5); cx++) {
+        for (const [tx, ty, o, v] of L.objList(cx, cy)) {
+          if (tx < tx0 || tx > tx1 || ty < ty0 || ty > ty1) continue;
+          const s = Sprites.obj(o, v, OBJ_ANIM[o] ? anim : 0);
+          D.push({ y: ty * 16 + 15, img: s.c, x: tx * 16 + 8 - (s.w >> 1), yy: ty * 16 + 16 - s.h + s.oy });
+        }
+      }
+    } else for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
       const o = L.objAt(tx, ty);
       if (!o || OBJ_BAKED[o] || o === O.BLOCK) continue;
       const nv = OBJ_VARIANTS[o] || 1;
@@ -1369,7 +1395,8 @@ const Game = {
     const dark = this.darkness();
     if (dark <= 0.01) return;
     const lc = this.lightX, vw = this.vw, vh = this.vh, P = this.player, L = this.level;
-    lc.globalCompositeOperation = 'source-over';
+    lc.globalCompositeOperation = 'source-over'; lc.globalAlpha = 1;
+    lc.setTransform(1 / this.lightDiv, 0, 0, 1 / this.lightDiv, 0, 0);
     lc.clearRect(0, 0, vw, vh);
     lc.fillStyle = L.isWorld ? `rgba(8,10,32,${dark})` : `rgba(4,2,8,${dark})`;
     lc.fillRect(0, 0, vw, vh);
@@ -1381,7 +1408,18 @@ const Game = {
     lights.push([P.x, P.y - 8, pr, 1]);
     const tx0 = Math.floor(camX / 16) - 4, ty0 = Math.floor(camY / 16) - 4, tx1 = Math.floor((camX + vw) / 16) + 4, ty1 = Math.floor((camY + vh) / 16) + 4;
     const fire = [];
-    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
+    const addLight = (tx, ty, o) => {
+      const lr = OBJ_DEFS[o].light;
+      if (lr) { const fl = (o === O.TORCH || o === O.CAMPFIRE || o === O.LAMP || o === O.FORGE) ? 1 + Math.sin(this.t * 9 + tx) * 0.05 : 1; lights.push([tx * 16 + 8, ty * 16 + 4, lr * fl, 1]); if (o === O.TORCH || o === O.CAMPFIRE || o === O.FORGE || o === O.LAMP) fire.push([tx * 16 + 8, ty * 16 + 4, lr * 0.8]); }
+    };
+    if (L.isWorld) {
+      // mundo: listas prontas por trecho de luzes e lava
+      for (let cy = Math.max(0, ty0 >> 5); cy <= Math.min(WORLD_H / 32 - 1, ty1 >> 5); cy++) for (let cx = Math.max(0, tx0 >> 5); cx <= Math.min(WORLD_W / 32 - 1, tx1 >> 5); cx++) {
+        const ll = L.lightList(cx, cy);
+        for (const [tx, ty, o] of ll.objs) if (tx >= tx0 && tx <= tx1 && ty >= ty0 && ty <= ty1) addLight(tx, ty, o);
+        for (const [tx, ty] of ll.lava) if (tx >= tx0 && tx <= tx1 && ty >= ty0 && ty <= ty1) lights.push([tx * 16 + 8, ty * 16 + 8, 26, 0.7]);
+      }
+    } else for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
       const o = L.objAt(tx, ty); if (!o) continue;
       const lr = OBJ_DEFS[o].light;
       if (lr) { const fl = (o === O.TORCH || o === O.CAMPFIRE || o === O.LAMP || o === O.FORGE) ? 1 + Math.sin(this.t * 9 + tx) * 0.05 : 1; lights.push([tx * 16 + 8, ty * 16 + 4, lr * fl, 1]); if (o === O.TORCH || o === O.CAMPFIRE || o === O.FORGE || o === O.LAMP) fire.push([tx * 16 + 8, ty * 16 + 4, lr * 0.8]); }
@@ -1398,21 +1436,30 @@ const Game = {
     for (const [x, y, r, a] of lights) {
       const sx = x - camX, sy = y - camY;
       if (sx < -r || sy < -r || sx > vw + r || sy > vh + r) continue;
-      const g = lc.createRadialGradient(sx, sy, 0, sx, sy, r);
-      g.addColorStop(0, `rgba(0,0,0,${a})`); g.addColorStop(0.55, `rgba(0,0,0,${a * 0.7})`); g.addColorStop(1, 'rgba(0,0,0,0)');
-      lc.fillStyle = g; lc.fillRect(sx - r, sy - r, r * 2, r * 2);
+      // mancha de luz pré-desenhada (em vez de criar um gradiente por luz a cada quadro)
+      lc.globalAlpha = a; lc.drawImage(this.lightBlob(0), sx - r, sy - r, r * 2, r * 2);
     }
-    ctx.drawImage(this.lightC, 0, 0);
+    lc.globalAlpha = 1; lc.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.imageSmoothingEnabled = true; ctx.drawImage(this.lightC, 0, 0, this.lightC.width, this.lightC.height, 0, 0, this.lightC.width * this.lightDiv, this.lightC.height * this.lightDiv); ctx.imageSmoothingEnabled = false;
     // brilho quente
     ctx.globalCompositeOperation = 'lighter';
     for (const [x, y, r] of fire) {
       const sx = x - camX, sy = y - camY;
       if (sx < -r || sy < -r || sx > vw + r || sy > vh + r) continue;
-      const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, r);
-      g.addColorStop(0, `rgba(255,140,40,${0.22 * dark})`); g.addColorStop(1, 'rgba(255,100,20,0)');
-      ctx.fillStyle = g; ctx.fillRect(sx - r, sy - r, r * 2, r * 2);
+      ctx.globalAlpha = 0.22 * dark; ctx.drawImage(this.lightBlob(1), sx - r, sy - r, r * 2, r * 2);
     }
+    ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
+  },
+  // gradientes radiais desenhados uma vez só: 0 = luz (recorta a escuridão), 1 = brilho quente do fogo
+  lightBlob(kind) {
+    this._blobs = this._blobs || [];
+    if (this._blobs[kind]) return this._blobs[kind];
+    const c = Sprites.cv(64, 64), x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+    if (kind === 0) { g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(0.55, 'rgba(0,0,0,0.7)'); g.addColorStop(1, 'rgba(0,0,0,0)'); }
+    else { g.addColorStop(0, 'rgba(255,140,40,1)'); g.addColorStop(1, 'rgba(255,100,20,0)'); }
+    x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+    return (this._blobs[kind] = c);
   },
   // Cena do título
   renderTitle(dt) {

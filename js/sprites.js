@@ -210,6 +210,25 @@ const Sprites = {};
 
   // Pinta um bloco de tiles num contexto (usado por chunks e masmorras)
   // getT(x,y) retorna tile em coordenadas locais (pode ir 1 além das bordas)
+  // bordas de transição entre terrenos e espuma da água, desenhadas uma vez só
+  // (6 variações por cor e lado) em vez de 16 retângulos por borda a cada trecho novo
+  const edgeCache = new Map();
+  function edgeImg(col, k, v, foam) {
+    const key = col + k + v + (foam ? 'f' : '');
+    let c = edgeCache.get(key);
+    if (c) return c;
+    c = cv(16, 16); const x = c.getContext('2d'); x.fillStyle = col;
+    for (let i = 0; i < 16; i++) {
+      const hv = hash2(i * 7 + v * 131, k * 17 + v * 3, foam ? 41 : 97);
+      const dd = foam ? (hv * 2) | 0 : 1 + ((hv * 3.2) | 0);
+      if (!dd) continue;
+      if (k === 0) x.fillRect(i, 0, 1, dd); else if (k === 2) x.fillRect(i, 16 - dd, 1, dd);
+      else if (k === 1) x.fillRect(16 - dd, i, dd, 1); else x.fillRect(0, i, dd, 1);
+    }
+    edgeCache.set(key, c);
+    return c;
+  }
+  const NB4 = [[0, -1], [1, 0], [0, 1], [-1, 0]];
   S.paintTiles = function (ctx, w, h, getT, seed, ox = 0, oy = 0) {
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const t = getT(x, y);
@@ -229,34 +248,13 @@ const Sprites = {};
       const my = BLEND[t];
       if (my === undefined) continue;
       // bordas
-      const nb = [[0, -1], [1, 0], [0, 1], [-1, 0]];
       for (let k = 0; k < 4; k++) {
-        const n = getT(x + nb[k][0], y + nb[k][1]);
+        const n = getT(x + NB4[k][0], y + NB4[k][1]);
         if (n === t) continue;
-        const pr = BLEND[n];
-        const water = def.water;
-        if (water && !TILE_DEFS[n].water && !TILE_DEFS[n].wall) {
-          // espuma
-          ctx.fillStyle = '#b8daf4';
-          for (let i = 0; i < 16; i++) {
-            const dd = (hash2(x * 16 + i + ox * 16, y * 16 + k + oy * 16, seed + 3) * 2) | 0;
-            if (dd === 0) continue;
-            if (k === 0) ctx.fillRect(x * 16 + i, y * 16, 1, dd);
-            else if (k === 2) ctx.fillRect(x * 16 + i, y * 16 + 16 - dd, 1, dd);
-            else if (k === 1) ctx.fillRect(x * 16 + 16 - dd, y * 16 + i, dd, 1);
-            else ctx.fillRect(x * 16, y * 16 + i, dd, 1);
-          }
-        }
+        const pr = BLEND[n], ev = (hash2(x + ox, y + oy, seed + k * 13) * 6) | 0;
+        if (def.water && !TILE_DEFS[n].water && !TILE_DEFS[n].wall) ctx.drawImage(edgeImg('#b8daf4', k, ev, true), x * 16, y * 16);
         if (pr === undefined || pr <= my) continue;
-        const col = TILE_DEFS[n].c;
-        ctx.fillStyle = col;
-        for (let i = 0; i < 16; i++) {
-          const dd = 1 + ((hash2((x + ox) * 16 + i, (y + oy) * 16 + k * 7, seed + 11) * 3.2) | 0);
-          if (k === 0) ctx.fillRect(x * 16 + i, y * 16, 1, dd);
-          else if (k === 2) ctx.fillRect(x * 16 + i, y * 16 + 16 - dd, 1, dd);
-          else if (k === 1) ctx.fillRect(x * 16 + 16 - dd, y * 16 + i, dd, 1);
-          else ctx.fillRect(x * 16, y * 16 + i, dd, 1);
-        }
+        ctx.drawImage(edgeImg(TILE_DEFS[n].c, k, ev, false), x * 16, y * 16);
       }
     }
   };

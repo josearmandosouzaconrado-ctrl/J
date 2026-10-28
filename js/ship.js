@@ -238,11 +238,12 @@ class ShipLevel {
     const W = Game.world, D = [];
     const tx0 = Math.floor(cx / 16) - 2, ty0 = Math.floor(cy / 16) - 1, tx1 = Math.floor((cx + vw) / 16) + 2, ty1 = Math.floor((cy + vh) / 16) + 3;
     const anim = Math.floor(Game.t * 4) % 2;
-    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
-      const o = W.objAt(tx, ty);
-      if (!o || OBJ_BAKED[o] || o === O.BLOCK) continue;
-      const nv = OBJ_VARIANTS[o] || 1, s = Sprites.obj(o, nv > 1 ? Math.floor(hash2(tx, ty, 5) * nv) : 0, OBJ_ANIM[o] ? anim : 0);
-      D.push({ y: ty * 16 + 15, img: s.c, x: tx * 16 + 8 - (s.w >> 1), yy: ty * 16 + 16 - s.h + s.oy });
+    for (let cy = Math.max(0, ty0 >> 5); cy <= Math.min(WORLD_H / 32 - 1, ty1 >> 5); cy++) for (let cx = Math.max(0, tx0 >> 5); cx <= Math.min(WORLD_W / 32 - 1, tx1 >> 5); cx++) {
+      for (const [tx, ty, o, v] of W.objList(cx, cy)) {
+        if (tx < tx0 || tx > tx1 || ty < ty0 || ty > ty1) continue;
+        const s = Sprites.obj(o, v, OBJ_ANIM[o] ? anim : 0);
+        D.push({ y: ty * 16 + 15, img: s.c, x: tx * 16 + 8 - (s.w >> 1), yy: ty * 16 + 16 - s.h + s.oy });
+      }
     }
     for (const b of W.buildingsInView(cx, cy, cx + vw, cy + vh)) { if (b.site) continue; const img = Sprites.building(b.spec); D.push({ y: (b.ty + b.h) * 16, img, x: b.tx * 16 - 1, yy: (b.ty + b.h) * 16 - (img.height - 1) }); }
     Game.drawShips(D, cx, cy);

@@ -163,7 +163,8 @@ const War = {
   makeSoldier(k, kind, x, y, rng) {
     const K = this.K[k];
     const lvl = Math.max(2, K.lvl[0] + WAR_KIND_RANK[kind] * 2);
-    const m = new Monster('war_' + kind, x, y, lvl, { look: this.look(k, kind, rng), name: `${ENEMIES['war_' + kind].name} de ${K.short}`, hpMul: 0.55 });
+    // 8 aparências por reino e tipo de tropa: os sprites são reaproveitados entre soldados
+    const m = new Monster('war_' + kind, x, y, lvl, { look: this.look(k, kind, new RNG(hashStr(k + kind) + rng.int(0, 7) * 7919)), name: `${ENEMIES['war_' + kind].name} de ${K.short}`, hpMul: 0.55 });
     m.faction = k; m.team = 'war'; m.kind = kind; m.ctrl = 'squad'; m.aggro = 210;
     // infantaria de linha: atira em salvas e luta de baioneta (a elite carrega de baioneta)
     if (m.look.weapon === 'musketb' && kind !== 'elite') { m.ai = 'musket'; m.proj = 'bullet'; m.aggro = 300; if (kind !== 'mosqueteiro') m.dmg *= 1.6; }
@@ -480,9 +481,13 @@ const War = {
   },
   // ---------- Mosqueteiros: linha de tiro, salvas e baioneta ----------
   nearFoe(m, r) {
+    // resultado guardado por um instante (cada mosqueteiro não precisa procurar a cada quadro)
+    if (m._nfT > Game.t && m._nfR === r) return m._nf && !m._nf.dead ? m._nf : null;
+    m._nfT = Game.t + 0.15 + Math.random() * 0.1; m._nfR = r;
     let best = null, bd = r * r;
-    for (const a of Combat.targetsOf(m)) { if (a.dead) continue; const d = dist2(m.x, m.y, a.x, a.y); if (d < bd) { bd = d; best = a; } }
-    return best;
+    const P = Game.player;
+    for (const a of P ? [P].concat(Game.actors) : Game.actors) { if (a.dead || a === m) continue; const d = dist2(m.x, m.y, a.x, a.y); if (d < bd && isHostile(m, a)) { bd = d; best = a; } }
+    return (m._nf = best);
   },
   musketAI(m, t, d, dt, sf) {
     // inimigo colado: calar baionetas e lutar corpo a corpo

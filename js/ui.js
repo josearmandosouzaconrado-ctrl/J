@@ -212,6 +212,7 @@ const UI = {
       const el = this.show('options', `<div class="panel"><div class="ptitle">Opções</div>
         <div class="opts">
           ${tog('sfx', 'Efeitos sonoros')} ${tog('music', 'Música')} ${tog('weather', 'Clima')} ${tog('showFps', 'Mostrar FPS')}
+          <button class="sbtn ${S.lite ? 'on' : ''}" ${f(() => { S.lite = !S.lite; Game.saveSettings(); Game.resize(); render(); })}>Modo leve (celular fraco): ${S.lite ? 'SIM' : 'NÃO'}</button>
           <div class="row"><span>Tamanho dos botões</span>${[0.8, 1, 1.2, 1.4].map(v => `<button class="sbtn small ${S.btnScale === v ? 'on' : ''}" ${f(() => { S.btnScale = v; Game.saveSettings(); render(); })}>${Math.round(v * 100)}%</button>`).join('')}</div>
           <div class="row"><span>Zoom da câmera</span>${[0.8, 1, 1.25, 1.5].map(v => `<button class="sbtn small ${S.zoom === v ? 'on' : ''}" ${f(() => { S.zoom = v; Game.saveSettings(); render(); })}>${Math.round(v * 100)}%</button>`).join('')}</div>
           <div class="row"><span>Volume música</span>${[0.15, 0.35, 0.6].map(v => `<button class="sbtn small ${S.musicVol === v ? 'on' : ''}" ${f(() => { S.musicVol = v; Game.saveSettings(); render(); })}>${v === 0.15 ? 'Baixo' : v === 0.35 ? 'Médio' : 'Alto'}</button>`).join('')}</div>
@@ -900,6 +901,10 @@ const UI = {
   setClass(id, cls, on) { const k = id + '.' + cls; if (this.hudCache[k] !== on) { this.hudCache[k] = on; const e = document.getElementById(id); if (e) e.classList.toggle(cls, on); } },
   updateHUD(dt) {
     if (!Game.started || !Game.player) return;
+    // a HUD não precisa mudar 60 vezes por segundo: 20 atualizações bastam
+    this.hudT = (this.hudT || 0) - dt;
+    if (this.hudT > 0) return;
+    dt = 0.05 - this.hudT; this.hudT = 0.05;
     const P = Game.player, S = P.stat;
     this.setStyle('hp-fill', 'width', (P.hp / S.maxHp * 100).toFixed(1) + '%');
     this.setStyle('mp-fill', 'width', (P.mp / S.maxMp * 100).toFixed(1) + '%');

@@ -126,7 +126,8 @@ function mix(a, b, t) {
   return rgbToHex(lerp(A[0], B[0], t), lerp(A[1], B[1], t), lerp(A[2], B[2], t));
 }
 
-function fmt(n) { return Math.floor(n).toLocaleString('pt-BR'); }
+const _nf = new Intl.NumberFormat('pt-BR');
+function fmt(n) { return _nf.format(Math.floor(n)); }
 let _uid = 1;
 function uid() { return (Date.now().toString(36) + (_uid++).toString(36) + Math.floor(Math.random() * 1e6).toString(36)); }
 function cap(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
