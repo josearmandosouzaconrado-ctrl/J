@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Teste dos Blindados</title>
+<style>
+  :root { --bg: #1b2026; --fg: #f1ecd9; --acc: #e6c35c; --btn: #2c333b; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1b2026; --fg: #f1ecd9; --acc: #e6c35c; --btn: #2c333b; } }
+  :root[data-theme="dark"] { --bg: #1b2026; --fg: #f1ecd9; --acc: #e6c35c; --btn: #2c333b; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: system-ui, sans-serif; overflow: hidden; }
+  #c { position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; display: block; }
+  #ui { position: fixed; left: 0; right: 0; bottom: 0; padding: 8px 16px calc(8px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 6px; background: linear-gradient(transparent, rgba(0,0,0,.6) 25%); }
+  .row { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; justify-content: safe center; }
+  .row::-webkit-scrollbar { display: none; }
+  button { flex: none; background: var(--btn); color: var(--fg); border: 1px solid #485260; border-radius: 8px; padding: 9px 12px; font-size: 14px; }
+  button.on { background: var(--acc); color: #1b1b1b; border-color: var(--acc); font-weight: 700; }
+  #top { position: fixed; top: 0; left: 0; right: 0; padding: 12px 16px; font-size: 14px; background: linear-gradient(rgba(0,0,0,.5), transparent); pointer-events: none; }
+  #top b { color: var(--acc); }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="top"><b id="nome"></b> · arraste para girar, pinça para zoom · <span id="tri"></span></div>
+<div id="ui">
+  <div class="row" id="kinds"></div>
+  <div class="row">
+    <button data-y="1940">1940</button><button data-y="1942">1942</button><button data-y="1944" class="on">1944</button>
+    <button data-b="" class="on">Europa</button><button data-b="desert">Deserto</button><button data-b="winter">Inverno</button>
+    <button id="move">Andar</button><button id="aim">Girar torre</button><button id="man" class="on">Soldado</button>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/soldado3d.js"></script>
+<script src="js/blindados3d.js"></script>
+<script>
+'use strict';
+var SC = { year: 1944, biome: '' };
+const NOMES = { sherman: 'Sherman M4A3', panzer4: 'Panzer IV', tiger: 'Tiger I', t34: 'T-34/76', panzer2: 'Panzer II', panzer3: 'Panzer III', panzer38t: 'Panzer 38(t)', stug: 'StuG III',
+  panther: 'Panther', kingtiger: 'Tiger II', jagdpanther: 'Jagdpanther', hetzer: 'Hetzer', wirbelwind: 'Wirbelwind', tp7: '7TP', charb1: 'Char B1 bis', somua: 'Somua S35',
+  matilda: 'Matilda II', crusader: 'Crusader', t26: 'T-26', bt7: 'BT-7', kv1: 'KV-1', stuart: 'M3 Stuart', lee: 'M3 Lee', m1340: 'M13/40', l335: 'L3/35', m24: 'M24 Chaffee',
+  m18: 'M18 Hellcat', m10: 'M10 Wolverine', m36: 'M36 Jackson', m26: 'M26 Pershing', m7: 'M7 Priest', calliope: 'Calliope', chiha: 'Chi-Ha', hago: 'Ha-Go' };
+const cv = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xaab4ba); scene.fog = new THREE.Fog(0xaab4ba, 30, 90);
+const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 200);
+scene.add(new THREE.HemisphereLight(0xdfe8f0, 0x4a5030, 0.7));
+const sun = new THREE.DirectionalLight(0xfff2dc, 0.95); sun.position.set(8, 14, 9); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9 }); sun.shadow.bias = -0.0005; scene.add(sun);
+const groundMat = new THREE.MeshLambertMaterial({ color: 0x6f7d43 });
+const ground = new THREE.Mesh(new THREE.CircleGeometry(80, 64), groundMat);
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+const man = Soldado3.make({ nat: 'USA', kind: 'rifle', scale: 1.38, variant: 0, skin: 0 }); man.position.set(3.4, 0, 2.2); man.rotation.y = -0.5; scene.add(man);
+let kind = 'sherman', tank = null, moving = false, aiming = false, ty = 0;
+function rebuild() {
+  if (tank) scene.remove(tank);
+  tank = Blindado3.make(kind); scene.add(tank);
+  document.getElementById('nome').textContent = NOMES[kind] || kind;
+  document.getElementById('tri').textContent = Blindado3.triangles(tank, 0) + ' triângulos de perto, ' + Blindado3.triangles(tank, 1) + ' de longe';
+  const nat = Blindado3.SPEC[kind].nat;
+  scene.remove(man);
+  const m2 = Soldado3.make({ nat: nat === 'USA' ? 'USA' : nat, kind: 'rifle', scale: 1.38, variant: 0, skin: 0 });
+  m2.position.copy(man.position); m2.rotation.y = man.rotation.y; man.visible && scene.add(m2);
+  Object.assign(man, {}); manRef = m2;
+  groundMat.color.setHex(SC.biome === 'desert' ? 0xb9a576 : SC.biome === 'winter' ? 0xe6eaec : 0x6f7d43);
+}
+let manRef = man;
+const kd = document.getElementById('kinds');
+for (const k of Blindado3.kinds()) { const b = document.createElement('button'); b.textContent = NOMES[k] || k; b.dataset.k = k; if (k === kind) b.className = 'on'; kd.appendChild(b); }
+kd.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; kind = b.dataset.k; kd.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); rebuild(); });
+for (const b of document.querySelectorAll('[data-y]')) b.onclick = () => { SC.year = +b.dataset.y + 0.5; document.querySelectorAll('[data-y]').forEach(x => x.classList.toggle('on', x === b)); rebuild(); };
+for (const b of document.querySelectorAll('[data-b]')) b.onclick = () => { SC.biome = b.dataset.b; document.querySelectorAll('[data-b]').forEach(x => x.classList.toggle('on', x === b)); rebuild(); };
+document.getElementById('move').onclick = (e) => { moving = !moving; e.target.classList.toggle('on', moving); };
+document.getElementById('aim').onclick = (e) => { aiming = !aiming; e.target.classList.toggle('on', aiming); };
+document.getElementById('man').onclick = (e) => { const on = !e.target.classList.contains('on'); e.target.classList.toggle('on', on); manRef.visible = on; };
+const cam = { yaw: 0.8, pitch: 0.22, dist: 15 };
+let drag = null, pinch = null;
+cv.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, id: e.pointerId }; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', (e) => { if (!drag || pinch || e.pointerId !== drag.id) return; cam.yaw -= (e.clientX - drag.x) * 0.008; cam.pitch = Math.max(0.02, Math.min(1.3, cam.pitch + (e.clientY - drag.y) * 0.006)); drag.x = e.clientX; drag.y = e.clientY; });
+cv.addEventListener('pointerup', () => { drag = null; });
+cv.addEventListener('touchstart', (e) => { if (e.touches.length === 2) pinch = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); }, { passive: true });
+cv.addEventListener('touchmove', (e) => { if (e.touches.length === 2 && pinch) { const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); cam.dist = Math.max(4, Math.min(45, cam.dist * pinch / d)); pinch = d; } }, { passive: true });
+cv.addEventListener('touchend', () => { pinch = null; });
+cv.addEventListener('wheel', (e) => { cam.dist = Math.max(4, Math.min(45, cam.dist * (1 + Math.sign(e.deltaY) * 0.1))); }, { passive: true });
+function resize() { const w = window.innerWidth, h = window.innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+window.addEventListener('resize', resize); resize();
+rebuild();
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  const ud = tank.userData;
+  if (moving) ud.trackMat.map.offset.x -= 6 * dt * 1.15;
+  if (aiming) { ty += dt * 0.6; ud.turret.rotation.y = Math.sin(ty) * 1.2; } else ud.turret.rotation.y *= 0.9;
+  camera.position.set(Math.sin(cam.yaw) * Math.cos(cam.pitch) * cam.dist, 1.8 + Math.sin(cam.pitch) * cam.dist, Math.cos(cam.yaw) * Math.cos(cam.pitch) * cam.dist);
+  camera.lookAt(0, 1.6, 0);
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+window.__t = { cam, set: (k, y, b) => { kind = k; if (y) SC.year = y; if (b !== undefined) SC.biome = b; rebuild(); }, info: () => Blindado3.triangles(tank, 0) + ' / ' + Blindado3.triangles(tank, 1) };
+</script>
+</body>
+</html>
