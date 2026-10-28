@@ -12,7 +12,6 @@
    antebraços e arma) com os mesmos pivôs: as animações não mudam.
    Civis e soldados japoneses usam o modelo anterior.
    ========================================================= */
-const _makeSoldierOld = makeSoldier;
 
 /* ---------- primitivas facetadas ---------- */
 function flatGeo(geo) { const g = geo.toNonIndexed(); g.computeVertexNormals(); return g; }
@@ -209,8 +208,7 @@ WEAPONS.rifle = (B, team) => {
 };
 
 /* ---------- soldado completo ---------- */
-makeSoldier = function (team, kind, palKey) {
-  if (team === 'civ' || (team === 'de' && jpGear())) return _makeSoldierOld(team, kind, palKey);
+function makeSoldierV1(team, kind, palKey) {
   const us = team === 'us';
   const variant = (Math.random() * 3) | 0, skin = (Math.random() * SKINS.length) | 0;
   const role = kind === 'medic' || kind === 'sani' ? 'med' : kind === 'para' ? 'para' : '';
@@ -283,4 +281,4 @@ makeSoldier = function (team, kind, palKey) {
   g.scale.setScalar(1.12);
   g.userData = { legL, legR, shinL, shinR, armL, armR, foreL, foreR, rifle, tube };
   return g;
-};
+}

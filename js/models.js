@@ -422,7 +422,7 @@ const WEAPONS = {
   },
 };
 function jpGear() { return SC.jp !== undefined ? SC.jp : SC.biome === 'tropical'; }
-function makeSoldier(team, kind, palKey) {
+function makeSoldierClassic(team, kind, palKey) {
   const civ = team === 'civ';
   const variant = civ ? (Math.random() * CIV_PALS.length) | 0 : (Math.random() * 3) | 0;
   const skin = civ ? 0 : (Math.random() * SKINS.length) | 0;
@@ -487,6 +487,364 @@ function makeSoldier(team, kind, palKey) {
   g.scale.setScalar(1.12);
   g.userData = { legL, legR, shinL, shinR, armL, armR, foreL, foreR, rifle, tube };
   return g;
+}
+
+/* =========================================================
+   SOLDADO V2 (fuzileiro americano, Normandia 1944)
+   Geometria modelada com seções (lofts) em vez de caixas e esferas:
+   - tronco anatômico (peito, cintura, trapézio) com jaqueta M41
+   - cabeça com mandíbula, nariz, sobrancelhas, olhos e barba por fazer
+   - capacete M1 com aba, rede e jugular
+   - cinto M1923 com 10 bolsos, suspensórios, bandoleira, granadas MkII,
+     mochila M1928 com pá M1943 e baioneta, cantil, kit de primeiros socorros
+   - calças de lã afofadas sobre perneiras de lona e botinas de couro
+   - mãos fechadas, mangas com punho, emblema da 1ª Divisão
+   - fuzil M1 Garand com coronha perfilada, guarda-mãos, braçadeiras e bandoleira
+   Mesmos pivôs de quadris, joelhos, ombros e cotovelos: as animações não mudam.
+   ========================================================= */
+// anel superelíptico no plano XZ (k = 2 elipse; maior = mais quadrado); fy(cos, sin) desloca y
+function sRing(n, y, rx, rz, k, cx, cz, fy) {
+  const out = [], e = 2 / (k || 2);
+  for (let i = 0; i < n; i++) {
+    const a = i / n * Math.PI * 2, c = Math.cos(a), s = Math.sin(a);
+    out.push([(cx || 0) + Math.sign(c) * Math.pow(Math.abs(c), e) * rx, y + (fy ? fy(c, s) : 0), (cz || 0) + Math.sign(s) * Math.pow(Math.abs(s), e) * rz]);
+  }
+  return out;
+}
+// anel no plano XY ao longo do eixo z (botas, coronha)
+function zRing(n, z, cx, cy, rx, ry, k) {
+  const out = [], e = 2 / (k || 2);
+  for (let i = 0; i < n; i++) {
+    const a = i / n * Math.PI * 2, c = Math.cos(a), s = Math.sin(a);
+    out.push([cx + Math.sign(c) * Math.pow(Math.abs(c), e) * rx, cy + Math.sign(s) * Math.pow(Math.abs(s), e) * ry, z]);
+  }
+  return out;
+}
+// liga anéis em uma superfície fechada; normais suaves (ou facetadas com flat)
+function loftGeo(R, opt) {
+  opt = opt || {};
+  const n = R[0].length, pos = [], idx = [], ctr = R.map(r => { let x = 0, y = 0, z = 0; for (const p of r) { x += p[0]; y += p[1]; z += p[2]; } return [x / n, y / n, z / n]; });
+  for (const r of R) for (const p of r) pos.push(p[0], p[1], p[2]);
+  const P = (i) => [pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]];
+  const push = (a, b, c, ref, dir) => {
+    const A = P(a), B = P(b), C = P(c);
+    const ux = B[0] - A[0], uy = B[1] - A[1], uz = B[2] - A[2], vx = C[0] - A[0], vy = C[1] - A[1], vz = C[2] - A[2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const d = dir || [(A[0] + B[0] + C[0]) / 3 - ref[0], (A[1] + B[1] + C[1]) / 3 - ref[1], (A[2] + B[2] + C[2]) / 3 - ref[2]];
+    if (nx * d[0] + ny * d[1] + nz * d[2] < 0) idx.push(a, c, b); else idx.push(a, b, c);
+  };
+  for (let r = 0; r < R.length - 1; r++) {
+    const ref = [(ctr[r][0] + ctr[r + 1][0]) / 2, (ctr[r][1] + ctr[r + 1][1]) / 2, (ctr[r][2] + ctr[r + 1][2]) / 2];
+    for (let i = 0; i < n; i++) {
+      const a = r * n + i, b = r * n + (i + 1) % n, c = (r + 1) * n + (i + 1) % n, d = (r + 1) * n + i;
+      push(a, b, c, ref); push(a, c, d, ref);
+    }
+  }
+  for (const [ri, nb] of [[0, 1], [R.length - 1, R.length - 2]]) {
+    if ((ri === 0 && opt.capA === false) || (ri > 0 && opt.capB === false)) continue;
+    const base = pos.length / 3; for (const p of R[ri]) pos.push(p[0], p[1], p[2]);
+    const c = pos.length / 3; pos.push(ctr[ri][0], ctr[ri][1], ctr[ri][2]);
+    const dir = [ctr[ri][0] - ctr[nb][0], ctr[ri][1] - ctr[nb][1], ctr[ri][2] - ctr[nb][2]];
+    for (let i = 0; i < n; i++) push(c, base + i, base + (i + 1) % n, null, dir);
+  }
+  let g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+  if (opt.flat) { g = g.toNonIndexed(); g.computeVertexNormals(); }
+  return g;
+}
+// membro: seções [y, rx, rz, dx, dz]
+function limbGeo(n, secs, k) { return loftGeo(secs.map(([y, rx, rz, dx, dz]) => sRing(n, y, rx, rz, k || 2, dx || 0, dz || 0))); }
+// fita (correia, bandoleira) seguindo um caminho; out(p) = direção "para fora" da superfície
+function strapGeo(pts, w, t, out) {
+  const R = [], V = THREE.Vector3;
+  for (let i = 0; i < pts.length; i++) {
+    const p = new V(...pts[i]), a = new V(...pts[Math.max(0, i - 1)]), b = new V(...pts[Math.min(pts.length - 1, i + 1)]);
+    const T = b.sub(a).normalize(), N = new V(...out(pts[i])).normalize(), S = new V().crossVectors(T, N).normalize(), N2 = new V().crossVectors(S, T).normalize();
+    const q = (sw, sn) => p.clone().addScaledVector(S, sw * w / 2).addScaledVector(N2, sn * t / 2).toArray();
+    R.push([q(1, 1), q(-1, 1), q(-1, -1), q(1, -1)]);
+  }
+  return loftGeo(R, { flat: true });
+}
+
+/* ---------- proporções do tronco (jaqueta M41) ---------- */
+const TORSO_US = [
+  [0.82, 0.5, 0.33, 0], [0.92, 0.48, 0.31, 0], [1.03, 0.45, 0.29, 0], [1.16, 0.48, 0.3, 0.005], [1.3, 0.55, 0.33, 0.01],
+  [1.44, 0.64, 0.36, 0.015], [1.56, 0.69, 0.355, 0.01], [1.65, 0.75, 0.32, 0], [1.71, 0.72, 0.28, -0.005], [1.765, 0.5, 0.24, -0.01], [1.8, 0.27, 0.2, -0.005],
+];
+const TORSO_K = 2.6;
+function torsoAt(T, y) {
+  let i = 0; while (i < T.length - 2 && T[i + 1][0] < y) i++;
+  const a = T[i], b = T[i + 1], t = clamp((y - a[0]) / (b[0] - a[0]), 0, 1);
+  return [lerp(a[1], b[1], t) / 2, lerp(a[2], b[2], t) / 2, lerp(a[3], b[3], t)];
+}
+// ponto na superfície do tronco: lado da frente (f = 1) ou das costas (f = -1)
+function torsoPt(T, x, y, f, off) {
+  const [hw, hd, dz] = torsoAt(T, y), u = Math.min(0.999, Math.abs(x) / hw);
+  return [x, y, dz + f * (hd * Math.pow(1 - Math.pow(u, TORSO_K), 1 / TORSO_K) + (off || 0))];
+}
+// ponto em volta do tronco pelo ângulo (frente = π/2) e direção de giro do objeto
+function aroundTorso(T, y, a, off) {
+  const [hw, hd, dz] = torsoAt(T, y), e = 2 / TORSO_K, c = Math.cos(a), s = Math.sin(a);
+  const x = Math.sign(c) * Math.pow(Math.abs(c), e) * hw, z = Math.sign(s) * Math.pow(Math.abs(s), e) * hd;
+  const nx = x / (hw * hw), nz = z / (hd * hd), l = Math.hypot(nx, nz) || 1;
+  return { x: x + nx / l * (off || 0), z: dz + z + nz / l * (off || 0), ry: Math.atan2(nx, nz) };
+}
+const _outT = (p) => (p[1] > 1.735 ? [p[0] * 0.3, 1, p[2] * 0.3] : [p[0] * 0.6, 0, p[2]]);
+const _shC = new THREE.Color();
+function shadeC(hex, k) { return _shC.setHex(hex).multiplyScalar(k).getHex(); }
+
+/* ---------- formas (criadas uma vez) ---------- */
+let _SV2 = null;
+function sv2Shapes() {
+  if (_SV2) return _SV2;
+  const S = {};
+  const T = TORSO_US;
+  S.torso = loftGeo(T.map(([y, w, d, dz]) => sRing(20, y, w / 2, d / 2, TORSO_K, 0, dz)));
+  S.hem = loftGeo([sRing(20, 0.815, 0.262, 0.172, TORSO_K), sRing(20, 0.87, 0.252, 0.164, TORSO_K)], { flat: true });
+  S.hips = loftGeo([sRing(14, 0.7, 0.215, 0.14, 2.4), sRing(14, 0.8, 0.24, 0.158, 2.4), sRing(14, 0.88, 0.245, 0.16, 2.4)]);
+  S.neck = limbGeo(10, [[1.74, 0.074, 0.072, 0, -0.005], [1.9, 0.066, 0.068, 0, 0.01]]);
+  S.collar = loftGeo([sRing(14, 1.765, 0.145, 0.13, 2.2, 0, 0.0), sRing(14, 1.83, 0.118, 0.106, 2.2, 0, 0.008)], { flat: true });
+  // cabeça: queixo, mandíbula, maçãs, olhos, testa e topo
+  S.head = loftGeo([
+    [1.852, 0.03, 0.025, 0.08], [1.868, 0.068, 0.055, 0.062], [1.895, 0.094, 0.1, 0.035], [1.94, 0.103, 0.116, 0.02], [1.99, 0.107, 0.121, 0.012],
+    [2.04, 0.108, 0.123, 0.005], [2.09, 0.104, 0.12, 0], [2.13, 0.088, 0.104, -0.005], [2.16, 0.055, 0.07, -0.01], [2.175, 0.012, 0.014, -0.01],
+  ].map(([y, rx, rz, dz]) => sRing(14, y, rx, rz, 2.2, 0, dz)));
+  // capacete M1: casco alto e aba que desce sobre as orelhas
+  const hz = -0.008, drop = (c, s) => -0.042 * c * c - (s < 0 ? 0.028 * s * s : 0);
+  const HL = [[2.292, 0.01, 0.012], [2.287, 0.065, 0.072], [2.265, 0.118, 0.132], [2.228, 0.157, 0.174], [2.178, 0.18, 0.2], [2.12, 0.19, 0.211]];
+  S.helmet = loftGeo([...HL.map(([y, rx, rz]) => sRing(20, y, rx, rz, 2.1, 0, hz)), sRing(20, 2.075, 0.193, 0.215, 2.1, 0, hz, drop)], { capB: false });
+  S.helmRim = loftGeo([
+    sRing(20, 2.078, 0.194, 0.216, 2.1, 0, hz, drop), sRing(20, 2.066, 0.208, 0.231, 2.1, 0, hz, drop),
+    sRing(20, 2.054, 0.209, 0.232, 2.1, 0, hz, drop), sRing(20, 2.062, 0.188, 0.21, 2.1, 0, hz, drop),
+  ], { flat: true });
+  const hOut = (p) => [p[0], p[1] - 2.08, p[2] - hz];
+  const netPts = (a, f) => HL.slice(1).concat([[2.08, 0.193, 0.215]]).map(([y, rx, rz]) => [Math.cos(a) * rx * f, y + 0.002, Math.sin(a) * rz * f + hz]);
+  S.net = [];
+  for (let i = 0; i < 6; i++) S.net.push(strapGeo(netPts(i / 6 * Math.PI * 2 + 0.2, 1.035), 0.012, 0.008, hOut));
+  for (const [y, rx, rz] of [[2.165, 0.184, 0.204]]) {
+    const pts = []; for (let i = 0; i <= 14; i++) { const a = i / 14 * Math.PI * 2; pts.push([Math.cos(a) * rx * 1.04, y, Math.sin(a) * rz * 1.04 + hz]); }
+    S.net.push(strapGeo(pts, 0.012, 0.008, hOut));
+  }
+  for (const sx of [-1, 1]) S['chin' + sx] = strapGeo([[sx * 0.193, 2.06, 0.01], [sx * 0.185, 2.0, 0.025], [sx * 0.165, 1.93, 0.03], [sx * 0.15, 1.89, 0.02]], 0.02, 0.006, (p) => [p[0], 0, 0.2]);
+  // cinto, suspensórios e bandoleira seguindo o tronco
+  S.belt = loftGeo([sRing(20, 0.995, 0.24, 0.161, TORSO_K, 0, 0.001), sRing(20, 1.09, 0.247, 0.165, TORSO_K, 0, 0.004)], { flat: true });
+  S.susp = [];
+  for (const sx of [-1, 1]) {
+    const pts = [];
+    for (let y = 1.08; y <= 1.7; y += 0.08) pts.push(torsoPt(T, sx * lerp(0.095, 0.13, (y - 1.08) / 0.62), y, 1, 0.007));
+    pts.push([sx * 0.14, 1.775, 0.03], [sx * 0.14, 1.785, -0.04]);
+    for (let y = 1.72; y >= 1.5; y -= 0.07) pts.push(torsoPt(T, sx * 0.12, y, -1, 0.007));
+    S.susp.push(strapGeo(pts, 0.042, 0.012, _outT));
+  }
+  const band = []; for (let i = 0; i <= 10; i++) { const t = i / 10, x = 0.21 - 0.43 * t, y = 1.73 - 0.67 * t; band.push(torsoPt(T, x, y, 1, 0.026)); }
+  S.bandolier = strapGeo([[0.23, 1.79, -0.02], ...band], 0.06, 0.016, _outT);
+  S.bandBack = strapGeo([[0.23, 1.79, -0.02], ...[0, 0.2, 0.4, 0.6, 0.8, 1].map(t => torsoPt(T, 0.2 - 0.42 * t, 1.72 - 0.66 * t, -1, 0.03))], 0.06, 0.016, _outT);
+  S.bandPts = band;
+  S.placket = strapGeo([1.0, 1.15, 1.3, 1.45, 1.6, 1.74].map(y => torsoPt(T, 0, y, 1, 0.003)), 0.05, 0.012, _outT);
+  // mochila M1928 (bolsa macia com cantos chanfrados)
+  S.pack = loftGeo([sRing(8, 1.2, 0.14, 0.055, 3.5, 0, -0.24), sRing(8, 1.24, 0.165, 0.075, 3.5, 0, -0.25), sRing(8, 1.6, 0.165, 0.08, 3.5, 0, -0.255), sRing(8, 1.65, 0.14, 0.06, 3.5, 0, -0.245)], { flat: true });
+  S.canteen = loftGeo([sRing(10, -0.09, 0.06, 0.03, 2.4), sRing(10, -0.07, 0.072, 0.036, 2.4), sRing(10, 0.06, 0.072, 0.036, 2.4), sRing(10, 0.085, 0.06, 0.03, 2.4)]);
+  // pernas
+  S.ball = new THREE.SphereGeometry(1, 8, 6);
+  S.thigh = limbGeo(10, [[0.1, 0.11, 0.118], [0.04, 0.122, 0.13], [-0.04, 0.128, 0.137, 0, 0.01], [-0.18, 0.122, 0.132, 0, 0.014], [-0.32, 0.108, 0.116, 0, 0.01], [-0.44, 0.095, 0.102, 0, 0.004], [-0.52, 0.088, 0.095]]);
+  S.trouser = limbGeo(10, [[0.03, 0.088, 0.095], [-0.08, 0.085, 0.091, 0, -0.006], [-0.15, 0.099, 0.105, 0, -0.004], [-0.2, 0.092, 0.098]]);
+  S.legging = limbGeo(10, [[-0.18, 0.086, 0.092], [-0.29, 0.081, 0.087, 0, -0.007], [-0.39, 0.074, 0.08], [-0.455, 0.081, 0.093, 0, 0.011]]);
+  S.boot = loftGeo([[-0.105, -0.47, 0.058, 0.055], [-0.07, -0.468, 0.07, 0.07], [0.02, -0.475, 0.075, 0.066], [0.1, -0.488, 0.07, 0.05], [0.165, -0.495, 0.062, 0.04], [0.2, -0.5, 0.045, 0.028], [0.212, -0.505, 0.02, 0.012]]
+    .map(([z, cy, rx, ry]) => zRing(10, z, 0, cy, rx, ry, 2.6)));
+  // braços
+    S.sleeve = limbGeo(10, [[-0.03, 0.094, 0.097], [-0.14, 0.087, 0.091, 0, 0.008], [-0.26, 0.077, 0.081, 0, 0.004], [-0.37, 0.07, 0.073]]);
+    S.forearm = limbGeo(10, [[0.0, 0.073, 0.075], [-0.1, 0.072, 0.075, 0, 0.006], [-0.22, 0.06, 0.063], [-0.255, 0.058, 0.06]]);
+  S.cuff = limbGeo(10, [[-0.235, 0.066, 0.068], [-0.285, 0.064, 0.066]]);
+  S.wrist = limbGeo(8, [[-0.27, 0.033, 0.029], [-0.305, 0.036, 0.03]]);
+  S.palm = limbGeo(8, [[-0.295, 0.037, 0.027, 0, 0.004], [-0.33, 0.042, 0.03, 0, 0.008], [-0.37, 0.04, 0.028, 0, 0.01]], 2.6);
+  S.fist = limbGeo(8, [[-0.325, 0.039, 0.024, 0, 0.036], [-0.385, 0.037, 0.022, 0, 0.03]], 2.8);
+  // fuzil M1 Garand: coronha com punho e soleira, guarda-mãos
+  const stock = [[-0.6, 0.035, -0.135, 0.032], [-0.5, 0.032, -0.115, 0.032], [-0.36, 0.027, -0.08, 0.029], [-0.27, 0.012, -0.062, 0.024], [-0.2, 0.0, -0.078, 0.022],
+    [-0.13, 0.0, -0.06, 0.026], [0.05, 0.0, -0.046, 0.028], [0.3, -0.002, -0.042, 0.026], [0.5, -0.004, -0.04, 0.024], [0.53, -0.01, -0.034, 0.017]];
+  S.stock = loftGeo(stock.map(([z, t, b, hw]) => zRing(10, z, 0, (t + b) / 2, hw, (t - b) / 2, 2.8)));
+  S.hgRear = loftGeo([[-0.02, 0.04, -0.0, 0.022], [0.12, 0.04, -0.0, 0.024]].map(([z, t, b, hw]) => zRing(8, z, 0, (t + b) / 2, hw, (t - b) / 2, 2.6)));
+  S.hgFront = loftGeo([[0.165, 0.038, 0.0, 0.023], [0.49, 0.036, 0.0, 0.021], [0.51, 0.03, 0.002, 0.018]].map(([z, t, b, hw]) => zRing(8, z, 0, (t + b) / 2, hw, (t - b) / 2, 2.6)));
+  const sl = []; for (let i = 0; i <= 8; i++) { const t = i / 8; sl.push([0.0, lerp(-0.045, -0.12, t) - Math.sin(t * Math.PI) * 0.07, lerp(0.45, -0.42, t)]); }
+  S.sling = strapGeo(sl, 0.024, 0.006, () => [1, 0, 0]);
+  _SV2 = S; return S;
+}
+
+/* ---------- partes ---------- */
+const US_PAL2 = { jacket: 0x5f6444, pants: 0x4f4a36, helm: 0x4c5334, band: 0x3e432c, web: 0x9a916c, boot: 0x5e3f26, legging: 0xa39873, pack: 0x857c58 };
+function bodyUSv2(B, pal, variant) {
+  const S = sv2Shapes(), T = TORSO_US, J = pal.jacket, Jd = shadeC(J, 0.8), W = pal.web, Wd = shadeC(W, 0.8), sk = pal.skin, met = 0x6f6f66;
+  // jaqueta e calça
+  B.add(S.torso, J, 1, 1, 1, 0, 0, 0);
+  B.add(S.hem, Jd, 1, 1, 1, 0, 0, 0);
+  B.add(S.hips, pal.pants, 1, 1, 1, 0, 0, 0);
+  B.add(S.collar, J, 1, 1, 1, 0, 0, 0);
+  for (const sx of [-1, 1]) {
+    B.add(G.box, J, 0.105, 0.016, 0.085, sx * 0.068, 1.79, 0.112, -0.9, 0, sx * 0.35);            // pontas da gola
+    const e = torsoPt(T, sx * 0.25, 1.73, 1, 0); void e;
+    B.add(G.box, J, 0.2, 0.014, 0.055, sx * 0.24, 1.742, -0.005, 0, 0, sx * -0.42);               // dragonas
+    B.add(G.box, met, 0.016, 0.01, 0.016, sx * 0.165, 1.775, -0.005);
+    const p = aroundTorso(T, 1.19, Math.PI / 2 - sx * 0.62, 0.006);                                  // bolsos inclinados
+    B.add(G.box, Jd, 0.13, 0.04, 0.014, p.x, 1.19, p.z, 0, p.ry, sx * 0.55);
+    B.add(G.box, 0x2c2a22, 0.016, 0.016, 0.012, p.x - sx * 0.01, 1.175, p.z + 0.006);
+  }
+  B.add(S.placket, Jd, 1, 1, 1, 0, 0, 0);
+  for (const y of [1.2, 1.36, 1.52, 1.68]) { const p = torsoPt(T, 0, y, 1, 0.012); B.add(G.box, 0x3a372a, 0.02, 0.02, 0.01, p[0], p[1], p[2]); }
+  // cabeça com barba por fazer
+  const stub = new THREE.Color(shadeC(sk, 0.78)), skC = new THREE.Color(sk);
+  B.cf = (x, y, z, base) => (base.equals(skC) && y < 1.955 && y > 1.86 && z > -0.03 ? stub : base);
+  B.add(S.neck, sk, 1, 1, 1, 0, 0, 0);
+  B.add(S.head, sk, 1, 1, 1, 0, 0, 0);
+  B.cf = null;
+  B.add(G.box, sk, 0.036, 0.062, 0.048, 0, 2.0, 0.138, -0.28, 0, 0);                          // nariz
+  B.add(G.box, shadeC(sk, 0.9), 0.05, 0.02, 0.03, 0, 1.97, 0.142);                             // narinas
+  B.add(G.box, shadeC(sk, 0.88), 0.18, 0.026, 0.03, 0, 2.056, 0.118);                          // arco das sobrancelhas
+  B.add(G.box, 0x6e4034, 0.056, 0.012, 0.012, 0, 1.935, 0.13);                                 // boca
+  for (const sx of [-1, 1]) {
+    B.add(G.box, shadeC(sk, 0.75), 0.05, 0.03, 0.01, sx * 0.043, 2.034, 0.121);                  // órbita
+    B.add(G.box, 0xe9e3d6, 0.032, 0.017, 0.008, sx * 0.043, 2.034, 0.125);
+    B.add(G.box, 0x241a12, 0.016, 0.017, 0.008, sx * 0.043, 2.034, 0.128);
+    B.add(G.box, 0x3a2a1c, 0.055, 0.014, 0.012, sx * 0.045, 2.062, 0.126, 0, 0, sx * -0.12);    // sobrancelha
+    B.add(sv2Shapes().ball, sk, 0.022, 0.045, 0.03, sx * 0.108, 2.01, 0.0);                                // orelha
+  }
+  // capacete M1
+  B.add(S.helmet, pal.helm, 1, 1, 1, 0, 0, 0);
+  B.add(S.helmRim, shadeC(pal.helm, 0.85), 1, 1, 1, 0, 0, 0);
+  for (const n of S.net) B.add(n, shadeC(pal.helm, 0.62), 1, 1, 1, 0, 0, 0);
+  for (const sx of [-1, 1]) { B.add(S['chin' + sx], pal.band, 1, 1, 1, 0, 0, 0); B.add(G.box, met, 0.022, 0.02, 0.01, sx * 0.15, 1.885, 0.025); }
+  if (variant === 1) for (const [a, y, s, c] of [[0.4, 2.24, 1, 0x56603a], [2.0, 2.2, 1.1, 0x8a7a55], [3.6, 2.25, 0.9, 0x4e5a35], [5.0, 2.17, 1, 0x7a6e4a], [1.2, 2.27, 0.8, 0x56603a]])
+    B.add(G.box, c, 0.09 * s, 0.012, 0.035, Math.cos(a) * 0.15, y, Math.sin(a) * 0.17, 0.3, a, 0.5);
+  // cinto M1923: 5 bolsos de cada lado, fivela e kit de primeiros socorros
+  B.add(S.belt, W, 1, 1, 1, 0, 0, 0);
+  for (const sx of [-1, 1]) for (let i = 0; i < 5; i++) {
+    const p = aroundTorso(T, 1.045, Math.PI / 2 - sx * (0.42 + i * 0.27), 0.03);
+    B.add(G.box, W, 0.07, 0.1, 0.045, p.x, 1.04, p.z, 0, p.ry, 0);
+    B.add(G.box, Wd, 0.074, 0.035, 0.05, p.x, 1.08, p.z + 0.002, 0, p.ry, 0);
+    B.add(G.box, met, 0.012, 0.012, 0.05, p.x, 1.072, p.z + 0.004, 0, p.ry, 0);
+  }
+  B.add(G.box, met, 0.06, 0.05, 0.02, 0, 1.045, torsoPt(T, 0, 1.045, 1, 0.012)[2]);
+  B.add(G.box, W, 0.085, 0.09, 0.04, -0.09, 0.95, torsoPt(T, -0.09, 0.95, 1, 0.02)[2]);
+  // suspensórios, bandoleira com 6 bolsos e granadas MkII
+  for (const g of S.susp) B.add(g, W, 1, 1, 1, 0, 0, 0);
+  B.add(S.bandolier, shadeC(W, 1.05), 1, 1, 1, 0, 0, 0);
+  B.add(S.bandBack, shadeC(W, 1.05), 1, 1, 1, 0, 0, 0);
+  for (let i = 2; i <= 9; i += 1.4) {
+    const k = Math.floor(i), p = S.bandPts[k], q = S.bandPts[k + 1];
+    B.add(G.box, shadeC(W, 0.95), 0.06, 0.075, 0.03, p[0], p[1], p[2] + 0.012, 0, Math.atan2(p[0] * 0.6, 1), Math.atan2(-(q[0] - p[0]), q[1] - p[1]) + Math.PI);
+  }
+  for (const [sx, y] of [[-1, 1.33], [1, 1.25]]) {
+    const p = torsoPt(T, sx * 0.105, y, 1, 0.045);
+    B.add(S.ball, 0x474c2e, 0.03, 0.04, 0.03, p[0], p[1], p[2]);
+    B.add(G.box, 0x474c2e, 0.016, 0.025, 0.016, p[0], p[1] + 0.045, p[2]);
+    B.add(G.box, 0x5a5a50, 0.012, 0.05, 0.008, p[0] + 0.02, p[1] + 0.015, p[2] + 0.012);
+  }
+  // mochila M1928 com pá M1943 e baioneta M1905; cantil no quadril
+  B.add(S.pack, pal.pack, 1, 1, 1, 0, 0, 0);
+  B.add(G.box, shadeC(pal.pack, 0.85), 0.33, 0.14, 0.03, 0, 1.58, -0.33);
+  for (const sx of [-1, 1]) { B.add(G.box, W, 0.03, 0.4, 0.012, sx * 0.09, 1.42, -0.336); B.add(G.box, met, 0.035, 0.02, 0.016, sx * 0.09, 1.5, -0.34); }
+  B.add(G.box, shadeC(pal.pack, 0.9), 0.2, 0.09, 0.06, 0, 1.68, -0.25);
+  B.add(G.box, 0x4d5040, 0.17, 0.22, 0.045, 0, 1.14, -0.32);
+  B.add(G.box, shadeC(0x4d5040, 0.8), 0.17, 0.05, 0.05, 0, 1.235, -0.32);
+  B.add(G.cyl8, 0x5e4a30, 0.018, 0.2, 0.018, 0, 0.95, -0.32);
+  B.add(G.box, 0x3d3f35, 0.032, 0.36, 0.022, -0.185, 1.33, -0.27, 0, 0, 0.05);
+  B.add(G.box, 0x5a4630, 0.026, 0.1, 0.03, -0.19, 1.56, -0.27);
+  B.add(G.box, met, 0.06, 0.012, 0.02, -0.19, 1.51, -0.27);
+  const cp = aroundTorso(T, 0.95, -0.55, 0.05);
+  B.add(S.canteen, 0x6a664a, 1, 1, 1, cp.x, 0.95, cp.z, 0, cp.ry + Math.PI / 2, 0);
+  B.add(G.box, shadeC(0x6a664a, 0.85), 0.15, 0.03, 0.08, cp.x, 1.03, cp.z, 0, cp.ry + Math.PI / 2, 0);
+}
+function shinUSv2(B, pal, side) {
+  const S = sv2Shapes(), L = pal.legging;
+  B.add(S.ball, pal.pants, 0.09, 0.09, 0.095, 0, 0, 0.01);
+  B.add(S.trouser, pal.pants, 1, 1, 1, 0, 0, 0);
+  B.add(S.legging, L, 1, 1, 1, 0, 0, 0);
+  for (let i = 0; i < 6; i++) { const y = -0.22 - i * 0.04, r = lerp(0.086, 0.076, i / 5); B.add(G.box, 0x4a4535, 0.016, 0.012, 0.016, side * (r + 0.004), y, 0.02); }
+  B.add(G.box, shadeC(L, 0.85), 0.012, 0.22, 0.03, side * 0.083, -0.33, 0.02);
+  B.add(S.boot, pal.boot, 1, 1, 1, 0, 0, 0);
+  B.add(G.box, shadeC(L, 0.75), 0.16, 0.02, 0.03, 0, -0.5, -0.0);
+  B.add(G.box, 0x1d1712, 0.14, 0.028, 0.31, 0, -0.522, 0.055);
+  B.add(G.box, 0x1d1712, 0.125, 0.035, 0.085, 0, -0.52, -0.06);
+}
+function upperUSv2(B, pal, side, variant) {
+  const S = sv2Shapes();
+  B.add(S.ball, pal.jacket, 0.108, 0.112, 0.106, -side * 0.03, -0.01, 0);
+  B.add(S.sleeve, pal.jacket, 1, 1, 1, 0, 0, 0);
+  if (side < 0) {
+    // emblema da 1ª Divisão de Infantaria ("Big Red One")
+    B.add(G.box, 0x5a5c3e, 0.008, 0.085, 0.065, -0.098, -0.08, 0.0);
+    B.add(G.box, 0xa8241c, 0.01, 0.06, 0.016, -0.102, -0.08, 0.0);
+  }
+  if (variant === 2) for (let i = 0; i < 3; i++) B.add(G.box, 0xc9b25a, 0.01, 0.018, 0.1, side * 0.088, -0.13 - i * 0.034, 0.0);
+}
+function foreUSv2(B, pal) {
+  const S = sv2Shapes(), sk = pal.skin;
+  B.add(S.ball, pal.jacket, 0.075, 0.075, 0.077, 0, 0, 0);
+  B.add(S.forearm, pal.jacket, 1, 1, 1, 0, 0, 0);
+  B.add(S.cuff, shadeC(pal.jacket, 0.85), 1, 1, 1, 0, 0, 0);
+  B.add(S.wrist, sk, 1, 1, 1, 0, 0, 0);
+  B.add(S.palm, sk, 1, 1, 1, 0, 0, 0);
+  B.add(S.fist, shadeC(sk, 0.95), 1, 1, 1, 0, 0, 0);
+  B.add(G.box, sk, 0.02, 0.045, 0.022, 0, -0.318, 0.045, 0.3, 0, 0);                            // polegar
+}
+WEAPONS.garand = (B) => {
+  const S = sv2Shapes(), wood = 0x87512c, met = 0x2b2c2a;
+  B.add(S.stock, wood, 1, 1, 1, 0, 0, 0);
+  B.add(S.hgRear, wood, 1, 1, 1, 0, 0, 0);
+  B.add(S.hgFront, wood, 1, 1, 1, 0, 0, 0);
+  B.add(G.box, met, 0.068, 0.172, 0.014, 0, -0.05, -0.604);                                    // chapa da soleira
+  B.add(G.box, met, 0.05, 0.055, 0.25, 0, 0.026, -0.065);                                      // caixa da culatra
+  B.add(G.box, 0x1a1a19, 0.034, 0.01, 0.1, 0, 0.055, -0.04);                                   // janela do clipe
+  B.add(G.box, met, 0.044, 0.045, 0.05, 0, 0.06, -0.165);                                      // alça de mira
+  for (const sx of [-1, 1]) B.add(G.cyl8, met, 0.012, 0.014, 0.012, sx * 0.028, 0.068, -0.165, 0, 0, Math.PI / 2);
+  B.add(G.box, met, 0.012, 0.022, 0.42, 0.028, 0.012, 0.17);                                    // haste de operação
+  B.add(G.box, met, 0.02, 0.018, 0.03, 0.04, 0.03, -0.02);
+  B.add(G.cyl8, met, 0.014, 0.4, 0.014, 0, 0.022, 0.66, Math.PI / 2, 0, 0);                     // cano
+  B.add(G.cyl8, met, 0.021, 0.085, 0.021, 0, 0.012, 0.82, Math.PI / 2, 0, 0);                    // cilindro de gás
+  B.add(G.box, met, 0.012, 0.045, 0.014, 0, 0.05, 0.845);                                       // massa de mira
+  for (const sx of [-1, 1]) B.add(G.box, met, 0.006, 0.03, 0.02, sx * 0.014, 0.048, 0.845);
+  for (const z of [0.145, 0.5]) B.add(G.box, met, 0.058, 0.062, 0.022, 0, 0.016, z);           // braçadeiras
+  B.add(G.box, met, 0.018, 0.035, 0.085, 0, -0.06, -0.135);                                    // guarda-mato
+  B.add(G.box, met, 0.008, 0.03, 0.01, 0, -0.04, -0.12);
+  B.add(S.sling, 0x5c3c22, 1, 1, 1, 0, 0, 0);
+};
+function makeSoldierV2(team, kind, palKey) {
+  const variant = (Math.random() * 3) | 0, skin = (Math.random() * SKINS.length) | 0;
+  const pal = Object.assign({}, SOLDIER_PAL.us, US_PAL2, (SC.pal && SC.pal[palKey || team]) || {}, { skin: SKINS[skin] });
+  const key = 'usv2' + (palKey || '') + variant + 's' + skin + SC.id;
+  const g = new THREE.Group(); g.rotation.order = 'YXZ';
+  VM(merged('body' + key, B => bodyUSv2(B, pal, variant)), g, 0, 0, 0, true);
+  const thighG = merged('thigh' + key, B => {
+    const S = sv2Shapes();
+    B.add(S.ball, pal.pants, 0.12, 0.11, 0.13, 0, 0, 0);
+    B.add(S.thigh, pal.pants, 1, 1, 1, 0, 0, 0);
+    B.add(G.box, shadeC(pal.pants, 0.8), 0.06, 0.012, 0.012, 0.0, -0.02, 0.13, 0, 0, 0.6);       // bolso frontal
+  });
+  const legs = [-1, 1].map(side => {
+    const shinG = merged('shin' + side + key, B => shinUSv2(B, pal, side));
+    const th = new THREE.Group(); th.position.set(side * 0.13, 0.98, 0); VM(thighG, th, 0, 0, 0, false);
+    const kn = new THREE.Group(); kn.position.y = -0.5; th.add(kn); VM(shinG, kn, 0, 0, 0, false);
+    g.add(th); return [th, kn];
+  });
+  const foreG = merged('fore' + key, B => foreUSv2(B, pal));
+  const arms = [-1, 1].map(side => {
+    const upperG = merged('upper' + side + key, B => upperUSv2(B, pal, side, variant));
+    const sh = new THREE.Group(); sh.position.set(side * 0.39, 1.68, 0); VM(upperG, sh, 0, 0, 0, false);
+    const el = new THREE.Group(); el.position.y = -0.36; sh.add(el); VM(foreG, el, 0, 0, 0, false);
+    g.add(sh); return [sh, el];
+  });
+  const [[legL, shinL], [legR, shinR]] = legs, [[armL, foreL], [armR, foreR]] = arms;
+  const wk = variant === 2 ? 'thompson' : 'garand';
+  const rifle = new THREE.Group(); g.add(rifle);
+  VM(merged('wpnv2' + wk, B => WEAPONS[wk](B, team)), rifle, 0, 0, 0, false);
+  blob(g, 1.4);
+  g.scale.setScalar(1.12);
+  g.userData = { legL, legR, shinL, shinR, armL, armR, foreL, foreR, rifle, tube: false };
+  return g;
+}
+// escolhe o modelo: fuzileiro americano novo; demais tropas nos modelos anteriores
+function makeSoldier(team, kind, palKey) {
+  if (team === 'civ' || (team === 'de' && jpGear())) return makeSoldierClassic(team, kind, palKey);
+  if (team === 'us' && kind === 'rifle') return makeSoldierV2(team, kind, palKey);
+  return typeof makeSoldierV1 === 'function' ? makeSoldierV1(team, kind, palKey) : makeSoldierClassic(team, kind, palKey);
 }
 
 /* ---------- tanques ---------- */
