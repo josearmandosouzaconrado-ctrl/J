@@ -325,8 +325,8 @@ Object.assign(Game, {
     UI.close(); UI.fade();
     Academy.scene([
       { n: cap.name, look: cap.look, t: 'Levantar âncora! Içar as velas! Rumo ao Mar das Brumas!', fx: () => Sfx.play('quest') },
-      { n: to.port.cont === 2 || from.port.cont === 2 ? 'Oceano do Sul' : 'Mar das Brumas', t: '<i>O navio corta as ondas. Gaivotas acompanham o casco e a névoa cobre o horizonte...</i>' },
-      { n: to.port.cont === 2 || from.port.cont === 2 ? 'Oceano do Sul' : 'Mar das Brumas', t: '<i>À noite, o céu se enche de estrelas. Os marinheiros cantam velhas canções sobre serpentes marinhas.</i>' },
+      { n: Elyndra.seaName(to.port.cont, from.port.cont), t: '<i>O navio corta as ondas. Gaivotas acompanham o casco e a névoa cobre o horizonte...</i>' },
+      { n: Elyndra.seaName(to.port.cont, from.port.cont), t: '<i>À noite, o céu se enche de estrelas. Os marinheiros cantam velhas canções sobre serpentes marinhas.</i>' },
       ...(War.st().navals && War.st().navals.length ? [{ n: cap.name, look: cap.look, t: `Ao longe, canhões trovejam no horizonte: ${esc(War.st().navals[0].name.replace('Batalha naval', 'uma batalha naval'))}! Mantenham distância!` }] : []),
       { n: cap.name, look: cap.look, t: `Terra à vista! Bem-vindo(a) a ${esc(to.name)}.` }
     ], () => {

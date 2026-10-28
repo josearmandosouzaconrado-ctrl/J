@@ -5,9 +5,12 @@ for (let i = 0; i < TILE_DEFS.length; i++) if (TILE_DEFS[i]) { TSOLID[i] = TILE_
 for (let i = 0; i < OBJ_DEFS.length; i++) if (OBJ_DEFS[i]) OSOLID[i] = OBJ_DEFS[i].solid ? 1 : 0;
 // objetos "chatos" pintados direto no chão do chunk
 const OBJ_BAKED = new Uint8Array(256);
-[O.FLOWERS, O.TALLGRASS, O.BONES, O.LILY, O.ROCK, O.SKULLS, O.CROP, O.RUG, O.PELT, O.HATCH, O.ROPE].forEach(o => OBJ_BAKED[o] = 1);
-const OBJ_VARIANTS = { [O.COUNTER]: 2, [O.BEDSMALL]: 2, [O.PAINTING]: 4, [O.OAK]: 6, [O.AUTUMN]: 6, [O.PINE]: 6, [O.SNOWPINE]: 6, [O.PALM]: 4, [O.DEADTREE]: 3, [O.WILLOW]: 3, [O.ELFTREE]: 3, [O.BIGSHROOM]: 3, [O.BUSH]: 3, [O.FLOWERS]: 4, [O.STALL]: 4, [O.TENT]: 3, [O.CRYSTAL]: 4, [O.BANNER]: 5, [O.LILY]: 2, [O.CACTUS]: 2, [O.LAMP]: 2, [O.BROKEN_PILLAR]: 3, [O.RUG]: 6, [O.POTS]: 3, [O.SACKS]: 2, [O.INSTRUMENT]: 2, [O.TROPHY]: 2, [O.ARMORSTAND]: 3, [O.SHELFWALL]: 3, [O.SHIELDWALL]: 4, [O.DRESSER]: 2, [O.ARMCHAIR]: 3 };
-const TREE_OBJS = new Set([O.OAK, O.PINE, O.SNOWPINE, O.PALM, O.DEADTREE, O.WILLOW, O.AUTUMN]);
+[O.FLOWERS, O.TALLGRASS, O.BONES, O.LILY, O.ROCK, O.SKULLS, O.CROP, O.RUG, O.PELT, O.HATCH, O.ROPE, O.MISTREED].forEach(o => OBJ_BAKED[o] = 1);
+// terrenos que brilham no escuro (recifes, lagoas, cristais, poeira de estrelas)
+const TGLOW = new Uint8Array(64);
+for (let i = 0; i < TILE_DEFS.length; i++) if (TILE_DEFS[i] && TILE_DEFS[i].glow) TGLOW[i] = 1;
+const OBJ_VARIANTS = { [O.COUNTER]: 2, [O.BEDSMALL]: 2, [O.PAINTING]: 4, [O.OAK]: 6, [O.AUTUMN]: 6, [O.PINE]: 6, [O.SNOWPINE]: 6, [O.PALM]: 4, [O.DEADTREE]: 3, [O.WILLOW]: 3, [O.ELFTREE]: 3, [O.BIGSHROOM]: 3, [O.CORALTREE]: 3, [O.WINDSPIRE]: 3, [O.CRYSTALSPIRE]: 3, [O.LIVETREE]: 3, [O.OBSIDSPIKE]: 2, [O.BAOBAB]: 2, [O.STARSHARD]: 2, [O.RUNEMONO]: 2, [O.DUSKBLOOM]: 2, [O.BUSH]: 3, [O.FLOWERS]: 4, [O.STALL]: 4, [O.TENT]: 3, [O.CRYSTAL]: 4, [O.BANNER]: 5, [O.LILY]: 2, [O.CACTUS]: 2, [O.LAMP]: 2, [O.BROKEN_PILLAR]: 3, [O.RUG]: 6, [O.POTS]: 3, [O.SACKS]: 2, [O.INSTRUMENT]: 2, [O.TROPHY]: 2, [O.ARMORSTAND]: 3, [O.SHELFWALL]: 3, [O.SHIELDWALL]: 4, [O.DRESSER]: 2, [O.ARMCHAIR]: 3 };
+const TREE_OBJS = new Set([O.OAK, O.PINE, O.SNOWPINE, O.PALM, O.DEADTREE, O.WILLOW, O.AUTUMN, O.LIVETREE, O.BAOBAB]);
 const QUARRY_OBJS = new Set([O.BOULDER, O.ICEROCK, O.SANDROCK]);
 const OBJ_ANIM = new Uint8Array(256);
 [O.CAMPFIRE, O.TORCH, O.RUNESTONE, O.FOUNTAIN, O.PORTAL, O.ALTAR, O.SHRINE, O.FORGE, O.FIREPLACE, O.CANDLE, O.CAULDRON, O.DESTINY, O.DESTINY2, O.DESTINY3, O.STOVE, O.OVEN, O.CLOCK, O.MACHINE, O.BOILER, O.GASLAMP, O.LANTERN].forEach(o => OBJ_ANIM[o] = 1);
@@ -18,6 +21,9 @@ const ORE_BY_REGION = {
   khazdurim: [O.ORE_FERRO, O.ORE_OURO, O.ORE_PRATA, O.ORE_OURO], nordheim: [O.ORE_MALAQUITA, O.ORE_FERRO, O.ORE_MALAQUITA],
   gorthak: [O.ORE_OBSIDIANA, O.ORE_FERRO, O.ORE_OBSIDIANA], zahrim: [O.ORE_OURO, O.ORE_FERRO], ssarak: [O.ORE_FERRO, O.ORE_PRATA],
   morvath: [O.ORE_EBANO, O.ORE_OBSIDIANA, O.ORE_EBANO],
+  voralis: [O.ORE_PRATA, O.ORE_MALAQUITA], zephyra: [O.ORE_PRATA, O.ORE_FERRO], thaldrim: [O.CRYSTALSPIRE, O.ORE_PRATA, O.ORE_OURO], silvania: [O.ORE_MALAQUITA, O.ORE_FERRO],
+  krazul: [O.ORE_OBSIDIANA, O.ORE_OBSIDIANA, O.ORE_OURO], nimbor: [O.ORE_EBANO, O.ORE_PRATA], vaelith: [O.ORE_FERRO, O.ORE_OURO], xarqin: [O.STARSHARD, O.ORE_EBANO, O.ORE_PRATA],
+  brumaria: [O.ORE_PRATA, O.ORE_FERRO, O.ORE_EBANO], terralux: [O.ORE_OURO, O.ORE_OURO, O.ORE_FERRO, O.ORE_MALAQUITA],
   talassa: [O.ORE_PRATA, O.ORE_FERRO, O.ORE_PRATA], azhkar: [O.ORE_OBSIDIANA, O.ORE_EBANO, O.ORE_OURO], shirokai: [O.ORE_FERRO, O.ORE_MALAQUITA, O.ORE_PRATA], ferrania: [O.ORE_FERRO, O.ORE_FERRO, O.ORE_PRATA], kharzul: [O.ORE_FERRO, O.ORE_OURO, O.ORE_EBANO, O.ORE_OURO], orkhai: [O.ORE_OBSIDIANA, O.ORE_FERRO], serpentis: [O.ORE_FERRO, O.ORE_PRATA, O.ORE_MALAQUITA],
   aurelion: [O.ORE_FERRO, O.ORE_PRATA, O.ORE_OURO], gromhald: [O.ORE_MALAQUITA, O.ORE_EBANO, O.ORE_FERRO], lunethar: [O.ORE_PRATA, O.ORE_MALAQUITA], rodafina: [O.ORE_FERRO, O.ORE_FERRO, O.ORE_OURO], kumari: [O.ORE_OURO, O.ORE_FERRO, O.ORE_OBSIDIANA], umbraval: [O.ORE_EBANO, O.ORE_OBSIDIANA, O.ORE_EBANO]
 };
@@ -29,7 +35,9 @@ class World {
     this.nE = new Simplex(seed * 7 + 1); this.nM = new Simplex(seed * 7 + 2); this.nW = new Simplex(seed * 7 + 3);
     this.nR = new Simplex(seed * 7 + 4); this.nD = new Simplex(seed * 7 + 5); this.nL = new Simplex(seed * 7 + 6);
     this.regions = REGIONS.map(r => Object.assign({}, r, { cx: r.fx * WORLD_TILES, cy: r.fy * WORLD_TILES }));
-    this.regC = [[], [], [], []]; this.regions.forEach((r, i) => this.regC[r.cont || 0].push(i));
+    this.regC = [[], [], [], [], []]; this.regions.forEach((r, i) => this.regC[r.cont || 0].push(i));
+    // relevo máximo das regiões de cada continente (para reconhecer mar aberto sem calcular tudo)
+    this.maxMount = this.regC.map(l => l.reduce((m, i) => Math.max(m, this.regions[i].mount), 0));
     this.volcano = { x: VOLCANO.fx * WORLD_TILES, y: VOLCANO.fy * WORLD_TILES };
     this.chunks = new Map(); this.canvases = new Map();
     this.tick = 0;
@@ -54,6 +62,44 @@ class World {
     if (x < 0 || y < 0 || x >= WORLD_W || y >= WORLD_H) { this._r = 0; this._e = 0; return T.DEEP; }
     const cont = contAt(x, y);
     const wx = x + 150 * this.nW.noise(x / 520, y / 520), wy = y + 150 * this.nW.noise(x / 520 + 91.3, y / 520 + 47.1);
+    // quedas do relevo nas bordas de cada continente (aplicadas na mesma ordem de sempre)
+    const F = this._F || (this._F = []); F.length = 0;
+    if (!cont) {
+      const nx = x / W * 2 - 1, ny = y / W * 2 - 1;
+      const d = Math.max(Math.abs(nx), Math.abs(ny)) * 0.65 + Math.sqrt(nx * nx + ny * ny) * 0.35;
+      if (d > 0.8) { const f = (d - 0.8) / 0.2; F.push(f * f * 0.75); }
+    } else if (cont === 2) {
+      // Valtheria: o Grande Continente do sul, maior que Eldoria
+      const nx = (x - 4600) / 4400, ny = (y - 8250) / 3900;
+      const d = Math.sqrt(nx * nx + ny * ny) * 0.72 + Math.max(Math.abs(nx), Math.abs(ny)) * 0.28 + this.nW.noise(x / 520, y / 520) * 0.07;
+      if (d > 0.76) { const f = (d - 0.76) / 0.24; F.push(f * f * 0.85); }
+      if (y < VALTHERIA_Y + 500) { const f = (VALTHERIA_Y + 500 - y) / 500; F.push(f * f); }   // oceano largo ao norte
+    } else if (cont === 4) {
+      // Elyndra: o maior de todos, com costas recortadas, baías e cabos
+      const nx = (x - ELYNDRA.x) / ELYNDRA.rx, ny = (y - ELYNDRA.y) / ELYNDRA.ry;
+      const d = Math.sqrt(nx * nx + ny * ny) * 0.7 + Math.max(Math.abs(nx), Math.abs(ny)) * 0.3 + this.nW.noise(x / 640, y / 640) * 0.09 + this.nW.noise(x / 170 + 33.3, y / 170 - 12.7) * 0.025;
+      if (d > 0.78) { const f = (d - 0.78) / 0.22; F.push(f * f * 0.9); }
+      if (x < ELYNDRA.x0 + 500) { const f = (ELYNDRA.x0 + 500 - x) / 500; F.push(f * f); }   // mar largo a oeste
+    } else if (cont === 3) {
+      // Ilha de Nyxhal: pequena, recortada e cercada de mar profundo
+      const nx = (x - ISLE.x) / ISLE.rx, ny = (y - ISLE.y) / ISLE.ry;
+      const d = Math.sqrt(nx * nx + ny * ny) + this.nW.noise(x / 160, y / 160) * 0.16;
+      if (d > 0.6) { const f = (d - 0.6) / 0.4; F.push(f * f * 0.9 + (d > 1 ? 1 : 0)); }
+    } else {
+      // Kaeloria: continente alongado do outro lado do Mar das Brumas
+      const nx = (x - 5180) / 760, ny = (y - 2048) / 1780;
+      const d = Math.sqrt(nx * nx + ny * ny) * 0.75 + Math.max(Math.abs(nx), Math.abs(ny)) * 0.25 + this.nW.noise(x / 300, y / 300) * 0.08;
+      if (d > 0.72) { const f = (d - 0.72) / 0.28; F.push(f * f * 0.85); }
+    }
+    const vdx = x - this.volcano.x, vdy = y - this.volcano.y, vd = Math.sqrt(vdx * vdx + vdy * vdy);
+    const vb = vd < 150 ? (1 - vd / 150) ** 2 * 0.6 : 0;
+    // mar aberto: nem o relevo mais alto passaria do nível do mar (pula o ruído caro, mesmo resultado)
+    let fall = 0; for (const f of F) fall += f;
+    if (1.1 + this.maxMount[cont] + vb - fall < 0.29) {
+      let best = 0, bd = Infinity;
+      for (const i of this.regC[cont]) { const r = this.regions[i], dx = wx - r.cx, dy = wy - r.cy, dd = dx * dx + dy * dy; if (dd < bd) { bd = dd; best = i; } }
+      this._r = best; this._e = 1.1 + this.maxMount[cont] + vb - fall; this._m = 0.5; return T.DEEP;
+    }
     const R = this.regions;
     let best = 0, bd = Infinity, mb = 0, ws = 0;
     for (const i of this.regC[cont]) {
@@ -64,28 +110,7 @@ class World {
     mb = ws > 1e-6 ? mb / ws : 0;
     const reg = R[best]; this._r = best;
     let e = 0.5 + 0.6 * fbm(this.nE, x / 820, y / 820, 6) + mb;
-    if (!cont) {
-      const nx = x / W * 2 - 1, ny = y / W * 2 - 1;
-      const d = Math.max(Math.abs(nx), Math.abs(ny)) * 0.65 + Math.sqrt(nx * nx + ny * ny) * 0.35;
-      if (d > 0.8) { const f = (d - 0.8) / 0.2; e -= f * f * 0.75; }
-    } else if (cont === 2) {
-      // Valtheria: o Grande Continente do sul, maior que Eldoria
-      const nx = (x - 4600) / 4400, ny = (y - 8250) / 3900;
-      const d = Math.sqrt(nx * nx + ny * ny) * 0.72 + Math.max(Math.abs(nx), Math.abs(ny)) * 0.28 + this.nW.noise(x / 520, y / 520) * 0.07;
-      if (d > 0.76) { const f = (d - 0.76) / 0.24; e -= f * f * 0.85; }
-      if (y < VALTHERIA_Y + 500) { const f = (VALTHERIA_Y + 500 - y) / 500; e -= f * f; }   // oceano largo ao norte
-    } else if (cont === 3) {
-      // Ilha de Nyxhal: pequena, recortada e cercada de mar profundo
-      const nx = (x - ISLE.x) / ISLE.rx, ny = (y - ISLE.y) / ISLE.ry;
-      const d = Math.sqrt(nx * nx + ny * ny) + this.nW.noise(x / 160, y / 160) * 0.16;
-      if (d > 0.6) { const f = (d - 0.6) / 0.4; e -= f * f * 0.9 + (d > 1 ? 1 : 0); }
-    } else {
-      // Kaeloria: continente alongado do outro lado do Mar das Brumas
-      const nx = (x - 5180) / 760, ny = (y - 2048) / 1780;
-      const d = Math.sqrt(nx * nx + ny * ny) * 0.75 + Math.max(Math.abs(nx), Math.abs(ny)) * 0.25 + this.nW.noise(x / 300, y / 300) * 0.08;
-      if (d > 0.72) { const f = (d - 0.72) / 0.28; e -= f * f * 0.85; }
-    }
-    const vdx = x - this.volcano.x, vdy = y - this.volcano.y, vd = Math.sqrt(vdx * vdx + vdy * vdy);
+    for (const f of F) e -= f;
     if (vd < 150) { const k = 1 - vd / 150; e += k * k * 0.6; }
     this._e = e;
     if (vd < 9) return T.LAVA;
@@ -93,12 +118,14 @@ class World {
     this._m = m;
     const b = reg.biome;
     if (e < 0.3) return T.DEEP;
-    if (e < 0.34) return b === 'snow' ? T.ICE : b === 'volcanic' ? T.LAVA : T.WATER;
-    if (e < 0.7 && b !== 'desert' && b !== 'volcanic') {
+    if (e < 0.34) return b === 'snow' ? T.ICE : (b === 'volcanic' || b === 'obsidian') ? T.LAVA : b === 'reef' ? T.LUMWATER : T.WATER;
+    if (e < 0.7 && b !== 'desert' && b !== 'volcanic' && b !== 'obsidian') {
       const rv = Math.abs(fbm(this.nR, x / 700, y / 700, 3));
-      if (rv < 0.011) return b === 'snow' ? T.ICE : T.WATER;
+      if (rv < 0.011) return b === 'snow' ? T.ICE : b === 'reef' ? T.LUMWATER : T.WATER;
     }
+    if (e > 0.73 && cont === 4) return b === 'crystal' || b === 'cosmic' ? T.CRYSTALROCK : b === 'livestone' || b === 'savanna' ? T.CANYON : b === 'obsidian' ? T.VWALL : (e > 0.84 ? T.SNOWROCK : T.ROCK);
     if (e > 0.73) return (e > 0.84 || (b === 'snow' && e > 0.77) || (b === 'mountain' && e > 0.8)) ? T.SNOWROCK : T.ROCK;
+    if (e < 0.365 && cont === 4) return b === 'obsidian' ? T.ASH : b === 'dusk' ? T.DUSKSAND : b === 'mist' ? T.MUD : b === 'cosmic' ? T.STARDUST : b === 'livestone' ? T.SANDSTONE : T.SAND;
     if (e < 0.365) return b === 'desert' ? T.DESERT : b === 'snow' ? T.SNOW : b === 'swamp' ? T.MUD : (b === 'volcanic' || b === 'dead') ? T.ASH : T.SAND;
     switch (b) {
       case 'plains': return m > 0.68 ? T.DGRASS : T.GRASS;
@@ -110,6 +137,17 @@ class World {
       case 'desert': if (m > 0.84) return T.WATER; if (m > 0.77) return T.GRASS; return T.DESERT;
       case 'swamp': if (m > 0.7) return T.WATER; if (m > 0.52) return T.SWAMP; return m < 0.3 ? T.DGRASS : T.MUD;
       case 'dead': return m > 0.56 ? T.ASH : T.DEADGRASS;
+      // ----- biomas inventados de Elyndra -----
+      case 'reef': if (m > 0.66) return T.LUMWATER; if (m > 0.42) return T.CORAL; return m > 0.3 ? T.SAND : T.DGRASS;
+      case 'windland': if (m > 0.78) return T.GRASS; return m < 0.18 ? T.TUNDRA : T.WINDGRASS;
+      case 'crystal': { const lv = this.nL.noise(x / 50, y / 50); return (m > 0.36 || lv > 0.4) ? T.CRYSTALF : T.TUNDRA; }
+      case 'liveforest': { const g = this.nD.noise(x / 90, y / 90); if (g > 0.45) return T.ELFGRASS; return m < 0.28 ? T.DGRASS : T.LIVEMOSS; }
+      case 'obsidian': { const lv = this.nL.noise(x / 40, y / 40); if (lv > 0.6 && e > 0.42) return T.LAVA; return m > 0.62 ? T.ASH : T.OBSIDIAN; }
+      case 'dusk': return m > 0.76 ? T.DEADGRASS : T.DUSKSAND;
+      case 'savanna': if (m > 0.86) return T.WATER; return m < 0.2 ? T.DIRT : T.SAVANNA;
+      case 'cosmic': { const lv = this.nL.noise(x / 70, y / 70); return lv > 0.6 ? T.CRYSTALF : T.STARDUST; }
+      case 'mist': if (m > 0.74) return T.SWAMP; return m < 0.24 ? T.MUD : T.MISTHEATH;
+      case 'livestone': { const cn = Math.abs(this.nR.noise(x / 150, y / 150)); if (cn < 0.05 && e > 0.45 && e < 0.7) return T.CANYON; return m > 0.72 ? T.SANDSTONE : T.LIVESTONE; }
     }
     return T.GRASS;
   }
@@ -136,7 +174,7 @@ class World {
       }
       case T.DGRASS: {
         const tp = treeP(0.18, 0.3);
-        if (h < tp) { const k = hash2(x, y, 9); return reg.biome === 'swamp' ? O.WILLOW : k < 0.25 ? O.PINE : (reg.biome === 'hills' && k < 0.45) ? O.AUTUMN : O.OAK; }
+        if (h < tp) { const k = hash2(x, y, 9); if (reg.biome === 'liveforest') return O.LIVETREE; if (reg.biome === 'reef') return O.PALM; return reg.biome === 'swamp' ? O.WILLOW : k < 0.25 ? O.PINE : (reg.biome === 'hills' && k < 0.45) ? O.AUTUMN : O.OAK; }
         if (h < tp + 0.03) return O.BUSH;
         if (h < tp + 0.07) return O.TALLGRASS;
         if (h < tp + 0.074) return O.HERB_RED;
@@ -192,6 +230,18 @@ class World {
         if (h < 0.083) return O.BONES;
         return 0;
       }
+      // ----- Elyndra -----
+      case T.CORAL: { if (h < 0.05) return O.CORALTREE; if (h < 0.065) return O.CRYSTAL; if (h < 0.1) return O.ROCK; if (h < 0.104) return O.HERB_BLUE; return 0; }
+      case T.LUMWATER: { if (h < 0.04) return O.LILY; return 0; }
+      case T.WINDGRASS: { if (h < 0.009) return O.WINDSPIRE; if (h < 0.022) return O.BUSH; if (h < 0.07) return O.TALLGRASS; if (h < 0.1) return O.FLOWERS; if (h < 0.102) return O.HERB_BLUE; return 0; }
+      case T.CRYSTALF: { if (h < 0.01) return O.CRYSTALSPIRE; if (h < 0.028) return O.CRYSTAL; if (h < 0.05) return O.ROCK; return 0; }
+      case T.LIVEMOSS: { const tp = treeP(0.08, 0.2); if (h < tp) return O.LIVETREE; if (h < tp + 0.008) return O.BIGSHROOM; if (h < tp + 0.05) return O.FLOWERS; if (h < tp + 0.09) return O.TALLGRASS; if (h < tp + 0.095) return O.HERB_RED; if (h < tp + 0.098) return O.HERB_SHROOM; return 0; }
+      case T.OBSIDIAN: { if (h < 0.018) return O.OBSIDSPIKE; if (h < 0.04) return O.ROCK; if (h < 0.044) return O.HERB_FIRE; if (h < 0.046) return O.BONES; return 0; }
+      case T.DUSKSAND: { if (h < 0.01) return O.BROKEN_PILLAR; if (h < 0.026) return O.DUSKBLOOM; if (h < 0.034) return O.DEADTREE; if (h < 0.045) return O.ROCK; return 0; }
+      case T.SAVANNA: { if (h < 0.005) return O.BAOBAB; if (h < 0.025) return O.BUSH; if (h < 0.12) return O.TALLGRASS; if (h < 0.123) return O.BONES; return 0; }
+      case T.STARDUST: { if (h < 0.01) return O.STARSHARD; if (h < 0.022) return O.CRYSTAL; if (h < 0.04) return O.ROCK; return 0; }
+      case T.MISTHEATH: { if (h < 0.025) return O.DEADTREE; if (h < 0.13) return O.MISTREED; if (h < 0.136) return O.HERB_SHROOM; if (h < 0.14) return O.GRAVE; return 0; }
+      case T.LIVESTONE: { if (h < 0.005) return O.RUNEMONO; if (h < 0.018) return O.BOULDER; if (h < 0.028) return O.SANDROCK; if (h < 0.032) return O.CACTUS; return 0; }
       case T.DEADGRASS: {
         if (h < treeP(0.02, 0.08)) return O.DEADTREE;
         if (h < 0.11) return O.BONES;
@@ -205,9 +255,9 @@ class World {
   }
 
   // ---------- Chunks ----------
-  ckey(cx, cy) { return cy * 512 + cx; }
+  ckey(cx, cy) { return cy * 1024 + cx; }
   getChunk(cx, cy) {
-    const k = cy * 512 + cx;
+    const k = cy * 1024 + cx;
     let ch = this.chunks.get(k);
     if (ch) { ch.t = this.tick; return ch; }
     ch = this.genChunk(cx, cy);
@@ -228,7 +278,7 @@ class World {
       tiles[i] = this.baseTile(x0 + lx, y0 + ly);
       reg[i] = this._r;
     }
-    const k = cy * 512 + cx;
+    const k = cy * 1024 + cx;
     const roads = this.roadTiles.get(k);
     const isRoad = new Uint8Array(1024);
     if (roads) for (const i of roads) {
@@ -245,7 +295,7 @@ class World {
       if (o && OSOLID[o] && ((lx > 0 && isRoad[i - 1]) || (lx < 31 && isRoad[i + 1]) || (ly > 0 && isRoad[i - 32]) || (ly < 31 && isRoad[i + 32]))) o = 0;
       // minérios perto de montanhas
       if (!o && !TSOLID[t] && !TWATER[t] && lx > 0 && lx < 31 && ly > 0 && ly < 31) {
-        const nr = (tt) => tt === T.ROCK || tt === T.SNOWROCK;
+        const nr = (tt) => tt === T.ROCK || tt === T.SNOWROCK || tt === T.CRYSTALROCK || tt === T.CANYON || tt === T.VWALL;
         if (nr(tiles[i - 1]) || nr(tiles[i + 1]) || nr(tiles[i - 32]) || nr(tiles[i + 32])) {
           const h = hash2(x0 + lx, y0 + ly, this.seed + 555);
           if (h < 0.045) { const list = ORE_BY_REGION[this.regions[reg[i]].id]; o = list[Math.floor(hash2(x0 + lx, y0 + ly, 77) * list.length)]; }
@@ -315,6 +365,7 @@ class World {
       const tx = x0 + (i & 31), ty = y0 + (i >> 5), o = ch.objs[i];
       if (o && OBJ_DEFS[o].light) objs.push([tx, ty, o]);
       if (ch.tiles[i] === T.LAVA && (tx + ty) % 2 === 0) lava.push([tx, ty]);
+      else if (TGLOW[ch.tiles[i]] && hash2(tx, ty, 3) < 0.04) lava.push([tx, ty]);
     }
     return (ch.lightList = { objs, lava });
   }
@@ -509,6 +560,7 @@ class World {
     this.generateKaeloria();
     this.generateValtheria();
     this.generateIsland();
+    this.generateElyndra();
     // placas
     for (const s of this.settlements) {
       for (const g of s.gates) {
@@ -693,6 +745,92 @@ class World {
       this.extendGate(ga, e.w); this.extendGate(gb, e.w);
     }
     this.roadEdges = this.roadEdges.concat(edges);
+  }
+  // ---------- Elyndra: o continente do leste ----------
+  // Dez reinos de povos que só existem aqui, cada um no seu bioma inventado. Nenhum deles
+  // tinha contato com os outros continentes: os portos da costa oeste são novos.
+  generateElyndra() {
+    const rng = new RNG(this.seed * 97 + 41);
+    const regs = this.regions.filter(r => r.cont === 4);
+    const made = [];
+    let sid = 0;
+    for (const reg of regs) {
+      const names = SETTLEMENT_NAMES[reg.id], pool = rng.shuffle(names.list.slice());
+      const types = ['capital'];
+      for (let i = 0; i < reg.towns; i++) types.push('town');
+      for (let i = 0; i < reg.villages; i++) types.push('village');
+      for (const type of types) {
+        const size = type === 'capital' ? 50 : type === 'town' ? 34 : 24, half = size / 2 + 4;
+        const ok = (x, y) => {
+          if (contAt(x, y) !== 4 || this.regionAt(x, y) !== reg.index) return false;
+          const pts = [[0, 0], [-half, -half], [half, -half], [-half, half], [half, half], [0, -half], [0, half], [-half, 0], [half, 0]];
+          let bad = 0;
+          for (const [dx, dy] of pts) { const t = this.baseTile(x + dx, y + dy); if (t === T.DEEP || t === T.LAVA) return false; if (TSOLID[t] || TWATER[t]) bad++; }
+          return bad <= 2 && this.farFrom(x, y, made, type === 'village' ? 85 : 130);
+        };
+        const pos = this.findLand(reg.cx, reg.cy, rng, type === 'capital' ? 320 : type === 'town' ? 1200 : 1450, ok) || (type === 'capital' ? this.findLand(reg.cx, reg.cy, rng, 900, ok) : null);
+        if (!pos) continue;
+        const st = { id: 'e' + (sid++), name: type === 'capital' ? names.cap : (pool.pop() || ('Vila ' + sid)), type, region: reg, x: pos.x, y: pos.y, cx: pos.x, cy: pos.y };
+        made.push(st); this.settlements.push(st);
+      }
+    }
+    for (const st of made) this.layoutSettlement(st);
+    let uid = this.dungeons.reduce((m, d) => Math.max(m, d.uid), 0) + 1;
+    const dl = [];
+    const campName = { voralis: 'Acampamento de Caçadores de Pérolas', zephyra: 'Ninho de Saqueadores', thaldrim: 'Garimpo Clandestino', silvania: 'Acampamento de Lenhadores Ilegais', krazul: 'Acampamento de Exilados', nimbor: 'Círculo de Cultistas', vaelith: 'Acampamento de Caçadores', xarqin: 'Acampamento de Ladrões de Estrelas', brumaria: 'Acampamento Perdido na Névoa', terralux: 'Acampamento de Saqueadores de Runas' };
+    for (const R of regs) {
+      const types = REGION_DUNGEONS[R.id];
+      for (let i = 0; i < R.dungeons; i++) {
+        const pos = this.findLand(R.cx, R.cy, rng, 1450, (x, y) => contAt(x, y) === 4 && this.regionAt(x, y) === R.index && this.isLand(x, y) && this.isLand(x, y + 1) && this._e < 0.69 && this.farFrom(x, y, made, 36) && this.farFrom(x, y, dl, 34));
+        if (!pos) continue;
+        const type = rng.pick(types), dt = DUNGEON_TYPES[type];
+        const d = { id: 'ed' + uid, uid: uid++, name: dt.name + ' ' + rng.pick(DUNGEON_NOUNS), type, boss: dt.boss, lvl: rng.int(R.lvl[0], R.lvl[1]), size: rng.int(48, 64), x: pos.x, y: pos.y, region: R };
+        dl.push(d); this.stampDungeon(d); this.dungeons.push(d); this.dungeonById[d.id] = d;
+      }
+      for (let i = 0; i < 3; i++) {
+        const pos = this.findLand(R.cx, R.cy, rng, 1100, (x, y) => contAt(x, y) === 4 && this.regionAt(x, y) === R.index && this.isLand(x, y) && this._e < 0.66 && this.farFrom(x, y, made, 60) && this.farFrom(x, y, dl, 25) && this.farFrom(x, y, this.pois, 40));
+        if (!pos) continue;
+        const pc = { id: 'ecamp' + R.id + i, kind: 'camp', x: pos.x, y: pos.y, region: R, lvl: rng.int(R.lvl[0], R.lvl[1]), name: campName[R.id] || 'Acampamento Bandido' };
+        this.stampCamp(pc, rng); this.pois.push(pc);
+      }
+      for (let i = 0; i < 2; i++) {
+        const pos = this.findLand(R.cx, R.cy, rng, 900, (x, y) => contAt(x, y) === 4 && this.regionAt(x, y) === R.index && this.isLand(x, y) && this.isLand(x, y + 1) && this.farFrom(x, y, made, 40) && this.farFrom(x, y, this.pois, 40) && this.farFrom(x, y, dl, 20));
+        if (pos) { const pc = { id: 'eshrine' + R.id + i, kind: 'shrine', x: pos.x, y: pos.y, region: R, name: 'Santuário' }; this.stampSmall(pc, O.SHRINE, rng); this.pois.push(pc); }
+      }
+    }
+    // o Pilar de Luz: um feixe que sobe do Vale Cósmico até acima das nuvens (o caminho para Seraphel)
+    const RX = this.regions.find(r => r.id === 'xarqin');
+    if (RX) {
+      const pos = this.findLand(RX.cx + 260, RX.cy - 200, rng, 700, (x, y) => contAt(x, y) === 4 && this.regionAt(x, y) === RX.index && this.isLand(x, y) && this.isLand(x, y + 2) && this.isLand(x - 3, y) && this.isLand(x + 3, y) && this._e < 0.62 && this.farFrom(x, y, made, 70) && this.farFrom(x, y, dl, 30) && this.farFrom(x, y, this.pois, 40));
+      if (pos) {
+        const w = 9, h = 9, tiles = new Uint8Array(w * h).fill(255), objs = new Uint8Array(w * h);
+        for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const dx = xx - 4, dy = yy - 4; if (dx * dx + dy * dy <= 13) tiles[yy * w + xx] = T.SKYMARBLE; }
+        objs[4 * w + 4] = O.SKYPILLAR;
+        this.addStamp({ x0: pos.x - 4, y0: pos.y - 4, w, h, tiles, objs });
+        this.skyPillar = { x: pos.x, y: pos.y };
+        this.pois.push({ id: 'skypillar', kind: 'pillar', x: pos.x, y: pos.y, region: RX, name: 'Pilar de Luz' });
+      }
+    }
+    // portos novos na costa oeste, de frente para o Mar do Amanhecer
+    const before = this.ports.length;
+    [[2600, 'Porto do Amanhecer'], [5000, 'Porto das Lagoas'], [7400, 'Porto da Bruma'], [9600, 'Porto dos Cânions']].forEach(([y0, name], n) => this.placePortH(4, y0, name, n, rng));
+    const nv = this.ports.slice(before);
+    this.buildRoads(rng, made.concat(nv), false);
+  }
+  // porto em costa oeste/leste: varre na horizontal a partir do mar (dir<0: o mar fica a oeste)
+  placePortH(cont, y0, name, n, rng) {
+    const dir = -1, seaAt = (x, y) => { const t = this.baseTile(x, y); return TWATER[t] || t === T.DEEP; };
+    for (let dy = 0; dy < 900; dy += 10) for (const yy of [y0 + dy, y0 - dy]) {
+      let x = ELYNDRA.x0 + 60;
+      while (x < ELYNDRA.x0 + 3200) { if (this.isLand(x, yy)) break; x++; }
+      if (x >= ELYNDRA.x0 + 3200 || contAt(x, yy) !== cont) continue;
+      let land = 0, sea = 0;
+      for (let k = 1; k <= 12; k++) { if (this.isLand(x - dir * k, yy) && this.isLand(x - dir * k, yy - 3) && this.isLand(x - dir * k, yy + 3)) land++; if (seaAt(x + dir * k, yy) && seaAt(x + dir * k, yy - 3) && seaAt(x + dir * k, yy + 4)) sea++; }
+      const R = this.regions[this.regionAt(x, yy)];
+      if (land < 11 || sea < 11 || R.hostile || !this.farFrom(x, yy, this.settlements, 40) || !this.farFrom(x, yy, this.dungeons, 20)) continue;
+      this.layoutPort({ x, y: yy, R }, cont, dir, name, n, rng);
+      return;
+    }
   }
   // porto em costa norte/sul: varre na vertical a partir do mar
   placePortV(cont, x0, name, n, rng, south) {
@@ -1294,10 +1432,12 @@ class World {
     this.mapRow = 0; this.mapDone = false;
     this.mapStep = step;
   }
-  stepMapImage(rows = 8) {
+  // rows: limite de linhas; budget (ms): para antes se o quadro já gastou tempo demais
+  stepMapImage(rows = 8, budget = 0) {
     if (this.mapDone || !this.mapImg) return;
-    const R = MAP_H, step = this.mapStep, d = this.mapImg.data;
+    const R = MAP_H, step = this.mapStep, d = this.mapImg.data, t0 = budget ? performance.now() : 0;
     for (let k = 0; k < rows && this.mapRow < R; k++, this.mapRow++) {
+      if (budget && k && performance.now() - t0 > budget) break;
       const y = this.mapRow;
       for (let x = 0; x < MAP_W; x++) {
         const t = this.baseTile(Math.floor(x * step + step / 2), Math.floor(y * step + step / 2));
@@ -1313,7 +1453,7 @@ class World {
       // estradas
       this.mapCtx.fillStyle = 'rgba(170,130,80,0.9)';
       for (const [k, set] of this.roadTiles) {
-        const cx = k % 512, cy = Math.floor(k / 512);
+        const cx = k % 1024, cy = Math.floor(k / 1024);
         for (const i of set) { if ((i & 3) || ((i >> 5) & 3)) continue; this.mapCtx.fillRect(Math.floor((cx * 32 + (i & 31)) / step), Math.floor((cy * 32 + (i >> 5)) / step), 1, 1); }
       }
       this.mapDone = true;

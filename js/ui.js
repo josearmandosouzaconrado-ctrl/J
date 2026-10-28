@@ -263,6 +263,7 @@ const UI = {
     if (a.shipCrew) return Ship.talk(a);
     if (a.workCust) return Work.serve(a);
     if (a.race === 'nyxar') return Nyxar.talk(a);
+    if (a.angel) return Ceu.talk(a);
     if (a.guard) {
       const s = a.guardOf;
       const lines = GUARD_LINES.concat(s ? RUMORS[s.region.id] : []);
@@ -801,7 +802,7 @@ const UI = {
     ctx.drawImage(this.fog, ox, oy, MAP_W * z, MAP_H * z);
     const toS = (tx, ty) => [ox + tx / 16 * z, oy + ty / 16 * z];
     ctx.font = 'bold 22px VT323, monospace'; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,240,200,0.4)';
-    { let [x, y] = toS(2048, 120); ctx.fillText('ELDORIA', x, y); [x, y] = toS(5180, 120); ctx.fillText('KAELORIA', x, y); [x, y] = toS(4250, 2048); ctx.font = 'italic 16px VT323, monospace'; ctx.fillStyle = 'rgba(200,230,255,0.45)'; ctx.fillText('Mar das Brumas', x, y); [x, y] = toS(3000, 4250); ctx.fillText('Oceano do Sul', x, y); ctx.font = 'bold 22px VT323, monospace'; ctx.fillStyle = 'rgba(255,240,200,0.4)'; [x, y] = toS(3080, 4700); ctx.fillText('VALTHERIA', x, y); ctx.fillStyle = 'rgba(200,160,255,0.55)'; [x, y] = toS(ISLE.x, ISLE.y - ISLE.ry * 1.5); ctx.fillText('NYXHAL', x, y); }
+    { let [x, y] = toS(2048, 120); ctx.fillText('ELDORIA', x, y); [x, y] = toS(5180, 120); ctx.fillText('KAELORIA', x, y); [x, y] = toS(4250, 2048); ctx.font = 'italic 16px VT323, monospace'; ctx.fillStyle = 'rgba(200,230,255,0.45)'; ctx.fillText('Mar das Brumas', x, y); [x, y] = toS(3000, 4250); ctx.fillText('Oceano do Sul', x, y); ctx.font = 'bold 22px VT323, monospace'; ctx.fillStyle = 'rgba(255,240,200,0.4)'; [x, y] = toS(3080, 4700); ctx.fillText('VALTHERIA', x, y); ctx.fillStyle = 'rgba(200,160,255,0.55)'; [x, y] = toS(ISLE.x, ISLE.y - ISLE.ry * 1.5); ctx.fillText('NYXHAL', x, y); ctx.font = 'bold 26px VT323, monospace'; ctx.fillStyle = 'rgba(255,240,200,0.45)'; [x, y] = toS(ELYNDRA.x, 300); ctx.fillText('ELYNDRA', x, y); ctx.font = 'italic 16px VT323, monospace'; ctx.fillStyle = 'rgba(200,230,255,0.45)'; [x, y] = toS(9300, 6100); ctx.fillText('Mar do Amanhecer', x, y); }
     ctx.font = 'bold 14px VT323, monospace'; ctx.textAlign = 'center';
     for (const r of W.regions) { const [x, y] = toS(r.cx, r.cy); ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillText(r.name.toUpperCase(), x + 1, y - 30 + 1); ctx.fillStyle = 'rgba(255,240,200,0.75)'; ctx.fillText(r.name.toUpperCase(), x, y - 30); }
     ctx.font = '15px VT323, monospace';
@@ -821,7 +822,7 @@ const UI = {
         if (z > 5 || this.mapSel === m) { ctx.fillStyle = '#000'; ctx.fillText(m.name, x + 1, y - 6); ctx.fillStyle = '#ffc0c0'; ctx.fillText(m.name, x, y - 7); }
       } else {
         ctx.fillStyle = '#1a1010'; ctx.fillRect(x - 3, y - 3, 7, 7);
-        ctx.fillStyle = m.p.kind === 'destiny' ? '#ff80ff' : m.p.kind === 'runestone' ? '#60e0ff' : m.p.kind === 'shrine' ? '#fff0a0' : (Game.campCleared(m.p) ? '#808080' : '#ff9030'); ctx.fillRect(x - 2, y - 2, 5, 5);
+        ctx.fillStyle = m.p.kind === 'pillar' ? '#ffffff' : m.p.kind === 'destiny' ? '#ff80ff' : m.p.kind === 'runestone' ? '#60e0ff' : m.p.kind === 'shrine' ? '#fff0a0' : (Game.campCleared(m.p) ? '#808080' : '#ff9030'); ctx.fillRect(x - 2, y - 2, 5, 5);
         if (z > 5 || this.mapSel === m) { ctx.fillStyle = '#000'; ctx.fillText(m.name, x + 1, y - 5); ctx.fillStyle = '#e0f0ff'; ctx.fillText(m.name, x, y - 6); }
       }
     }

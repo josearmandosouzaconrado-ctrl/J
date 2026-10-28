@@ -279,7 +279,7 @@ const Game = {
     Input.update();
     if (this.state === 'title') { this.renderTitle(dt); return; }
     if (!this.started) return;
-    if (this.world && !this.world.mapDone) this.world.stepMapImage(10);
+    if (this.world && !this.world.mapDone) this.world.stepMapImage(10, 4);
     if (!this.paused && !this.player.dead) {
       if (this.hitstop > 0) this.hitstop -= dt;
       else this.update(dt);
@@ -320,7 +320,7 @@ const Game = {
     }
     Work.update(dt);
     Adm.update();
-    Sombra.tick(dt);
+    Sombra.tick(dt); Ceu.tick(dt);
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();
@@ -496,7 +496,7 @@ const Game = {
             const look = Object.assign({}, ENEMIES.guarda.look, { body: shade(col, -0.25), helm: '#a0a8b0', shield: col, skin: rng.pick(RACES[CULTURES[s.region.culture].race].skins) });
             const cr = RACES[CULTURES[s.region.culture].race];
             if (cr.ears) look.ears = cr.ears; if (cr.tusks) look.tusks = true; if (cr.short) look.short = cr.short; if (cr.snout) look.snout = true; if (cr.tail) { look.tail = true; look.tailC = look.skin; } if (cr.catears) look.catears = true; if (cr.bulky) look.bulky = true;
-            if (cr.sheet) Object.keys(look).forEach(k => delete look[k]), Object.assign(look, Nyxar.look('m', rng, 'guard'));  // guardas Nyxar
+            if (cr.sheet) Object.keys(look).forEach(k => delete look[k]), Object.assign(look, sheetLook(CULTURES[s.region.culture].race, 'm', rng, 'guard'));  // guardas desenhados a partir de arte
             const own = War.ownerOf(s);
             if (own && War.K[own] && (own !== s.region.id || KSTYLE[own].musket)) { const lk = War.look(own, own === s.region.id ? rng.pick(['soldado', 'mosqueteiro']) : 'soldado', rng); a = new Monster('guarda', spot.x * 16 + 8, spot.y * 16 + 12, Math.max(10, P.level + 5), { look: lk, name: own === s.region.id ? 'Guarda de ' + s.name : 'Ocupante de ' + War.K[own].short }); }
             else a = new Monster('guarda', spot.x * 16 + 8, spot.y * 16 + 12, Math.max(10, P.level + 5), { look, name: 'Guarda de ' + s.name });
@@ -674,7 +674,7 @@ const Game = {
     for (const sp of L.spots) {
       let a;
       if (sp.role === 'guard') {
-        const look = RACES[CULTURES[s.region.culture].race].sheet ? Nyxar.look('m', rng, 'guard') : Object.assign({}, ENEMIES.guarda.look, { body: shade(s.region.color, -0.25), shield: s.region.color });
+        const look = RACES[CULTURES[s.region.culture].race].sheet ? sheetLook(CULTURES[s.region.culture].race, 'm', rng, 'guard') : Object.assign({}, ENEMIES.guarda.look, { body: shade(s.region.color, -0.25), shield: s.region.color });
         a = new Monster('guarda', sp.x * 16 + 8, sp.y * 16 + 12, Math.max(10, P.level + 5), { look, name: 'Guarda Real' });
         a.guardOf = s; const own = War.ownerOf(s); if (own) a.faction = own;
       } else {
@@ -793,6 +793,7 @@ const Game = {
       else if (b === 'snow' || b === 'mountain') w.kind = r < 0.55 ? 'snow' : null;
       else if (b === 'desert') w.kind = r < 0.2 ? 'sand' : null;
       else if (b === 'volcanic' || b === 'dead') w.kind = r < 0.6 ? 'ash' : null;
+      else if (ELYNDRA_BIOMES.has(b)) w.kind = Elyndra.weatherKind(b, r);
       else w.kind = r < 0.2 ? 'rain' : r < 0.26 ? 'storm' : null;
     }
   },
@@ -931,7 +932,7 @@ const Game = {
       const o = L.objAt(tx, ty);
       const od = OBJ_DEFS[o];
       if (!o || !od.interact) continue;
-      const labels = { sleep: 'Dormir', destiny: 'Tocar', wardrobe: 'Baú', crib: 'Ver bebê', chest: 'Abrir', harvest: o >= O.ORE_FERRO && o <= O.ORE_EBANO ? 'Minerar' : 'Coletar', cook: 'Cozinhar', forge: 'Forjar', alchemy: 'Alquimia', runestone: 'Ler', shrine: 'Orar', dungeon: 'Entrar', exit: 'Sair', sign: 'Ler', minecart: 'Despejar', hatch: L.isShip && L.floor ? 'Subir' : 'Descer', helm: 'Timão', shipbed: 'Dormir', maptable: 'Ver rota' };
+      const labels = { skypillar: L.isCeu ? 'Descer' : 'Subir', sleep: 'Dormir', destiny: 'Tocar', wardrobe: 'Baú', crib: 'Ver bebê', chest: 'Abrir', harvest: o >= O.ORE_FERRO && o <= O.ORE_EBANO ? 'Minerar' : 'Coletar', cook: 'Cozinhar', forge: 'Forjar', alchemy: 'Alquimia', runestone: 'Ler', shrine: 'Orar', dungeon: 'Entrar', exit: 'Sair', sign: 'Ler', minecart: 'Despejar', hatch: L.isShip && L.floor ? 'Subir' : 'Descer', helm: 'Timão', shipbed: 'Dormir', maptable: 'Ver rota' };
       let name = od.name;
       if (od.interact === 'dungeon' && L.isWorld) { const dd = this.world.entrances.get(tkey(tx, ty)); if (dd) name = `${dd.name} (Nv ${dd.lvl})`; }
       bd = d; best = { kind: od.interact, tx, ty, o, label: labels[od.interact] || 'Usar', name };
@@ -1027,6 +1028,7 @@ const Game = {
       case 'dungeon': { const d = this.world.entrances.get(tkey(it.tx, it.ty)); if (d) UI.confirm(`Entrar em <b>${esc(d.name)}</b>?<br><span class="dim">Nível recomendado: ${d.lvl}${this.mods.cleared[d.id] ? ' • Conquistada' : ''}</span>`, () => this.enterDungeon(d)); break; }
       case 'exit': if (this.level.isNyxCave) Nyxar.exitAt(it.tx, it.ty); this.exitDungeon(); break;
       case 'nyxcave': Nyxar.enter(it.c); break;
+      case 'skypillar': if (L.isCeu) Ceu.leave(); else Ceu.enter(it.tx, it.ty); break;
       case 'hatch': if (this.level.isShip) Ship.switchFloor(); break;
       case 'work': Work.interact(it); break;
       case 'minecart': Work.unload(); break;
@@ -1244,6 +1246,7 @@ const Game = {
     for (const k of this.pickups) D.push({ y: k.y, pk: k });
     this.drawMountsCart(D); this.drawCarcasses(D);
     if (L.isWorld) { War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); Nyxar.drawables(D, camX, camY, vw, vh); }
+    Ceu.drawables(D, camX, camY, vw, vh);
     D.sort((a, b) => a.y - b.y);
     for (const d of D) {
       if (d.a) d.a.draw(ctx, camX, camY);
@@ -1397,7 +1400,7 @@ const Game = {
       ctx.fillStyle = 'rgba(220,180,110,0.22)'; ctx.fillRect(0, 0, vw, vh);
       ctx.fillStyle = 'rgba(240,210,150,0.6)';
       for (let i = 0; i < 80; i++) { const x = (hash2(i, 1, 5) * vw + t * 160) % vw, y = (hash2(i, 2, 5) * vh + Math.sin(t + i) * 4) % vh; ctx.fillRect(Math.round(x), Math.round(y), 3, 1); }
-    }
+    } else Elyndra.drawWeather(ctx, w.kind, vw, vh, t);
   },
   drawLighting(ctx, camX, camY) {
     const dark = this.darkness();

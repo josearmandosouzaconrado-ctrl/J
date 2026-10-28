@@ -3,3 +3,4 @@ node_modules/
 .DS_Store
 # chave privada de assinatura do APK (não versionar)
 android/signing/key.pem
+__pycache__/

@@ -24,7 +24,7 @@ const Academy = {
       list.push(o);
     };
     for (const R of REGIONS) {
-      if (!R.ruler) continue;
+      if (!R.ruler || R.isolated) continue;   // os reinos de Elyndra nunca mandaram herdeiros
       const race = R.ruler.race || CULTURES[R.culture].race, sex = rng.chance(0.5) ? 'm' : 'f';
       const first = rng.pick(NAMES[race][sex]);
       const t = R.id === 'colinas' ? (sex === 'f' ? 'Herdeira' : 'Herdeiro') : R.id === 'gorthak' ? (sex === 'f' ? 'Filha do Chefe' : 'Filho do Chefe') : (sex === 'f' ? 'Princesa' : 'Príncipe');

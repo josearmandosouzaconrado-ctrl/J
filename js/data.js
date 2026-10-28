@@ -7,7 +7,10 @@ const T = {
   ROCK: 10, SNOWROCK: 11, LAVA: 12, ASH: 13, ROAD: 14, COBBLE: 15, WOOD: 16, WALL: 17, BRIDGE: 18, TUNDRA: 19,
   FARM: 20, DFLOOR: 21, DWALL: 22, CFLOOR: 23, CWALL: 24, DEADGRASS: 25, BADLAND: 26, ELFGRASS: 27, MUD: 28, SANDSTONE: 29,
   IFLOOR: 30, IWALL: 31, TFLOOR: 32, TWALL: 33, VFLOOR: 34, VWALL: 35, RFLOOR: 36, RWALL: 37, MFLOOR: 38, MWALL: 39,
-  CARPET: 40, PALISADE: 41, DCOBBLE: 42, HWALL: 43, LOGWALL: 44, HFLOOR: 45
+  CARPET: 40, PALISADE: 41, DCOBBLE: 42, HWALL: 43, LOGWALL: 44, HFLOOR: 45,
+  // Elyndra (terrenos que não existem em nenhum outro lugar) e a ilha dos anjos
+  CORAL: 46, LUMWATER: 47, WINDGRASS: 48, CRYSTALF: 49, LIVEMOSS: 50, OBSIDIAN: 51, DUSKSAND: 52, SAVANNA: 53, STARDUST: 54,
+  MISTHEATH: 55, LIVESTONE: 56, CRYSTALROCK: 57, CANYON: 58, CLOUD: 59, SKYMARBLE: 60, SKYVOID: 61, GOLDWALL: 62
 };
 // solid: bloqueia; slow: multiplicador de velocidade; hurt: dano/s; c: cor do mapa; wall: renderizado como parede 3D
 const TILE_DEFS = [];
@@ -58,6 +61,24 @@ tdef(T.DCOBBLE, { name: 'Calçada escura', slow: 1.15, c: '#5a5660' });
 tdef(T.HWALL, { name: 'Parede', solid: true, c: '#c8b898', wall: true });
 tdef(T.LOGWALL, { name: 'Parede de troncos', solid: true, c: '#6a4a2a', wall: true });
 tdef(T.HFLOOR, { name: 'Assoalho', c: '#8a6038' });
+// glow: brilha no escuro (ilumina a noite)
+tdef(T.CORAL, { name: 'Recife luminoso', c: '#2a8a96', glow: true });
+tdef(T.LUMWATER, { name: 'Lagoa bioluminescente', slow: 0.55, c: '#18b8b8', water: true, glow: true });
+tdef(T.WINDGRASS, { name: 'Relva dos ventos', slow: 1.08, c: '#a8c8a2' });
+tdef(T.CRYSTALF, { name: 'Campo de cristal', c: '#9484d0', glow: true });
+tdef(T.LIVEMOSS, { name: 'Musgo vivo', c: '#3c9c4a' });
+tdef(T.OBSIDIAN, { name: 'Obsidiana', slow: 1.1, c: '#2c2230' });
+tdef(T.DUSKSAND, { name: 'Areia do crepúsculo', c: '#6c5a8c' });
+tdef(T.SAVANNA, { name: 'Capim selvagem', c: '#c8a650' });
+tdef(T.STARDUST, { name: 'Poeira estelar', c: '#2c2c62', glow: true });
+tdef(T.MISTHEATH, { name: 'Charneca da bruma', slow: 0.92, c: '#6a8898' });
+tdef(T.LIVESTONE, { name: 'Pedra viva', c: '#b08a5a' });
+tdef(T.CRYSTALROCK, { name: 'Montanha de cristal', solid: true, c: '#8a70d0', wall: true });
+tdef(T.CANYON, { name: 'Paredão de pedra viva', solid: true, c: '#8a6038', wall: true });
+tdef(T.CLOUD, { name: 'Nuvem', slow: 0.9, c: '#eef2fa' });
+tdef(T.SKYMARBLE, { name: 'Mármore celeste', slow: 1.1, c: '#e8e2d0' });
+tdef(T.SKYVOID, { name: 'Céu aberto', solid: true, c: '#8ab8f0' });
+tdef(T.GOLDWALL, { name: 'Muralha celeste', solid: true, c: '#d8c890', wall: true });
 
 // ---------- Objetos ----------
 const O = {
@@ -73,7 +94,8 @@ const O = {
   HUT_TOTEM: 71, ICEROCK: 72, SANDROCK: 73, ALTAR: 74, PORTAL: 75,
   COUNTER: 76, SHELF: 77, BOOKSHELF: 78, CHAIR: 79, FIREPLACE: 80, THRONE: 81, PLANT: 82, WARDROBE: 83, CRIB: 84, WEAPONRACK: 85,
   DOOR_IN: 86, CANDLE: 87, BENCH: 88, POTSHELF: 89, KEG: 90, CAULDRON: 91, DESTINY: 92, ANVIL: 93, WINDOW: 94, PAINTING: 95, QUESTBOARD: 96, BEDSMALL: 97, DESTINY2: 98, DESTINY3: 99, STUMP: 100, WORKBENCH: 101, PLAYERBED: 102, DUMMY: 103, LECTERN: 104, BLACKBOARD: 105,
-  GRAMOPHONE: 127, PIANO: 128, SEWING: 129, GASLAMP: 130, MACHINE: 131, PIPES: 132, BOILER: 133, GUNRACK: 134, HATCH: 135, HELM: 136, CANNON: 137, MAST: 138, SHIPBED: 139, HAMMOCK: 140, LIFEBOAT: 141, ROPE: 142, MAPTABLE: 143, LANTERN: 144, MINECART: 145, MINEBEAM: 146, STOVE: 106, SACKS: 107, POTS: 108, TROPHY: 109, PELT: 110, FISHNET: 111, DESK: 112, LOOM: 113, OVEN: 114, INSTRUMENT: 115, ARMORSTAND: 116, CLOCK: 117, ARMCHAIR: 118, TOOLRACK: 119, DRESSER: 120, TOYBOX: 121, RUG: 122, SHELFWALL: 123, HERBS: 124, BATHTUB: 125, SHIELDWALL: 126
+  GRAMOPHONE: 127, PIANO: 128, SEWING: 129, GASLAMP: 130, MACHINE: 131, PIPES: 132, BOILER: 133, GUNRACK: 134, HATCH: 135, HELM: 136, CANNON: 137, MAST: 138, SHIPBED: 139, HAMMOCK: 140, LIFEBOAT: 141, ROPE: 142, MAPTABLE: 143, LANTERN: 144, MINECART: 145, MINEBEAM: 146,
+  CORALTREE: 147, WINDSPIRE: 148, CRYSTALSPIRE: 149, LIVETREE: 150, OBSIDSPIKE: 151, DUSKBLOOM: 152, BAOBAB: 153, STARSHARD: 154, MISTREED: 155, RUNEMONO: 156, SKYPILLAR: 157, ANGELSTATUE: 158, SKYFOUNT: 159, HARP: 160, STOVE: 106, SACKS: 107, POTS: 108, TROPHY: 109, PELT: 110, FISHNET: 111, DESK: 112, LOOM: 113, OVEN: 114, INSTRUMENT: 115, ARMORSTAND: 116, CLOCK: 117, ARMCHAIR: 118, TOOLRACK: 119, DRESSER: 120, TOYBOX: 121, RUG: 122, SHELFWALL: 123, HERBS: 124, BATHTUB: 125, SHIELDWALL: 126
 };
 // solid; tall=altura do sprite (px); harvest; light (raio px); kind de interação
 const OBJ_DEFS = [];
@@ -215,6 +237,20 @@ odef(O.MAPTABLE, { name: 'Mesa de mapas', solid: true, interact: 'maptable' });
 odef(O.LANTERN, { name: 'Lanterna', solid: true, light: 40 });
 odef(O.MINECART, { name: 'Carrinho de mina', solid: true, interact: 'minecart' });
 odef(O.MINEBEAM, { name: 'Escora de madeira', solid: true });
+odef(O.CORALTREE, { name: 'Coral luminoso', solid: true, light: 30 });
+odef(O.WINDSPIRE, { name: 'Rocha flutuante', solid: true });
+odef(O.CRYSTALSPIRE, { name: 'Cristal vivo', solid: true, light: 44, harvest: { item: 'cristal_vivo', n: [1, 2], skill: 'ferraria' }, interact: 'harvest' });
+odef(O.LIVETREE, { name: 'Árvore viva', solid: true, light: 10 });
+odef(O.OBSIDSPIKE, { name: 'Espinho de obsidiana', solid: true, light: 22 });
+odef(O.DUSKBLOOM, { name: 'Flor do Crepúsculo', light: 14, harvest: { item: 'flor_crepusculo', n: [1, 2], skill: 'alquimia' }, interact: 'harvest' });
+odef(O.BAOBAB, { name: 'Baobá', solid: true });
+odef(O.STARSHARD, { name: 'Fragmento estelar', solid: true, light: 34, harvest: { item: 'poeira_estelar', n: [1, 2], skill: 'alquimia' }, interact: 'harvest' });
+odef(O.MISTREED, { name: 'Junco da bruma' });
+odef(O.RUNEMONO, { name: 'Monólito vivo', solid: true, light: 26 });
+odef(O.SKYPILLAR, { name: 'Pilar de Luz', solid: true, light: 90, interact: 'skypillar' });
+odef(O.ANGELSTATUE, { name: 'Estátua de anjo', solid: true });
+odef(O.SKYFOUNT, { name: 'Fonte celestial', solid: true, light: 40 });
+odef(O.HARP, { name: 'Harpa celestial', solid: true });
 odef(O.WORKBENCH, { name: 'Bancada de Carpintaria', solid: true, interact: 'carpentry' });
 for (const id of [O.ENT_CAVE, O.ENT_CRYPT, O.ENT_RUIN, O.ENT_MINE, O.ENT_TOMB, O.ENT_BARROW, O.ENT_LAVA, O.ENT_ICE, O.ENT_ARENA])
   odef(id, { name: 'Entrada', solid: true, interact: 'dungeon', light: 24 });
@@ -292,9 +328,41 @@ const REGIONS = [
   // ----- Ilha de Nyxhal: território do povo Nyxar -----
   { id: 'nyxhal', name: 'Território de Nyxhal', short: 'Nyxhal', race: 'nyxar', fx: 7350 / 4096, fy: 1500 / 4096, biome: 'dead', lvl: [18, 28], mount: 0.02, culture: 'nyx', cont: 3,
     ruler: null, neutral: true, towns: 0, villages: 0, dungeons: 0, color: '#7a3ac8',
-    desc: 'Ilha da alcateia Nyxar: seres chifrudos de veias brilhantes que vivem em cavernas ligadas por túneis. Território neutro: nenhum reino pode declarar guerra a eles nem invadir a ilha.' }
+    desc: 'Ilha da alcateia Nyxar: seres chifrudos de veias brilhantes que vivem em cavernas ligadas por túneis. Território neutro: nenhum reino pode declarar guerra a eles nem invadir a ilha.' },
+  // ----- Elyndra: o continente do leste, maior que todos, com povos que não existem em outro lugar -----
+  // isolated: reinos que nunca fizeram contato com os outros continentes (não entram nas guerras nem mandam herdeiros à academia)
+  { id: 'voralis', name: 'Recifes Abissais de Voralis', short: 'Voralis', race: 'voralis', fx: 11250 / 4096, fy: 4300 / 4096, biome: 'reef', lvl: [24, 34], mount: -0.1, culture: 'abissal', cont: 4, isolated: true,
+    ruler: { title: 'Rainha-Maré', name: 'Nerysa Luz-Abissal', race: 'voralis' }, towns: 4, villages: 6, dungeons: 10, color: '#30c8e0',
+    desc: 'Lagoas e recifes que brilham no escuro. Os Voralis, filhos das profundezas, respiram na água e no ar.' },
+  { id: 'zephyra', name: 'Planalto dos Ventos de Zephyra', short: 'Zephyra', race: 'zephyran', fx: 13300 / 4096, fy: 2500 / 4096, biome: 'windland', lvl: [24, 34], mount: 0.03, culture: 'aerea', cont: 4, isolated: true,
+    ruler: { title: 'Grão-Senhor dos Ventos', name: 'Aerion Pena-de-Prata', race: 'zephyran' }, towns: 4, villages: 6, dungeons: 10, color: '#e8e0c8',
+    desc: 'Planaltos varridos pelo vento, cheios de rochas que flutuam. Os Zephyrans planam de uma pedra a outra.' },
+  { id: 'thaldrim', name: 'Campos de Cristal de Thaldrim', short: 'Thaldrim', race: 'thaldrim', fx: 15900 / 4096, fy: 2900 / 4096, biome: 'crystal', lvl: [26, 36], mount: 0.08, culture: 'cristal', cont: 4, isolated: true,
+    ruler: { title: 'Monarca de Cristal', name: 'Ametrys, o Imutável', race: 'thaldrim' }, towns: 4, villages: 6, dungeons: 10, color: '#9a7af0',
+    desc: 'Campos e montanhas de cristal vivo. Os Thaldrim nascem da pedra e se regeneram com o tempo.' },
+  { id: 'silvania', name: 'Floresta Viva de Silvânia', short: 'Silvânia', race: 'silvano', fx: 12100 / 4096, fy: 6400 / 4096, biome: 'liveforest', lvl: [22, 32], mount: 0.0, culture: 'arvore', cont: 4, isolated: true,
+    ruler: { title: 'Guardiã-Mãe', name: 'Sylwen Raiz-Antiga', race: 'silvano' }, towns: 4, villages: 6, dungeons: 10, color: '#58c060',
+    desc: 'Uma floresta que respira: árvores com olhos, musgo que pulsa e cidades construídas dentro dos troncos.' },
+  { id: 'krazul', name: 'Terras de Obsidiana de Krazul', short: 'Krazul', race: 'krazul', fx: 17100 / 4096, fy: 5100 / 4096, biome: 'obsidian', lvl: [28, 38], mount: 0.06, culture: 'magma', cont: 4, isolated: true,
+    ruler: { title: 'Senhor da Forja', name: 'Ignarok Coração-de-Magma', race: 'krazul' }, towns: 4, villages: 6, dungeons: 10, color: '#ff5a20',
+    desc: 'Planícies de vidro negro cortadas por rios de magma. Os Krazul são feitos de rocha e fogo.' },
+  { id: 'nimbor', name: 'Ermos do Crepúsculo de Nimbor', short: 'Nimbor', race: 'nimbor', fx: 14500 / 4096, fy: 4700 / 4096, biome: 'dusk', lvl: [26, 36], mount: 0.02, culture: 'crepusculo', cont: 4, isolated: true,
+    ruler: { title: 'Oráculo do Crepúsculo', name: 'Velaryn Meia-Luz', race: 'nimbor' }, towns: 4, villages: 6, dungeons: 10, color: '#8a6ad0',
+    desc: 'Terras onde é sempre fim de tarde: areia violeta, ruínas antigas e flores que só abrem no escuro.' },
+  { id: 'vaelith', name: 'Savana Selvagem de Vaelith', short: 'Vaelith', race: 'vaelith', fx: 14700 / 4096, fy: 7300 / 4096, biome: 'savanna', lvl: [24, 34], mount: -0.03, culture: 'tribal', cont: 4, isolated: true,
+    ruler: { title: 'Grande Caçadora', name: 'Kaira Presa-Dourada', race: 'vaelith' }, towns: 4, villages: 6, dungeons: 10, color: '#d89a48',
+    desc: 'Capim dourado sem fim, baobás e manadas. Os Vaelith falam com os animais e caçam em tribos.' },
+  { id: 'xarqin', name: "Vale Cósmico de Xar'Qin", short: "Xar'Qin", race: 'xarqin', fx: 17000 / 4096, fy: 7700 / 4096, biome: 'cosmic', lvl: [30, 40], mount: 0.01, culture: 'cosmica', cont: 4, isolated: true,
+    ruler: { title: 'Arquimago Cósmico', name: "Xal'Thuun", race: 'xarqin' }, towns: 4, villages: 6, dungeons: 10, color: '#7a48e0',
+    desc: 'Um vale onde o céu parece encostar no chão: poeira de estrelas, cristais que caíram do cosmos e magia que dobra o espaço.' },
+  { id: 'brumaria', name: 'Charneca da Bruma de Brumária', short: 'Brumária', race: 'brumario', fx: 12500 / 4096, fy: 8900 / 4096, biome: 'mist', lvl: [26, 36], mount: -0.02, culture: 'nevoa', cont: 4, isolated: true,
+    ruler: { title: 'Guardião da Névoa', name: 'Ossyrel Véu-Cinza', race: 'brumario' }, towns: 4, villages: 6, dungeons: 10, color: '#6aa8e0',
+    desc: 'Charnecas cobertas por uma névoa que nunca vai embora. Os Brumários são feitos dela e guardam segredos antigos.' },
+  { id: 'terralux', name: 'Cânions de Pedra Viva de Terralux', short: 'Terralux', race: 'terralux', fx: 15300 / 4096, fy: 9800 / 4096, biome: 'livestone', lvl: [28, 38], mount: 0.05, culture: 'pedra', cont: 4, isolated: true,
+    ruler: { title: 'Patriarca Rochoso', name: 'Grumvar Pedra-Viva', race: 'terralux' }, towns: 4, villages: 6, dungeons: 10, color: '#d0a050',
+    desc: 'Cânions de pedra que brilham com runas. Os Terralux nascem das rochas e moldam a terra com as mãos.' }
 ];
-const CONTINENTS = ['Eldoria', 'Kaeloria', 'Valtheria', 'Nyxhal'];
+const CONTINENTS = ['Eldoria', 'Kaeloria', 'Valtheria', 'Nyxhal', 'Elyndra'];
 const REGION_BY_ID = {}; REGIONS.forEach((r, i) => { r.index = i; REGION_BY_ID[r.id] = r; });
 const VOLCANO = { fx: 0.91, fy: 0.29 };
 
@@ -341,7 +409,20 @@ const RACES = {
     mods: { mp: 30, magic: 0.1, gold: 0.15 }, short: 3 },
   // povo da Ilha de Nyxhal (não é escolhível na criação: só aparece como moradores)
   nyxar: { name: 'Nyxar', desc: 'Povo chifrudo das sombras, de veias brilhantes, que vive só na Ilha de Nyxhal.', npcOnly: true, sheet: true,
-    skins: ['#2a2236'], hairs: ['#3a2050'], mods: {}, res: { dark: 0.3 }, horns: true }
+    skins: ['#2a2236'], hairs: ['#3a2050'], mods: {}, res: { dark: 0.3 }, horns: true },
+  // povos de Elyndra (só aparecem como moradores do continente)
+  voralis: { name: 'Voralis', desc: 'Os filhos das profundezas: corpo adaptado à água, bioluminescência e controle da água.', npcOnly: true, sheet: true, skins: ['#3a8ad0'], hairs: ['#40c0f0'], mods: {} },
+  zephyran: { name: 'Zephyran', desc: 'Os filhos do vento e do céu: nômades de asas leves que vivem entre as nuvens.', npcOnly: true, sheet: true, skins: ['#e8d8c0'], hairs: ['#f0f0f0'], mods: {} },
+  thaldrim: { name: 'Thaldrim', desc: 'Os senhores do cristal: seres de cristal vivo que crescem e se regeneram.', npcOnly: true, sheet: true, skins: ['#9a8ae0'], hairs: ['#c0b0ff'], mods: {} },
+  silvano: { name: 'Silvano', desc: 'Os guardiões da floresta viva: pele vegetal, chifres de galhos e cura natural.', npcOnly: true, sheet: true, skins: ['#6a9a3a'], hairs: ['#a0c060'], mods: {} },
+  krazul: { name: 'Krazul', desc: 'Os filhos do fogo e da lava: corpo de rocha e magma, guerreiros natos.', npcOnly: true, sheet: true, skins: ['#a03a20'], hairs: ['#2a1a1a'], mods: {} },
+  nimbor: { name: 'Nimbor', desc: 'Os filhos do crepúsculo: seres etéreos que vivem entre o mundo físico e o espiritual.', npcOnly: true, sheet: true, skins: ['#6a5aa0'], hairs: ['#3a2a6a'], mods: {} },
+  vaelith: { name: 'Vaelith', desc: 'Os que falam com os animais: caçadores de traços selvagens e mente ligada às feras.', npcOnly: true, sheet: true, skins: ['#b08050'], hairs: ['#4a3020'], mods: {} },
+  xarqin: { name: "Xar'Qin", desc: 'Os mestres do tecido da realidade: magos cósmicos que criam ilusões e dobram o espaço.', npcOnly: true, sheet: true, skins: ['#6a48c0'], hairs: ['#b090ff'], mods: {} },
+  brumario: { name: 'Brumário', desc: 'Os guardiões do nevoeiro: corpo feito de névoa, capazes de se tornar invisíveis.', npcOnly: true, sheet: true, skins: ['#6aa0d8'], hairs: ['#a0d0f0'], mods: {} },
+  terralux: { name: 'Terralux', desc: 'Os filhos da pedra viva: corpo de pedra e minerais, fortes e resistentes.', npcOnly: true, sheet: true, skins: ['#c0a060'], hairs: ['#40d0c0'], mods: {} },
+  // anjos: vivem só em Seraphel, a cidade acima das nuvens (os reinos nem sabem que eles existem)
+  anjo: { name: 'Anjo', desc: 'Seres alados de Seraphel, a cidade acima das nuvens. Orgulhosos, raramente aceitam ter filhos.', npcOnly: true, sheet: true, skins: ['#f4dcc4'], hairs: ['#f0d890'], mods: {} }
 };
 // raças que o jogador pode escolher (e que aparecem misturadas nas cidades)
 function playableRaces() { return Object.keys(RACES).filter(k => !RACES[k].npcOnly); }
@@ -597,7 +678,12 @@ const MATS = [
   ['diamante', 'Diamante', 300, { k: 'gem', c: '#e0f8ff' }],
   ['alma_dragao', 'Alma de Dragão', 0, { k: 'soul', c: '#ffb040' }],
   ['perola', 'Pérola de Talassa', 90, { k: 'gem', c: '#f0f0f8' }],
-  ['sal_fogo', 'Sal de Enxofre', 20, { k: 'goo', c: '#e0c030' }]
+  ['sal_fogo', 'Sal de Enxofre', 20, { k: 'goo', c: '#e0c030' }],
+  ['cristal_vivo', 'Cristal Vivo de Thaldrim', 60, { k: 'gem', c: '#a080ff' }],
+  ['flor_crepusculo', 'Flor do Crepúsculo', 22, { k: 'herb', c: '#b070f0' }],
+  ['poeira_estelar', 'Poeira Estelar', 70, { k: 'essence', c: '#7060ff' }],
+  ['essencia_vento', 'Essência do Vento', 40, { k: 'essence', c: '#d0f0ff' }],
+  ['pena_celestial', 'Pena Celestial', 200, { k: 'wing', c: '#fff8e0' }]
 ];
 for (const [id, name, value, icon] of MATS) idef(id, { name, type: 'material', value, stack: true, icon });
 ITEMS.alma_dragao.type = 'misc';
@@ -761,6 +847,37 @@ const ENEMIES = {
   mercenario: { name: 'Mercenário', look: { k: 'hum', skin: '#d8a070', body: '#5a6a8a', legs: '#3a3a4a', hair: '#3a2a1a', helm: '#9aa0a8', weapon: 'sword', wc: '#c0c0c0', shield: true }, hp: 160, dmg: 14, spd: 68, ai: 'melee', xp: 0, ally: true },
   hidra_jovem: { name: 'Hidra Jovem', look: { k: 'hum', skin: '#3a8a5a', body: '#2a6a3a', legs: '#1a4a2a', snout: true, horns: true, tail: true, tailC: '#3a8a5a', size: 1.6, bulky: true, nobelt: true, eyes: '#ffe040', weapon: 'mace', wc: '#2a5a3a' }, hp: 300, dmg: 26, spd: 50, ai: 'charge', charge: true, r: 9, xp: 150, poison: 4, gold: [30, 100], drops: [['escama_lagarto', 1], ['veneno', 0.6]], dropGear: 0.3 },
   // só existe em Valtheria: predador das florestas, cavernas, montanhas e áreas escuras (sprites da folha de arte)
+  // ----- Criaturas de Elyndra -----
+  agua_viva: { name: 'Água-viva Terrestre', look: { k: 'slime', c: '#40f0e0' }, hp: 70, dmg: 14, spd: 40, ai: 'melee', xp: 40, aggro: 90, elem: 'frost', drops: [['gosma', 0.6], ['perola', 0.05]] },
+  caranguejo_abissal: { name: 'Caranguejo Abissal', look: { k: 'scorpion', c: '#3a6ab0' }, hp: 120, dmg: 20, spd: 50, ai: 'melee', xp: 60, armor: 30, drops: [['carapaca', 0.8], ['perola', 0.08]] },
+  leviata_abissal: { name: 'Leviatã Abissal', look: { k: 'dragon', c: '#1a7a9a', heads: 2, size: 1.2 }, hp: 2200, dmg: 40, spd: 44, ai: 'boss', proj: 'frost', xp: 1400, boss: true, r: 14, elem: 'frost', dropGear: 1, gold: [500, 900] },
+  lobo_vento: { name: 'Lobo dos Ventos', look: { k: 'wolf', c: '#e0e8f0' }, hp: 80, dmg: 16, spd: 92, ai: 'melee', xp: 44, aggro: 140, drops: [['pele_lobo', 0.6], ['presa', 0.3]], animal: true },
+  elemental_vento: { name: 'Elemental do Vento', look: { k: 'elemental', c: '#d8f0ff' }, hp: 140, dmg: 18, spd: 70, ai: 'caster', proj: 'frost', xp: 70, drops: [['essencia_vento', 0.5]] },
+  tempestade_viva: { name: 'Tempestade Viva', look: { k: 'elemental', c: '#b0d8ff', size: 2 }, hp: 2000, dmg: 38, spd: 60, ai: 'boss', proj: 'bolt', summon: 'elemental_vento', xp: 1300, boss: true, r: 12, dropGear: 1, gold: [500, 900] },
+  golem_cristal: { name: 'Golem de Cristal', look: { k: 'golem', c: '#9a7ae0' }, hp: 320, dmg: 26, spd: 40, ai: 'melee', xp: 110, r: 8, armor: 50, drops: [['cristal_vivo', 0.9], ['ametista', 0.15]] },
+  aranha_cristal: { name: 'Aranha de Cristal', look: { k: 'spider', c: '#8a70d0' }, hp: 90, dmg: 16, spd: 66, ai: 'melee', xp: 46, aggro: 120, drops: [['cristal_vivo', 0.4], ['seda_aranha', 0.4]] },
+  colosso_cristal: { name: 'Colosso de Cristal', look: { k: 'golem', c: '#b090ff', size: 2.1, rune: true }, hp: 2600, dmg: 42, spd: 40, ai: 'boss', proj: 'rock', xp: 1500, boss: true, r: 14, armor: 70, dropGear: 1, gold: [500, 1000] },
+  ent_furioso: { name: 'Ent Furioso', look: { k: 'golem', c: '#4a7a3a' }, hp: 260, dmg: 24, spd: 38, ai: 'melee', xp: 90, r: 8, armor: 30, drops: [['lenha', 1], ['erva_vermelha', 0.5]] },
+  javali_musgo: { name: 'Javali de Musgo', look: { k: 'boar', c: '#3a6a3a' }, hp: 90, dmg: 16, spd: 62, ai: 'charge', xp: 40, aggro: 90, drops: [['couro', 0.6], ['carne_crua', 0.7]], animal: true },
+  ent_anciao: { name: 'Ent Ancião', look: { k: 'golem', c: '#3a6a2a', size: 2.2 }, hp: 2400, dmg: 40, spd: 36, ai: 'boss', proj: 'poison', summon: 'ent_furioso', xp: 1400, boss: true, r: 14, armor: 50, dropGear: 1, gold: [500, 900] },
+  salamandra_obsidiana: { name: 'Salamandra de Obsidiana', look: { k: 'lizard', c: '#2a1a2a' }, hp: 110, dmg: 20, spd: 58, ai: 'melee', xp: 50, elem: 'fire', drops: [['minerio_obsidiana', 0.5], ['sal_fogo', 0.4]] },
+  elemental_magma: { name: 'Elemental de Magma', look: { k: 'elemental', c: '#ff3a10' }, hp: 200, dmg: 26, spd: 50, ai: 'caster', proj: 'fireball', xp: 90, elem: 'fire', drops: [['essencia_fogo', 0.5]] },
+  tita_magma: { name: 'Titã de Magma', look: { k: 'elemental', c: '#ff2a00', size: 2.3 }, hp: 2800, dmg: 46, spd: 46, ai: 'boss', proj: 'fireball', summon: 'elemental_magma', xp: 1600, boss: true, elem: 'fire', r: 14, dropGear: 1, gold: [600, 1100] },
+  espectro_crepusculo: { name: 'Espectro do Crepúsculo', look: { k: 'ghost', c: '#b090f0' }, hp: 110, dmg: 20, spd: 56, ai: 'melee', xp: 55, undead: true, fly: true, ghost: true, drops: [['ectoplasma', 0.6], ['flor_crepusculo', 0.3]] },
+  sombra_errante: { name: 'Sombra Errante', look: { k: 'ghost', c: '#5a3a8a' }, hp: 90, dmg: 22, spd: 64, ai: 'melee', xp: 50, undead: true, fly: true, ghost: true, drops: [['ectoplasma', 0.5]] },
+  eco_crepuscular: { name: 'Eco Crepuscular', look: { k: 'ghost', c: '#d0b0ff', size: 2 }, hp: 2200, dmg: 40, spd: 56, ai: 'boss', proj: 'dark', summon: 'sombra_errante', xp: 1400, boss: true, undead: true, fly: true, r: 12, dropGear: 1, gold: [500, 900] },
+  hiena: { name: 'Hiena Selvagem', look: { k: 'wolf', c: '#b0905a' }, hp: 70, dmg: 15, spd: 80, ai: 'melee', xp: 36, aggro: 130, drops: [['couro', 0.5], ['presa', 0.3]], animal: true },
+  leao_juba: { name: 'Leão de Juba Negra', look: { k: 'bear', c: '#d0a040' }, hp: 180, dmg: 24, spd: 66, ai: 'charge', xp: 80, r: 7, aggro: 110, drops: [['couro', 0.8], ['presa', 0.5], ['carne_crua', 0.6]], animal: true },
+  zebra: { name: 'Zebra de Vaelith', look: { k: 'deer', c: '#e8e8e0' }, hp: 50, dmg: 0, spd: 90, ai: 'flee', xp: 8, r: 6, drops: [['carne_crua', 1], ['couro', 0.6]], animal: true, passive: true },
+  besta_alfa: { name: 'Besta Alfa', look: { k: 'bear', c: '#6a4a2a', size: 1.9 }, hp: 2400, dmg: 44, spd: 56, ai: 'boss', summon: 'hiena', xp: 1400, boss: true, r: 14, dropGear: 1, gold: [500, 900] },
+  devorador_estelar: { name: 'Devorador Estelar', look: { k: 'slime', c: '#4a30b0' }, hp: 120, dmg: 22, spd: 44, ai: 'melee', xp: 55, drops: [['poeira_estelar', 0.6]] },
+  arauto_estelar: { name: 'Arauto Estelar', look: { k: 'elemental', c: '#8060ff', size: 2.2 }, hp: 3000, dmg: 46, spd: 50, ai: 'boss', proj: 'bolt', summon: 'devorador_estelar', xp: 1700, boss: true, r: 14, dropGear: 1, gold: [600, 1200] },
+  espirito_bruma: { name: 'Espírito da Bruma', look: { k: 'ghost', c: '#a0c8e8' }, hp: 100, dmg: 19, spd: 58, ai: 'melee', xp: 50, undead: true, fly: true, ghost: true, elem: 'frost', drops: [['ectoplasma', 0.6], ['essencia_vento', 0.2]] },
+  senhor_nevoa: { name: 'Senhor da Névoa', look: { k: 'ghost', c: '#d0e8ff', size: 2.1 }, hp: 2300, dmg: 40, spd: 54, ai: 'boss', proj: 'frost', summon: 'espirito_bruma', xp: 1400, boss: true, undead: true, fly: true, r: 12, dropGear: 1, gold: [500, 900] },
+  golem_vivo: { name: 'Golem de Pedra Viva', look: { k: 'golem', c: '#c09050', rune: true }, hp: 340, dmg: 26, spd: 40, ai: 'melee', xp: 110, r: 8, armor: 55, drops: [['minerio_ouro', 0.5], ['cristal_vivo', 0.3], ['diamante', 0.04]] },
+  // ----- Anjos (só em Seraphel) -----
+  anjo_guerreiro: { name: 'Anjo Guerreiro', look: { k: 'raca', r: 'anjo', v: 1, sz: 0.95 }, hp: 420, dmg: 30, spd: 66, ai: 'melee', xp: 160, armor: 40, gold: [40, 90] },
+  serafim_quarto: { name: 'Aurelith, o Quarto Serafim', look: { k: 'raca', r: 'anjo', v: 1, sz: 1.2 }, hp: 3400, dmg: 44, spd: 70, ai: 'boss', proj: 'bolt', summon: 'anjo_guerreiro', xp: 2500, boss: true, r: 12, armor: 60, dropGear: 1, gold: [900, 1500] },
   criatura_sombras: { name: 'Criatura das Sombras', look: { k: 'sombra' }, hp: 380, dmg: 30, spd: 80, ai: 'charge', cd: 1.0, xp: 260, armor: 24, r: 12, aggro: 250, glowEyes: true, noMeat: true, gold: [40, 120], drops: [['essencia_sombria', 1], ['garra_sombria', 0.7]] },
   pistoleiro: { name: 'Pistoleiro Fora-da-Lei', look: { k: 'hum', skin: '#e0ac69', body: '#4a3a2a', legs: '#2a2a30', hair: '#2a1a10', helm: '#2a2a2a', helmStyle: 'tricorne', crossbelt: true, weapon: 'musket', wc: '#5a4a3a' }, hp: 60, dmg: 22, spd: 60, ai: 'ranged', proj: 'bullet', cd: 2.4, xp: 42, gold: [20, 70], drops: [['bala_arcana', 0.6]], dropGear: 0.15 },
   legionario_renegado: { name: 'Legionário Renegado', look: { k: 'hum', skin: '#e0ac69', body: '#a03030', legs: '#5a4a3a', hair: '#2a1a10', helm: '#c0a050', helmStyle: 'kettle', crest: '#c02020', weapon: 'sword', wc: '#d0d0d8', shield: '#a03030' }, hp: 95, dmg: 16, spd: 62, ai: 'melee', xp: 40, armor: 20, gold: [15, 50], dropGear: 0.2 },
@@ -786,6 +903,17 @@ const SPAWNS = {
   lunethar: { day: [['aranha', 3], ['lobo', 2], ['cervo', 3], ['urso', 2], ['espectro', 1], ['coelho', 2]], night: [['aranha', 3], ['espectro', 2], ['lobo', 2], ['cavaleiro_morto', 0.4], ['criatura_sombras', 1.2]] },
   rodafina: { day: [['automato', 3], ['goblin', 2], ['goblin_arqueiro', 1], ['javali', 2], ['coelho', 3], ['slime', 2]], night: [['automato', 2], ['goblin_xama', 1], ['esqueleto', 2], ['lobo', 2], ['criatura_sombras', 0.5]] },
   kumari: { day: [['escorpiao', 3], ['lobo', 2], ['javali', 2], ['cervo', 2], ['bandido', 1], ['mumia', 0.6]], night: [['escorpiao', 2], ['mumia', 2], ['esqueleto', 2], ['lobo', 2], ['criatura_sombras', 0.8]] },
+  // Elyndra (de noite os espectros e os bichos mais perigosos saem)
+  voralis: { day: [['agua_viva', 3], ['caranguejo_abissal', 2], ['cervo', 2], ['coelho', 2]], night: [['agua_viva', 3], ['caranguejo_abissal', 2], ['espectro', 1]] },
+  zephyra: { day: [['lobo_vento', 3], ['elemental_vento', 1.5], ['cervo', 3], ['coelho', 3]], night: [['lobo_vento', 3], ['elemental_vento', 2], ['espectro', 1]] },
+  thaldrim: { day: [['golem_cristal', 1.5], ['aranha_cristal', 3], ['coelho', 2], ['cervo', 1]], night: [['aranha_cristal', 3], ['golem_cristal', 2], ['espectro', 1]] },
+  silvania: { day: [['ent_furioso', 1.5], ['javali_musgo', 3], ['cervo', 3], ['coelho', 3], ['aranha', 1]], night: [['ent_furioso', 2], ['aranha', 3], ['javali_musgo', 2]] },
+  krazul: { day: [['salamandra_obsidiana', 3], ['elemental_magma', 1.5], ['slime_fogo', 2]], night: [['elemental_magma', 2], ['salamandra_obsidiana', 3], ['esqueleto', 1]] },
+  nimbor: { day: [['espectro_crepusculo', 2], ['sombra_errante', 1], ['cervo', 2], ['coelho', 2]], night: [['espectro_crepusculo', 3], ['sombra_errante', 3]] },
+  vaelith: { day: [['hiena', 3], ['leao_juba', 1.5], ['zebra', 4], ['javali', 2]], night: [['hiena', 4], ['leao_juba', 2]] },
+  xarqin: { day: [['devorador_estelar', 3], ['golem_cristal', 1], ['coelho', 2]], night: [['devorador_estelar', 3], ['espectro_crepusculo', 2], ['elemental_vento', 1]] },
+  brumaria: { day: [['espirito_bruma', 2], ['lobo', 2], ['cervo', 2], ['lagarto', 1]], night: [['espirito_bruma', 4], ['espectro', 2], ['lobo', 2]] },
+  terralux: { day: [['golem_vivo', 2], ['escorpiao', 2], ['lagarto', 2], ['coelho', 2]], night: [['golem_vivo', 2], ['escorpiao', 2], ['esqueleto', 2]] },
   nyxhal: { day: [['cervo', 3], ['javali', 2], ['coelho', 2]], night: [['lobo', 2], ['cervo', 1]] },
   umbraval: { day: [['cavaleiro_morto', 2], ['espectro', 3], ['troll', 2], ['cultista', 2], ['golem_pedra', 1]], night: [['cavaleiro_morto', 3], ['espectro', 3], ['esqueleto_arqueiro', 2], ['necromante', 0.3], ['criatura_sombras', 2.0]] },
   talassa: { day: [['pirata', 3], ['pirata_arqueiro', 1.5], ['lobo', 2], ['javali', 2], ['cervo', 3], ['coelho', 2], ['slime', 1], ['lagarto', 1]], night: [['pirata', 2], ['esqueleto', 2], ['zumbi', 1], ['lobo', 2]] },
@@ -816,7 +944,18 @@ const DUNGEON_TYPES = {
   caverna_lava: { name: 'Caverna de Lava', gen: 'cave', floor: T.VFLOOR, wall: T.VWALL, ent: O.ENT_LAVA, mobs: ['elemental_fogo', 'salamandra', 'slime_fogo', 'ogro'], boss: 'senhor_chamas', deco: [O.CRYSTAL, O.HERB_FIRE, O.ORE_OBSIDIANA, O.BONES], lava: true },
   ruina_afundada: { name: 'Ruína Afundada', gen: 'rooms', floor: T.RFLOOR, wall: T.RWALL, ent: O.ENT_RUIN, mobs: ['lagarto', 'slime', 'aranha', 'zumbi'], boss: 'hidra', deco: [O.BROKEN_PILLAR, O.HERB_SHROOM, O.REEDS, O.COBWEB], water: true },
   cripta_sombria: { name: 'Cripta Sombria', gen: 'rooms', floor: T.DFLOOR, wall: T.DWALL, ent: O.ENT_CRYPT, mobs: ['esqueleto', 'espectro', 'cultista', 'cavaleiro_morto', 'esqueleto_arqueiro'], boss: 'necromante', deco: [O.GRAVE, O.TORCH, O.SKULLS, O.ALTAR, O.ORE_EBANO] },
-  arena: { name: 'Arena', gen: 'arena', floor: T.SAND, wall: T.WALL, ent: O.ENT_ARENA, mobs: ['orc_renegado', 'ogro'], boss: 'campeao_orc', deco: [O.TORCH, O.BANNER] }
+  arena: { name: 'Arena', gen: 'arena', floor: T.SAND, wall: T.WALL, ent: O.ENT_ARENA, mobs: ['orc_renegado', 'ogro'], boss: 'campeao_orc', deco: [O.TORCH, O.BANNER] },
+  // Elyndra
+  gruta_coral: { name: 'Gruta de Coral', gen: 'cave', floor: T.CORAL, wall: T.CWALL, ent: O.ENT_CAVE, mobs: ['agua_viva', 'caranguejo_abissal', 'agua_viva'], boss: 'leviata_abissal', deco: [O.CORALTREE, O.CRYSTAL, O.BONES] },
+  santuario_vento: { name: 'Santuário dos Ventos', gen: 'rooms', floor: T.COBBLE, wall: T.WALL, ent: O.ENT_RUIN, mobs: ['elemental_vento', 'lobo_vento'], boss: 'tempestade_viva', deco: [O.BROKEN_PILLAR, O.WINDSPIRE, O.TORCH] },
+  caverna_cristal: { name: 'Caverna de Cristal', gen: 'cave', floor: T.CRYSTALF, wall: T.CRYSTALROCK, ent: O.ENT_ICE, mobs: ['golem_cristal', 'aranha_cristal', 'aranha_cristal'], boss: 'colosso_cristal', deco: [O.CRYSTALSPIRE, O.CRYSTAL, O.BONES] },
+  bosque_oco: { name: 'Bosque Oco', gen: 'cave', floor: T.LIVEMOSS, wall: T.RWALL, ent: O.ENT_CAVE, mobs: ['ent_furioso', 'aranha', 'javali_musgo'], boss: 'ent_anciao', deco: [O.LIVETREE, O.HERB_SHROOM, O.BIGSHROOM] },
+  forja_magma: { name: 'Forja de Magma', gen: 'cave', floor: T.VFLOOR, wall: T.VWALL, ent: O.ENT_LAVA, mobs: ['salamandra_obsidiana', 'elemental_magma', 'slime_fogo'], boss: 'tita_magma', deco: [O.OBSIDSPIKE, O.CAMPFIRE, O.BONES] },
+  ruina_crepusculo: { name: 'Ruína do Crepúsculo', gen: 'rooms', floor: T.DUSKSAND, wall: T.RWALL, ent: O.ENT_RUIN, mobs: ['espectro_crepusculo', 'sombra_errante'], boss: 'eco_crepuscular', deco: [O.BROKEN_PILLAR, O.DUSKBLOOM, O.GRAVE] },
+  toca_feras: { name: 'Toca das Feras', gen: 'cave', floor: T.CFLOOR, wall: T.CWALL, ent: O.ENT_CAVE, mobs: ['hiena', 'leao_juba', 'hiena'], boss: 'besta_alfa', deco: [O.BONES, O.PELT, O.SKULLS] },
+  observatorio: { name: 'Observatório Cósmico', gen: 'rooms', floor: T.STARDUST, wall: T.DWALL, ent: O.ENT_CRYPT, mobs: ['devorador_estelar', 'golem_cristal'], boss: 'arauto_estelar', deco: [O.STARSHARD, O.CANDLE, O.BOOKSHELF] },
+  cripta_bruma: { name: 'Cripta da Bruma', gen: 'rooms', floor: T.DFLOOR, wall: T.DWALL, ent: O.ENT_CRYPT, mobs: ['espirito_bruma', 'espectro', 'esqueleto'], boss: 'senhor_nevoa', deco: [O.GRAVE, O.MISTREED, O.TORCH] },
+  templo_pedra: { name: 'Templo de Pedra Viva', gen: 'rooms', floor: T.TFLOOR, wall: T.CANYON, ent: O.ENT_TOMB, mobs: ['golem_vivo', 'escorpiao'], boss: 'guardiao_golem', deco: [O.RUNEMONO, O.PILLAR, O.TORCH] }
 };
 const REGION_DUNGEONS = {
   ferrania: ['covil_bandido', 'mina_ana', 'caverna', 'cripta'],
@@ -829,6 +968,16 @@ const REGION_DUNGEONS = {
   rodafina: ['mina_ana', 'caverna', 'covil_goblin', 'covil_bandido'],
   kumari: ['tumba_deserto', 'tumba_deserto', 'caverna', 'covil_bandido'],
   umbraval: ['cripta_sombria', 'cripta_sombria', 'caverna_lava', 'cripta'],
+  voralis: ['gruta_coral', 'gruta_coral', 'ruina_afundada', 'caverna'],
+  zephyra: ['santuario_vento', 'santuario_vento', 'caverna'],
+  thaldrim: ['caverna_cristal', 'caverna_cristal', 'mina_ana'],
+  silvania: ['bosque_oco', 'bosque_oco', 'ruina_elfica'],
+  krazul: ['forja_magma', 'forja_magma', 'caverna_lava'],
+  nimbor: ['ruina_crepusculo', 'ruina_crepusculo', 'cripta_sombria'],
+  vaelith: ['toca_feras', 'toca_feras', 'caverna'],
+  xarqin: ['observatorio', 'observatorio', 'caverna_cristal'],
+  brumaria: ['cripta_bruma', 'cripta_bruma', 'cripta'],
+  terralux: ['templo_pedra', 'templo_pedra', 'mina_ana'],
   nyxhal: ['cripta_sombria', 'caverna'],
   talassa: ['caverna', 'covil_bandido', 'ruina_afundada', 'cripta'],
   azhkar: ['caverna_lava', 'caverna_lava', 'cripta_sombria', 'covil_bandido'],
@@ -893,6 +1042,17 @@ const GUILDS = {
 
 // ---------- Nomes ----------
 const NAMES = {
+  voralis: { m: ['Nerion', 'Thalassyr', 'Coraleth', 'Abyssor', 'Maervyn', 'Ondrel', 'Pelyar', 'Lumaris'], f: ['Nerysa', 'Maelis', 'Coralia', 'Ondine', 'Lumyra', 'Thessaly', 'Ysmera', 'Abyssa'], s: ['Luz-Abissal', 'Maré-Funda', 'Escama-Azul', 'do Recife', 'Corrente-Fria', 'Pérola-Viva'] },
+  zephyran: { m: ['Aerion', 'Zephyr', 'Caelan', 'Ventus', 'Aurel', 'Skyrel', 'Galeth', 'Nimbus'], f: ['Aeris', 'Zephyra', 'Caelia', 'Briza', 'Aurela', 'Skyla', 'Galena', 'Lyra'], s: ['Pena-de-Prata', 'Asa-Leve', 'Sopro-Alto', 'das Nuvens', 'Vento-Norte', 'Rajada'] },
+  thaldrim: { m: ['Ametrys', 'Quarzon', 'Thaldor', 'Prisman', 'Geodar', 'Lazurel', 'Crystor', 'Obelion'], f: ['Ametra', 'Quarzia', 'Thalya', 'Prisma', 'Geodessa', 'Lazura', 'Crystal', 'Opalyn'], s: ['o Imutável', 'Faceta-Viva', 'Brilho-Eterno', 'da Geoda', 'Veio-Lilás', 'Prisma-Antigo'] },
+  silvano: { m: ['Sylwen', 'Carvalhar', 'Raizon', 'Musgor', 'Folhedo', 'Galhardo', 'Seivar', 'Ramiel'], f: ['Sylvia', 'Flora', 'Raiza', 'Musgália', 'Folhinha', 'Seiva', 'Rama', 'Hera'], s: ['Raiz-Antiga', 'Folha-Verde', 'Casca-Dura', 'do Bosque', 'Seiva-Doce', 'Galho-Torto'] },
+  krazul: { m: ['Ignarok', 'Krazmor', 'Basalto', 'Magnor', 'Pyrrak', 'Cindral', 'Obsidor', 'Vulkar'], f: ['Ignara', 'Krazya', 'Brasa', 'Magna', 'Pyrra', 'Cindra', 'Obsidia', 'Lavínia'], s: ['Coração-de-Magma', 'Punho-de-Brasa', 'Pele-de-Rocha', 'da Forja', 'Chama-Negra', 'Cinza-Quente'] },
+  nimbor: { m: ['Velaryn', 'Nimbrel', 'Umbriel', 'Crepus', 'Noxen', 'Duskar', 'Aethel', 'Morvel'], f: ['Velara', 'Nimbra', 'Umbra', 'Crepúscula', 'Noxia', 'Duskia', 'Aethra', 'Selune'], s: ['Meia-Luz', 'Véu-Violeta', 'Entre-Mundos', 'do Ocaso', 'Sussurro', 'Passo-Leve'] },
+  vaelith: { m: ['Kairon', 'Rugar', 'Taurek', 'Fennor', 'Ursin', 'Garrak', 'Lince', 'Brado'], f: ['Kaira', 'Rugia', 'Taura', 'Fenna', 'Ursa', 'Garra', 'Linça', 'Bravia'], s: ['Presa-Dourada', 'Juba-Longa', 'Olho-de-Fera', 'da Savana', 'Uivo-Alto', 'Casco-Firme'] },
+  xarqin: { m: ["Xal'Thuun", "Qor'Vax", 'Zenthar', "Xar'Ul", 'Vorlex', "Ith'Qar", 'Nebulon', 'Astrax'], f: ["Xyla'Qin", 'Qyra', 'Zentha', "Ith'Ra", 'Vorla', 'Nebula', 'Astra', "Xan'Ya"], s: ['Tece-Estrelas', 'Olho-Cósmico', 'Além-Véu', 'do Vazio', 'Fio-de-Luz', 'Dobra-Espaço'] },
+  brumario: { m: ['Ossyrel', 'Brumor', 'Nebel', 'Vaporan', 'Cinzel', 'Fumaren', 'Orvalho', 'Neblin'], f: ['Ossyra', 'Bruma', 'Nebela', 'Vapora', 'Cinzia', 'Fumara', 'Orvalha', 'Neblina'], s: ['Véu-Cinza', 'Sopro-Frio', 'Passo-de-Névoa', 'da Charneca', 'Olhar-Pálido', 'Sem-Forma'] },
+  terralux: { m: ['Grumvar', 'Rochedo', 'Granor', 'Basalt', 'Quartzo', 'Terrok', 'Lapidar', 'Calcar'], f: ['Gruma', 'Rocha', 'Granita', 'Basália', 'Quartza', 'Terra', 'Lápis', 'Calcita'], s: ['Pedra-Viva', 'Runa-Funda', 'Ombro-de-Montanha', 'do Cânion', 'Veio-de-Ouro', 'Mão-de-Pedra'] },
+  anjo: { m: ['Aurelith', 'Seraphiel', 'Cassiel', 'Raziel', 'Uriel', 'Zadkiel', 'Haniel', 'Azrael', 'Camael', 'Jophiel'], f: ['Aurelia', 'Seraphina', 'Celestia', 'Ariel', 'Elarien', 'Lumiel', 'Gabriela', 'Selaphiel', 'Iophiel', 'Raquel'], s: ['da Aurora', 'Asa-Dourada', 'do Primeiro Coro', 'Luz-Eterna', 'Pena-Branca', 'do Halo'] },
   gigante: { m: ['Ulfgar', 'Brakk', 'Torvald', 'Hrodmar', 'Grom', 'Bjarki', 'Stigr', 'Orrin'], f: ['Hilda', 'Brunna', 'Ragna', 'Sigrun', 'Tova', 'Gerda', 'Astra'], s: ['Pedra-Viva', 'Ombro-de-Montanha', 'Passo-Trovão', 'Punho-de-Rocha', 'Barba-de-Neve'] },
   nyxar: { m: ["Vhar'Zul", 'Kragnar', "Ozh'Ral", 'Thurvak', 'Nyxor', 'Zhaal', 'Mordrak', "Vex'Thar", 'Ulgoth'], f: ['Nyxa', "Zhae'Ra", 'Vorana', 'Ishkha', 'Mor\'Veth', 'Sylvhar', 'Kaelith', 'Vashra'], s: ['Chifre-Negro', 'Veia-de-Luz', 'Garra-Antiga', 'da Cinza', 'Olho-Violeta', 'Sombra-Viva', 'Osso-Pálido'] },
   gnomo: { m: ['Fizbo', 'Tinkel', 'Bimbo', 'Zook', 'Pipo', 'Gimble', 'Nim', 'Wizzle'], f: ['Pimpa', 'Tilly', 'Zinnia', 'Bixie', 'Lulu', 'Fifi', 'Mirra'], s: ['Engrenagem', 'Parafuso', 'Mola-Torta', 'Faísca', 'Chaleira', 'Vapor-Doce'] },
@@ -918,6 +1078,16 @@ const NAMES = {
     s: ['Machado-Gélido', 'Filho-do-Urso', 'Escudo-Partido', 'Lobo-Branco', 'Barba-de-Neve'] }
 };
 const SETTLEMENT_NAMES = {
+  voralis: { cap: 'Thalassyr', list: ['Lagoa Luminosa', 'Recife das Pérolas', 'Concha Alta', 'Coral Azul', 'Maré Calma', 'Gruta Brilhante', 'Abismo Raso', 'Corrente Viva', 'Ilhota de Nácar', 'Baía das Medusas', 'Farol de Coral', 'Poço Profundo'] },
+  zephyra: { cap: 'Aerópolis', list: ['Pico do Sopro', 'Rocha Suspensa', 'Ninho Alto', 'Mirante dos Ventos', 'Vila Pluma', 'Planalto Prata', 'Torre da Brisa', 'Campo Ventoso', 'Penhasco Leve', 'Porto das Asas', 'Moinho Celeste', 'Vale do Assobio'] },
+  thaldrim: { cap: 'Prismaterra', list: ['Geoda Funda', 'Campo Lilás', 'Pico Facetado', 'Veio de Ametista', 'Vila Quartzo', 'Salão Prismático', 'Mina Cintilante', 'Pedra Clara', 'Torre de Opala', 'Vale Vítreo', 'Cristalina', 'Eco de Cristal'] },
+  silvania: { cap: 'Coração-da-Mata', list: ['Raiz Funda', 'Tronco Oco', 'Vila Musgo', 'Copa Alta', 'Clareira Viva', 'Seiva Doce', 'Galho Torto', 'Ninho de Folhas', 'Bosque dos Olhos', 'Flor Eterna', 'Cipó Grande', 'Toca da Hera'] },
+  krazul: { cap: 'Ignarok', list: ['Forja Funda', 'Rio de Brasa', 'Vila Obsidiana', 'Cratera Rubra', 'Pedra Quente', 'Salão da Bigorna', 'Fenda de Magma', 'Cinza Alta', 'Torre Negra', 'Poço de Lava', 'Vidro Negro', 'Brasa Eterna'] },
+  nimbor: { cap: 'Ocaso', list: ['Ruína do Véu', 'Vila Meia-Luz', 'Torre Violeta', 'Areia Lilás', 'Templo do Sussurro', 'Campo das Sombras', 'Último Raio', 'Portal Antigo', 'Vale do Crepúsculo', 'Pedra do Sonho', 'Arco Partido', 'Lua Baixa'] },
+  vaelith: { cap: 'Grande Toca', list: ['Acampamento da Juba', 'Baobá Velho', 'Poço das Zebras', 'Rocha do Uivo', 'Capim Alto', 'Trilha da Manada', 'Toca do Lince', 'Campo Dourado', 'Totem da Caçada', 'Vale das Feras', 'Ninho do Falcão', 'Rio Lento'] },
+  xarqin: { cap: "Xar'Vael", list: ['Observatório Alto', 'Vila Estelar', 'Pedra Caída', 'Campo Cósmico', 'Torre do Vazio', 'Dobra do Espaço', 'Templo das Constelações', 'Cratera Azul', 'Fio de Luz', 'Véu de Estrelas', 'Poço do Cosmos', 'Arco Celeste'] },
+  brumaria: { cap: 'Velabruma', list: ['Charneca Cinza', 'Vila Orvalho', 'Pântano Pálido', 'Torre da Névoa', 'Brejo Calado', 'Ponte Sumida', 'Lago Fantasma', 'Campo Úmido', 'Moinho Cinzento', 'Vale Velado', 'Sino da Bruma', 'Farol Apagado'] },
+  terralux: { cap: 'Grumvar', list: ['Cânion Rúnico', 'Vila Granito', 'Arco de Pedra', 'Mesa Alta', 'Veio Dourado', 'Pilar Vivo', 'Desfiladeiro Fundo', 'Rocha Mãe', 'Salão de Basalto', 'Vale do Eco', 'Muralha Viva', 'Pedra Cantante'] },
   ferrania: { cap: 'Ferrânia', list: ['Vila Caldeira', 'Porto Carvão', 'Engrenagem Alta', 'Fundição Velha', 'Trilho Novo', 'Chaminé Vermelha', 'Vapor Branco', 'Ponte de Ferro', 'Bairro do Relógio', 'Usina Sul', 'Manufatura', 'Vila Locomotiva', 'Campo do Vapor', 'Cais de Carvão', 'Forja Nova'] },
   kharzul: { cap: 'Kharzul', list: ['Bigorna Funda', 'Portão de Ferro', 'Mina do Rei', 'Salão das Runas', 'Forja Eterna', 'Pico Martelo', 'Veio de Ouro', 'Cripta dos Ancestrais', 'Ponte de Pedra', 'Barba-Longa'] },
   orkhai: { cap: 'Orkhai', list: ['Acampamento do Khan', 'Yurta Vermelha', 'Colina dos Lobos', 'Pedra do Uivo', 'Rio de Sangue', 'Totem Alto', 'Vale do Trovão', 'Estepe Seca', 'Poço dos Cavalos', 'Fogueira Eterna', 'Garra Partida'] },
@@ -960,8 +1130,21 @@ const CULTURES = {
   orc: { plaza: T.DIRT, street: T.DIRT, wall: T.PALISADE, walls: ['capital', 'town', 'village'], houseWall: 'hide', roof: ['#8a5a3a', '#6a3a2a', '#9a6a4a'], wallC: '#7a5a3a', race: 'orc', tents: true },
   desert: { plaza: T.SANDSTONE, street: T.SANDSTONE, wall: T.WALL, walls: ['capital'], houseWall: 'adobe', roof: ['#e8e0d0', '#4a80c0', '#e0d0b0'], wallC: '#d8b880', race: 'felino', domes: true },
   swamp: { plaza: T.WOOD, street: T.WOOD, wall: null, walls: [], houseWall: 'stilt', roof: ['#8a7a4a', '#6a6a3a', '#7a6a3a'], wallC: '#6a5a3a', race: 'draconato' },
-  fort: { plaza: T.DCOBBLE, street: T.DCOBBLE, wall: T.WALL, walls: ['capital', 'town', 'village'], houseWall: 'stone', roof: ['#3a3a4a', '#4a3a3a'], wallC: '#7a7a80', race: 'humano', guard: true }
+  fort: { plaza: T.DCOBBLE, street: T.DCOBBLE, wall: T.WALL, walls: ['capital', 'town', 'village'], houseWall: 'stone', roof: ['#3a3a4a', '#4a3a3a'], wallC: '#7a7a80', race: 'humano', guard: true },
+  // Elyndra
+  abissal: { plaza: T.CORAL, street: T.SANDSTONE, wall: T.WALL, walls: ['capital'], houseWall: 'adobe', roof: ['#28b0c8', '#3a70d0', '#1a8a9a'], wallC: '#c0e8f0', race: 'voralis', domes: true, guard: true },
+  aerea: { plaza: T.COBBLE, street: T.COBBLE, wall: null, walls: [], houseWall: 'timber', roof: ['#f0f0f8', '#a8c8e8', '#e8d8b0'], wallC: '#f4f0e8', race: 'zephyran', flowers: true },
+  cristal: { plaza: T.CRYSTALF, street: T.DCOBBLE, wall: T.WALL, walls: ['capital', 'town'], houseWall: 'stone', roof: ['#8a6ae0', '#6a4ac0', '#b090f0'], wallC: '#5a4a7a', race: 'thaldrim', guard: true, glow: true },
+  arvore: { plaza: T.LIVEMOSS, street: T.RFLOOR, wall: null, walls: [], houseWall: 'elven', roof: ['#3a8a3a', '#5aa040', '#2a6a4a'], wallC: '#c8b888', race: 'silvano', glow: true },
+  magma: { plaza: T.OBSIDIAN, street: T.VFLOOR, wall: T.WALL, walls: ['capital', 'town', 'village'], houseWall: 'stone', roof: ['#5a1a10', '#3a1a1a', '#7a2a10'], wallC: '#3a2a2a', race: 'krazul', guard: true },
+  crepusculo: { plaza: T.DCOBBLE, street: T.DUSKSAND, wall: null, walls: [], houseWall: 'stone', roof: ['#4a2a7a', '#6a3a9a', '#2a1a4a'], wallC: '#6a5a8a', race: 'nimbor', glow: true },
+  tribal: { plaza: T.DIRT, street: T.DIRT, wall: T.PALISADE, walls: ['capital', 'town'], houseWall: 'hide', roof: ['#a07a3a', '#8a5a2a', '#c09a4a'], wallC: '#7a5a3a', race: 'vaelith', tents: true },
+  cosmica: { plaza: T.STARDUST, street: T.DCOBBLE, wall: T.WALL, walls: ['capital'], houseWall: 'adobe', roof: ['#2a1a6a', '#4a2a9a', '#1a1a4a'], wallC: '#3a3060', race: 'xarqin', domes: true, guard: true, glow: true },
+  nevoa: { plaza: T.DCOBBLE, street: T.DCOBBLE, wall: null, walls: [], houseWall: 'stilt', roof: ['#5a7a9a', '#4a6a8a', '#6a8aa0'], wallC: '#5a6a7a', race: 'brumario' },
+  pedra: { plaza: T.SANDSTONE, street: T.LIVESTONE, wall: T.WALL, walls: ['capital', 'town'], houseWall: 'adobe', roof: ['#b08a50', '#8a6a3a', '#c8a060'], wallC: '#c8a878', race: 'terralux', guard: true }
 };
+// chão em volta das casas (interior) de cada bioma inventado
+const BIOME_GROUND = { reef: T.CORAL, windland: T.WINDGRASS, crystal: T.CRYSTALF, liveforest: T.LIVEMOSS, obsidian: T.OBSIDIAN, dusk: T.DUSKSAND, savanna: T.SAVANNA, cosmic: T.STARDUST, mist: T.MISTHEATH, livestone: T.LIVESTONE };
 
 // ---------- Receitas ----------
 const RECIPES = {
@@ -1042,6 +1225,16 @@ const MAIN_QUEST = [
 
 // ---------- Falas ----------
 const RUMORS = {
+  voralis: ['À noite, as lagoas de Voralis brilham como um céu caído.', 'A Rainha-Maré Nerysa consegue ficar dias inteiros debaixo d\'água.', 'Dizem que um leviatã dorme numa gruta de coral perto da costa.', 'Nunca vimos navios de outras terras até agora. De onde você veio, afinal?'],
+  zephyra: ['Os Zephyrans pulam de uma rocha flutuante para outra como se fosse nada.', 'O vento do planalto empurra quem anda por ele: você vai mais rápido aqui.', 'Uma tempestade viva mora num santuário antigo no alto do planalto.', 'Dizem que há uma ilha acima das nuvens... mas ninguém nunca chegou lá.'],
+  thaldrim: ['Os Thaldrim não comem: eles bebem a luz dos cristais.', 'Se um Thaldrim quebra um braço, ele cresce de novo em alguns anos.', 'Os cristais vivos brilham mais quando alguém mente perto deles.', 'Um colosso de cristal guarda a caverna mais funda de Thaldrim.'],
+  silvania: ['As árvores daqui têm olhos. Não corte nenhuma perto de um Silvano.', 'A Guardiã-Mãe Sylwen tem mais de mil anos.', 'O musgo vivo cura feridas, se você dormir sobre ele.', 'Um ent ancião está furioso desde que um bosque inteiro apodreceu.'],
+  krazul: ['Os Krazul nascem dentro dos vulcões e saem andando já adultos.', 'A obsidiana daqui corta qualquer armadura.', 'Um titã de magma acordou numa das forjas antigas.', 'Os Krazul acham que água fria é uma ofensa.'],
+  nimbor: ['Aqui é sempre fim de tarde. O sol nunca termina de se pôr.', 'Os Nimbors aparecem e desaparecem quando querem.', 'As ruínas do crepúsculo são mais velhas que qualquer reino conhecido.', 'As Flores do Crepúsculo só abrem quando ninguém está olhando.'],
+  vaelith: ['Os Vaelith conversam com as zebras como se fossem parentes.', 'Nunca corra de um leão de juba negra. Ele gosta da caçada.', 'A Grande Caçadora Kaira derrubou uma besta alfa com as mãos.', 'Os baobás guardam água para a estação seca.'],
+  xarqin: ["Os Xar'Qin dobram o espaço: entram numa porta e saem em outra vila.", 'Pedaços de estrelas caíram neste vale há milênios.', 'O Arquimago Xal\'Thuun diz que já viu o fim do mundo duas vezes.', 'Há um pilar de luz no meio do vale que sobe até as nuvens. Quem toca nele some.'],
+  brumaria: ['Os Brumários ficam invisíveis quando a névoa engrossa.', 'A névoa daqui nunca vai embora, nem ao meio-dia.', 'Se ouvir um sino na charneca, não siga o som.', 'O Senhor da Névoa já foi um Brumário como nós.'],
+  terralux: ['As runas dos cânions acendem quando a pedra está feliz.', 'Os Terralux dormem de pé, encostados na montanha.', 'Um Terralux pode viver séculos sem comer nem beber.', 'O Patriarca Grumvar ergueu esta cidade inteira em uma noite.'],
   ferrania: ['As fábricas de Ferrânia nunca dormem: o vapor sobe dia e noite.', 'Os mosquetes arcanos misturam pólvora com pó de cristal mágico. Um tiro derruba um troll!', 'Só os reinos humanos de Valtheria sabem fabricar mosquetes.', 'O Chanceler quer trilhos de ferro ligando todo o continente.', 'Os gnomos de Rodafina dizem que roubamos as invenções deles.'],
   kharzul: ['As minas de Kharzul são tão fundas que chegam ao fogo do mundo.', 'Os anões de Kharzul dizem que Khaz Durim é só uma vila deles.', 'O Alto-Rei forja runas que nunca se apagam.', 'Cuidado com os golens nas minas abandonadas.'],
   orkhai: ['As hordas do Grão-Khan cavalgam lobos do tamanho de cavalos.', 'Nas estepes, a honra vale mais que o ouro.', 'Aurélion e Orkhai brigam por estas terras há séculos.', 'Os tambores de guerra tocam quando a lua fica vermelha.'],

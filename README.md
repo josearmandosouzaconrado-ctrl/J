@@ -78,10 +78,45 @@ WASD/setas andar • Shift correr • J/Espaço atacar • K magia • Q trocar 
 | `js/game.js`, `js/game2.js` | Loop principal, renderização, iluminação, salvamento, montarias, empregos, construção, cena inicial |
 | `js/war.js` | Guerra, diplomacia, exércitos, batalhas, conquistas, alistamento e saque |
 | `js/academy.js` | Academia Real de Astralis: alunos, aulas, matrícula, visitas de amigos e cenas |
+| `js/racas.js`, `js/racas_frames.js`, `img/racas.png` | Sprites das 10 raças de Elyndra e dos Anjos, recortados da arte original por `tools/extrair_racas.py` |
+| `js/elyndra.js` | Os 10 biomas inventados de Elyndra: chãos, paredes, objetos e clima |
+| `js/ceu.js` | Seraphel, a cidade dos anjos acima das nuvens: o Coro dos Serafins, o duelo e o romance com anjos |
 
 O modo **Multiplayer** aparece no menu inicial como "em breve".
 
 Sem dependências externas além da fonte VT323 (opcional).
+
+## Elyndra, o continente do leste (o maior de todos)
+
+Do outro lado do **Mar do Amanhecer**, a leste de Kaeloria e de Valtheria, fica **Elyndra**: cerca de **238 km² de terra** (Valtheria tem uns 144 km²). O mundo ficou mais que duas vezes mais largo para caber ele.
+
+Elyndra tem **10 biomas que não existem em nenhum outro lugar**, cada um com chão, objetos, criaturas, masmorras e clima próprios — e **10 povos novos**, com sprites tirados da arte original (`tools/racas_ref.png`):
+
+| Reino | Povo | Bioma inventado |
+|---|---|---|
+| Recifes Abissais de Voralis | Voralis, os filhos das profundezas | **Recifes bioluminescentes**: coral e lagoas que brilham à noite, esporos no ar |
+| Planalto dos Ventos de Zephyra | Zephyrans, os filhos do vento | **Planalto dos ventos**: relva prateada que te empurra mais rápido e rochas que flutuam |
+| Campos de Cristal de Thaldrim | Thaldrim, os senhores do cristal | **Campos de cristal**: chão lilás cintilante, montanhas de cristal e cristais vivos para coletar |
+| Floresta Viva de Silvânia | Silvanos, os guardiões da floresta | **Floresta viva**: musgo que pulsa e árvores com olhos |
+| Terras de Obsidiana de Krazul | Krazul, os filhos do fogo | **Obsidiana**: vidro negro rachado de magma, rios de lava e espinhos que brilham |
+| Ermos do Crepúsculo de Nimbor | Nimbors, os filhos do crepúsculo | **Crepúsculo eterno**: areia violeta, ruínas e Flores do Crepúsculo |
+| Savana Selvagem de Vaelith | Vaelith, os que falam com os animais | **Savana selvagem**: capim dourado, baobás, zebras, hienas e leões |
+| Vale Cósmico de Xar'Qin | Xar'Qin, os mestres da realidade | **Vale cósmico**: poeira de estrelas no chão, estrelas cadentes e fragmentos estelares |
+| Charneca da Bruma de Brumária | Brumários, os guardiões do nevoeiro | **Charneca da bruma**: névoa que nunca vai embora |
+| Cânions de Pedra Viva de Terralux | Terralux, os filhos da pedra viva | **Pedra viva**: cânions com runas que acendem e monólitos vivos |
+
+- Cada reino tem capital, cidades, vilas, masmorras (Gruta de Coral, Caverna de Cristal, Forja de Magma, Observatório Cósmico...) com **chefes novos** (Leviatã Abissal, Colosso de Cristal, Titã de Magma, Arauto Estelar...).
+- Os reinos de Elyndra **nunca tiveram contato** com os outros continentes: não entram nas guerras e não mandam herdeiros à Academia. As raças não podem ser escolhidas na criação de personagem.
+- Chega-se de **navio** por quatro portos novos na costa oeste.
+
+### Seraphel e os Anjos
+
+Muito acima das nuvens fica **Seraphel**, a cidade dos **Anjos**. Os reinos **não sabem que ela existe** e os anjos **não fazem diplomacia** com ninguém. O único caminho é o **Pilar de Luz**, um feixe que sobe do Vale Cósmico de Xar'Qin.
+
+- Os anjos vivem numa ilha de nuvem com avenidas de mármore, templos e harpas: cidadãos, guerreiros, arqueiros, magos, clérigos e assassinos (sprites da arte original `tools/anjos_ref.png`).
+- O **Coro dos Serafins** são os sete anjos mais fortes, do 1º ao 7º. Para ter um romance com um anjo é preciso **vencer em duelo a Quarta Serafim, Aurelith**, na arena do Coro (ninguém morre: quem chega a zero se rende).
+- Depois da vitória você **escolhe um anjo** (até a própria Aurelith), que vira sua **namorada/namorado** ou sua **esposa/marido**.
+- **Anjos não gostam de ter filhos**: com um anjo a chance de ter um bebê é muito pequena (cerca de 6% por tentativa, uma tentativa por dia).
 
 ## Ilha de Nyxhal e a alcateia Nyxar
 

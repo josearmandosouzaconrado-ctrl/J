@@ -1,6 +1,6 @@
 'use strict';
 // rodando dentro do aplicativo Android (APK)?
-const GAME_VERSION = '0.9.6';
+const GAME_VERSION = '0.9.7';
 const IS_APK = /EldoriaAPK/.test(navigator.userAgent);
 // versão ADM (painel de testes): APK 'Eldoria ADM' ou o endereço com ?adm
 const IS_ADM = /EldoriaADM/.test(navigator.userAgent) || /[?&]adm\b/.test(location.search);
@@ -9,14 +9,16 @@ const TILE = 16;
 const CHUNK = 32;
 const CHUNK_PX = TILE * CHUNK;
 const WORLD_TILES = 4096; // altura do mundo e largura do continente de Eldoria
-const WORLD_W = 9216;      // largura total: Eldoria + Mar das Brumas + Kaeloria (e Valtheria embaixo)
+const WORLD_W = 19456;     // largura total: Eldoria + Mar das Brumas + Kaeloria (Valtheria embaixo) + Mar do Amanhecer + Elyndra
 const WORLD_H = 12288;     // altura total: Eldoria/Kaeloria no norte + Oceano do Sul + Valtheria
 const MAP_W = WORLD_W / 16; // largura do mapa-múndi / névoa (células de 16 tiles)
 const MAP_H = WORLD_H / 16;
 const VALTHERIA_Y = 4400;  // abaixo desta linha começa o continente de Valtheria
 // Ilha de Nyxhal: ilha pequena no oceano a leste de Kaeloria, só do povo Nyxar (continente 3)
 const ISLE = { x: 7350, y: 1500, rx: 300, ry: 240 };
-function contAt(x, y) { return Math.abs(x - ISLE.x) < 540 && Math.abs(y - ISLE.y) < 470 ? 3 : y >= VALTHERIA_Y ? 2 : x >= WORLD_TILES ? 1 : 0; }
+// Elyndra: o continente do leste, o maior de todos (continente 4), além do Mar do Amanhecer
+const ELYNDRA = { x: 14450, y: 6144, rx: 4750, ry: 5750, x0: 9700 };
+function contAt(x, y) { return x >= ELYNDRA.x0 ? 4 : Math.abs(x - ISLE.x) < 540 && Math.abs(y - ISLE.y) < 470 ? 3 : y >= VALTHERIA_Y ? 2 : x >= WORLD_TILES ? 1 : 0; }
 
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;

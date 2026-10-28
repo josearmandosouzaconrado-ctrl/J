@@ -478,7 +478,7 @@ const Ship = {
   talk(a) {
     const G = Game, L = G.level, P = G.player;
     if (!L || !L.isShip) return;
-    const pct = Math.round(L.progress() * 100), sea = L.to.port.cont === 2 || L.from.port.cont === 2 ? 'Oceano do Sul' : 'Mar das Brumas';
+    const pct = Math.round(L.progress() * 100), sea = Elyndra.seaName(L.to.port.cont, L.from.port.cont);
     if (a.shipCrew === 'captain') {
       const txt = L.docked ? `Chegamos a <b>${esc(L.to.name)}</b>! Pode desembarcar.` : `Navegamos pelo <b>${sea}</b> rumo a <b>${esc(L.to.name)}</b>, em ${CONTINENTS[L.to.port.cont]}.<br>Já percorremos <b>${pct}%</b> da rota. Faltam uns ${this.eta(L)} segundos de vento bom.`;
       const opts = [];

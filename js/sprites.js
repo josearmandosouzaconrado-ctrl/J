@@ -47,6 +47,7 @@ const Sprites = {};
   // ---------- helpers de pintura ----------
   function fill(p, c) { p(0, 0, c, 16, 16); }
   function speck(p, r, cols, n, size = 1) { for (let i = 0; i < n; i++) p(r.int(0, 16 - size), r.int(0, 16 - size), r.pick(cols), size, size); }
+  S.fill = fill; S.speck = speck;
   function blob(p, r, cx, cy, rad, base, opts = {}) {
     const hi = opts.hi || shade(base, 0.22), sh = opts.sh || shade(base, -0.28), dk = shade(base, -0.45);
     for (let y = Math.floor(cy - rad); y <= cy + rad; y++) for (let x = Math.floor(cx - rad); x <= cx + rad; x++) {
@@ -89,6 +90,7 @@ const Sprites = {};
 
   // ---------- TILES ----------
   const TP = {}; // pintores por tile
+  S.TP = TP; S.slabs = (p, r, b, l, n) => slabs(p, r, b, l, n);
   TP[T.GRASS] = (p, r) => { fill(p, '#4f9a3c'); speck(p, r, ['#3f8a30', '#458f34'], 34); speck(p, r, ['#62ad48', '#5aa542'], 18); for (let i = 0; i < 4; i++) { const x = r.int(1, 14), y = r.int(2, 14); p(x, y, '#6fbf50'); p(x, y - 1, '#7acb58'); } };
   TP[T.DGRASS] = (p, r) => { fill(p, '#3a7330'); speck(p, r, ['#2f6228', '#336a2b'], 36); speck(p, r, ['#4a8a3a', '#447f36'], 16); speck(p, r, ['#6a5a2a', '#7a6a32'], 3); };
   TP[T.ELFGRASS] = (p, r) => { fill(p, '#3d9a72'); speck(p, r, ['#2f8a62', '#358f68'], 30); speck(p, r, ['#52b088', '#5abb90'], 14); if (r.chance(0.5)) p(r.int(1, 14), r.int(1, 14), '#c0fff0'); };
@@ -142,6 +144,7 @@ const Sprites = {};
     [T.HWALL]: { top: '#5a3a22', face: '#d8c8a4', dark: '#6a4a2a', hi: '#efe2c4', kind: 'plaster' },
     [T.LOGWALL]: { top: '#4a3018', face: '#7a5230', dark: '#4a2e18', hi: '#9a7048', kind: 'logh' }
   };
+  S.WALLS = WALLS;
   function paintWall(p, r, w, face) {
     if (!face) {
       fill(p, w.top);
@@ -268,6 +271,7 @@ const Sprites = {};
     if (!s) { s = makeObj(id, v, frame); objCache.set(k, s); }
     return s;
   };
+  S.extraObj = {};
   function mk(w, h, fn, ol = true) { const c = cv(w, h), p = P(c.getContext('2d')); fn(p, c.getContext('2d')); if (ol) outline(c); return c; }
   function trunk(p, x, y, w, h, c) { p(x, y, c, w, h); p(x, y, shade(c, 0.2), 1, h); p(x + w - 1, y, shade(c, -0.25), 1, h); }
   function makeObj(id, v, f) {
@@ -644,7 +648,7 @@ const Sprites = {};
       case O.TOYBOX: { c = mk(14, 12, p => { p(1, 3, '#a05a30', 12, 9); p(1, 3, '#c07a48', 12, 2); p(3, 7, '#e0c060', 8, 1); p(2, 0, '#e04040', 3, 3); S.ellipse(p, 9, 2, 2, 2, '#4080e0'); p(6, 1, '#f0d040', 2, 2); }); break; }
       case O.BATHTUB: { c = mk(24, 14, p => { S.ellipse(p, 12, 7, 11, 6, '#8a6a40'); S.ellipse(p, 12, 6, 9, 4, '#a0c8e0'); S.ellipse(p, 9, 5, 3, 1.5, '#e0f0ff'); p(2, 11, '#6a4a2a', 3, 3); p(19, 11, '#6a4a2a', 3, 3); }); break; }
       case O.WORKBENCH: { c = mk(18, 16, p => { p(0, 4, '#a87440', 18, 4); p(0, 4, '#c8945a', 18, 1); p(1, 8, '#6a4020', 2, 8); p(15, 8, '#6a4020', 2, 8); p(3, 1, '#9a9a9a', 5, 3); p(11, 2, '#7a5028', 6, 2); p(5, 10, '#8a5a2e', 8, 2); }); break; }
-      default: c = mk(8, 8, p => p(0, 0, '#ff00ff', 8, 8));
+      default: if (S.extraObj[id]) { const o = S.extraObj[id](v, f, r, mk); c = o.c; oy = o.oy || 0; } else c = mk(8, 8, p => p(0, 0, '#ff00ff', 8, 8));
     }
     return { c, oy, w: c.width, h: c.height };
   }
@@ -748,5 +752,5 @@ const Sprites = {};
     return c;
   }
 
-  S.init = function () { initTiles(); Sombra.load(); Nyxar.load(); };
+  S.init = function () { Elyndra.initArt(); initTiles(); Sombra.load(); Nyxar.load(); Racas.load(); };
 })(Sprites);

@@ -491,6 +491,7 @@
   S.actor = function (L) {
     if (L.k === 'sombra') return Sombra.sheet();
     if (L.k === 'nyxar') return Nyxar.sheet(L);
+    if (L.k === 'raca') return Racas.sheet(L);
     const key = JSON.stringify(L);
     let s = actorCache.get(key);
     if (s) return s;

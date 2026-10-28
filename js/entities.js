@@ -229,7 +229,7 @@ const Combat = {
       const ls = (o.drain || 0) + P.stat.lifesteal;
       if (ls > 0) P.heal(dmg * ls, true);
     }
-    if (t.hp <= 0) { t.hp = 0; t.die(o.src); }
+    if (t.hp <= 0) { if (Ceu.duelGuard(t)) return dmg; t.hp = 0; t.die(o.src); }
     return dmg;
   },
   melee(src, ang, arc, range, dmgFn) {
@@ -584,7 +584,7 @@ class Monster extends Actor {
 // ---------- NPCs ----------
 function npcLook(race, sex, rng, role) {
   const R = RACES[race];
-  if (R.sheet) return Nyxar.look(sex, rng, role);
+  if (R.sheet) return sheetLook(race, sex, rng, role);
   const L = { k: 'hum', skin: rng.pick(R.skins), hair: rng.pick(R.hairs), hairStyle: sex === 'f' ? rng.pick([1, 1, 4, 0]) : rng.pick([0, 0, 2, 3, 0]) };
   if (R.ears) L.ears = R.ears;
   if (R.tall) L.tall = 1; if (R.short) L.short = R.short; if (R.bulky) L.bulky = true;

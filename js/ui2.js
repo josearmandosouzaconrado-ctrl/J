@@ -62,7 +62,9 @@ Object.assign(UI, {
         Game.spawnFollower(); this.close(); Game.toast(`${a.name} agora acompanha você!`, '#ff90c0');
       } });
       if (P.houses.length && !P.spouseHome) opts.push({ label: 'Vamos morar na minha casa', fn: () => { P.spouseHome = P.houses[0]; const s = Game.world.settlements.find(s => s.id === P.spouseHome); Game.toast(`${a.name} vai morar na sua casa em ${s ? s.name : ''}.`, '#ff90c0'); this.personal(a, back); } });
-      if (P.spouseHome && P.houses.includes(P.spouseHome) && (P.children || []).length < 4 && !P.babyDue && r.aff >= 70) opts.push({ label: 'Vamos aumentar a família? 👶', fn: () => {
+      if (P.spouseHome && P.houses.includes(P.spouseHome) && (P.children || []).length < 4 && !P.babyDue && r.aff >= 70 && r.babyTryDay !== day) opts.push({ label: 'Vamos aumentar a família? 👶', fn: () => {
+        // anjos quase nunca aceitam ter filhos
+        if (!Ceu.babyTry(r)) return this.dialog(a.name, a.look, `${this.hearts(r.aff)}<br>${esc(this.pron(r.sex, 'Ele', 'Ela'))} desvia o olhar e fecha as asas.<br>"Anjos não costumam ter filhos... hoje não. Talvez nunca."<div class="dim small">(Com um anjo a chance de ter um filho é muito pequena. Dá para tentar de novo amanhã.)</div>`, [{ label: 'Voltar', fn: () => this.personal(a, back) }]);
         P.babyDue = Game.day + 3; r.aff = Math.min(100, r.aff + 5); Sfx.play('quest');
         this.dialog(a.name, a.look, 'Um bebê! Que alegria! Em alguns dias nossa família vai crescer. 💕', [{ label: 'Voltar', fn: () => this.personal(a, back) }]);
       } });

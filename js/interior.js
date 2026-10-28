@@ -352,6 +352,7 @@ class Interior {
   // chão de fora da casa (em vez do vazio preto)
   outsideTile() {
     const bio = this.s.region.biome;
+    if (BIOME_GROUND[bio]) return BIOME_GROUND[bio];
     return bio === 'snow' ? T.SNOW : bio === 'desert' ? T.DESERT : bio === 'volcanic' ? T.BADLAND : bio === 'swamp' ? T.MUD : bio === 'dead' ? T.DEADGRASS : bio === 'mountain' ? T.TUNDRA : bio === 'forest' ? T.DGRASS : T.GRASS;
   }
   render() {
