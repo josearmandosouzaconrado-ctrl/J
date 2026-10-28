@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Teste do Soldado</title>
+<style>
+  :root { --bg: #1b2026; --fg: #f1ecd9; --acc: #e6c35c; --btn: #2c333b; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1b2026; --fg: #f1ecd9; --acc: #e6c35c; --btn: #2c333b; } }
+  :root[data-theme="dark"] { --bg: #1b2026; --fg: #f1ecd9; --acc: #e6c35c; --btn: #2c333b; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font-family: system-ui, sans-serif; overflow: hidden; }
+  #c { position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; display: block; }
+  #ui { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; background: linear-gradient(transparent, rgba(0,0,0,.55)); }
+  button { background: var(--btn); color: var(--fg); border: 1px solid #485260; border-radius: 8px; padding: 10px 14px; font-size: 15px; }
+  button.on { background: var(--acc); color: #1b1b1b; border-color: var(--acc); font-weight: 700; }
+  #top { position: fixed; top: 0; left: 0; right: 0; padding: 12px 16px; font-size: 14px; background: linear-gradient(rgba(0,0,0,.5), transparent); pointer-events: none; }
+  #top b { color: var(--acc); }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="top"><b>Soldado novo (protótipo)</b> · arraste para girar, pinça para zoom · <span id="tri"></span></div>
+<div id="ui">
+  <button data-p="idle" class="on">Parado</button>
+  <button data-p="walk">Andando</button>
+  <button data-p="run">Correndo</button>
+  <button data-p="aim">Mirando</button>
+  <button data-p="kneel">Ajoelhado</button>
+  <button data-p="kneelaim">Ajoelhado mirando</button>
+  <button id="spin">Girar</button>
+  <button id="grp">Esquadrão</button>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/soldado3d.js"></script>
+<script>
+'use strict';
+const cv = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
+renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xaab4ba); scene.fog = new THREE.Fog(0xaab4ba, 12, 40);
+const camera = new THREE.PerspectiveCamera(32, 1, 0.05, 100);
+scene.add(new THREE.HemisphereLight(0xdfe8f0, 0x4a5030, 0.75));
+const sun = new THREE.DirectionalLight(0xfff2dc, 0.9); sun.position.set(3, 6, 4); sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4 }); scene.add(sun);
+const ground = new THREE.Mesh(new THREE.CircleGeometry(30, 48), new THREE.MeshLambertMaterial({ color: 0x6f7d43 }));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+const men = [];
+function addMan(x, z, ry, o) { const s = Soldado3.make(o); s.position.set(x, 0, z); s.rotation.y = ry; scene.add(s); men.push(s); return s; }
+const main = addMan(0, 0, 0, { variant: 0, skin: 0 });
+document.getElementById('tri').textContent = Math.round(Soldado3.triangles(main)) + ' triângulos';
+let squad = false;
+document.getElementById('grp').onclick = (e) => {
+  squad = !squad; e.target.classList.toggle('on', squad);
+  if (squad && men.length === 1) { addMan(-1.3, -1.1, 0.15, { variant: 1, skin: 1 }); addMan(1.3, -1.3, -0.1, { variant: 0, skin: 2 }); addMan(0.4, -2.6, 0.05, { variant: 1, skin: 3 }); }
+  men.forEach((m, i) => { if (i) m.visible = squad; });
+  cam.dist = squad ? 7.5 : 4.2;
+};
+let poseName = 'idle';
+for (const b of document.querySelectorAll('[data-p]')) b.onclick = () => { poseName = b.dataset.p; document.querySelectorAll('[data-p]').forEach(x => x.classList.toggle('on', x === b)); };
+let spin = false; document.getElementById('spin').onclick = (e) => { spin = !spin; e.target.classList.toggle('on', spin); };
+const cam = { yaw: 0.5, pitch: 0.12, dist: 4.2 };
+let drag = null, pinch = null;
+cv.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, id: e.pointerId }; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', (e) => { if (!drag || pinch || e.pointerId !== drag.id) return; cam.yaw -= (e.clientX - drag.x) * 0.008; cam.pitch = Math.max(-0.2, Math.min(1.2, cam.pitch + (e.clientY - drag.y) * 0.006)); drag.x = e.clientX; drag.y = e.clientY; });
+cv.addEventListener('pointerup', () => { drag = null; });
+cv.addEventListener('touchstart', (e) => { if (e.touches.length === 2) pinch = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); }, { passive: true });
+cv.addEventListener('touchmove', (e) => { if (e.touches.length === 2 && pinch) { const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); cam.dist = Math.max(1.4, Math.min(14, cam.dist * pinch / d)); pinch = d; } }, { passive: true });
+cv.addEventListener('touchend', () => { pinch = null; });
+cv.addEventListener('wheel', (e) => { cam.dist = Math.max(1.4, Math.min(14, cam.dist * (1 + Math.sign(e.deltaY) * 0.1))); }, { passive: true });
+function resize() { const w = window.innerWidth, h = window.innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+window.addEventListener('resize', resize); resize();
+const ST = { idle: {}, walk: { moving: true, speed: 6 }, run: { moving: true, speed: 10 }, aim: { aim: true }, kneel: { crouch: true }, kneelaim: { crouch: true, aim: true } };
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (spin) cam.yaw += dt * 0.5;
+  for (const m of men) if (m.visible) Soldado3.pose(m, ST[poseName], dt);
+  const ty = poseName.startsWith('kneel') ? 0.75 : 1.05;
+  camera.position.set(Math.sin(cam.yaw) * Math.cos(cam.pitch) * cam.dist, ty + Math.sin(cam.pitch) * cam.dist, Math.cos(cam.yaw) * Math.cos(cam.pitch) * cam.dist);
+  camera.lookAt(0, ty, squad ? -1 : 0);
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+window.__test = { men, cam, ST, setPose: (p) => { poseName = p; }, step: (n, dt) => { for (let i = 0; i < n; i++) for (const m of men) if (m.visible) Soldado3.pose(m, ST[poseName], dt || 0.05); } };
+</script>
+</body>
+</html>
