@@ -2325,7 +2325,7 @@ $('wMenu').addEventListener('click', () => { if (W) { W.paused = true; saveWorld
 $('bRetreat').addEventListener('click', () => { if (S.phase === 'battle') finishBattle(false, 'Você ordenou a retirada.'); });
 
 /* ---------- batalhas da campanha mundial no modo tático ---------- */
-const NAT_PLANE = { GER: ['fw190', 'Ju 87 Stuka'], ITA: ['fw190', 'Macchi C.202'], JAP: ['zero', 'Mitsubishi Zero'], MAN: ['zero', 'Zero'], SOV: ['p47', 'Il-2 Sturmovik'], ENG: ['p47', 'Hawker Typhoon'], USA: ['p47', 'P-47 Thunderbolt'], FRA: ['p47', 'Dewoitine D.520'], POL: ['p47', 'PZL P.11'], CHN: ['p47', 'Polikarpov I-16'] };
+const NAT_PLANE = { GER: ['ju87', 'Ju 87 Stuka'], ITA: ['c202', 'Macchi C.202'], JAP: ['zero', 'Mitsubishi Zero'], MAN: ['zero', 'Zero'], SOV: ['il2', 'Il-2 Sturmovik'], ENG: ['typhoon', 'Hawker Typhoon'], USA: ['p47', 'P-47 Thunderbolt'], FRA: ['d520', 'Dewoitine D.520'], POL: ['pzl11', 'PZL P.11'], CHN: ['i16', 'Polikarpov I-16'] };
 const NAT_PAL = {
   GER: {}, ITA: { jacket: 0x6b6a4f, pants: 0x63624a, helm: 0x5e604c, collar: 0x5a5a44 }, HUN: { jacket: 0x6f6a48, pants: 0x66603f, helm: 0x5e5f48 }, ROM: { jacket: 0x7a7556, pants: 0x6f6a4c }, FIN: { jacket: 0x63685a, pants: 0x5a5f52 },
   SOV: { jacket: 0x7d7250, pants: 0x6e6446, helm: 0x4d5a36, band: 0x4d5a36, web: 0x6a5a3c, legging: 0x3a3026, pack: 0x6e6446 }, ENG: { jacket: 0x76694a, pants: 0x6e6244, helm: 0x5c5c3c, web: 0xa59a74, legging: 0xa09670 },

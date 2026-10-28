@@ -2016,7 +2016,8 @@ float vnoise(vec3 x){ vec3 i = floor(x); vec3 f = fract(x); f = f * f * (3.0 - 2
     };
     walk(o); return Math.round(t);
   }
-  return { make, has: (k) => !!SPEC[k], kinds: () => Object.keys(SPEC), SPEC, K, triangles, A, prism, tloft, plan8, superPlan, lathe, decal, dtex, numTex };
+  const kit = { MB, loft, lathe, tube, faces, orient, prism, once, decal, canvasTex, star5, NOISE, box, C6, C8, C12, C16, SPH, HEMI, PT, PD, PL, STEEL, DARK, RUBBER, GLASS, smoothSides, decalMat, crew, zLoft };
+  return { make, has: (k) => !!SPEC[k], kinds: () => Object.keys(SPEC), SPEC, K, triangles, A, prism, tloft, plan8, superPlan, lathe, decal, dtex, numTex, kit };
 })();
 // substitui os modelos antigos pelos novos onde houver
 if (typeof makeTank === 'function') {
