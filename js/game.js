@@ -1452,6 +1452,7 @@ const Game = {
     }
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
+    Sombra.drawEyes(ctx, camX, camY, dark);
   },
   // gradientes radiais desenhados uma vez só: 0 = luz (recorta a escuridão), 1 = brilho quente do fogo
   lightBlob(kind) {
@@ -1459,6 +1460,7 @@ const Game = {
     if (this._blobs[kind]) return this._blobs[kind];
     const c = Sprites.cv(64, 64), x = c.getContext('2d'), g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
     if (kind === 0) { g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(0.55, 'rgba(0,0,0,0.7)'); g.addColorStop(1, 'rgba(0,0,0,0)'); }
+    else if (kind === 2) { g.addColorStop(0, 'rgba(255,40,40,1)'); g.addColorStop(0.25, 'rgba(255,20,30,0.55)'); g.addColorStop(1, 'rgba(160,0,10,0)'); }
     else { g.addColorStop(0, 'rgba(255,140,40,1)'); g.addColorStop(1, 'rgba(255,100,20,0)'); }
     x.fillStyle = g; x.fillRect(0, 0, 64, 64);
     return (this._blobs[kind] = c);

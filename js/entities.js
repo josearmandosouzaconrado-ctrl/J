@@ -121,7 +121,10 @@ class Actor {
   drawBody(ctx, camX, camY, S) {
     let dk;
     if (S.type === 'hum') dk = this.dir; else dk = this.dir === 'left' || this.dir === 'right' ? this.dir : this.lastH;
-    const f = S.type === 'hum' ? this.frameIndex() : (this.moving || this.fly ? 1 + (Math.floor(this.anim * 6) % 2) : 0);
+    let f = S.type === 'hum' ? this.frameIndex() : (this.moving || this.fly ? 1 + (Math.floor(this.anim * 6) % 2) : 0);
+    // poses especiais (Criatura das Sombras): ataque e morte
+    if (S.dead && this.dead) { S = S.dead; f = 0; }
+    else if (S.atk && (this.windup > 0 || this.swingT > 0 || this.charging > 0)) { S = S.atk; f = 0; }
     const img = this.flash > 0 ? Sprites.actorWhite(S, dk, f) : S[dk][f];
     const x = Math.round(this.x - img.width / 2 - camX), y = Math.round(this.y - img.height + 1 - camY - this.z);
     if (this.alpha < 1) ctx.globalAlpha = this.alpha;
@@ -286,6 +289,8 @@ class Monster extends Actor {
     this.specialT = 3 + Math.random() * 2; this.blockedT = 0; this.flowT = 0; this.chargeCd = 2; this.charging = 0;
     this.swingT = 0;
     if (this.ai === 'flyer') { this.z = 22; this.fstate = 'circle'; this.fT = 4; this.orbit = Math.random() * 6; }
+    // criatura das sombras: parada, andar sem pressa (vista de lado) e corrida atrás da presa
+    if (this.look.k === 'sombra') this.frameIndex = () => !this.moving ? 0 : this.target ? 1 + (Math.floor(this.anim * 7) % 2) : (Math.floor(this.anim * 4) % 2 ? 3 : 1);
     if (d.look.ghostly || d.ghost) this.alpha = 0.8;
     this.minions = 0;
     this.deadT = 0;
@@ -409,6 +414,7 @@ class Monster extends Actor {
     this.atkCd -= dt; this.specialT -= dt; this.chargeCd -= dt;
     if (this.swingT > 0) this.swingT -= dt;
     if (this.thrustT > 0) this.thrustT -= dt;
+    if (this.look.k === 'sombra') { if (this.S.placeholder && Sombra.ready) { this.S = Sombra.sheet(); this.h = this.S.h; } Sombra.update(this, dt); }
     this.moving = false;
     if (this.stun > 0) return;
     const sf = this.speedFactor;

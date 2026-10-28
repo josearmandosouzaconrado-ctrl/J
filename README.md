@@ -83,6 +83,14 @@ O modo **Multiplayer** aparece no menu inicial como "em breve".
 
 Sem dependências externas além da fonte VT323 (opcional).
 
+## Criatura das Sombras (só em Valtheria)
+
+Um predador enorme (cerca de 3,5 blocos de altura) que **só existe no continente de Valtheria**: aparece à noite nas florestas, montanhas, cavernas e áreas escuras (no Abismo de Umbraval e no Bosque de Lunethar até de dia). Os sprites foram recortados diretamente da folha de arte original (`tools/criatura_sombras_ref.png`, extraídos por `tools/extrair_sombra.py`): vista de frente, de lado e de costas, parada, andando, correndo, atacando e morrendo.
+
+- Ruge ao avistar a presa, avança em investidas e fica mais rápida à noite.
+- Os olhos vermelhos brilham no escuro e o corpo solta fumaça e brasas.
+- Ameaça muito alta: muita vida, armadura e dano. Ao morrer deixa a carcaça (vale muito no açougue) ou, esfolando, **Essência Sombria** e **Garra da Criatura das Sombras**.
+
 ## Trabalhos de verdade (Taverna, Fazenda e Mina)
 
 Os empregos de **Taverneiro**, **Fazendeiro** e **Minerador** não pagam mais só com um clique: você vai até o lugar e faz o serviço.

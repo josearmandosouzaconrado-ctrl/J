@@ -32,10 +32,10 @@ PACKAGE = 'com.eldoria.cronicas.adm' if ADM else 'com.eldoria.cronicas'
 ACTIVITY = PACKAGE + '.MainActivity'
 APP_NAME = 'Eldoria ADM' if ADM else 'Crônicas de Eldoria'
 UA_TAG = ' EldoriaAPK EldoriaADM' if ADM else ' EldoriaAPK'
-VERSION_CODE = 11
-VERSION_NAME = '0.9.2-beta'
+VERSION_CODE = 12
+VERSION_NAME = '0.9.3-beta'
 MIN_SDK, TARGET_SDK = 24, 34
-WEB_FILES = ['index.html', 'manifest.json', 'css', 'js', 'icons']
+WEB_FILES = ['index.html', 'manifest.json', 'css', 'js', 'icons', 'img']
 
 
 # ======================================================================

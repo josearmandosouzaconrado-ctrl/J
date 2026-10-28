@@ -489,6 +489,7 @@
   // Cache de sprites de atores: retorna {down:[3], up:[3], right:[3], left:[3]} ou {right:[2],left:[2]}
   const actorCache = new Map();
   S.actor = function (L) {
+    if (L.k === 'sombra') return Sombra.sheet();
     const key = JSON.stringify(L);
     let s = actorCache.get(key);
     if (s) return s;
@@ -847,6 +848,7 @@
   S.carcass = function (eid) {
     if (carcC.has(eid)) return carcC.get(eid);
     const look = ENEMIES[eid].look;
+    if (look.k === 'sombra') { if (!Sombra.ready) return Sombra.sheet().down[0]; const c = Sombra.sheetS.dead.right[0]; carcC.set(eid, c); return c; }
     const sp = S.actor(look);
     const img = (sp.right || sp.down)[0];
     const c = cv(img.width, img.height), x = c.getContext('2d');

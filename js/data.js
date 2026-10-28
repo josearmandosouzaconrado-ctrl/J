@@ -573,6 +573,8 @@ const MATS = [
   ['bandagem', 'Bandagem Antiga', 12, { k: 'silk', c: '#c8b890' }],
   ['escama_lagarto', 'Escama de Lagarto', 14, { k: 'scale', c: '#5a8a3a' }],
   ['escama_dragao', 'Escama de Dragão', 250, { k: 'scale', c: '#c03028' }],
+  ['essencia_sombria', 'Essência Sombria', 160, { k: 'essence', c: '#e01830' }],
+  ['garra_sombria', 'Garra da Criatura das Sombras', 90, { k: 'fang', c: '#4a2228' }],
   ['osso_dragao', 'Osso de Dragão', 300, { k: 'bone', c: '#f0e0b0' }],
   ['erva_vermelha', 'Flor Sanguínea', 5, { k: 'herb', c: '#e03040' }],
   ['erva_azul', 'Lírio Lunar', 6, { k: 'herb', c: '#5080ff' }],
@@ -749,6 +751,8 @@ const ENEMIES = {
   lobo_domado: { name: 'Lobo Domado', look: { k: 'wolf', c: '#5a5a62' }, hp: 150, dmg: 14, spd: 84, ai: 'melee', xp: 0, ally: true },
   mercenario: { name: 'Mercenário', look: { k: 'hum', skin: '#d8a070', body: '#5a6a8a', legs: '#3a3a4a', hair: '#3a2a1a', helm: '#9aa0a8', weapon: 'sword', wc: '#c0c0c0', shield: true }, hp: 160, dmg: 14, spd: 68, ai: 'melee', xp: 0, ally: true },
   hidra_jovem: { name: 'Hidra Jovem', look: { k: 'hum', skin: '#3a8a5a', body: '#2a6a3a', legs: '#1a4a2a', snout: true, horns: true, tail: true, tailC: '#3a8a5a', size: 1.6, bulky: true, nobelt: true, eyes: '#ffe040', weapon: 'mace', wc: '#2a5a3a' }, hp: 300, dmg: 26, spd: 50, ai: 'charge', charge: true, r: 9, xp: 150, poison: 4, gold: [30, 100], drops: [['escama_lagarto', 1], ['veneno', 0.6]], dropGear: 0.3 },
+  // só existe em Valtheria: predador das florestas, cavernas, montanhas e áreas escuras (sprites da folha de arte)
+  criatura_sombras: { name: 'Criatura das Sombras', look: { k: 'sombra' }, hp: 380, dmg: 30, spd: 80, ai: 'charge', cd: 1.0, xp: 260, armor: 24, r: 12, aggro: 250, glowEyes: true, noMeat: true, gold: [40, 120], drops: [['essencia_sombria', 1], ['garra_sombria', 0.7]] },
   pistoleiro: { name: 'Pistoleiro Fora-da-Lei', look: { k: 'hum', skin: '#e0ac69', body: '#4a3a2a', legs: '#2a2a30', hair: '#2a1a10', helm: '#2a2a2a', helmStyle: 'tricorne', crossbelt: true, weapon: 'musket', wc: '#5a4a3a' }, hp: 60, dmg: 22, spd: 60, ai: 'ranged', proj: 'bullet', cd: 2.4, xp: 42, gold: [20, 70], drops: [['bala_arcana', 0.6]], dropGear: 0.15 },
   legionario_renegado: { name: 'Legionário Renegado', look: { k: 'hum', skin: '#e0ac69', body: '#a03030', legs: '#5a4a3a', hair: '#2a1a10', helm: '#c0a050', helmStyle: 'kettle', crest: '#c02020', weapon: 'sword', wc: '#d0d0d8', shield: '#a03030' }, hp: 95, dmg: 16, spd: 62, ai: 'melee', xp: 40, armor: 20, gold: [15, 50], dropGear: 0.2 },
   gigante_bruto: { name: 'Gigante Bruto', look: { k: 'hum', skin: '#c89070', body: '#6a5040', legs: '#4a3a2a', hair: '#8a8a8a', bulky: true, beard: true, fur: true, size: 1.7, weapon: 'hammer', wc: '#7a7a80' }, hp: 340, dmg: 30, spd: 50, ai: 'charge', charge: true, r: 9, xp: 160, gold: [40, 140], dropGear: 0.4 },
@@ -764,16 +768,16 @@ const ENEMIES = {
 };
 
 const SPAWNS = {
-  ferrania: { day: [['pistoleiro', 3], ['automato', 2], ['bandido', 2], ['lobo', 2], ['javali', 2], ['cervo', 2]], night: [['pistoleiro', 2], ['automato', 2], ['zumbi', 2], ['espectro', 1]] },
-  kharzul: { day: [['golem_pedra', 1.5], ['troll', 1.5], ['lobo_gelo', 2], ['urso', 2], ['automato', 1], ['goblin', 2]], night: [['draugr', 2], ['esqueleto', 2], ['troll', 1.5], ['espectro', 1]] },
-  orkhai: { day: [['orc_renegado', 3], ['lobo', 3], ['javali', 2], ['cervo', 2], ['ogro', 1], ['goblin_arqueiro', 1]], night: [['orc_renegado', 2], ['lobo', 3], ['esqueleto', 2], ['ogro', 1]] },
-  serpentis: { day: [['lagarto', 3], ['aranha', 2], ['slime', 2], ['escorpiao', 1], ['cervo', 1], ['hidra_jovem', 0.4]], night: [['lagarto', 2], ['zumbi', 2], ['espectro', 2], ['aranha', 2]] },
-  aurelion: { day: [['pistoleiro', 2], ['bandido', 2], ['bandido_arqueiro', 1], ['lobo', 2], ['javali', 2], ['cervo', 3], ['coelho', 2], ['ogro', 0.6], ['legionario_renegado', 1.5]], night: [['esqueleto', 2], ['zumbi', 2], ['espectro', 1], ['lobo', 2]] },
-  gromhald: { day: [['lobo_gelo', 3], ['urso_polar', 2], ['troll_gelo', 1.5], ['yeti', 0.6], ['gigante_bruto', 0.8]], night: [['draugr', 2], ['lobo_gelo', 3], ['troll_gelo', 1], ['espectro', 1]] },
-  lunethar: { day: [['aranha', 3], ['lobo', 2], ['cervo', 3], ['urso', 2], ['espectro', 1], ['coelho', 2]], night: [['aranha', 3], ['espectro', 2], ['lobo', 2], ['cavaleiro_morto', 0.4]] },
-  rodafina: { day: [['automato', 3], ['goblin', 2], ['goblin_arqueiro', 1], ['javali', 2], ['coelho', 3], ['slime', 2]], night: [['automato', 2], ['goblin_xama', 1], ['esqueleto', 2], ['lobo', 2]] },
-  kumari: { day: [['escorpiao', 3], ['lobo', 2], ['javali', 2], ['cervo', 2], ['bandido', 1], ['mumia', 0.6]], night: [['escorpiao', 2], ['mumia', 2], ['esqueleto', 2], ['lobo', 2]] },
-  umbraval: { day: [['cavaleiro_morto', 2], ['espectro', 3], ['troll', 2], ['cultista', 2], ['golem_pedra', 1]], night: [['cavaleiro_morto', 3], ['espectro', 3], ['esqueleto_arqueiro', 2], ['necromante', 0.3]] },
+  ferrania: { day: [['pistoleiro', 3], ['automato', 2], ['bandido', 2], ['lobo', 2], ['javali', 2], ['cervo', 2]], night: [['pistoleiro', 2], ['automato', 2], ['zumbi', 2], ['espectro', 1], ['criatura_sombras', 0.4]] },
+  kharzul: { day: [['golem_pedra', 1.5], ['troll', 1.5], ['lobo_gelo', 2], ['urso', 2], ['automato', 1], ['goblin', 2]], night: [['draugr', 2], ['esqueleto', 2], ['troll', 1.5], ['espectro', 1], ['criatura_sombras', 0.8]] },
+  orkhai: { day: [['orc_renegado', 3], ['lobo', 3], ['javali', 2], ['cervo', 2], ['ogro', 1], ['goblin_arqueiro', 1]], night: [['orc_renegado', 2], ['lobo', 3], ['esqueleto', 2], ['ogro', 1], ['criatura_sombras', 0.6]] },
+  serpentis: { day: [['lagarto', 3], ['aranha', 2], ['slime', 2], ['escorpiao', 1], ['cervo', 1], ['hidra_jovem', 0.4]], night: [['lagarto', 2], ['zumbi', 2], ['espectro', 2], ['aranha', 2], ['criatura_sombras', 0.8]] },
+  aurelion: { day: [['pistoleiro', 2], ['bandido', 2], ['bandido_arqueiro', 1], ['lobo', 2], ['javali', 2], ['cervo', 3], ['coelho', 2], ['ogro', 0.6], ['legionario_renegado', 1.5]], night: [['esqueleto', 2], ['zumbi', 2], ['espectro', 1], ['lobo', 2], ['criatura_sombras', 0.5]] },
+  gromhald: { day: [['lobo_gelo', 3], ['urso_polar', 2], ['troll_gelo', 1.5], ['yeti', 0.6], ['gigante_bruto', 0.8]], night: [['draugr', 2], ['lobo_gelo', 3], ['troll_gelo', 1], ['espectro', 1], ['criatura_sombras', 0.8]] },
+  lunethar: { day: [['aranha', 3], ['lobo', 2], ['cervo', 3], ['urso', 2], ['espectro', 1], ['coelho', 2], ['criatura_sombras', 0.3]], night: [['aranha', 3], ['espectro', 2], ['lobo', 2], ['cavaleiro_morto', 0.4], ['criatura_sombras', 1.2]] },
+  rodafina: { day: [['automato', 3], ['goblin', 2], ['goblin_arqueiro', 1], ['javali', 2], ['coelho', 3], ['slime', 2]], night: [['automato', 2], ['goblin_xama', 1], ['esqueleto', 2], ['lobo', 2], ['criatura_sombras', 0.5]] },
+  kumari: { day: [['escorpiao', 3], ['lobo', 2], ['javali', 2], ['cervo', 2], ['bandido', 1], ['mumia', 0.6]], night: [['escorpiao', 2], ['mumia', 2], ['esqueleto', 2], ['lobo', 2], ['criatura_sombras', 0.8]] },
+  umbraval: { day: [['cavaleiro_morto', 2], ['espectro', 3], ['troll', 2], ['cultista', 2], ['golem_pedra', 1], ['criatura_sombras', 0.6]], night: [['cavaleiro_morto', 3], ['espectro', 3], ['esqueleto_arqueiro', 2], ['necromante', 0.3], ['criatura_sombras', 2.0]] },
   talassa: { day: [['pirata', 3], ['pirata_arqueiro', 1.5], ['lobo', 2], ['javali', 2], ['cervo', 3], ['coelho', 2], ['slime', 1], ['lagarto', 1]], night: [['pirata', 2], ['esqueleto', 2], ['zumbi', 1], ['lobo', 2]] },
   azhkar: { day: [['diabrete', 3], ['cultista_infernal', 2], ['salamandra', 2], ['slime_fogo', 2], ['escorpiao', 1], ['oni', 0.4]], night: [['diabrete', 3], ['esqueleto', 2], ['cultista_infernal', 2], ['elemental_fogo', 0.6], ['oni', 0.5]] },
   shirokai: { day: [['ronin', 2], ['javali', 2], ['cervo', 3], ['coelho', 3], ['aranha', 1], ['lobo', 2], ['ninja', 1]], night: [['ninja', 2], ['espectro', 2], ['oni', 0.5], ['lobo', 2], ['ronin', 1]] },
@@ -1125,7 +1129,7 @@ const MOUNTS = {
 };
 const CART_PRICE = 700, CART_CAP = 6;
 // Carcaças de animais grandes (podem ser carregadas e vendidas)
-const CARCASS = { lobo: 1, lobo_gelo: 1, urso: 2, urso_polar: 2, javali: 1, cervo: 1, lagarto: 1, yeti: 3, troll: 2, troll_gelo: 2, escorpiao: 1 };
+const CARCASS = { criatura_sombras: 5, lobo: 1, lobo_gelo: 1, urso: 2, urso_polar: 2, javali: 1, cervo: 1, lagarto: 1, yeti: 3, troll: 2, troll_gelo: 2, escorpiao: 1 };
 
 // ---------- Empregos ----------
 const JOBS = {

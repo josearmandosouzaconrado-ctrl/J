@@ -78,7 +78,7 @@ Object.assign(Game, {
     const P = this.player, d = ENEMIES[c.eid];
     const rng = new RNG(Math.floor(Math.random() * 1e9));
     for (const [id] of d.drops || []) P.addItem(Items.make(id, 1 + (CARCASS[c.eid] > 1 && rng.chance(0.5) ? 1 : 0)));
-    if (!(d.drops || []).some(x => x[0] === 'carne_crua')) P.addItem(Items.make('carne_crua', CARCASS[c.eid]));
+    if (!d.noMeat && !(d.drops || []).some(x => x[0] === 'carne_crua')) P.addItem(Items.make('carne_crua', CARCASS[c.eid]));
     Sfx.play('harvest');
   },
   drawCarcasses(D) {
