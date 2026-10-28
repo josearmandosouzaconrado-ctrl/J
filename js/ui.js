@@ -108,11 +108,13 @@ const UI = {
           <button class="mbtn" ${f(() => this.multiplayer())}>Multiplayer <small class="soon">EM BREVE</small></button>
           <button class="mbtn" ${f(() => this.options())}>Opções</button>
           <button class="mbtn" ${f(() => this.help())}>Como Jogar</button>
-          ${IS_APK ? '' : `<a class="mbtn apk" href="CronicasDeEldoria.apk" download="CronicasDeEldoria.apk">📱 Baixar para Android (APK)<small>joga com a tela deitada</small></a>`}
+          ${IS_APK ? '' : `<a class="mbtn apk hidden" id="apk-dl" href="CronicasDeEldoria.apk" download="CronicasDeEldoria.apk">📱 Baixar para Android (APK)<small>joga com a tela deitada</small></a>`}
         </div>
         <div class="ver">Versão Beta ${GAME_VERSION} • 3 continentes • 18 reinos • 14 raças • guerras em terra e no mar</div>
       </div>`, { cls: 'transparent' });
     this.bind(el, f);
+    // só mostra o botão do APK se o arquivo existir neste servidor
+    if (!IS_APK && location.protocol.startsWith('http')) fetch('CronicasDeEldoria.apk', { method: 'HEAD' }).then(r => { const b = document.getElementById('apk-dl'); if (b && r.ok) b.classList.remove('hidden'); }).catch(() => { });
     Game.state = 'title';
   },
   multiplayer() {
