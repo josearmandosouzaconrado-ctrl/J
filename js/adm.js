@@ -55,7 +55,7 @@ const Adm = {
         ${tog('Teleporte tocando no mapa', this.tp, () => { this.tp = !this.tp; this.open(); })}
         ${b('Revelar o mapa inteiro', () => { Game.mods.explored.fill(1); for (const s of Game.world.settlements) Game.mods.discovered.add(s.id); for (const d of Game.world.dungeons) Game.mods.discovered.add(d.id); this.msg('mapa revelado'); })}
         <div class="adm-row">Ir para: <select id="adm-goto" class="adm-sel">${caps.map(s => `<option value="${s.id}">${esc(s.name)} (${CONTINENTS[contAt(s.x, s.y)]})</option>`).join('')}</select>${b('Ir', () => { const s = Game.world.settlements.find(x => x.id === document.getElementById('adm-goto').value); if (s) { const g = s.gates.find(g => g.dir === 's') || s.gates[0]; this.teleport(g.x, g.y + 2); } })}</div>
-        <div class="adm-row">Anjos: ${b('Ir ao Pilar de Luz', () => { const p = Game.world.skyPillar; if (p) this.teleport(p.x, p.y + 3); })} ${b('Subir a Seraphel', () => { const p = Game.world.skyPillar; if (!p) return; if (!Game.level.isWorld) Game.exitDungeon(); UI.close(); Ceu.enter(p.x, p.y); })} ${b('Vencer o duelo do Coro', () => { Ceu.state().won = true; this.msg('duelo vencido: escolha um anjo'); })}</div>
+        <div class="adm-row">Anjos: ${b('Ir ao Pilar de Luz', () => { const p = Game.world.skyPillar; if (p) this.teleport(p.x, p.y + 2); })} ${b('Subir a Seraphel', () => { const p = Game.world.skyPillar; if (!p) return; if (!Game.level.isWorld) Game.exitDungeon(); UI.close(); Ceu.enter(p.x, p.y); })} ${b('Vencer o duelo do Coro', () => { Ceu.state().won = true; this.msg('duelo vencido: escolha um anjo'); })}</div>
         <div class="adm-row">Hora: ${[[6, 'Manhã'], [12, 'Meio-dia'], [18, 'Tarde'], [22, 'Noite']].map(([h, n]) => b(n, () => { Game.time = h * 60; this.msg(n); })).join('')}</div>
         <div class="adm-row">Tempo: ${b('+1 dia', () => this.days(1))} ${b('+7 dias', () => this.days(7))} ${b('+30 dias', () => this.days(30))}</div>
         <div class="adm-row">Clima: ${[[null, 'Limpo'], ['rain', 'Chuva'], ['storm', 'Tempestade'], ['snow', 'Neve'], ['sand', 'Areia'], ['ash', 'Cinzas']].map(([k, n]) => b(n, () => { Game.weather.kind = k; Game.weather.t = 600; this.msg('clima: ' + n); })).join('')}</div>
@@ -126,7 +126,7 @@ const Adm = {
   },
   teleport(tx, ty) {
     const G = Game, P = G.player;
-    UI.close();
+    UI.close(); G.skipIntro();
     if (!G.level.isWorld) { G.worldPos = { x: tx * 16 + 8, y: ty * 16 + 8 }; G.exitDungeon(); }
     P.mounted = false; P.x = tx * 16 + 8; P.y = ty * 16 + 8; G.findFree(P);
     G.actors = G.actors.filter(a => a.team === 'ally' && a.follow && !a.dead);

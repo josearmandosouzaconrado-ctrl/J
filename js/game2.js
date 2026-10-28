@@ -226,8 +226,23 @@ Object.assign(Game, {
     this.actors.push(npc);
     this.intro = { npc, vill, t: 1.5 };
   },
+  // termina a cena inicial na hora (teleporte, viagem, prefeito sumiu...): o jogador nunca fica preso dormindo
+  skipIntro() {
+    const I = this.intro; if (!I) return;
+    const P = this.player, n = I.npc;
+    this.intro = null; P.sleeping = false;
+    if (I.talking) UI.close();
+    P.gold += 40; P.addItem(Items.make('pao', 2));
+    if (n) { n.role = 'citizen'; n.home = { x: I.vill.mid.x * 16 + 8, y: I.vill.mid.y * 16 + 8 }; }
+    this.chron(`Acordei em ${I.vill.name}, sem memória, e segui meu caminho.`);
+  },
   updateIntro(dt) {
     const I = this.intro, P = this.player, n = I.npc;
+    // o prefeito sumiu, o jogador foi parar longe ou a cena travou: encerra sem prender ninguém
+    I.age = (I.age || 0) + dt;
+    if (!this.level.isWorld || n.dead || !this.actors.includes(n) || dist(n.x, n.y, P.x, P.y) > 600 || (!I.talking && I.age > 40)) { this.skipIntro(); return; }
+    // a conversa foi fechada por outra janela (painel ADM, menu...): não fica esperando para sempre
+    if (I.talking && !UI.current) { I.idle = (I.idle || 0) + dt; if (I.idle > 1.5) { this.skipIntro(); return; } } else I.idle = 0;
     I.t -= dt;
     if (I.t > 0 || I.talking) return;
     const d = dist(n.x, n.y, P.x, P.y);
