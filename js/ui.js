@@ -255,6 +255,7 @@ const UI = {
   // ---------- NPCs ----------
   talkNPC(a) {
     const P = Game.player;
+    if (a.shipCrew) return Ship.talk(a);
     if (a.guard) {
       const s = a.guardOf;
       const lines = GUARD_LINES.concat(s ? RUMORS[s.region.id] : []);
@@ -822,6 +823,7 @@ const UI = {
     const tgt = Game.trackTarget(q);
     if (tgt) { const [x, y] = toS(tgt.x, tgt.y); const r = 6 + Math.sin(Game.t * 6) * 2; ctx.strokeStyle = '#ffd040'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r + (tgt.region ? 20 : 0), 0, Math.PI * 2); ctx.stroke(); ctx.fillStyle = '#ffd040'; ctx.fillText('★', x, y + 5); }
     for (const t of M.treasures) { const [x, y] = toS(t.x, t.y); ctx.fillStyle = '#ff3030'; ctx.font = 'bold 18px VT323, monospace'; ctx.fillText('X', x, y + 5); }
+    this.drawShipRoute(ctx, toS);
     // jogador
     const wp = Game.level.isWorld ? P : (Game.worldPos || P);
     const [px, py] = toS(wp.x / 16, wp.y / 16);
@@ -966,6 +968,7 @@ const UI = {
   },
   drawMinimap() {
     const ctx = this.mmx, L = Game.level, P = Game.player;
+    if (L.isShip) return this.drawShipMinimap(L);
     const N = 48, S = 2;
     if (!this.mmImg) { this.mmImg = ctx.createImageData(N * S, N * S); }
     const img = this.mmImg, d = img.data;
@@ -995,5 +998,27 @@ const UI = {
     const tgt = Game.trackTarget(q);
     if (tgt && L.isWorld) { let [x, y] = toM(tgt.x * 16, tgt.y * 16); x = clamp(x, 3, N * S - 3); y = clamp(y, 3, N * S - 3); ctx.fillStyle = '#000'; ctx.fillRect(x - 2, y - 2, 5, 5); ctx.fillStyle = '#ffd040'; ctx.fillRect(x - 1, y - 1, 3, 3); }
     ctx.fillStyle = '#fff'; ctx.fillRect(N / 2 * S - 1, N / 2 * S - 1, 3, 3);
+  },
+  // no navio: minimapa do oceano com a rota e o navio
+  drawShipMinimap(L) {
+    const ctx = this.mmx, W = Game.world, S = 96, cx = L.x / 256, cy = L.y / 256, Z = 4;
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = '#1f4a8a'; ctx.fillRect(0, 0, S, S);
+    if (W.mapCanvas) ctx.drawImage(W.mapCanvas, cx - S / Z / 2, cy - S / Z / 2, S / Z, S / Z, 0, 0, S, S);
+    const toM = (x, y) => [(x / 256 - cx) * Z + S / 2, (y / 256 - cy) * Z + S / 2];
+    ctx.strokeStyle = 'rgba(255,230,140,0.8)'; ctx.setLineDash([2, 2]); ctx.beginPath();
+    for (let i = L.ri - 1; i < L.route.length; i += 3) { const p = i < L.ri ? L : L.route[i], [x, y] = toM(p.x, p.y); ctx.lineTo(x, y); }
+    const e = L.route[L.route.length - 1], [ex, ey] = toM(e.x, e.y); ctx.lineTo(ex, ey); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#ffd040'; ctx.fillRect(clamp(ex, 2, S - 4) - 2, clamp(ey, 2, S - 4) - 2, 4, 4);
+    ctx.save(); ctx.translate(S / 2, S / 2); ctx.rotate(L.ang + Math.PI / 2); ctx.fillStyle = '#000'; ctx.fillRect(-2, -5, 5, 10); ctx.fillStyle = '#ffffff'; ctx.fillRect(-1, -4, 3, 8); ctx.restore();
+  },
+  // rota do navio no mapa grande
+  drawShipRoute(ctx, toS) {
+    const L = Game.level; if (!L || !L.isShip) return;
+    ctx.strokeStyle = 'rgba(255,230,140,0.85)'; ctx.lineWidth = 2; ctx.setLineDash([5, 4]); ctx.beginPath();
+    const [sx, sy] = toS(L.x / 16, L.y / 16); ctx.moveTo(sx, sy);
+    for (let i = L.ri; i < L.route.length; i += 2) { const [x, y] = toS(L.route[i].x / 16, L.route[i].y / 16); ctx.lineTo(x, y); }
+    const e = L.route[L.route.length - 1], [ex, ey] = toS(e.x / 16, e.y / 16); ctx.lineTo(ex, ey); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = '#ffd040'; ctx.font = 'bold 16px VT323, monospace'; ctx.textAlign = 'center'; ctx.fillText('⚓ ' + L.to.name, ex, ey - 10); ctx.textAlign = 'left';
   }
 };

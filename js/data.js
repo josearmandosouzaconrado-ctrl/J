@@ -73,7 +73,7 @@ const O = {
   HUT_TOTEM: 71, ICEROCK: 72, SANDROCK: 73, ALTAR: 74, PORTAL: 75,
   COUNTER: 76, SHELF: 77, BOOKSHELF: 78, CHAIR: 79, FIREPLACE: 80, THRONE: 81, PLANT: 82, WARDROBE: 83, CRIB: 84, WEAPONRACK: 85,
   DOOR_IN: 86, CANDLE: 87, BENCH: 88, POTSHELF: 89, KEG: 90, CAULDRON: 91, DESTINY: 92, ANVIL: 93, WINDOW: 94, PAINTING: 95, QUESTBOARD: 96, BEDSMALL: 97, DESTINY2: 98, DESTINY3: 99, STUMP: 100, WORKBENCH: 101, PLAYERBED: 102, DUMMY: 103, LECTERN: 104, BLACKBOARD: 105,
-  GRAMOPHONE: 127, PIANO: 128, SEWING: 129, GASLAMP: 130, MACHINE: 131, PIPES: 132, BOILER: 133, GUNRACK: 134, STOVE: 106, SACKS: 107, POTS: 108, TROPHY: 109, PELT: 110, FISHNET: 111, DESK: 112, LOOM: 113, OVEN: 114, INSTRUMENT: 115, ARMORSTAND: 116, CLOCK: 117, ARMCHAIR: 118, TOOLRACK: 119, DRESSER: 120, TOYBOX: 121, RUG: 122, SHELFWALL: 123, HERBS: 124, BATHTUB: 125, SHIELDWALL: 126
+  GRAMOPHONE: 127, PIANO: 128, SEWING: 129, GASLAMP: 130, MACHINE: 131, PIPES: 132, BOILER: 133, GUNRACK: 134, HATCH: 135, HELM: 136, CANNON: 137, MAST: 138, SHIPBED: 139, HAMMOCK: 140, LIFEBOAT: 141, ROPE: 142, MAPTABLE: 143, LANTERN: 144, STOVE: 106, SACKS: 107, POTS: 108, TROPHY: 109, PELT: 110, FISHNET: 111, DESK: 112, LOOM: 113, OVEN: 114, INSTRUMENT: 115, ARMORSTAND: 116, CLOCK: 117, ARMCHAIR: 118, TOOLRACK: 119, DRESSER: 120, TOYBOX: 121, RUG: 122, SHELFWALL: 123, HERBS: 124, BATHTUB: 125, SHIELDWALL: 126
 };
 // solid; tall=altura do sprite (px); harvest; light (raio px); kind de interação
 const OBJ_DEFS = [];
@@ -203,6 +203,16 @@ odef(O.MACHINE, { name: 'Máquina a vapor', solid: true, light: 10 });
 odef(O.PIPES, { name: 'Canos de vapor', solid: true });
 odef(O.BOILER, { name: 'Caldeira', solid: true, light: 26 });
 odef(O.GUNRACK, { name: 'Suporte de mosquetes', solid: true });
+odef(O.HATCH, { name: 'Escotilha', interact: 'hatch' });
+odef(O.HELM, { name: 'Timão', solid: true, interact: 'helm' });
+odef(O.CANNON, { name: 'Canhão', solid: true });
+odef(O.MAST, { name: 'Mastro', solid: true });
+odef(O.SHIPBED, { name: 'Beliche', solid: true, interact: 'shipbed' });
+odef(O.HAMMOCK, { name: 'Rede de dormir', solid: true });
+odef(O.LIFEBOAT, { name: 'Bote salva-vidas', solid: true });
+odef(O.ROPE, { name: 'Rolo de corda' });
+odef(O.MAPTABLE, { name: 'Mesa de mapas', solid: true, interact: 'maptable' });
+odef(O.LANTERN, { name: 'Lanterna', solid: true, light: 40 });
 odef(O.WORKBENCH, { name: 'Bancada de Carpintaria', solid: true, interact: 'carpentry' });
 for (const id of [O.ENT_CAVE, O.ENT_CRYPT, O.ENT_RUIN, O.ENT_MINE, O.ENT_TOMB, O.ENT_BARROW, O.ENT_LAVA, O.ENT_ICE, O.ENT_ARENA])
   odef(id, { name: 'Entrada', solid: true, interact: 'dungeon', light: 24 });

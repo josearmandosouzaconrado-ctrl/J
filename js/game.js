@@ -133,7 +133,8 @@ const Game = {
     if (!this.started || !this.player) return false;
     const P = this.player, M = this.mods;
     let px = P.x, py = P.y;
-    if (!this.level.isWorld && this.worldPos) { px = this.worldPos.x; py = this.worldPos.y; }
+    if (this.level.isShip) { const sp = this.level.savePos(); px = sp.x; py = sp.y; }
+    else if (!this.level.isWorld && this.worldPos) { px = this.worldPos.x; py = this.worldPos.y; }
     // névoa do mapa compactada (sequências de 0/1)
     const exp = M.explored, runs = []; let cur = 0, n = 0; for (let i = 0; i < exp.length; i++) { const v = exp[i] ? 1 : 0; if (v === cur) n++; else { runs.push(n.toString(36)); cur = v; n = 1; } } runs.push(n.toString(36));
     const pj = P.toJSON(); pj.x = px; pj.y = py;
@@ -195,12 +196,13 @@ const Game = {
   timeStr() { const h = Math.floor(this.time / 60), m = Math.floor(this.time % 60); return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`; },
   darkness() {
     if (this.level.isInterior) { const h = this.time / 60; return h >= 7 && h < 18 ? 0 : h >= 18 && h < 20.5 ? (h - 18) / 2.5 * 0.45 : h >= 5 && h < 7 ? (7 - h) / 2 * 0.45 : 0.45; }
-    if (!this.level.isWorld) return this.level.dark ? 0.9 : 0;
+    if (!this.level.isWorld && !this.level.isShip) return this.level.dark ? 0.9 : 0;
     const h = this.time / 60;
     let d;
     if (h >= 6.5 && h < 18) d = 0; else if (h >= 18 && h < 20.5) d = (h - 18) / 2.5 * 0.74; else if (h >= 4 && h < 6.5) d = (1 - (h - 4) / 2.5) * 0.74; else d = 0.74;
     if (this.player && RACES[this.player.race].nightvision) d *= 0.55;
     if (this.weather.kind === 'rain' || this.weather.kind === 'storm') d = Math.max(d, 0.18);
+    if (this.level.isShip && this.level.floor) d = Math.min(0.8, 0.3 + d * 0.6);
     return d;
   },
   locationName() {
@@ -301,6 +303,7 @@ const Game = {
     Academy.update(dt);
     War.update(dt);
     Naval.update(dt);
+    if (this.level.isShip) this.level.update(dt);
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();
@@ -351,7 +354,7 @@ const Game = {
     this.camY = lerp(this.camY, lookY - this.vh / 2, Math.min(1, dt * 6));
     if (!this.level.isWorld) {
       const LW = this.level.w * 16, LH = this.level.h * 16;
-      const mg = this.level.isInterior ? 40 : 16;
+      const mg = this.level.isShip ? 150 : this.level.isInterior ? 40 : 16;
       this.camX = LW + mg * 2 < this.vw ? (LW - this.vw) / 2 : clamp(this.camX, -mg, LW - this.vw + mg);
       this.camY = LH + mg * 2 < this.vh ? (LH - this.vh) / 2 : clamp(this.camY, -mg, LH - this.vh + mg);
     }
@@ -778,6 +781,7 @@ const Game = {
     }
     let m;
     if (boss) m = 'boss'; else if (battle) m = 'battle';
+    else if (this.level.isShip) m = 'sea';
     else if (!this.level.isWorld) m = 'dungeon';
     else if (this.curTown) m = 'town';
     else if (this.isNight()) m = 'night';
@@ -902,7 +906,7 @@ const Game = {
       const o = L.objAt(tx, ty);
       const od = OBJ_DEFS[o];
       if (!o || !od.interact) continue;
-      const labels = { sleep: 'Dormir', destiny: 'Tocar', wardrobe: 'Baú', crib: 'Ver bebê', chest: 'Abrir', harvest: o >= O.ORE_FERRO && o <= O.ORE_EBANO ? 'Minerar' : 'Coletar', cook: 'Cozinhar', forge: 'Forjar', alchemy: 'Alquimia', runestone: 'Ler', shrine: 'Orar', dungeon: 'Entrar', exit: 'Sair', sign: 'Ler' };
+      const labels = { sleep: 'Dormir', destiny: 'Tocar', wardrobe: 'Baú', crib: 'Ver bebê', chest: 'Abrir', harvest: o >= O.ORE_FERRO && o <= O.ORE_EBANO ? 'Minerar' : 'Coletar', cook: 'Cozinhar', forge: 'Forjar', alchemy: 'Alquimia', runestone: 'Ler', shrine: 'Orar', dungeon: 'Entrar', exit: 'Sair', sign: 'Ler', hatch: L.isShip && L.floor ? 'Subir' : 'Descer', helm: 'Timão', shipbed: 'Dormir', maptable: 'Ver rota' };
       let name = od.name;
       if (od.interact === 'dungeon' && L.isWorld) { const dd = this.world.entrances.get(tkey(tx, ty)); if (dd) name = `${dd.name} (Nv ${dd.lvl})`; }
       bd = d; best = { kind: od.interact, tx, ty, o, label: labels[od.interact] || 'Usar', name };
@@ -990,6 +994,10 @@ const Game = {
       case 'shrine': this.useShrine(it.tx, it.ty); break;
       case 'dungeon': { const d = this.world.entrances.get(tkey(it.tx, it.ty)); if (d) UI.confirm(`Entrar em <b>${esc(d.name)}</b>?<br><span class="dim">Nível recomendado: ${d.lvl}${this.mods.cleared[d.id] ? ' • Conquistada' : ''}</span>`, () => this.enterDungeon(d)); break; }
       case 'exit': this.exitDungeon(); break;
+      case 'hatch': if (this.level.isShip) Ship.switchFloor(); break;
+      case 'shipbed': Ship.sleepPrompt(); break;
+      case 'maptable': UI.openMap(); break;
+      case 'helm': this.toast(this.level.isShip ? `O capitão segura o timão firme. Rumo: ${this.level.to.name} (${Math.round(this.level.progress() * 100)}%)` : 'Timão', '#c0e0ff'); break;
     }
   },
   openChest(tx, ty, o) {
@@ -1205,7 +1213,8 @@ const Game = {
     // efeitos
     for (const f of this.fx) this.drawFx(ctx, f, camX, camY);
     // clima
-    if (L.isWorld) this.drawWeather(ctx, vw, vh);
+    if (L.drawOverlay) L.drawOverlay(ctx, camX, camY);
+    if (L.isWorld || (L.isShip && !L.floor)) this.drawWeather(ctx, vw, vh);
     // iluminação
     this.drawLighting(ctx, camX, camY);
     // partículas e números

@@ -72,6 +72,8 @@ const Sfx = {
       case 'quest': [659, 784, 988].forEach((f, i) => this.tone(f, 0.3, 'triangle', 0.12, 0, i * 0.12)); break;
       case 'fail': this.tone(200, 0.15, 'square', 0.1, -80); break;
       case 'chest': this.tone(300, 0.1, 'square', 0.1, 100); [523, 784, 1047].forEach((f, i) => this.tone(f, 0.2, 'triangle', 0.1, 0, 0.12 + i * 0.07)); break;
+      case 'wave': this.noise(1.6, 0.12, 420, 0.5, 0, 'lowpass', -200); break;
+      case 'creak': this.tone(170, 0.5, 'sawtooth', 0.04, 60); this.tone(120, 0.6, 'triangle', 0.05, -30, 0.1); break;
       case 'door': this.noise(0.2, 0.2, 300, 1); this.tone(120, 0.15, 'square', 0.06, -30); break;
       case 'shout': this.noise(0.8, 0.4, 250, 0.6, 0, 'lowpass', 400); this.tone(110, 0.7, 'sawtooth', 0.2, -40); this.tone(55, 0.9, 'sine', 0.3); break;
       case 'roll': this.noise(0.18, 0.15, 900, 0.7, 0, 'bandpass', -600); break;
@@ -88,6 +90,7 @@ const Sfx = {
     field: { root: 57, scale: [0, 2, 3, 5, 7, 8, 10], prog: [0, 5, 2, 6], tempo: 92, lead: 'pluck', pad: true },
     night: { root: 52, scale: [0, 2, 3, 5, 7, 8, 10], prog: [0, 3, 5, 4], tempo: 70, lead: 'flute', pad: true },
     town: { root: 62, scale: [0, 2, 3, 5, 7, 9, 10], prog: [0, 3, 0, 4], tempo: 108, lead: 'pluck', pad: false, bass: true },
+    sea: { root: 50, scale: [0, 2, 3, 5, 7, 9, 10], prog: [0, 6, 3, 4], tempo: 96, lead: 'flute', pad: true, bass: true },
     dungeon: { root: 45, scale: [0, 1, 3, 5, 7, 8, 10], prog: [0, 1, 0, 6], tempo: 60, lead: 'flute', pad: true, sparse: true },
     battle: { root: 50, scale: [0, 2, 3, 5, 7, 8, 11], prog: [0, 5, 6, 4], tempo: 140, lead: 'square', bass: true, drums: true },
     boss: { root: 48, scale: [0, 1, 3, 5, 6, 8, 10], prog: [0, 1, 5, 6], tempo: 150, lead: 'square', bass: true, drums: true, pad: true },
