@@ -5,7 +5,18 @@
       "identifier": "gm:azul_bazuca",
       "is_spawnable": true,
       "is_summonable": true,
-      "is_experimental": false
+      "is_experimental": false,
+      "properties": {
+        "gm:pele": {
+          "type": "int",
+          "range": [
+            0,
+            2
+          ],
+          "default": "math.random_integer(0, 2)",
+          "client_sync": true
+        }
+      }
     },
     "component_groups": {
       "modo_ataque": {

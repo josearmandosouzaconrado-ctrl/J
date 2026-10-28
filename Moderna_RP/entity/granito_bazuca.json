@@ -7,10 +7,12 @@
         "default": "entity_alphatest"
       },
       "textures": {
-        "default": "textures/entity/gm/granito_bazuca"
+        "p0": "textures/entity/gm/granito_bazuca_0",
+        "p1": "textures/entity/gm/granito_bazuca_1",
+        "p2": "textures/entity/gm/granito_bazuca_2"
       },
       "geometry": {
-        "default": "geometry.gm_bazuca"
+        "default": "geometry.gm_granito_bazuca"
       },
       "animations": {
         "olhar": "animation.gm.olhar",
@@ -25,7 +27,7 @@
         ]
       },
       "render_controllers": [
-        "controller.render.default"
+        "controller.render.gm_soldado"
       ],
       "enable_attachables": false,
       "spawn_egg": {

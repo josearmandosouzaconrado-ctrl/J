@@ -10,7 +10,8 @@ import sys
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from guerra_gerar import c, empacotar, geo_json, escurecer, salvar_json, salvar_img  # noqa: E402
+from guerra_gerar import c, empacotar, escurecer, salvar_json, salvar_img  # noqa: E402
+import moderna_visual as V  # noqa: E402
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BP = os.path.join(RAIZ, "Moderna_BP")
@@ -355,6 +356,8 @@ def pintar(bones, larg, alt, p, rosto):
 
 # ------------------------------------------------------------------ comportamento
 
+SOLDADOS = ["fuzileiro", "atirador", "metralhador", "bazuca", "medico"]
+
 UNIDADES = {
     "fuzileiro": {"vida": 24, "vel": 0.32, "intervalo": [0.8, 1.3], "alcance": 22, "proj": "bala_fuzil", "rajada": 3, "rajada_int": 0.12},
     "atirador": {"vida": 20, "vel": 0.3, "intervalo": [3.0, 4.0], "alcance": 40, "proj": "bala_sniper"},
@@ -476,7 +479,10 @@ def entidade_unidade(f, tipo):
     return {
         "format_version": "1.20.80",
         "minecraft:entity": {
-            "description": {"identifier": f"gm:{f}_{tipo}", "is_spawnable": True, "is_summonable": True, "is_experimental": False},
+            "description": {
+                "identifier": f"gm:{f}_{tipo}", "is_spawnable": True, "is_summonable": True, "is_experimental": False,
+                **({} if veic else {"properties": {"gm:pele": {"type": "int", "range": [0, 2], "default": "math.random_integer(0, 2)", "client_sync": True}}}),
+            },
             "component_groups": {
                 "modo_ataque": alvo(64, False),
                 "modo_defesa": {**alvo(24, True), "minecraft:home": {"restriction_radius": 16}},
@@ -714,36 +720,47 @@ def main():
     textos_rp = list(lang)
     texturas_itens = {}
 
-    geos = {}
-    for nome, bones in MODELOS.items():
+    # ---- modelos e texturas detalhados (moderna_visual)
+    def gerar_modelo(ident, bones, arquivo):
         larg, alt = empacotar(bones)
-        geos[nome] = (larg, alt)
-        salvar_json(geo_json(nome, bones, larg, alt), RP, "models", "entity", f"{nome}.geo.json")
-    # a geometria da guerra futurista usa o prefixo guerra_; aqui renomeamos para gm_
-    for nome in MODELOS:
-        caminho = os.path.join(RP, "models", "entity", f"{nome}.geo.json")
-        s = open(caminho, encoding="utf-8").read().replace(f"geometry.guerra_{nome}", f"geometry.gm_{nome}")
-        open(caminho, "w", encoding="utf-8").write(s)
+        salvar_json(V.geo_json(ident, bones, larg, alt), RP, "models", "entity", f"{arquivo}.geo.json")
+        return larg, alt
 
-    for f, info in FACCOES.items():
-        for nome, bones in MODELOS.items():
-            if nome in ("bala", "foguete"):
-                continue
-            larg, alt = geos[nome]
-            salvar_img(pintar(bones, larg, alt, info["cores"], info["rosto"]), RP, "textures", "entity", "gm", f"{f}_{nome}.png")
-    for nome in ("bala", "foguete"):
-        larg, alt = geos[nome]
-        salvar_img(pintar(MODELOS[nome], larg, alt, FACCOES["oliva"]["cores"], "gas"), RP, "textures", "entity", "gm", f"{nome}.png")
+    for f in FACCOES:
+        for tipo in SOLDADOS:
+            bones = V.soldado(f, tipo)
+            larg, alt = gerar_modelo(f"geometry.gm_{f}_{tipo}", bones, f"{f}_{tipo}")
+            for n, pele in enumerate(V.PELES):
+                salvar_img(V.pintar(bones, larg, alt, V.PALETAS[f], pele), RP, "textures", "entity", "gm", f"{f}_{tipo}_{n}.png")
+    for nome, fabrica in (("tanque", V.tanque), ("blindado", V.blindado), ("comando", V.comando)):
+        bones = fabrica()
+        larg, alt = gerar_modelo(f"geometry.gm_{nome}", bones, nome)
+        for f in FACCOES:
+            salvar_img(V.pintar(bones, larg, alt, V.PALETAS[f]), RP, "textures", "entity", "gm", f"{f}_{nome}.png")
+    for nome, tam in (("bala", 1), ("foguete", 2)):
+        bones = V.projetil(tam)
+        larg, alt = gerar_modelo(f"geometry.gm_{nome}", bones, nome)
+        salvar_img(V.pintar(bones, larg, alt, V.PALETAS["oliva"]), RP, "textures", "entity", "gm", f"{nome}.png")
 
-    def cliente(ident, textura, geo, anims, scripts, ovo=None, material="entity_alphatest"):
+    salvar_json({
+        "format_version": "1.8.0",
+        "render_controllers": {"controller.render.gm_soldado": {
+            "arrays": {"textures": {"Array.peles": ["Texture.p0", "Texture.p1", "Texture.p2"]}},
+            "geometry": "Geometry.default",
+            "materials": [{"*": "Material.default"}],
+            "textures": ["Array.peles[query.property('gm:pele')]"],
+        }},
+    }, RP, "render_controllers", "soldado.render_controllers.json")
+
+    def cliente(ident, textura, geo, anims, scripts, ovo=None, material="entity_alphatest", peles=False):
         desc = {
             "identifier": ident,
             "materials": {"default": material},
-            "textures": {"default": textura},
+            "textures": {f"p{n}": f"{textura}_{n}" for n in range(3)} if peles else {"default": textura},
             "geometry": {"default": geo},
             "animations": anims,
             "scripts": {"animate": scripts},
-            "render_controllers": ["controller.render.default"],
+            "render_controllers": ["controller.render.gm_soldado" if peles else "controller.render.default"],
             "enable_attachables": False,
         }
         if ovo:
@@ -771,13 +788,13 @@ def main():
                 if UNIDADES[tipo].get("veiculo"):
                     cli = cliente(ident, f"textures/entity/gm/{f}_{tipo}", f"geometry.gm_{tipo}", *anim_ia, info["ovo"])
                 else:
-                    cli = cliente(ident, f"textures/entity/gm/{f}_{tipo}", f"geometry.gm_{tipo}", *anim_humano, info["ovo"])
+                    cli = cliente(ident, f"textures/entity/gm/{f}_{tipo}", f"geometry.gm_{f}_{tipo}", *anim_humano, info["ovo"], peles=True)
             salvar_json(cli, RP, "entity", f"{f}_{tipo}.json")
             nome_unid = f"{NOMES_TIPO[tipo]} - {sufixo}"
             textos_rp.append(f"entity.{ident}.name={nome_unid}")
             textos_rp.append(f"item.spawn_egg.entity.{ident}.name={nome_unid}")
         ITENS[f"bandeira_{f}"] = (f"§fBandeira: {sufixo}", 1)
-        salvar_img(icone(f"bandeira_{f}", info["cores"]["acento"]), RP, "textures", "items", f"gm_bandeira_{f}.png")
+        salvar_img(icone(f"bandeira_{f}", V.PALETAS[f]["acento"]), RP, "textures", "items", f"gm_bandeira_{f}.png")
 
     for nome, pj in PROJETEIS.items():
         salvar_json(entidade_projetil(nome), BP, "entities", "projeteis", f"{nome}.json")

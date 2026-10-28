@@ -7,10 +7,12 @@
         "default": "entity_alphatest"
       },
       "textures": {
-        "default": "textures/entity/gm/caveira_atirador"
+        "p0": "textures/entity/gm/caveira_atirador_0",
+        "p1": "textures/entity/gm/caveira_atirador_1",
+        "p2": "textures/entity/gm/caveira_atirador_2"
       },
       "geometry": {
-        "default": "geometry.gm_atirador"
+        "default": "geometry.gm_caveira_atirador"
       },
       "animations": {
         "olhar": "animation.gm.olhar",
@@ -25,7 +27,7 @@
         ]
       },
       "render_controllers": [
-        "controller.render.default"
+        "controller.render.gm_soldado"
       ],
       "enable_attachables": false,
       "spawn_egg": {

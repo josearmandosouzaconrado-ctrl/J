@@ -1,0 +1,25 @@
+{
+  "format_version": "1.8.0",
+  "render_controllers": {
+    "controller.render.gm_soldado": {
+      "arrays": {
+        "textures": {
+          "Array.peles": [
+            "Texture.p0",
+            "Texture.p1",
+            "Texture.p2"
+          ]
+        }
+      },
+      "geometry": "Geometry.default",
+      "materials": [
+        {
+          "*": "Material.default"
+        }
+      ],
+      "textures": [
+        "Array.peles[query.property('gm:pele')]"
+      ]
+    }
+  }
+}

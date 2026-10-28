@@ -213,6 +213,12 @@ ao entrar (ou `/scriptevent gm:item`, ou receita: ferro + redstone + linha).
 Cada uma tem Fuzileiro, Atirador, Metralhador, Antitanque (lança-foguetes), Médico, **Blindado**,
 **Tanque** e um **Posto de Comando** na base. Todos têm ovos no criativo.
 
+Os modelos são detalhados no estilo "boneco de Minecraft bem acabado": rosto com olhos e cabelo
+(3 tons de pele sorteados para cada soldado), casaco com botões, bolsos e saia, cinto com fivela e
+coldre, correias, dragonas, botas altas, quepes, boinas, capuzes e capacetes por facção, armas com
+coronha, pente e luneta, e texturas em resolução dobrada. Tanques e blindados têm saias laterais,
+faróis, escotilhas, tambores, blindagem reativa e número pintado na torre.
+
 ## Batalha
 
 Rádio → *Iniciar Batalha*: escolha facção (ou assistir), 2 a 5 facções, cenário (Cidade em Guerra,
@@ -241,4 +247,5 @@ comando inimigos. No fim dá para **restaurar o terreno**.
 - Créditos de batalha compram melhorias no **Arsenal** (munição perfurante, carregadores, reforços,
   artilharia) e sobem sua patente de Recruta a General.
 
-Para regenerar: `python3 tools/moderna_sons.py` (numpy + ffmpeg) e `python3 tools/moderna_gerar.py`.
+Para regenerar: `python3 tools/moderna_sons.py` (numpy + ffmpeg) e `python3 tools/moderna_gerar.py`
+(os modelos e a pintura detalhada ficam em `tools/moderna_visual.py`).
