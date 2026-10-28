@@ -83,15 +83,16 @@ O modo **Multiplayer** aparece no menu inicial como "em breve".
 
 Sem dependências externas além da fonte VT323 (opcional).
 
-## Ilha de Nyxhal e o povo Nyxar
+## Ilha de Nyxhal e a alcateia Nyxar
 
-Uma **ilha pequena e sombria** no oceano a leste de Kaeloria — o território do **povo Nyxar**, e só deles. Os Nyxar são uma **raça** (não monstros): seres chifrudos, de veias brilhantes e olhos violeta, com o sprite tirado da arte original (`tools/nyxar_ref.png`, reduzida por `tools/extrair_nyxar.py`).
+Uma **ilha pequena e sombria** no oceano a leste de Kaeloria — o território da **alcateia Nyxar**, e só deles. Os Nyxar são uma **raça** (não monstros): seres chifrudos, de veias brilhantes e olhos violeta, com o sprite tirado da arte original (`tools/nyxar_ref.png`, reduzida por `tools/extrair_nyxar.py`).
 
-- **Domínio de Nyxhal**, governado pelo Soberano **Vhar'Zul, o Chifre Eterno**: a capital **Vhar Nyxhal**, as vilas **Chifre Partido** e **Ninho de Osso** e o **Porto de Nyxhal**, ligados por estradas, entre cinzas e árvores mortas, com masmorras e o Santuário dos Chifres.
-- Todos os moradores, comerciantes, donos das casas e guardas são Nyxar. Cada um tem veias de uma cor (turquesa, violeta, verde ou azul); os **guardas** têm veias carmesim e o governante, douradas.
-- Têm nomes, sobrenomes e boatos próprios. Não fazem parte das guerras dos reinos.
-- Chega-se de **navio**: qualquer porto de Eldoria, Kaeloria ou Valtheria leva até o Porto de Nyxhal.
-- A raça não aparece na criação de personagem: é um povo do mundo.
+- **Sem cidades nem casas**: a alcateia vive num **covil de cavernas ligadas por túneis**, com **três bocas** espalhadas pela ilha. Lá dentro há a câmara do alfa **Vhar'Zul** (veias douradas), tocas com fogueiras, peles e ossos, cristais e musgo brilhante. Dá para sair por qualquer uma das três saídas, cada uma leva a uma boca diferente da ilha.
+- Fora das cavernas, grupos da alcateia andam perto das bocas. Eles **não atacam o jogador**.
+- **Língua própria**: os Nyxar falam uma língua que só eles usam, e o diálogo mostra uma **barra de tradução** logo abaixo da fala.
+- **Território neutro**: não é um reino, não tem diplomacia nem guerra — **nenhum reino pode declarar guerra a eles ou invadir a ilha**.
+- **Não fazem comércio** e **ninguém entra na alcateia** (eles recusam, na língua deles). A raça também não pode ser escolhida na criação de personagem.
+- Chega-se de **navio**: o único lugar para desembarcar é o **Píer de Nyxhal**, onde fica o barqueiro (um tritão de Talassa).
 
 ## Criatura das Sombras (só em Valtheria)
 

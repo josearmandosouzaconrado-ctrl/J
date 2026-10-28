@@ -290,9 +290,9 @@ const REGIONS = [
     ruler: null, towns: 2, villages: 0, dungeons: 16, color: '#604878', hostile: true,
     desc: 'Uma ferida na terra de onde saem horrores antigos. Só os mais fortes voltam.' },
   // ----- Ilha de Nyxhal: território do povo Nyxar -----
-  { id: 'nyxhal', name: 'Domínio de Nyxhal', short: 'Nyxhal', race: 'nyxar', fx: 7350 / 4096, fy: 1500 / 4096, biome: 'dead', lvl: [18, 28], mount: 0.02, culture: 'nyx', cont: 3,
-    ruler: { title: 'Soberano', name: "Vhar'Zul, o Chifre Eterno", race: 'nyxar' }, towns: 1, villages: 1, dungeons: 2, color: '#7a3ac8',
-    desc: 'Ilha isolada do povo Nyxar: seres chifrudos de veias brilhantes que vivem entre cinzas e árvores mortas. Estrangeiros são tolerados, não bem-vindos.' }
+  { id: 'nyxhal', name: 'Território de Nyxhal', short: 'Nyxhal', race: 'nyxar', fx: 7350 / 4096, fy: 1500 / 4096, biome: 'dead', lvl: [18, 28], mount: 0.02, culture: 'nyx', cont: 3,
+    ruler: null, neutral: true, towns: 0, villages: 0, dungeons: 0, color: '#7a3ac8',
+    desc: 'Ilha da alcateia Nyxar: seres chifrudos de veias brilhantes que vivem em cavernas ligadas por túneis. Território neutro: nenhum reino pode declarar guerra a eles nem invadir a ilha.' }
 ];
 const CONTINENTS = ['Eldoria', 'Kaeloria', 'Valtheria', 'Nyxhal'];
 const REGION_BY_ID = {}; REGIONS.forEach((r, i) => { r.index = i; REGION_BY_ID[r.id] = r; });
@@ -786,7 +786,7 @@ const SPAWNS = {
   lunethar: { day: [['aranha', 3], ['lobo', 2], ['cervo', 3], ['urso', 2], ['espectro', 1], ['coelho', 2]], night: [['aranha', 3], ['espectro', 2], ['lobo', 2], ['cavaleiro_morto', 0.4], ['criatura_sombras', 1.2]] },
   rodafina: { day: [['automato', 3], ['goblin', 2], ['goblin_arqueiro', 1], ['javali', 2], ['coelho', 3], ['slime', 2]], night: [['automato', 2], ['goblin_xama', 1], ['esqueleto', 2], ['lobo', 2], ['criatura_sombras', 0.5]] },
   kumari: { day: [['escorpiao', 3], ['lobo', 2], ['javali', 2], ['cervo', 2], ['bandido', 1], ['mumia', 0.6]], night: [['escorpiao', 2], ['mumia', 2], ['esqueleto', 2], ['lobo', 2], ['criatura_sombras', 0.8]] },
-  nyxhal: { day: [['lobo', 2], ['aranha', 3], ['espectro', 1], ['javali', 1], ['cervo', 1]], night: [['aranha', 3], ['espectro', 2], ['esqueleto', 2], ['lobo', 2]] },
+  nyxhal: { day: [['cervo', 3], ['javali', 2], ['coelho', 2]], night: [['lobo', 2], ['cervo', 1]] },
   umbraval: { day: [['cavaleiro_morto', 2], ['espectro', 3], ['troll', 2], ['cultista', 2], ['golem_pedra', 1]], night: [['cavaleiro_morto', 3], ['espectro', 3], ['esqueleto_arqueiro', 2], ['necromante', 0.3], ['criatura_sombras', 2.0]] },
   talassa: { day: [['pirata', 3], ['pirata_arqueiro', 1.5], ['lobo', 2], ['javali', 2], ['cervo', 3], ['coelho', 2], ['slime', 1], ['lagarto', 1]], night: [['pirata', 2], ['esqueleto', 2], ['zumbi', 1], ['lobo', 2]] },
   azhkar: { day: [['diabrete', 3], ['cultista_infernal', 2], ['salamandra', 2], ['slime_fogo', 2], ['escorpiao', 1], ['oni', 0.4]], night: [['diabrete', 3], ['esqueleto', 2], ['cultista_infernal', 2], ['elemental_fogo', 0.6], ['oni', 0.5]] },
@@ -928,7 +928,6 @@ const SETTLEMENT_NAMES = {
   rodafina: { cap: 'Rodafina', list: ['Engrenópolis', 'Vila Parafuso', 'Moinho Giratório', 'Chaleira Alta', 'Faísca Verde', 'Torre do Relógio', 'Mola Feliz', 'Colina Vapor', 'Caldeirão Doce', 'Toca Inventiva', 'Bobina'] },
   kumari: { cap: 'Kumari', list: ['Cânion Dourado', 'Oásis do Leão', 'Pedra do Sol', 'Rio Seco', 'Juba Vermelha', 'Baobá Velho', 'Savana Alta', 'Toca da Leoa', 'Vale das Hienas', 'Duna Rubra'] },
   umbraval: { cap: 'Bastião de Umbraval', list: ['Último Farol', 'Posto da Vigília'] },
-  nyxhal: { cap: 'Vhar Nyxhal', list: ['Garra do Crepúsculo', 'Vale das Cinzas Frias', 'Chifre Partido', 'Ninho de Osso'] },
   talassa: { cap: 'Talassa', list: ['Porto Coral', 'Enseada Azul', 'Recife Branco', 'Baía das Pérolas', 'Farol do Norte', 'Vila Concha', 'Maré Baixa', 'Rochedo das Sereias', 'Areia Clara'] },
   azhkar: { cap: 'Azhkar', list: ['Forja Rubra', 'Cinzaval', 'Torre do Pacto', 'Vale do Enxofre', 'Brasa Negra', 'Pedra Sangrenta', 'Fenda Ardente'] },
   shirokai: { cap: 'Shirokai', list: ['Vila Sakura', 'Monte Kaze', 'Ponte da Lua', 'Templo do Bambu', 'Vale das Lanternas', 'Rio Jade', 'Aldeia Kitsune', 'Colina do Chá'] },
@@ -1052,7 +1051,6 @@ const RUMORS = {
   lunethar: ['As árvores de Lunethar brilham na lua cheia.', 'Os elfos da lua não falam com os elfos de Sylvaris há mil anos.', 'Uma coruja branca guia os perdidos no bosque.', 'Aranhas gigantes guardam as ruínas antigas.'],
   rodafina: ['A Grão-Inventora construiu um pássaro de metal que voa!', 'Cuidado com os autômatos desregulados nas colinas.', 'Um gnomo inventou uma chaleira que faz chá sozinha.', 'Os moinhos de Rodafina giram até sem vento.'],
   kumari: ['A Rainha-Leoa caça sozinha nas savanas.', 'Hienas e escorpiões tornam a savana perigosa à noite.', 'Os cânions dourados escondem tumbas antigas.', 'Aurélion quer nossas minas de ouro.'],
-  nyxhal: ['Os estrangeiros podem ficar até o amanhecer. Depois disso, depende do Soberano.', 'Nossas veias brilham mais quando estamos com raiva. Cuidado.', 'Somos o povo mais antigo deste mar. Os outros chegaram depois.', "Vhar'Zul governa esta ilha há trezentos anos.", 'A Criatura das Sombras de Valtheria? Não é parente nossa, por mais que pareça.', 'A cinza da ilha é boa para o nosso couro e para nada mais.'],
   umbraval: ['O Abismo cresce um pouco a cada ano.', 'Nenhum explorador que desceu ao Abismo voltou inteiro.', 'Dizem que algo enorme respira lá embaixo.'],
   talassa: ['Os navios de Eldoria chegam ao nosso porto toda semana.', 'Dizem que piratas escondem tesouros nas cavernas do litoral.', 'A Rainha Nerissa canta para acalmar as tempestades.', 'Azhkar cobiça nossos portos há séculos.', 'As pérolas de Talassa valem mais que ouro em Eldoria.'],
   azhkar: ['O Imperador Malakar não perdoa traidores.', 'Os diabretes saem das fendas de lava à noite.', 'Um pacto antigo protege as muralhas da capital.', 'Os onis das montanhas são mais fortes que dez soldados.', 'Nossas lâminas são forjadas no fogo do abismo.'],

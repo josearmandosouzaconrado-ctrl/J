@@ -88,7 +88,7 @@ const War = {
   rel(a, b) { const v = this.st().rel[this.key(a, b)]; return v === undefined ? 0 : v; },
   atWar(a, b) { if (!a || !b || a === b) return false; return this.st().wars.some(w => (w.a === a && w.b === b) || (w.a === b && w.b === a)); },
   warOf(k) { return this.st().wars.filter(w => w.a === k || w.b === k); },
-  ownerOf(s) { if (!s || s.academy || s.homeId) return null; const o = this.st().owner[s.id]; return o || (KSTYLE[s.region.id] && s.region.ruler ? s.region.id : null); },
+  ownerOf(s) { if (!s || s.academy || s.homeId || s.region.neutral) return null; const o = this.st().owner[s.id]; return o || (KSTYLE[s.region.id] && s.region.ruler ? s.region.id : null); },
   settlement(id) { return Game.world.settlements.find(s => s.id === id); },
   news(text, imp, ks) {
     const S = this.st();

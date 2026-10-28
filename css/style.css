@@ -334,3 +334,8 @@ a.mbtn.apk small { display: block; font-size: 13px; opacity: .8; }
 .adm-list { display: flex; flex-direction: column; gap: 2px; }
 .adm-item { display: flex; align-items: center; gap: 6px; } .adm-item img { width: 22px; height: 22px; image-rendering: pixelated; } .adm-item span { flex: 1; }
 .adm-war { margin: 3px 0; }
+
+/* fala na língua Nyxar e barra de tradução */
+.nyx-fala { color: #c8a0ff; font-style: italic; letter-spacing: 1px; font-size: 1.1em; text-shadow: 0 0 6px rgba(150,80,255,.6), 2px 2px 0 #000; margin-bottom: 6px; }
+.nyx-trad { background: rgba(20,12,30,.85); border: 2px solid #6a4a9a; border-left: 6px solid #40e8d8; padding: 4px 8px; color: #e8e0f0; }
+.nyx-trad b { color: #40e8d8; margin-right: 6px; font-size: .85em; text-transform: uppercase; letter-spacing: 1px; }

@@ -262,6 +262,7 @@ const UI = {
     const P = Game.player;
     if (a.shipCrew) return Ship.talk(a);
     if (a.workCust) return Work.serve(a);
+    if (a.race === 'nyxar') return Nyxar.talk(a);
     if (a.guard) {
       const s = a.guardOf;
       const lines = GUARD_LINES.concat(s ? RUMORS[s.region.id] : []);

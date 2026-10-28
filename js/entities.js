@@ -606,7 +606,7 @@ class NPC extends Actor {
     super(spot.x * 16 + 8, spot.y * 16 + 12);
     this.team = 'npc'; this.role = spot.role; this.s = s; this.home = { x: this.x, y: this.y };
     const cul = CULTURES[s.region.culture];
-    this.race = RACES[cul.race].npcOnly ? cul.race : (s.type === 'capital' && rng.chance(0.3)) ? rng.pick(playableRaces()) : cul.race;
+    this.race = spot.race ? spot.race : RACES[cul.race].npcOnly ? cul.race : (s.type === 'capital' && rng.chance(0.3)) ? rng.pick(playableRaces()) : cul.race;
     this.sex = rng.chance(0.5) ? 'm' : 'f';
     const N = NAMES[this.race];
     this.name = rng.pick(N[this.sex]) + ' ' + rng.pick(N.s);

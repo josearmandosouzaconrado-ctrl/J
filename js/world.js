@@ -587,49 +587,38 @@ class World {
     }
     this.roadEdges = this.roadEdges.concat(edges);
   }
-  // Ilha de Nyxhal: capital, vila, porto ao sul, masmorras e santuário (só do povo Nyxar)
+  // Ilha de Nyxhal: território da alcateia Nyxar. Não há cidades nem casas: eles vivem num
+  // covil de cavernas ligadas por túneis, com três bocas espalhadas pela ilha.
   generateIsland() {
     const rng = new RNG(this.seed * 71 + 13);
     const R = this.regions.find(r => r.cont === 3); if (!R) return;
-    const names = SETTLEMENT_NAMES[R.id], pool = rng.shuffle(names.list.slice());
-    const made = [];
-    ['capital', 'village', 'village'].forEach((type, n) => {
-      const half = (type === 'capital' ? 50 : 24) / 2 + 4;
-      const ok = (x, y) => {
-        if (contAt(x, y) !== 3) return false;
-        let bad = 0;
-        for (const [dx, dy] of [[0, 0], [-half, -half], [half, -half], [-half, half], [half, half], [0, -half], [0, half], [-half, 0], [half, 0]]) { const t = this.baseTile(x + dx, y + dy); if (t === T.DEEP || t === T.LAVA) return false; if (TSOLID[t] || TWATER[t]) bad++; }
-        return bad <= 2 && this.farFrom(x, y, made, type === 'capital' ? 70 : 55);
-      };
-      const pos = this.findLand(ISLE.x, ISLE.y - 20, rng, type === 'capital' ? 70 : 170, ok) || this.findLand(ISLE.x, ISLE.y, rng, 230, ok);
-      if (!pos) return;
-      const st = { id: 'n' + n, name: type === 'capital' ? names.cap : (pool.pop() || 'Vila Nyxar'), type, region: R, x: pos.x, y: pos.y, cx: pos.x, cy: pos.y };
-      made.push(st); this.settlements.push(st);
-    });
-    for (const st of made) this.layoutSettlement(st);
-    let uid = this.dungeons.reduce((m, d) => Math.max(m, d.uid), 0) + 1;
-    const dl = [];
-    for (let i = 0; i < R.dungeons; i++) {
-      const pos = this.findLand(ISLE.x, ISLE.y, rng, 200, (x, y) => contAt(x, y) === 3 && this.isLand(x, y) && this.isLand(x, y + 1) && this._e < 0.69 && this.farFrom(x, y, made, 34) && this.farFrom(x, y, dl, 30));
-      if (!pos) continue;
-      const type = rng.pick(REGION_DUNGEONS[R.id]), dt = DUNGEON_TYPES[type];
-      const d = { id: 'nd' + uid, uid: uid++, name: dt.name + ' ' + rng.pick(DUNGEON_NOUNS), type, boss: dt.boss, lvl: rng.int(R.lvl[0], R.lvl[1]), size: rng.int(44, 56), x: pos.x, y: pos.y, region: R };
-      dl.push(d); this.stampDungeon(d); this.dungeons.push(d); this.dungeonById[d.id] = d;
+    this.nyxCaves = [];
+    const clear = (x, y, rx, ry) => { for (let dy = -ry; dy <= ry; dy++) for (let dx = -rx; dx <= rx; dx++) { const t = this.baseTile(x + dx, y + dy); if (TSOLID[t] || TWATER[t] || t === T.LAVA || t === T.DEEP) return false; } return true; };
+    for (const [ax, ay] of [[-0.45, -0.35], [0.5, -0.1], [-0.05, 0.4]]) {
+      const pos = this.findLand(ISLE.x + ax * ISLE.rx, ISLE.y + ay * ISLE.ry, rng, 60, (x, y) => contAt(x, y) === 3 && clear(x, y, 3, 3) && this.farFrom(x, y, this.nyxCaves, 40));
+      if (pos) this.nyxCaves.push({ x: pos.x, y: pos.y, i: this.nyxCaves.length });
     }
-    const sp = this.findLand(ISLE.x, ISLE.y, rng, 180, (x, y) => contAt(x, y) === 3 && this.isLand(x, y) && this.isLand(x, y + 1) && this.farFrom(x, y, made, 40) && this.farFrom(x, y, dl, 20));
-    if (sp) { const pc = { id: 'nshrine', kind: 'shrine', x: sp.x, y: sp.y, region: R, name: 'Santuário dos Chifres' }; this.stampSmall(pc, O.SHRINE, rng); this.pois.push(pc); }
-    // porto na costa sul, para os navios dos outros continentes
+    // as bocas das cavernas ficam livres de árvores e pedras
+    for (const c of this.nyxCaves) {
+      const W = 7, H = 6, tiles = new Uint8Array(W * H).fill(255), objs = new Uint8Array(W * H);
+      for (let i = 0; i < W * H; i++) objs[i] = 0;
+      this.addStamp({ x0: c.x - 3, y0: c.y - 4, w: W, h: H, tiles, objs, clearObjs: true });
+    }
+    const sp = this.findLand(ISLE.x, ISLE.y, rng, 160, (x, y) => contAt(x, y) === 3 && this.isLand(x, y) && this.isLand(x, y + 1) && this.farFrom(x, y, this.nyxCaves, 30));
+    if (sp) { const pc = { id: 'nshrine', kind: 'shrine', x: sp.x, y: sp.y, region: R, name: 'Pedra dos Chifres' }; this.stampSmall(pc, O.SHRINE, rng); this.pois.push(pc); }
+    // um píer na costa sul: o único lugar onde estrangeiros desembarcam (o barqueiro é um tritão de Talassa)
     const seaAt = (x, y) => { const t = this.baseTile(x, y); return TWATER[t] || t === T.DEEP; };
     outer: for (let dx = 0; dx < 220; dx += 6) for (const xx of [ISLE.x + dx, ISLE.x - dx]) {
       let y = ISLE.y; if (!this.isLand(xx, y)) continue;
       while (y < ISLE.y + ISLE.ry * 1.3 && this.isLand(xx, y + 1)) y++;
       let land = 0, sea = 0;
       for (let k = 1; k <= 12; k++) { if (this.isLand(xx, y - k) && this.isLand(xx - 3, y - k) && this.isLand(xx + 3, y - k)) land++; if (seaAt(xx, y + k) && seaAt(xx - 3, y + k) && seaAt(xx + 4, y + k)) sea++; }
-      if (land < 11 || sea < 11 || !this.farFrom(xx, y, this.settlements, 30) || !this.farFrom(xx, y, this.dungeons, 16)) continue;
-      this.layoutPortV({ x: xx, y, R }, 3, 1, 'Porto de Nyxhal', 30, rng);
+      if (land < 11 || sea < 11 || !this.farFrom(xx, y, this.nyxCaves, 30)) continue;
+      this.layoutPortV({ x: xx, y, R }, 3, 1, 'Píer de Nyxhal', 30, rng);
+      const pt = this.ports[this.ports.length - 1];
+      pt.npcSpots = pt.npcSpots.filter(sp => sp.role === 'captain').map(sp => Object.assign(sp, { race: 'tritao' }));
       break outer;
     }
-    this.buildRoads(rng, made.concat(this.ports.filter(p => p.port.cont === 3)), false);
   }
   generateValtheria() {
     const rng = new RNG(this.seed * 71 + 13);

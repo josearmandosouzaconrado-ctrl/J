@@ -354,7 +354,7 @@ const Game = {
     for (let i = this.timers.length - 1; i >= 0; i--) { const t = this.timers[i]; t.t -= dt; if (t.t <= 0) { this.timers.splice(i, 1); t.fn(); } }
     // sistemas do mundo
     if (this.level.isWorld) {
-      this.npcT -= dt; if (this.npcT <= 0) { this.npcT = 1; this.manageNPCs(); }
+      this.npcT -= dt; if (this.npcT <= 0) { this.npcT = 1; this.manageNPCs(); Nyxar.manage(); }
       this.spawnT -= dt; if (this.spawnT <= 0) { this.spawnT = 1.2; this.spawnTick(); }
       this.discT -= dt; if (this.discT <= 0) { this.discT = 0.5; this.discoveryTick(); }
       this.smokeT = (this.smokeT || 0) - dt;
@@ -958,6 +958,8 @@ const Game = {
     // trabalhos: barril, lareira, canteiros, entrada da mina
     const wi = Work.findInteract(fx, fy);
     if (wi && (!best || best.kind !== 'npc' || wi.d < bd)) best = wi;
+    const ni = Nyxar.findInteract(fx, fy);
+    if (ni && (!best || ni.d < bd)) best = ni;
     if (best && best.kind === 'npc' && best.a.workCust) best.label = best.a.workCust.state === 'wait' ? 'Servir' : 'Falar';
     if (!best && P.carrying) best = { kind: 'drop', label: 'Soltar', name: ENEMIES[P.carrying.eid].name };
     if (!best && L.isWorld && P.count('vara_pesca')) {
@@ -1023,7 +1025,8 @@ const Game = {
       case 'runestone': this.useRunestone(it.tx, it.ty); break;
       case 'shrine': this.useShrine(it.tx, it.ty); break;
       case 'dungeon': { const d = this.world.entrances.get(tkey(it.tx, it.ty)); if (d) UI.confirm(`Entrar em <b>${esc(d.name)}</b>?<br><span class="dim">Nível recomendado: ${d.lvl}${this.mods.cleared[d.id] ? ' • Conquistada' : ''}</span>`, () => this.enterDungeon(d)); break; }
-      case 'exit': this.exitDungeon(); break;
+      case 'exit': if (this.level.isNyxCave) Nyxar.exitAt(it.tx, it.ty); this.exitDungeon(); break;
+      case 'nyxcave': Nyxar.enter(it.c); break;
       case 'hatch': if (this.level.isShip) Ship.switchFloor(); break;
       case 'work': Work.interact(it); break;
       case 'minecart': Work.unload(); break;
@@ -1240,7 +1243,7 @@ const Game = {
     if (!P.dead || true) D.push({ y: P.y, a: P });
     for (const k of this.pickups) D.push({ y: k.y, pk: k });
     this.drawMountsCart(D); this.drawCarcasses(D);
-    if (L.isWorld) { War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); }
+    if (L.isWorld) { War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); Nyxar.drawables(D, camX, camY, vw, vh); }
     D.sort((a, b) => a.y - b.y);
     for (const d of D) {
       if (d.a) d.a.draw(ctx, camX, camY);
