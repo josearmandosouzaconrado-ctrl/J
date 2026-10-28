@@ -171,6 +171,7 @@ const Combat = {
   nearestHostile(src, x, y, range, prefAng) {
     let best = null, bs = Infinity;
     for (const a of this.targetsOf(src)) {
+      if (a.fogHidden) continue;  // a mira automática não acha o que está escondido na névoa
       if (a.passive && src === Game.player && !a.provoked && range < 60) { /* animais passivos ainda podem ser alvo */ }
       const d = dist(x, y, a.x, a.y - a.z * 0.5);
       if (d > range + a.r) continue;
@@ -358,6 +359,7 @@ class Monster extends Actor {
       if (kind === 'bullet') Game.musketFx(this.x + Math.cos(ang) * 12, this.y - 9 + Math.sin(ang) * 8, ang, '#80c0ff');
       else Sfx.play(kind === 'arrow' ? 'bow' : 'spell');
     }
+    if (this.look.k === 'sombra' && this.atkKind === 'melee') Sombra.strike(this);
   }
   special() {
     const d = this.def, t = this.target;
@@ -414,7 +416,7 @@ class Monster extends Actor {
     this.atkCd -= dt; this.specialT -= dt; this.chargeCd -= dt;
     if (this.swingT > 0) this.swingT -= dt;
     if (this.thrustT > 0) this.thrustT -= dt;
-    if (this.look.k === 'sombra') { if (this.S.placeholder && Sombra.ready) { this.S = Sombra.sheet(); this.h = this.S.h; } Sombra.update(this, dt); }
+    if (this.look.k === 'sombra') { if (this.S.placeholder && Sombra.ready) { this.S = Sombra.sheet(); this.h = this.S.h; } Sombra.update(this, dt); if (this.dead) return; }
     this.moving = false;
     if (this.stun > 0) return;
     const sf = this.speedFactor;
@@ -438,9 +440,10 @@ class Monster extends Actor {
         }
       }
       if (this.blocked) this.charging = 0;
-      if (this.charging <= 0) this.atkCd = 1;
+      if (this.charging <= 0) { this.atkCd = 1; if (this.look.k === 'sombra') Sombra.strike(this); }
       return;
     }
+    if (this.look.k === 'sombra' && Sombra.control(this, dt, sf)) return;
     this.retarget -= dt;
     if (this.retarget <= 0) { this.retarget = 0.25 + Math.random() * 0.2; this.target = this.findTarget(); }
     const t = this.target;
@@ -546,6 +549,7 @@ class Monster extends Actor {
     Game.onMonsterDeath(this, killer);
   }
   draw(ctx, camX, camY) {
+    if (this.fogHidden) return;  // escondida na névoa: não dá para ver
     if (this.dead) {
       if (this.deadT > 0.6) return;
       ctx.globalAlpha = 1 - this.deadT / 0.6;

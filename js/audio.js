@@ -37,6 +37,64 @@ const Sfx = {
     g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
     o.connect(g); g.connect(dest || this.sfxGain); o.start(t); o.stop(t + dur + 0.02);
   },
+  // som que cresce devagar (ataque suave), com vibrato, distorção, filtro e posição esquerda/direita
+  swell(f, dur, type = 'sine', vol = 0.2, o2 = {}) {
+    const c = this.ctx, t = c.currentTime + (o2.delay || 0);
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (o2.slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, f + o2.slide), t + dur);
+    if (o2.vib) { const l = c.createOscillator(), lg = c.createGain(); l.frequency.value = o2.vibF || 6; lg.gain.value = o2.vib; l.connect(lg); lg.connect(o.frequency); l.start(t); l.stop(t + dur + 0.05); }
+    g.gain.setValueAtTime(0.0008, t); g.gain.linearRampToValueAtTime(vol, t + (o2.atk || 0.3)); g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+    let node = o;
+    if (o2.dist) { const ws = c.createWaveShaper(); ws.curve = this.distCurve(o2.dist); node.connect(ws); node = ws; }
+    if (o2.lp) { const fl = c.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = o2.lp; node.connect(fl); node = fl; }
+    node.connect(g);
+    let out = g;
+    if (o2.pan && c.createStereoPanner) { const pn = c.createStereoPanner(); pn.pan.value = o2.pan; g.connect(pn); out = pn; }
+    out.connect(this.sfxGain); if (o2.echo) out.connect(this.echoNode());
+    o.start(t); o.stop(t + dur + 0.05);
+  },
+  distCurve(k) {
+    this._dc = this._dc || {}; if (this._dc[k]) return this._dc[k];
+    const n = 1024, cv = new Float32Array(n);
+    for (let i = 0; i < n; i++) { const x = i * 2 / n - 1; cv[i] = (3 + k) * x * 20 * Math.PI / 180 / (Math.PI + k * Math.abs(x)); }
+    return (this._dc[k] = cv);
+  },
+  // eco longo (para os sons da criatura das sombras)
+  echoNode() {
+    if (this._echo) return this._echo;
+    const c = this.ctx, d = c.createDelay(1.5), fb = c.createGain(), lp = c.createBiquadFilter();
+    d.delayTime.value = 0.32; fb.gain.value = 0.42; lp.type = 'lowpass'; lp.frequency.value = 1400;
+    d.connect(lp); lp.connect(fb); fb.connect(d); lp.connect(this.sfxGain);
+    return (this._echo = d);
+  },
+  // sons da Criatura das Sombras
+  sombra(kind, pan = 0) {
+    if (!this.ctx || !this.sfxOn) return;
+    if (kind === 'aparece') {
+      // zumbido grave, guincho dissonante, respiração e estalos de ossos
+      this.swell(36, 4.5, 'sawtooth', 0.26, { slide: -10, atk: 1.4, lp: 260 });
+      this.swell(47, 4.2, 'sawtooth', 0.14, { slide: -12, atk: 1.6, lp: 220 });
+      this.swell(1180, 2.6, 'sine', 0.05, { slide: -560, atk: 0.5, vib: 30, vibF: 7, delay: 0.9, echo: true });
+      this.swell(1252, 2.6, 'sine', 0.05, { slide: -600, atk: 0.5, vib: 26, vibF: 5.5, delay: 0.9, echo: true });
+      this.noise(3.4, 0.14, 520, 0.7, 0.2, 'bandpass', -320);
+      for (let i = 0; i < 6; i++) this.tone(80 + Math.random() * 60, 0.06, 'square', 0.12, -30, 1.6 + i * 0.13 + Math.random() * 0.08);
+    } else if (kind === 'rosnado') {
+      this.swell(52 + Math.random() * 10, 1.6, 'sawtooth', 0.16, { slide: -12, atk: 0.35, lp: 320, pan, echo: true });
+      this.noise(1.2, 0.07, 280, 0.8, 0.1, 'bandpass', -100);
+    } else if (kind === 'furia') {
+      // rugido alto e distorcido, com guincho e eco
+      this.swell(72, 3.2, 'sawtooth', 0.5, { slide: -38, atk: 0.06, dist: 60, lp: 1100, echo: true });
+      this.swell(144, 2.8, 'square', 0.22, { slide: -70, atk: 0.06, dist: 40, lp: 1600 });
+      this.swell(930, 1.8, 'sawtooth', 0.12, { slide: -620, atk: 0.1, vib: 40, vibF: 9, echo: true });
+      this.noise(2.6, 0.6, 900, 0.5, 0, 'lowpass', -760);
+      this.noise(0.5, 0.45, 300, 0.6, 0, 'lowpass');
+    } else if (kind === 'golpe') {
+      this.noise(0.25, 0.3, 700, 0.8, 0, 'bandpass', -400); this.swell(60, 0.5, 'sawtooth', 0.18, { atk: 0.02, lp: 400, pan });
+    } else if (kind === 'some') {
+      this.swell(300, 1.8, 'sine', 0.08, { slide: -240, atk: 0.2, echo: true }); this.noise(1.6, 0.1, 400, 0.6, 0, 'lowpass', -300);
+    }
+  },
   noise(dur, vol = 0.2, freq = 1200, q = 1, delay = 0, type = 'bandpass', slide = 0) {
     const c = this.ctx, t = c.currentTime + delay;
     const s = c.createBufferSource(); s.buffer = this.noiseBuf;

@@ -320,6 +320,7 @@ const Game = {
     }
     Work.update(dt);
     Adm.update();
+    Sombra.tick(dt);
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();
@@ -1258,6 +1259,7 @@ const Game = {
     if (L.isWorld || (L.isShip && !L.floor)) this.drawWeather(ctx, vw, vh);
     // iluminação
     this.drawLighting(ctx, camX, camY);
+    Sombra.drawFog(ctx);
     // partículas e números
     for (const p of this.particles) { ctx.globalAlpha = Math.min(1, p.life / p.max * 1.5); ctx.fillStyle = p.color; ctx.fillRect(Math.round(p.x - camX), Math.round(p.y - camY), p.size, p.size); }
     ctx.globalAlpha = 1;

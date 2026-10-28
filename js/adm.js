@@ -206,6 +206,7 @@ const Adm = {
     const id = this.en = this.val('adm-en', this.en), lv = this.lv = +this.val('adm-lv', this.lv || 10);
     if (!id) return;
     const P = this.P();
+    if (id === 'criatura_sombras' && !Game.isNight()) { Game.time = 22 * 60; this.msg('ela só aparece de noite: virou noite'); }
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2, r = 50 + Math.random() * 40;
       const m = new Monster(id, P.x + Math.cos(a) * r, P.y + Math.sin(a) * r, lv);

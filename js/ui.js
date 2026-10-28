@@ -1002,7 +1002,7 @@ const UI = {
     ctx.putImageData(img, 0, 0);
     const toM = (wx, wy) => [(wx / 16 - ptx + N / 2) * S, (wy / 16 - pty + N / 2) * S];
     for (const a of Game.actors) {
-      if (a.dead || a.hidden) continue;
+      if (a.dead || a.hidden || a.fogHidden) continue;
       const [x, y] = toM(a.x, a.y); if (x < 0 || y < 0 || x > N * S || y > N * S) continue;
       ctx.fillStyle = a.team === 'enemy' ? (a.boss ? '#ff40ff' : '#ff3030') : a.team === 'ally' ? '#40a0ff' : (a.role === 'quest' ? '#ffd040' : '#e0e0e0');
       ctx.fillRect(x - 1, y - 1, a.boss ? 3 : 2, a.boss ? 3 : 2);

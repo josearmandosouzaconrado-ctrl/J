@@ -85,9 +85,12 @@ Sem dependências externas além da fonte VT323 (opcional).
 
 ## Criatura das Sombras (só em Valtheria)
 
-Um predador enorme (cerca de 3,5 blocos de altura) que **só existe no continente de Valtheria**: aparece à noite nas florestas, montanhas, cavernas e áreas escuras (no Abismo de Umbraval e no Bosque de Lunethar até de dia). Os sprites foram recortados diretamente da folha de arte original (`tools/criatura_sombras_ref.png`, extraídos por `tools/extrair_sombra.py`): vista de frente, de lado e de costas, parada, andando, correndo, atacando e morrendo.
+Um predador enorme (cerca de 3,5 blocos de altura) que **só existe no continente de Valtheria** e **só aparece de noite**, nas florestas, montanhas, cavernas e áreas escuras. Ao amanhecer ela se desfaz nas sombras. Os sprites foram recortados diretamente da folha de arte original (`tools/criatura_sombras_ref.png`, extraídos por `tools/extrair_sombra.py`): vista de frente, de lado e de costas, parada, andando, correndo, atacando e morrendo.
 
-- Ruge ao avistar a presa, avança em investidas e fica mais rápida à noite.
+- **A aparição**: você não a vê chegar. Só escuta um **som tenebroso** (zumbido grave, guincho e estalos de ossos com eco) e uma **névoa densa** sobe ao seu redor, deixando ver só um pouco em volta do jogador.
+- **Na névoa** ela é invisível (a mira automática também não a encontra): rosna de algum lado (o som vem da direção dela), ataca e some de novo. Enquanto a névoa durar, os golpes dela são **fracos**, em você e nos soldados.
+- **Quando a névoa some**: um **rugido ainda mais alto e tenebroso**, a tela treme e ela fica **furiosa** — visível, mais rápida e com ataques **muito fortes** (cerca de 6x o dano da névoa).
+- Avança em investidas e ataca qualquer um por perto, inclusive soldados e animais.
 - Os olhos vermelhos brilham no escuro e o corpo solta fumaça e brasas.
 - Ameaça muito alta: muita vida, armadura e dano. Ao morrer deixa a carcaça (vale muito no açougue) ou, esfolando, **Essência Sombria** e **Garra da Criatura das Sombras**.
 
