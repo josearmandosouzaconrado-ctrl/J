@@ -139,6 +139,7 @@ class Actor {
     const sc = this.sizeScale || 1;
     if (d === 'down') hx += 5 * sc; else if (d === 'up') hx -= 5 * sc; else if (d === 'right') hx += 2 * sc; else hx -= 2 * sc;
     hy -= (sc - 1) * 8;
+    if (this.thrustT > 0) { const k = Math.sin((1 - this.thrustT / 0.22) * Math.PI) * 7; hx += Math.cos(this.face) * k; hy += Math.sin(this.face) * k * 0.6; }
     let ang;
     if (swing) ang = swing;
     else if (wclass === 'bow') ang = this.face;
@@ -333,8 +334,16 @@ class Monster extends Actor {
         Combat.damage(t, this.dmg * (0.85 + Math.random() * 0.3), { src: this, elem: el, poison: d.poison ? d.poison * (1 + this.lvl * 0.1) : 0, kb: { x: Math.cos(ang) * (this.boss ? 160 : 90), y: Math.sin(ang) * (this.boss ? 160 : 90) }, slow: el === 'frost' ? 0.3 : 0, burn: el === 'fire' ? this.dmg * 0.2 : 0 });
       }
       Sfx.play('swing');
+    } else if (this.atkKind === 'bayonet') {
+      // estocada de baioneta
+      this.thrustT = 0.22;
+      const reach = this.r + t.r + 18;
+      Game.fx.push({ kind: 'swing', x: this.x, y: this.y - 7, ang, arc: 0.45, r: reach, t: 0, dur: 0.14, color: '#e0e8f4' });
+      moveActor(this, Math.cos(ang) * 4, Math.sin(ang) * 4);
+      if (dist(this.x, this.y, t.x, t.y) <= reach + 8) Combat.damage(t, this.dmg * (0.8 + Math.random() * 0.3), { src: this, kb: { x: Math.cos(ang) * 110, y: Math.sin(ang) * 110 } });
+      Sfx.play('swing');
     } else if (this.atkKind === 'shoot') {
-      const kind = d.proj || 'arrow';
+      const kind = this.proj || d.proj || 'arrow';
       const n = this.boss ? 3 : 1;
       for (let i = 0; i < n; i++) {
         const a = ang + (i - (n - 1) / 2) * 0.22 + (Math.random() - 0.5) * 0.08;
@@ -398,6 +407,7 @@ class Monster extends Actor {
     if (this.def.regen && this.hp < this.maxHp) this.hp = Math.min(this.maxHp, this.hp + this.def.regen * (1 + this.lvl * 0.1) * dt);
     this.atkCd -= dt; this.specialT -= dt; this.chargeCd -= dt;
     if (this.swingT > 0) this.swingT -= dt;
+    if (this.thrustT > 0) this.thrustT -= dt;
     this.moving = false;
     if (this.stun > 0) return;
     const sf = this.speedFactor;
@@ -443,6 +453,7 @@ class Monster extends Actor {
         else if (d > reach) this.moveToward(t.x, t.y, this.spd * sf, dt);
         else if (this.atkCd <= 0) this.startAttack('melee');
         break;
+      case 'musket': War.musketAI(this, t, d, dt, sf); break;
       case 'ranged': case 'caster': {
         const ideal = this.ai === 'caster' ? 110 : 120;
         if (d < 60) this.moveToward(this.x - (t.x - this.x), this.y - (t.y - this.y), this.spd * 0.8 * sf, dt);
@@ -536,6 +547,7 @@ class Monster extends Actor {
     const aw = this.dir === 'up';
     let swingAng = null;
     if (this.swingT > 0 && this.wclass && this.wclass !== 'bow' && this.wclass !== 'staff') swingAng = this.face - 1 + (1 - this.swingT / 0.2) * 2;
+    if (this.thrustT > 0 || this.aimT > 0 || this.windup > 0 && this.ai === 'musket') swingAng = this.face;
     if (aw && this.wimg) this.drawWeapon(ctx, camX, camY, this.wimg, this.wclass, swingAng);
     const r = this.drawBody(ctx, camX, camY, this.S);
     if (!aw && this.wimg) this.drawWeapon(ctx, camX, camY, this.wimg, this.wclass, swingAng);

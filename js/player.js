@@ -190,7 +190,7 @@ class Player extends Actor {
     this.S = Sprites.actor(L);
     this.h = this.S.h;
     const w = this.equip.weapon;
-    if (w) { const d = ITEMS[w.id]; this.wclass = d.wclass; this.wimg = Sprites.weapon(d.wclass, d.icon.c, d.icon.g); } else { this.wclass = null; this.wimg = null; }
+    if (w) { const d = ITEMS[w.id]; this.wclass = d.wclass; this.wimg = Sprites.weapon(d.bayonet ? 'musketb' : d.wclass, d.icon.c, d.icon.g); } else { this.wclass = null; this.wimg = null; }
   }
   // ---------- Inventário ----------
   findItem(u) { return this.inv.find(i => i.u === u); }
@@ -341,6 +341,14 @@ class Player extends Actor {
         Combat.projectile(this, this.x, this.y - 8, a, 'arrow', pk.dmg, { crit: pk.crit, spd: 320, life: 0.9, weapon: true, kind2: 'bow' });
       }
       this.st = Math.max(0, this.st - 1); Sfx.play('bow');
+    } else if ((wc === 'musket' || wc === 'pistol') && d.bayonet && Combat.nearestHostile(this, this.x, this.y - 6, 30, ang)) {
+      // inimigo colado: estocada de baioneta em vez de atirar
+      this.atkT = 0.45;
+      this.swing = { t: 0, dur: 0.16, ang, arc: 0.5 };
+      Game.fx.push({ kind: 'swing', x: this.x, y: this.y - 6, ang, arc: 0.6, r: 34, t: 0, dur: 0.14, color: '#e0e8f4' });
+      const hits = Combat.melee(this, ang, 0.8, 32, (a) => { const pk = this.rollDamage('melee'); Combat.damage(a, pk.dmg * 0.6, { src: this, crit: pk.crit, kb: { x: Math.cos(ang) * 120, y: Math.sin(ang) * 120 } }); });
+      if (hits) { this.train('combate', 1.5); Game.hitstop = 0.04; }
+      this.st = Math.max(0, this.st - 2); Sfx.play('swing');
     } else if (wc === 'musket' || wc === 'pistol') {
       if (!this.count('bala_arcana')) { Game.toast('Sem cartuchos arcanos! Compre numa Armaria Arcana nos reinos humanos de Valtheria.', '#ffb080'); this.atkT = 0.5; return; }
       this.removeItem('bala_arcana', 1);

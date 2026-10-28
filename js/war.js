@@ -45,7 +45,7 @@ Object.assign(ENEMIES, {
   war_soldado: { name: 'Soldado', look: { k: 'hum', body: '#a0a8b0' }, hp: 100, dmg: 11, spd: 62, ai: 'melee', xp: 24, armor: 18, gold: [5, 18] },
   war_arqueiro: { name: 'Arqueiro', look: { k: 'hum', body: '#a0a8b0' }, hp: 70, dmg: 10, spd: 60, ai: 'ranged', proj: 'arrow', xp: 22, armor: 10, gold: [4, 15] },
   war_cavaleiro: { name: 'Cavaleiro', look: { k: 'hum', body: '#c0c8d0' }, hp: 170, dmg: 15, spd: 66, ai: 'charge', charge: true, xp: 48, armor: 32, gold: [15, 40] },
-  war_mosqueteiro: { name: 'Mosqueteiro Arcano', look: { k: 'hum', body: '#3a4a9a', weapon: 'musket' }, hp: 80, dmg: 21, spd: 60, ai: 'ranged', proj: 'bullet', cd: 2.3, xp: 38, armor: 12, gold: [8, 25] },
+  war_mosqueteiro: { name: 'Mosqueteiro Arcano', look: { k: 'hum', body: '#3a4a9a', weapon: 'musketb' }, hp: 80, dmg: 21, spd: 60, ai: 'musket', proj: 'bullet', cd: 2.3, xp: 38, armor: 12, gold: [8, 25] },
   war_elite: { name: 'Elite Real', look: { k: 'hum', body: '#d0d8e0' }, hp: 250, dmg: 20, spd: 66, ai: 'melee', xp: 85, armor: 46, gold: [30, 80] }
 });
 
@@ -131,7 +131,7 @@ const War = {
       L.helm = r === 2 ? metal : '#1a1a22'; L.helmStyle = r === 0 ? 'tricorne' : r === 3 ? 'bearskin' : 'shako';
       if (r >= 1) L.plume = r === 3 ? '#e02020' : shade(K.color, 0.3);
       if (r === 3) L.pauldron = '#e0c040';
-      L.weapon = kind === 'cavaleiro' ? 'sword' : kind === 'milicia' ? rng.pick(['spear', 'musket']) : 'musket'; L.wc = '#4a4a52';
+      L.weapon = kind === 'cavaleiro' ? 'sword' : kind === 'milicia' ? rng.pick(['spear', 'musketb']) : 'musketb'; L.wc = '#4a4a52';
       return L;
     }
     if (r === 0) {
@@ -165,6 +165,8 @@ const War = {
     const lvl = Math.max(2, K.lvl[0] + WAR_KIND_RANK[kind] * 2);
     const m = new Monster('war_' + kind, x, y, lvl, { look: this.look(k, kind, rng), name: `${ENEMIES['war_' + kind].name} de ${K.short}`, hpMul: 0.55 });
     m.faction = k; m.team = 'war'; m.kind = kind; m.ctrl = 'squad'; m.aggro = 210;
+    // infantaria de linha: atira em salvas e luta de baioneta (a elite carrega de baioneta)
+    if (m.look.weapon === 'musketb' && kind !== 'elite') { m.ai = 'musket'; m.proj = 'bullet'; m.aggro = 300; if (kind !== 'mosqueteiro') m.dmg *= 1.6; }
     return m;
   },
 
@@ -444,9 +446,12 @@ const War = {
         const tx = bt.x + bt.ax * along * sign - bt.ay * side, ty = bt.y + bt.ay * along * sign + bt.ax * side;
         const m = this.makeSoldier(ar.k, this.pickKind(ar.k, rng, ar.n), tx * 16 + 8, ty * 16 + 8, rng);
         Game.findFree(m); m.home = { x: bt.x * 16 + 8, y: bt.y * 16 + 8 };
-        m.ctrl = 'battle'; m.battleId = bt.id; m.armyId = ar.id; m.repr = repr; m.aggro = 320;
+        m.ctrl = 'battle'; m.battleId = bt.id; m.armyId = ar.id; m.repr = repr; m.aggro = m.ai === 'musket' ? 400 : 320;
         Game.actors.push(m);
       }
+      // mosqueteiros formam uma linha atrás da infantaria, de frente para o inimigo
+      const line = Game.actors.filter(m => m.battleId === bt.id && m.armyId === ar.id && m.ai === 'musket');
+      line.forEach((m, k) => { const along = 10, side = (k - (line.length - 1) / 2) * 1.5; const lx = bt.x + bt.ax * along * sign - bt.ay * side, ly = bt.y + bt.ay * along * sign + bt.ax * side; m.line = { x: lx * 16 + 8, y: ly * 16 + 8 }; m.x = m.line.x; m.y = m.line.y; Game.findFree(m); });
     }
   },
   unspawnBattle(bt) {
@@ -472,6 +477,45 @@ const War = {
   clearLive() {
     Game.actors = Game.actors.filter(m => !(m.faction && (m.ctrl === 'squad' || m.ctrl === 'battle' || m.ctrl === 'victor')));
     const S = this.st(); for (const a of S.armies) a.squad = false; for (const b of S.battles) b.live = false;
+  },
+  // ---------- Mosqueteiros: linha de tiro, salvas e baioneta ----------
+  nearFoe(m, r) {
+    let best = null, bd = r * r;
+    for (const a of Combat.targetsOf(m)) { if (a.dead) continue; const d = dist2(m.x, m.y, a.x, a.y); if (d < bd) { bd = d; best = a; } }
+    return best;
+  },
+  musketAI(m, t, d, dt, sf) {
+    // inimigo colado: calar baionetas e lutar corpo a corpo
+    const close = this.nearFoe(m, 34);
+    if (close) {
+      if (!m.fixed) { m.fixed = true; if (Math.random() < 0.35) Game.floater(m.x, m.y - 28, 'Baionetas!', '#ffd0a0', 0.8); }
+      m.target = close; m.fireDelay = undefined;
+      const dd = dist(m.x, m.y, close.x, close.y), reach = m.r + close.r + 15;
+      if (dd > reach) m.moveToward(close.x, close.y, m.spd * 0.9 * sf, dt);
+      else { m.setDir(angleTo(m.x, m.y, close.x, close.y)); if (m.atkCd <= 0) m.startAttack('bayonet', 0.24); }
+      return;
+    }
+    m.fixed = false;
+    // posição: a linha da batalha ou um arco de frente para o inimigo
+    let lx, ly;
+    if (m.line) { lx = m.line.x; ly = m.line.y; }
+    else { const a = angleTo(t.x, t.y, m.x, m.y) + ((m.id % 5) - 2) * 0.13; lx = t.x + Math.cos(a) * 150; ly = t.y + Math.sin(a) * 150; }
+    const off = dist(m.x, m.y, lx, ly);
+    if (off > 8 && d > 60) m.moveToward(lx, ly, m.spd * 0.75 * sf, dt);
+    else m.setDir(angleTo(m.x, m.y, t.x, t.y));
+    // salvas sincronizadas por unidade
+    const key = (m.battleId ? 'b' + m.battleId : 'a' + (m.armyId || 0)) + m.faction;
+    this.volleys = this.volleys || {};
+    const g = this.volleys[key] || (this.volleys[key] = { t: 2 + Math.random() * 1.5, said: false, fireT: -9, stamp: -1 });
+    if (g.stamp !== Game.t) {
+      g.stamp = Game.t; g.t -= dt;
+      if (g.t < 1.3 && !g.said) { g.said = true; Game.floater(m.x, m.y - 30, 'Apontar!', '#ffe0a0', 0.8); }
+      if (g.t <= 0) { g.t = 4 + Math.random() * 1.2; g.said = false; g.fireT = Game.t; Game.floater(m.x, m.y - 30, 'FOGO!', '#ff9060', 1); }
+    }
+    const ready = off <= 14 && d < 380;
+    m.aimT = ready && g.t < 1.3 ? 0.3 : Math.max(0, (m.aimT || 0) - dt);
+    if (ready && g.fireT > (m.lastVolley || -9) && Game.t - g.fireT < 0.5) { m.lastVolley = g.fireT; m.fireDelay = Math.random() * 0.3; }
+    if (m.fireDelay !== undefined) { m.fireDelay -= dt; if (m.fireDelay <= 0) { m.fireDelay = undefined; m.aimT = 0.5; m.startAttack('shoot', 0.02); } }
   },
   // movimento sem alvo (chamado pela IA dos monstros)
   steer(m, dt, sf) {

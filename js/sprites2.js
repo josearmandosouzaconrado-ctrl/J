@@ -525,7 +525,7 @@
     const k = wclass + col + (glow || '');
     let c = wCache.get(k);
     if (c) return c;
-    c = cv(20, 16); const p = P(c.getContext('2d'));
+    c = cv(wclass === 'musketb' ? 27 : 20, 16); const p = P(c.getContext('2d'));
     const hi = shade(col, 0.4), sh = shade(col, -0.3), wood = '#6a4424', gold = '#d8a838';
     switch (wclass) {
       case 'sword': p(0, 7, wood, 4, 2); p(4, 5, gold, 1, 6); p(5, 7, col, 10, 2); p(5, 7, hi, 10, 1); p(15, 7, col, 1, 1); break;
@@ -536,6 +536,7 @@
       case 'hammer': p(0, 7, wood, 12, 2); p(11, 2, col, 6, 12); p(11, 2, hi, 6, 1); p(16, 2, sh, 1, 12); break;
       case 'bow': for (let y = 0; y < 16; y++) { const x = 2 + Math.round(Math.sin(y / 15 * Math.PI) * 5); p(x, y, col, 2, 1); } p(2, 0, '#e8e8e0', 1, 16); break;
       case 'musket': p(0, 7, wood, 7, 3); p(0, 9, shade(wood, -0.3), 4, 1); p(6, 7, '#3a3a40', 13, 2); p(6, 7, '#6a6a74', 13, 1); p(9, 9, '#c0a040', 2, 1); p(13, 6, glow || '#80c0ff', 2, 1); p(18, 6, '#a0a0a8', 2, 1); break;
+      case 'musketb': p(0, 7, wood, 7, 3); p(0, 9, shade(wood, -0.3), 4, 1); p(6, 7, '#3a3a40', 13, 2); p(6, 7, '#6a6a74', 13, 1); p(9, 9, '#c0a040', 2, 1); p(13, 6, glow || '#80c0ff', 2, 1); p(18, 6, '#a0a0a8', 2, 1); p(18, 9, '#5a5a62', 2, 1); p(19, 9, '#c8ccd4', 7, 1); p(19, 10, '#8a8e96', 6, 1); p(26, 9, '#e8ecf4'); break;
       case 'pistol': p(2, 8, wood, 4, 4); p(5, 7, '#3a3a40', 8, 2); p(5, 7, '#6a6a74', 8, 1); p(6, 9, '#c0a040', 1, 2); p(9, 6, glow || '#80c0ff', 2, 1); break;
       case 'spear': p(0, 7, wood, 16, 1); p(0, 8, shade(wood, -0.25), 16, 1); p(16, 6, col, 2, 4); p(18, 7, col, 2, 2); p(16, 6, hi, 2, 1); p(14, 6, '#c03030', 1, 4); break;
       case 'staff': p(0, 7, col, 15, 2); p(0, 7, shade(col, 0.2), 15, 1); S.ellipse(p, 16.5, 8, 2.8, 2.8, glow || '#60a0ff'); p(15, 7, '#ffffff'); break;
