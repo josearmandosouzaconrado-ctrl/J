@@ -86,7 +86,11 @@ Na tela inicial:
 - `js/controle.js`: suporte a controle pela Gamepad API, com cursor virtual, navegação por direcional e vibração.
 - `js/soldado3d.js`: soldados de todas as facções, com esqueleto de proporções reais e mãos presas à arma em todas as poses (parado, andando, correndo, mirando, ajoelhado, ferido, paraquedas). Cada nação tem capacete, uniforme, equipamento e armas próprios.
 - `teste_soldado.html`: página para ver os soldados de perto, por facção, tipo e pose.
-- `js/models.js` e `js/veiculos.js`: civis, mais de 40 veículos, aviões, navios e construções.
+- `js/blindados3d.js`: 45 veículos modelados do zero em escala real — 34 tanques e caça-tanques, carros blindados, meias-lagartas, jipes, caminhões e o trator do Dia D. Têm rodas e lagartas animadas, camuflagem de cada nação e época pintada no shader, Zimmerit, Schürzen e uma versão leve automática quando estão longe da câmera.
+- `js/avioes3d.js`: 12 aviões (P-47, Fw 190, Ju 87, C.202, Il-2, Typhoon, Zero, D.520, PZL P.11, I-16, C-47 e B-26), com pintura de cada força aérea e as faixas da invasão.
+- `js/navios3d.js`: contratorpedeiros Fletcher e Kagerō, cruzador Cleveland, lanchas PT e S-Boot, barcaça Higgins, LST e encouraçado.
+- `teste_blindados.html`, `teste_avioes.html` e `teste_navios.html`: visualizadores para ver os modelos de perto.
+- `js/models.js` e `js/veiculos.js`: civis, construções e os modelos antigos (reserva).
 - `js/world.js`: terreno tático 3D, vilas, vegetação, coberturas e água.
 - `js/game.js`: o modo tático, com unidades, IA de cobertura, médicos, combate, apoio aéreo e de artilharia, e as batalhas da campanha.
 - `js/campanha.js`: gerador do mapa gigante do Reno, das versões anteriores.

@@ -17,6 +17,7 @@
          Soldado3.pose(s, { moving, speed, aim, crouch }, dt);
    ========================================================= */
 const Soldado3 = (() => {
+  let LITE = false;                     // versão de longe (LOD): menos segmentos e sem detalhes pequenos
   const V3 = THREE.Vector3, Q = THREE.Quaternion;
   const lerp = (a, b, t) => a + (b - a) * t, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
@@ -27,6 +28,7 @@ const Soldado3 = (() => {
   class MB {
     constructor() { this.p = []; this.n = []; this.c = []; this.cf = null; }
     add(geo, color, sx = 1, sy = 1, sz = 1, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) {
+      if (LITE) { if (!geo.boundingSphere) geo.computeBoundingSphere(); if (geo.boundingSphere.radius * Math.max(sx, sy, sz) < 0.05) return this; }
       _e.set(rx, ry, rz); _q.setFromEuler(_e); _m.compose(_p0.set(x, y, z), _q, _s0.set(sx, sy, sz)); _n.getNormalMatrix(_m);
       const g = ni(geo), pa = g.attributes.position, na = g.attributes.normal; _c.setHex(color);
       for (let i = 0; i < pa.count; i++) {
@@ -53,6 +55,7 @@ const Soldado3 = (() => {
   /* ---------- seções (lofts) ---------- */
   // anel superelíptico no plano XZ; fy(cos, sin) desloca y; fr(cos, sin) multiplica o raio
   function ring(n, y, rx, rz, k, cx, cz, fy, fr) {
+    if (LITE) n = Math.max(5, Math.round(n * 0.5));
     const out = [], e = 2 / (k || 2);
     for (let i = 0; i < n; i++) {
       const a = i / n * Math.PI * 2, c = Math.cos(a), s = Math.sin(a), r = fr ? fr(c, s) : 1;
@@ -61,6 +64,7 @@ const Soldado3 = (() => {
     return out;
   }
   function zring(n, z, cx, cy, rx, ry, k) {
+    if (LITE) n = Math.max(5, Math.round(n * 0.5));
     const out = [], e = 2 / (k || 2);
     for (let i = 0; i < n; i++) {
       const a = i / n * Math.PI * 2, c = Math.cos(a), s = Math.sin(a);
@@ -147,7 +151,7 @@ const Soldado3 = (() => {
 
   /* ---------- formas (criadas uma vez, por nome) ---------- */
   const SHP = new Map();
-  const shape = (name, fn) => { let g = SHP.get(name); if (!g) { g = fn(); SHP.set(name, g); } return g; };
+  const shape = (name, fn) => { const k = name + (LITE ? '~L' : ''); let g = SHP.get(k); if (!g) { g = fn(); SHP.set(k, g); } return g; };
   const common = () => shape('common', () => {
     const S = {};
     S.seat = loft([[-0.13, 0.25, 0.17], [-0.06, 0.32, 0.21], [0.04, 0.33, 0.215], [0.12, 0.3, 0.2]].map(([y, w, d]) => ring(12, y, w / 2, d / 2, 2.4)));
@@ -612,10 +616,16 @@ const Soldado3 = (() => {
 
   /* ---------- montagem ---------- */
   const _cache = new Map();
-  function geo(key, fn) { let g = _cache.get(key); if (!g) { const B = new MB(); fn(B); g = B.build(); _cache.set(key, g); } return g; }
+  // duas versões de cada peça: perto (completa) e longe (sem os detalhes pequenos)
+  const LOD_DIST = 26;
+  function geo(key, fn) { return [false, true].map(l => { const k = key + (l ? 'L' : ''); let g = _cache.get(k); if (!g) { LITE = l; const B = new MB(); fn(B); LITE = false; g = B.build(); _cache.set(k, g); } return g; }); }
   let MAT = null;
   function material() { return MAT || (MAT = (typeof VC_MAT !== 'undefined' ? VC_MAT : new THREE.MeshLambertMaterial({ vertexColors: true }))); }
-  const mesh = (g, parent, cast) => { const m = new THREE.Mesh(g, material()); m.castShadow = cast !== false; parent.add(m); return m; };
+  const mesh = (gs, parent, cast) => {
+    const o = new THREE.LOD();
+    gs.forEach((g, i) => { const m = new THREE.Mesh(g, material()); m.castShadow = cast !== false && i === 0; o.addLevel(m, i ? LOD_DIST : 0); });
+    parent.add(o); return o;
+  };
   const grp = (parent, x, y, z) => { const g = new THREE.Group(); g.position.set(x || 0, y || 0, z || 0); parent.add(g); return g; };
   const ROLE = { medic: 'med', sani: 'med', jmedic: 'med', para: 'para', bazooka: 'at', pzschreck: 'at', jat: 'at' };
 
@@ -817,6 +827,10 @@ const Soldado3 = (() => {
     pose(m, { moving, speed: u.speedNow, aim, crouch: u.crouch, heal: !!u.kneel && !!u.def.medic }, Math.min(ud.acc, 0.25));
     ud.acc = 0;
   }
-  function triangles(g) { let t = 0; g.traverse(o => { if (o.isMesh && o.visible) t += o.geometry.attributes.position.count / 3; }); return t; }
+  function triangles(g, level) {
+    let t = 0;
+    const walk = (o) => { if (!o.visible) return; if (o.isLOD) { walk(o.levels[Math.min(level || 0, o.levels.length - 1)].object); return; } if (o.isMesh) t += o.geometry.attributes.position.count / 3; for (const c of o.children) walk(c); };
+    walk(g); return t;
+  }
   return { make, pose, animate, downed, chute, gunner, triangles, LOOK, M };
 })();
