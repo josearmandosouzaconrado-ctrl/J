@@ -89,6 +89,7 @@ Na tela inicial:
 - `js/blindados3d.js`: 45 veículos modelados do zero em escala real — 34 tanques e caça-tanques, carros blindados, meias-lagartas, jipes, caminhões e o trator do Dia D. Têm rodas e lagartas animadas, camuflagem de cada nação e época pintada no shader, Zimmerit, Schürzen e uma versão leve automática quando estão longe da câmera.
 - `js/avioes3d.js`: 12 aviões (P-47, Fw 190, Ju 87, C.202, Il-2, Typhoon, Zero, D.520, PZL P.11, I-16, C-47 e B-26), com pintura de cada força aérea e as faixas da invasão.
 - `js/navios3d.js`: contratorpedeiros Fletcher e Kagerō, cruzador Cleveland, lanchas PT e S-Boot, barcaça Higgins, LST e encouraçado.
+- `js/zoom3d.js`: zoom 3D do mapa mundial. Ao aproximar (pinça ou roda do mouse), a câmera desce e inclina até ~20 km de altitude: o mapa vira relevo (montanhas, litoral, neve), com fronteiras coladas no terreno, cidades com casas e nomes, florestas e as divisões em miniatura (tanques, caminhões, soldados, navios de transporte) marchando de verdade entre as províncias, com tiros e explosões nas batalhas. O botão "lutar 3D" continua abrindo a batalha tática completa.
 - `teste_blindados.html`, `teste_avioes.html` e `teste_navios.html`: visualizadores para ver os modelos de perto.
 - `js/models.js` e `js/veiculos.js`: civis, construções e os modelos antigos (reserva).
 - `js/world.js`: terreno tático 3D, vilas, vegetação, coberturas e água.

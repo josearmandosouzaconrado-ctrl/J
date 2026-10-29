@@ -849,6 +849,7 @@ function setMapStyle(s) {
 }
 function updWorldCamera() {
   const c = WV.cam;
+  if (typeof Z3 !== 'undefined') { Z3.camera(c); return; }
   c.aspect = window.innerWidth / window.innerHeight; c.updateProjectionMatrix();
   if (mapStyle === 'globo') {
     WV.dist = clamp(WV.dist, GR * 1.18, GR * 4.2); WV.lat = clamp(WV.lat, -70, 80);
@@ -865,6 +866,7 @@ const wRay = new THREE.Raycaster(), wNdc = new THREE.Vector2();
 function screenLonLat(sx, sy) {
   wNdc.set(sx / window.innerWidth * 2 - 1, -(sy / window.innerHeight) * 2 + 1);
   wRay.setFromCamera(wNdc, WV.cam);
+  const z = typeof Z3 !== 'undefined' && Z3.pick(wRay); if (z) return z;
   const hit = wRay.intersectObject(mapStyle === 'globo' ? WV.globeMesh : WV.flatMesh, false)[0];
   if (!hit) return null;
   const p = hit.point;
@@ -911,6 +913,8 @@ function updFigures() {
   for (const type in FIG_INST) { const m = FIG_INST[type]; m.count = n[type]; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; }
 }
 let arrowsT = 0;
+// no zoom 3D as setas ficam coladas no relevo
+const wpos = (lon, lat, h) => (typeof Z3 !== 'undefined' && Z3.on() ? Z3.ground(lon, lat, h) : mapPos(lon, lat, h));
 function updArrows() {
   while (WV.arrows.children.length) { const c = WV.arrows.children.pop(); c.geometry.dispose(); }
   const segs = [], cols = [];
@@ -921,7 +925,7 @@ function updArrows() {
       const a = WG.provs[pts[i]], b = WG.provs[pts[i + 1]];
       for (let k = 0; k < 8; k++) {
         const t0 = k / 8, t1 = (k + 1) / 8, lift = (t) => (d.naval ? 6 : 1.2) * Math.sin(t * Math.PI) + 0.6;
-        const A = mapPos(lerp(a.lon, b.lon, t0), lerp(a.lat, b.lat, t0), lift(t0)), Bp = mapPos(lerp(a.lon, b.lon, t1), lerp(a.lat, b.lat, t1), lift(t1));
+        const A = wpos(lerp(a.lon, b.lon, t0), lerp(a.lat, b.lat, t0), lift(t0)), Bp = wpos(lerp(a.lon, b.lon, t1), lerp(a.lat, b.lat, t1), lift(t1));
         segs.push(A.x, A.y, A.z, Bp.x, Bp.y, Bp.z);
         const c = d.naval ? [0.5, 0.8, 1] : atWar(d.tag, W.ctrl[pts[i + 1]]) ? [1, 0.35, 0.25] : [0.6, 1, 0.5];
         cols.push(...c, ...c);
@@ -951,7 +955,7 @@ function updCounters() {
     const key = st.prov + ':' + st.tag; seen.add(key);
     let el = counterEls.get(key);
     if (!el) { el = document.createElement('button'); el.className = 'ct'; el.dataset.key = key; layer.appendChild(el); counterEls.set(key, el); }
-    const p = WG.provs[st.prov]; v.copy(mapPos(p.lon, p.lat, 1.5));
+    const p = WG.provs[st.prov], za = typeof Z3 !== 'undefined' && Z3.anchor(st); v.copy(za || mapPos(p.lon, p.lat, 1.5));
     const front = mapStyle !== 'globo' || v.clone().normalize().dot(camDir) > 0.15;
     v.project(WV.cam);
     const x = (v.x + 1) / 2 * Wd, y = (1 - v.y) / 2 * Hd;
@@ -977,7 +981,7 @@ function updCounters() {
   // marcadores de batalha
   const bl = document.getElementById('bmarks'); let html = '';
   for (const b of W.battles) {
-    const p = WG.provs[b.prov]; v.copy(mapPos(p.lon, p.lat, 2));
+    const p = WG.provs[b.prov], za = typeof Z3 !== 'undefined' && Z3.anchorProv(b.prov); v.copy(za || mapPos(p.lon, p.lat, 2));
     const front = mapStyle !== 'globo' || v.clone().normalize().dot(camDir) > 0.15; v.project(WV.cam);
     if (!front || v.z > 1) continue;
     const mine = b.atag === W.player || b.dtag === W.player || b.att.concat(b.def).some(i => { const d = divById(i); return d && d.tag === W.player; });
@@ -996,13 +1000,13 @@ function worldPointer(type, e) {
   if (type === 'down') {
     wPtr.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (wPtr.size === 1) wGest = { t: 'tap', sx: e.clientX, sy: e.clientY, lx: e.clientX, ly: e.clientY, right: e.button === 2 };
-    else if (wPtr.size === 2) { const [a, b] = [...wPtr.values()]; wGest = { t: 'pinch', d0: Math.hypot(a.x - b.x, a.y - b.y), z0: mapStyle === 'globo' ? WV.dist : WV.fh }; }
+    else if (wPtr.size === 2) { const [a, b] = [...wPtr.values()]; wGest = { t: 'pinch', d0: Math.hypot(a.x - b.x, a.y - b.y), z0: mapStyle === 'globo' ? WV.dist - GR : WV.fh }; }
   } else if (type === 'move') {
     const p = wPtr.get(e.pointerId); if (!p) return true; p.x = e.clientX; p.y = e.clientY;
     if (!wGest) return true;
     if (wGest.t === 'tap' && Math.hypot(e.clientX - wGest.sx, e.clientY - wGest.sy) > 8) wGest.t = 'pan';
     if (wGest.t === 'pan') { worldPan(e.clientX - wGest.lx, e.clientY - wGest.ly); wGest.lx = e.clientX; wGest.ly = e.clientY; }
-    else if (wGest.t === 'pinch' && wPtr.size >= 2) { const [a, b] = [...wPtr.values()]; const k = wGest.d0 / Math.max(20, Math.hypot(a.x - b.x, a.y - b.y)); if (mapStyle === 'globo') WV.dist = wGest.z0 * k; else WV.fh = wGest.z0 * k; }
+    else if (wGest.t === 'pinch' && wPtr.size >= 2) { const [a, b] = [...wPtr.values()]; const k = wGest.d0 / Math.max(20, Math.hypot(a.x - b.x, a.y - b.y)); if (mapStyle === 'globo') WV.dist = GR + wGest.z0 * k; else WV.fh = wGest.z0 * k; }
   } else if (type === 'up') {
     if (!wPtr.has(e.pointerId)) return true; wPtr.delete(e.pointerId);
     if (wGest && wGest.t === 'tap' && wPtr.size === 0) worldTap(e.clientX, e.clientY, wGest.right);
@@ -1011,10 +1015,10 @@ function worldPointer(type, e) {
   return true;
 }
 function worldPan(dx, dy) {
-  if (mapStyle === 'globo') { const k = (WV.dist - GR) / GR * 0.28; WV.lon -= dx * k; WV.lat += dy * k; }
+  if (mapStyle === 'globo') { const k = (WV.dist - GR) / GR * 0.28, cl = WV.dist - GR < 15 ? Math.max(0.35, Math.cos(WV.lat * Math.PI / 180)) : 1; WV.lon -= dx * k / cl; WV.lat += dy * k; }
   else { const k = WV.fh / window.innerHeight * 1.1; WV.fx -= dx * k; WV.fz += dy * k / FLAT_K; }
 }
-function worldZoom(f) { if (mapStyle === 'globo') WV.dist *= f; else WV.fh *= f; }
+function worldZoom(f) { if (mapStyle === 'globo') WV.dist = GR + (WV.dist - GR) * f; else WV.fh *= f; }   // multiplica a altitude: dá para descer até o chão
 function worldTap(sx, sy, right) {
   initAudio();
   const ll = screenLonLat(sx, sy); const p = ll && provAt(ll.lon, ll.lat);
@@ -1211,6 +1215,7 @@ function worldFrame(dt) {
     arrowsT -= dt; if (arrowsT <= 0) { arrowsT = 0.5; updArrows(); }
     updCounters();
   }
+  if (typeof Z3 !== 'undefined') Z3.update(dt);
   renderer.render(WV.scene, WV.cam);
 }
 function showWorld() {
