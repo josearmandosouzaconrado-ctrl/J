@@ -4,3 +4,5 @@ node_modules/
 # chave privada de assinatura do APK (não versionar)
 android/signing/key.pem
 __pycache__/
+# estado da Sala Oficial (gerado pelo servidor)
+rede/sala.json

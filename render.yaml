@@ -1,0 +1,9 @@
+# Implantação da Sala Oficial no Render (plano gratuito): New > Blueprint > escolha este repositório.
+services:
+  - type: web
+    name: cronicas-de-eldoria
+    runtime: node
+    plan: free
+    buildCommand: echo "sem dependências"
+    startCommand: node rede/servidor.js
+    healthCheckPath: /saude

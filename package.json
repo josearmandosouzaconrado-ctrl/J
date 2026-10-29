@@ -1,0 +1,12 @@
+{
+  "name": "cronicas-de-eldoria",
+  "version": "0.13.0",
+  "private": true,
+  "description": "Crônicas de Eldoria: servidor da Sala Oficial (multiplayer) e o jogo pelo navegador",
+  "scripts": {
+    "start": "node rede/servidor.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

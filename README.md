@@ -87,6 +87,28 @@ Criar um reino é difícil e leva tempo:
 
 **O mundo também cresce**: com o passar dos dias, aldeias em paz viram cidades e cidades viram metrópoles. As notícias aparecem em Reinos.
 
+## Multiplayer — Sala Oficial
+
+Uma única sala oficial para **até 20 jogadores** no mesmo mundo (todos usam a mesma semente).
+
+- Na tela inicial: **Multiplayer → Entrar na Sala Oficial → Criar herói e entrar**. O herói do multiplayer é salvo separado dos jogos do modo solo.
+- Os outros jogadores aparecem andando pelo mundo aberto com nome, nível, cor do reino e arma, e aparecem também no mapa (com as vilas deles).
+- **💬 Sala** (no alto da tela): lista de quem está online, distância e chat. Toque num jogador (ou fique perto e toque em **Jogador**) para **declarar guerra**, **propor paz** ou mandar mensagem.
+- **Guerra entre jogadores**: em guerra, golpes, flechas e magias acertam o outro jogador e os seus soldados também atacam. Quem cai renasce na última cidade e todos veem a notícia "⚔ fulano derrotou sicrano". A paz só vale quando os dois aceitam. O servidor confere tudo: só há dano entre quem está em guerra, perto e no mundo aberto.
+- Monstros, cidades, NPCs e reinos controlados pelo computador continuam sendo simulados em cada aparelho.
+
+### Colocar a Sala Oficial no ar (uma vez)
+
+O servidor precisa ficar ligado num endereço público. É Node.js puro, sem nada para instalar. No **Render** (tem plano gratuito):
+
+1. Entre em render.com com a sua conta do GitHub.
+2. **New → Blueprint** e escolha este repositório (ele já tem o `render.yaml`).
+3. Quando terminar, o endereço será algo como `https://cronicas-de-eldoria.onrender.com`. A sala fica em `wss://cronicas-de-eldoria.onrender.com/ws` e o jogo pelo navegador no próprio endereço.
+
+O APK já vem apontando para `wss://cronicas-de-eldoria.onrender.com/ws`. Se o Render der outro nome, troque o endereço na tela do Multiplayer (ele fica salvo) ou mude `REDE_SERVIDOR` em `js/rede.js` e gere o APK de novo. No plano gratuito o servidor "dorme" depois de 15 minutos sem ninguém: a primeira entrada pode levar cerca de 1 minuto. As guerras ficam salvas em `rede/sala.json`, que no plano gratuito é apagado quando o servidor reinicia.
+
+Para testar no computador: `node rede/servidor.js` e abra `http://localhost:8790`.
+
 ## Estrutura do código
 
 | Arquivo | Conteúdo |
@@ -109,6 +131,8 @@ Criar um reino é difícil e leva tempo:
 | `js/vida.js` | Fome, sede e sono, honra e as suas consequências, moradores conversando entre si e o romance pela conversa |
 | `js/eventos.js` | Missões de mundo aberto com escolhas e consequências (favores que voltam, caçadores de recompensa) |
 | `js/vila.js` | A vila do jogador: fundar, construir, colonos, impostos e ataques de bandidos |
+| `js/rede.js` | Multiplayer: conexão com a Sala Oficial, os outros jogadores no mundo, chat, guerra e paz entre jogadores |
+| `rede/servidor.js` | Servidor da Sala Oficial (Node.js puro, sem dependências): WebSocket em `/ws`, até 20 jogadores, e serve o jogo pelo navegador |
 | `js/reino.js` | O reino do jogador: tropas, guerra de independência, diplomacia, tática na batalha, mosquetes por amizade e o crescimento das cidades do mundo |
 
 O modo **Multiplayer** aparece no menu inicial como "em breve".

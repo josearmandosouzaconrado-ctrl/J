@@ -1,7 +1,7 @@
 'use strict';
 // ===================== ENTIDADES, IA E COMBATE =====================
 const HOSTILE = { enemy: { player: 1, ally: 1 }, ally: { enemy: 1 }, player: { enemy: 1, law: 1 }, npc: {}, law: { player: 1 } };
-function isHostile(a, b) { if (a.faction || b.faction) return War.hostile(a, b); const h = HOSTILE[a.team]; return !!(h && h[b.team]); }
+function isHostile(a, b) { if (b && b.remote) return !!(a === Game.player || a.team === 'ally' || a.team === 'player' || a.faction === 'jogador') && Rede.emGuerra(b.id); if (a && a.remote) return false; if (a.faction || b.faction) return War.hostile(a, b); const h = HOSTILE[a.team]; return !!(h && h[b.team]); }
 const BOSS_L0 = { bandido_chefe: 3, rei_goblin: 4, troll_rei: 6, cavaleiro_morto: 6, necromante: 8, yeti: 12, senhor_chamas: 14, hidra: 12, farao: 14, rainha_aranha: 8, guardiao_golem: 13, campeao_orc: 17, rei_draugr: 16, lich: 24, vorthax: 30, dragao: 7, dragao_gelo: 9 };
 
 function collides(L, x, y, r) {
@@ -184,6 +184,7 @@ const Combat = {
   },
   damage(t, amount, o = {}) {
     if (!t || t.dead) return 0;
+    if (t.remote) return Rede.acertar(t, amount, o);
     const P = Game.player;
     const elem = o.elem || 'phys';
     let dmg = amount;
@@ -260,6 +261,7 @@ const Combat = {
     const spd = o.spd || (kind === 'arrow' ? 260 : 170);
     const p = Object.assign({ x, y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, ang, kind, dmg, src, team: src.team, life: o.life || 1.6, r: o.r || 3, hit: new Set() }, o);
     Game.projectiles.push(p);
+    if (src === Game.player) Rede.projetil(p);
     return p;
   },
   projElem(kind) { return { bullet: 'fire', fireball: 'fire', frost: 'frost', dark: 'dark', poison: 'poison', bolt: 'magic', rock: 'phys', arrow: 'phys', breath: 'fire', shock: 'shock' }[kind] || 'phys'; }

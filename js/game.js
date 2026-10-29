@@ -114,6 +114,7 @@ const Game = {
   startPlay() {
     this.level = this.world;
     Mundo.aplicar(); Vila.restore(); Vida.last = undefined;
+    Rede.entrou();
     this.actors = []; this.projectiles = []; this.particles = []; this.fx = []; this.clouds = []; this.pickups = []; this.timers = []; this.floaters = [];
     this.started = true; this.paused = false; this.state = 'play';
     for (const s of this.world.settlements) { s.active = false; s.npcs = null; }
@@ -139,9 +140,10 @@ const Game = {
       if (!collides(L, x, y, a.r) && !TWATER[L.tileAt(Math.floor(x / 16), Math.floor(y / 16))]) { a.x = x; a.y = y; return; }
     }
   },
-  hasSave(slot) { try { return !!localStorage.getItem(SAVE_PREFIX + slot); } catch (e) { return false; } },
+  hasSave(slot) { if (this.mp && slot === 0) slot = 'mp'; try { return !!localStorage.getItem(SAVE_PREFIX + slot); } catch (e) { return false; } },
   saveInfo(slot) { try { const s = JSON.parse(localStorage.getItem(SAVE_PREFIX + slot)); return s ? s.summary : null; } catch (e) { return null; } },
   saveGame(slot, silent) {
+    if (this.mp) slot = 'mp';
     if (!this.started || !this.player) return false;
     const P = this.player, M = this.mods;
     let px = P.x, py = P.y;
@@ -162,6 +164,7 @@ const Game = {
     } catch (e) { this.toast('Erro ao salvar: ' + e.message, '#ff8080'); return false; }
   },
   loadGame(slot) {
+    if (this.mp && slot === 0) slot = 'mp';
     let s;
     try { s = JSON.parse(localStorage.getItem(SAVE_PREFIX + slot)); } catch (e) { s = null; }
     if (!s) { UI.toast('Nenhum jogo salvo neste espaço.', '#ff8080'); return; }
@@ -191,6 +194,7 @@ const Game = {
     else this.buildWorld(s.seed, go);
   },
   toTitle() {
+    Rede.sair();
     this.started = false; this.paused = true; this.state = 'title';
     UI.showHUD(false); UI.showTitle();
     Sfx.setMusic('title');
@@ -333,7 +337,7 @@ const Game = {
     Work.update(dt);
     Adm.update();
     Sombra.tick(dt); Ceu.tick(dt);
-    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt);
+    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt); Rede.tick(dt);
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();
@@ -889,7 +893,8 @@ const Game = {
       }
     }
   },
-  onPlayerDeath() {
+  onPlayerDeath(killer) {
+    Rede.morri(killer);
     Sfx.play('death');
     this.player.mounted = false;
     setTimeout(() => UI.death(), 1200);
@@ -931,9 +936,9 @@ const Game = {
     const fx = P.x + Math.cos(P.face) * 8, fy = P.y - 4 + Math.sin(P.face) * 8;
     for (const a of this.actors) {
       if (a.dead || a.hidden) continue;
-      if (!(a instanceof NPC) && !a.guard && !a.isFollower && !(a.faction && !War.hostile(P, a))) continue;
+      if (!(a instanceof NPC) && !a.guard && !a.isFollower && !a.remote && !(a.faction && !War.hostile(P, a))) continue;
       const d = dist(fx, fy, a.x, a.y - 6);
-      if (d < bd) { bd = d; best = { kind: 'npc', a, label: a.guard ? 'Falar' : a.isFollower ? 'Falar' : 'Falar', name: a.name }; }
+      if (d < bd) { bd = d; best = { kind: 'npc', a, label: a.remote ? 'Jogador' : 'Falar', name: a.name }; }
     }
     const ptx = Math.floor(P.x / 16), pty = Math.floor((P.y - 2) / 16);
     for (let dy = -2; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {

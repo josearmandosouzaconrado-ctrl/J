@@ -105,7 +105,7 @@ const UI = {
           ${saves.length ? `<button class="mbtn gold" ${f(() => Game.loadGame(saves[0].i))}>Continuar<br><small>${esc(saves[0].s ? saves[0].s.name + ' • Nv ' + saves[0].s.level : '')}</small></button>` : ''}
           <button class="mbtn" ${f(() => this.showCreate())}>Novo Jogo</button>
           ${saves.length ? `<button class="mbtn" ${f(() => this.slots('load'))}>Carregar</button>` : ''}
-          <button class="mbtn" ${f(() => this.multiplayer())}>Multiplayer <small class="soon">EM BREVE</small></button>
+          <button class="mbtn" ${f(() => this.multiplayer())}>Multiplayer <small>Sala Oficial • até 20</small></button>
           <button class="mbtn" ${f(() => this.options())}>Opções</button>
           <button class="mbtn" ${f(() => this.help())}>Como Jogar</button>
           ${IS_APK ? '' : `<a class="mbtn apk hidden" id="apk-dl" href="CronicasDeEldoria.apk" download="CronicasDeEldoria.apk">📱 Baixar para Android (APK)<small>joga com a tela deitada</small></a>`}
@@ -119,9 +119,19 @@ const UI = {
   },
   multiplayer() {
     const f = this.reg();
-    const el = this.show('multi', `<div class="panel small"><div class="ptitle">Multiplayer</div>
-      <div class="ctext"><b class="gold">Em breve!</b><br><br>Explore Eldoria com amigos, forme guildas, lute nas guerras entre reinos e negocie nas cidades.<br><br><span class="dim">O modo multiplayer ainda está em desenvolvimento.</span></div>
-      <div class="menu-col"><button class="mbtn" disabled style="opacity:.5">Criar Sala</button><button class="mbtn" disabled style="opacity:.5">Entrar em Sala</button><button class="mbtn" ${f(() => this.showTitle())}>Voltar</button></div></div>`, { cls: 'transparent', onBack: () => this.showTitle() });
+    let sv = null; try { sv = JSON.parse(localStorage.getItem(SAVE_PREFIX + 'mp')); } catch (e) { }
+    const cb = () => { if (this.current && this.current.name === 'multi') this.multiplayer(); };
+    const pronto = Rede.pendente && Rede.ws;
+    const heroi = sv && sv.seed === Rede.seed && sv.summary;
+    const el = this.show('multi', `<div class="panel small"><div class="ptitle">Multiplayer — Sala Oficial</div>
+      <div class="ctext">Uma única sala para até <b>20 jogadores</b> no mesmo mundo. Vocês se veem andando, conversam pelo chat 💬 e podem <b>declarar guerra</b> uns aos outros.<br><span class="dim small">O herói do multiplayer fica separado dos jogos salvos do modo solo.</span></div>
+      ${pronto ? '' : `<label class="small">Endereço do servidor</label><input id="mp-url" value="${esc(Rede.url())}" style="width:100%">`}
+      <div class="small ${pronto ? 'good' : 'dim'}" style="margin:6px 0">${esc(Rede.status || '')}</div>
+      <div class="menu-col">
+        ${pronto ? `${heroi ? `<button class="mbtn gold" ${f(() => { Game.mp = true; Game.loadGame('mp'); })}>Continuar com ${esc(sv.summary.name)}<br><small>Nível ${sv.summary.level}</small></button>` : ''}
+          <button class="mbtn ${heroi ? '' : 'gold'}" ${f(() => heroi ? this.confirm('Criar um herói novo? O herói atual do multiplayer será substituído quando você salvar.', () => this.showCreate(), () => this.multiplayer()) : this.showCreate())}>${heroi ? 'Novo herói' : 'Criar herói e entrar'}</button>`
+        : `<button class="mbtn gold" ${f(() => { const u = (document.getElementById('mp-url').value || '').trim(); if (u) Rede.conectar(u, cb); })}>Entrar na Sala Oficial</button>`}
+        <button class="mbtn" ${f(() => { Rede.sair(); Rede.status = ''; this.showTitle(); })}>Voltar</button></div></div>`, { cls: 'transparent', onBack: () => { Rede.sair(); this.showTitle(); } });
     this.bind(el, f);
   },
   // ---------- Criação de personagem ----------
@@ -149,8 +159,8 @@ const UI = {
               <label>Pele</label><div class="row swatches">${R.skins.map((s, i) => `<button class="sw ${c.skin === i ? 'on' : ''}" style="background:${s}" ${f(() => { c.skin = i; render(); })}></button>`).join('')}</div>
               <label>${c.race === 'draconato' ? 'Detalhes' : 'Cabelo'}</label><div class="row swatches">${R.hairs.map((s, i) => `<button class="sw ${c.hair === i ? 'on' : ''}" style="background:${s}" ${f(() => { c.hair = i; render(); })}></button>`).join('')}</div>
               <label>Estilo</label><div class="row">${['Curto', 'Longo', 'Careca', 'Moicano', 'Coque'].map((n, i) => `<button class="sbtn small ${c.hairStyle === i ? 'on' : ''}" ${f(() => { c.hairStyle = i; render(); })}>${n}</button>`).join('')}</div>
-              <label>Semente do mundo (opcional)</label>
-              <input id="cc-seed" placeholder="aleatória" value="${esc(c.seed)}" inputmode="numeric">
+              ${Rede.pendente ? '<label>Mundo</label><div class="gold">🌐 Mundo da Sala Oficial</div><input id="cc-seed" type="hidden" value="">' : `<label>Semente do mundo (opcional)</label>
+              <input id="cc-seed" placeholder="aleatória" value="${esc(c.seed)}" inputmode="numeric">`}
             </div>
             <div class="create-right">
               <label>Raça</label>
@@ -160,10 +170,11 @@ const UI = {
             </div>
           </div>
           <div class="row end">
-            <button class="mbtn small" ${f(() => this.showTitle())}>Voltar</button>
+            <button class="mbtn small" ${f(() => Rede.pendente ? this.multiplayer() : this.showTitle())}>Voltar</button>
             <button class="mbtn gold" ${f(() => {
               c.name = (document.getElementById('cc-name').value || '').trim() || c.name;
-              const seedv = parseInt((document.getElementById('cc-seed').value || '').replace(/\D/g, '')) || 0;
+              const seedv = Rede.pendente ? Rede.seed : parseInt((document.getElementById('cc-seed').value || '').replace(/\D/g, '')) || 0;
+              Game.mp = !!Rede.pendente;
               Game.newGame({ name: c.name, race: c.race, cls: c.cls, app: { skin: RACES[c.race].skins[c.skin], hair: RACES[c.race].hairs[c.hair], hairStyle: c.hairStyle, sex: c.sex }, seed: seedv });
             })}>Começar Aventura ▶</button>
           </div>
@@ -260,6 +271,7 @@ const UI = {
   // ---------- NPCs ----------
   talkNPC(a) {
     const P = Game.player;
+    if (a.remote) return Rede.menu(a);
     if (a.shipCrew) return Ship.talk(a);
     if (a.workCust) return Work.serve(a);
     if (a.evento) return Eventos.talk(a);

@@ -32,8 +32,8 @@ PACKAGE = 'com.eldoria.cronicas.adm' if ADM else 'com.eldoria.cronicas'
 ACTIVITY = PACKAGE + '.MainActivity'
 APP_NAME = 'Eldoria ADM' if ADM else 'Crônicas de Eldoria'
 UA_TAG = ' EldoriaAPK EldoriaADM' if ADM else ' EldoriaAPK'
-VERSION_CODE = 22
-VERSION_NAME = '0.12.0-beta'
+VERSION_CODE = 23
+VERSION_NAME = '0.13.0-beta'
 MIN_SDK, TARGET_SDK = 24, 34
 # img/ não entra: as imagens vão embutidas em js/imgdata.js (tools/gerar_imgdata.py)
 WEB_FILES = ['index.html', 'manifest.json', 'css', 'js', 'icons']
@@ -325,6 +325,7 @@ def build_manifest():
     A = lambda n, t, v: (n, t, v)
     tree = ('manifest', [A('versionCode', TYPE_INT, VERSION_CODE), A('versionName', TYPE_STRING, VERSION_NAME), ('package', TYPE_STRING, PACKAGE)], [
         ('uses-sdk', [A('minSdkVersion', TYPE_INT, MIN_SDK), A('targetSdkVersion', TYPE_INT, TARGET_SDK)], []),
+        ('uses-permission', [A('name', TYPE_STRING, 'android.permission.INTERNET')], []),   # multiplayer
         ('application', [A('theme', TYPE_REF, 0x01030007), A('label', TYPE_STRING, APP_NAME), A('icon', TYPE_REF, 0x7f010000),
                          A('allowBackup', TYPE_BOOL, True), A('hardwareAccelerated', TYPE_BOOL, True)], [
             ('activity', [A('name', TYPE_STRING, ACTIVITY), A('exported', TYPE_BOOL, True),

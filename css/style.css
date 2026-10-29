@@ -54,6 +54,12 @@ input { font-family: inherit; font-size: 22px; background: #140c10; color: var(-
 #hud-honra { font-size: 15px; }
 #tatica { position: absolute; top: calc(112px + var(--sa-t)); left: calc(8px + var(--sa-l)); display: flex; flex-direction: column; gap: 3px; align-items: stretch; pointer-events: auto; background: rgba(15,8,12,.72); border: 2px solid var(--border); padding: 3px; z-index: 5; }
 #tatica.hidden { display: none; }
+#b-sala { position: absolute; top: calc(6px + var(--sa-t)); left: 50%; transform: translateX(-50%); pointer-events: auto; font: inherit; font-size: 15px; color: #e8f4ff; background: rgba(20,30,50,.75); border: 2px solid #4a6a9a; padding: 1px 6px; }
+#b-sala.hidden { display: none; }
+#chatlog { position: absolute; left: calc(8px + var(--sa-l)); bottom: calc(8px + var(--sa-b)); max-width: 40%; font-size: 14px; text-shadow: 1px 1px 0 #000, -1px 0 0 #000; pointer-events: none; }
+#chatlog.fade { animation: chatfade 12s forwards; }
+@keyframes chatfade { 0%, 75% { opacity: 1; } 100% { opacity: 0; } }
+.chatbox { margin: 6px 0; padding: 4px 6px; background: rgba(0,0,0,.35); border: 1px solid var(--border2); max-height: 120px; overflow-y: auto; }
 #tatica .tat-t { font-size: 14px; color: var(--gold); white-space: nowrap; text-align: center; }
 #tatica button { font: inherit; font-size: 14px; text-align: left; color: #f2e6cc; background: #2a1a14; border: 2px solid #5a4030; padding: 1px 5px; white-space: nowrap; }
 #tatica button.on { background: #6a4a10; border-color: var(--gold); color: #fff; }
