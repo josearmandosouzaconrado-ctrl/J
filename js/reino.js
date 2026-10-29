@@ -122,7 +122,7 @@ const Reino = {
     const foe = wars[0].a === 'jogador' ? wars[0].b : wars[0].a;
     S.armies.push({ id: S.id++, k: 'jogador', foe, x: P.x / 16, y: P.y / 16, n, n0: n, state: 'follow', target: null, siegeT: 0, campo: true, comp });
     UI.close(); this.ordem = 'seguir';
-    Game.centerMsg('EXÉRCITO EM MARCHA!', `${n} soldados seguem você. Leve-os até o inimigo.`); Sfx.play('shout');
+    Game.centerMsg('EXÉRCITO REUNIDO!', `${n} soldados seguem você. Use os botões à esquerda para dar ordens.`); Sfx.play('shout');
   },
   devolver(a) {
     const R = this.st(), S = War.st();
@@ -236,17 +236,20 @@ const Reino = {
     if (!el) {
       const hud = document.getElementById('hud'); if (!hud) return;
       el = this.el = document.createElement('div'); el.id = 'tatica'; el.className = 'hidden'; hud.appendChild(el);
-      el.addEventListener('pointerdown', e => { const b = e.target.closest('button'); if (!b) return; e.preventDefault(); e.stopPropagation(); if (b.dataset.o === 'cercar') this.cercar(); else this.darOrdem(b.dataset.o); this.painelKey = ''; });
+      el.addEventListener('pointerdown', e => { const b = e.target.closest('button'); if (!b) return; e.preventDefault(); e.stopPropagation(); if (b.dataset.o === 'cercar') this.cercar(); else if (b.dataset.o === 'reunir') this.formar(1); else this.darOrdem(b.dataset.o); this.painelKey = ''; });
     }
     const P = Game.player, A = this.ativo() && Game.level.isWorld ? this.campo() : null;
     const emBatalha = this.ativo() && Game.actors.some(m => m.faction === 'jogador' && m.ctrl === 'battle' && !m.dead);
-    const show = !!(A || emBatalha) && !Game.paused;
+    // em guerra e sem exército em campo: botão para reunir as tropas da guarnição
+    const reunir = !A && !emBatalha && this.ativo() && Game.level.isWorld && War.warOf('jogador').length > 0 && this.total() >= 5;
+    const show = !!(A || emBatalha || reunir) && !Game.paused;
     const cerco = A && A.state === 'follow' && this.cidadeInimiga();
-    const key = show + this.ordem + !!cerco + (A ? A.state + A.n : '');
+    const key = show + this.ordem + !!cerco + (A ? A.state + A.n : '') + (reunir ? 'r' + this.total() : '');
     if (key === this.painelKey) return;
     this.painelKey = key;
     el.classList.toggle('hidden', !show);
     if (!show) return;
+    if (reunir) { el.innerHTML = `<div class="tat-t">⚔ Em guerra</div><button data-o="reunir" class="gold">🚩 Reunir exército (${this.total()})</button>`; return; }
     el.innerHTML = `<div class="tat-t">${A ? `🚩 ${A.n} soldados${A.state === 'siege' ? ' • cercando' : ''}` : 'Batalha'}</div>` + Object.entries(ORDENS).map(([o, l]) => `<button data-o="${o}" class="${this.ordem === o ? 'on' : ''}">${l}</button>`).join('') + (cerco ? `<button data-o="cercar" class="gold">🏰 Cercar</button>` : '');
     void P;
   },
@@ -407,7 +410,7 @@ const Reino = {
       if (su) {
         War.declare('jogador', su);
         for (const k of War._kList) if (k.id !== su && k.id !== 'jogador' && War.rel(k.id, su) < -30) this.addRel(k.id, 12);
-        Game.centerMsg('GUERRA DE INDEPENDÊNCIA!', `${V.nome} contra ${War.K[su].name}`);
+        Game.centerMsg('GUERRA DE INDEPENDÊNCIA!', `${V.nome} contra ${War.K[su].short} • toque em 🚩 Reunir exército (à esquerda)`);
         Game.chron(`Declarei a independência de ${V.nome} contra ${War.K[su].name}.`);
       } else { Game.centerMsg('UM NOVO REINO!', `${this.titulo()} ${Game.player.name} do ${this.nome()}`); Game.chron(`Proclamei o ${this.nome()}.`); }
       Vila.restore(); UI.close();
