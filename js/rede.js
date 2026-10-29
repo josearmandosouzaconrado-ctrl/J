@@ -103,7 +103,7 @@ const Rede = {
       for (const o of this.outros.values()) this.tirar(o);
       this.outros.clear();
       if (estava) { Game.toast('Conexão com a Sala Oficial perdida. Tentando de novo...', '#ff9080'); this.reconectar(); }
-      else if (!this.status.startsWith('Sala cheia')) { this.status = this.status === 'Conectando...' ? 'Não foi possível conectar.' : this.status; cb && cb(); }
+      else if (!this.status.startsWith('Sala cheia')) { if (this.status === 'Conectando...') this.status = `Não foi possível conectar a ${url}. O servidor da Sala Oficial precisa estar ligado (no Render) e o endereço precisa estar certo. Se ele acabou de ser criado ou estava dormindo, espere 1 minuto e tente de novo.`; cb && cb(); }
     };
     ws.onerror = () => { };
   },
