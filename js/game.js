@@ -337,7 +337,7 @@ const Game = {
     Work.update(dt);
     Adm.update();
     Sombra.tick(dt); Ceu.tick(dt);
-    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt); Rede.tick(dt);
+    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt); Rede.tick(dt); Construcao.tick(dt);
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();
@@ -1279,6 +1279,7 @@ const Game = {
     }
     // marcadores de missão em masmorra/ mundo (alvo próximo)
     this.drawQuestMarker(ctx, camX, camY);
+    if (L.isWorld) Construcao.drawGhost(ctx, camX, camY);
     // projéteis
     for (const p of this.projectiles) this.drawProjectile(ctx, p, camX, camY);
     // efeitos

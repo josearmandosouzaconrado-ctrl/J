@@ -1397,6 +1397,7 @@ class World {
       if (s.x0 * 16 > x1 + 64 || (s.x0 + s.w) * 16 < x0 - 64 || s.y0 * 16 > y1 + 160 || (s.y0 + s.h) * 16 < y0 - 64) continue;
       for (const b of s.buildings) out.push(b);
     }
+    for (const b of this.extras || []) { if (b.tx * 16 > x1 + 64 || (b.tx + b.w) * 16 < x0 - 64 || b.ty * 16 > y1 + 160 || (b.ty + b.h) * 16 < y0 - 64) continue; out.push(b); }
     for (const h of this.homes) { const b = h._b; if (!b || b.tx * 16 > x1 + 64 || (b.tx + b.w) * 16 < x0 - 64 || b.ty * 16 > y1 + 160 || (b.ty + b.h) * 16 < y0 - 64) continue; out.push(b); }
     return out;
   }

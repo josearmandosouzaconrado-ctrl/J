@@ -59,6 +59,7 @@ const UI = {
   },
   close() { this.closeAll(false); Input.clear(); },
   back() { if (this.current && this.current.onBack) this.current.onBack(); else if (this.current && this.current.name !== 'title' && this.current.name !== 'death' && this.current.name !== 'loading' && this.current.name !== 'create') this.close(); },
+  topbar() { let t = document.getElementById('topbar'); if (!t) { t = document.createElement('div'); t.id = 'topbar'; this.hud.appendChild(t); } return t; },
   showHUD(on) { this.hud.classList.toggle('hidden', !on); this.controls.classList.toggle('hidden', !on); },
   fade() { const f = document.getElementById('fade'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); },
   toast(text, color = '#f0e0c0', icon) {

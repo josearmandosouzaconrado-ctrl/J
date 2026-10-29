@@ -179,7 +179,7 @@ const War = {
     for (const k of this._kList) for (const o of k.nb) if (k.id !== 'jogador' && o !== 'jogador' && k.id < o && S.rel[this.key(k.id, o)] === undefined) S.rel[this.key(k.id, o)] = KBIAS[this.key(k.id, o)] || 0;
     for (const [p, v] of Object.entries(S.rel)) {
       const [a, b] = p.split('|');
-      if (a === 'jogador' || b === 'jogador' || !this.K[a] || !this.K[b]) continue;
+      if (a === 'jogador' || b === 'jogador' || !this.K[a] || !this.K[b] || this.K[a].extinto || this.K[b].extinto) continue;
       if (this.atWar(a, b)) continue;
       const base = KBIAS[p] || 0;
       let nv = v + (base - v) * 0.08 + rng.range(-5, 5);
@@ -219,7 +219,7 @@ const War = {
   },
   declare(a, b, quiet) {
     const S = this.st();
-    if (this.atWar(a, b)) return;
+    if (this.atWar(a, b) || this.extinto(a) || this.extinto(b)) return;
     S.wars.push({ a, b, since: Game.day, won: { [a]: [], [b]: [] } });
     if (a === 'jogador' || b === 'jogador') { S.prel = S.prel || {}; S.prel[a === 'jogador' ? b : a] = Math.min(Reino.rel(a === 'jogador' ? b : a), -80); } else S.rel[this.key(a, b)] = -80;
     const rng = new RNG(Game.world.seed + Game.day * 31 + S.id);
@@ -351,7 +351,7 @@ const War = {
     if (wk && lk && this.K[wk] && this.K[lk]) this.news(`${bt.name}: ${this.K[wk].short} venceu ${this.K[lk].short}. ${L && L.n >= 10 ? `O exército de ${this.K[lk].short} recuou e acampou esperando reforços.` : `O exército de ${this.K[lk].short} foi destruído.`}`, !!bt.live, [wk, lk]);
     const P = Game.player;
     if (bt.live && P.army && wk === P.army.k) { P.army.merit += 8; Game.toast('Vitória! +8 de mérito', '#80ff80'); Game.chron(`Lutei na ${bt.name} e ${this.K[wk].short} venceu.`); }
-    Reino.onResolve(bt, wk, lk);
+    Reino.onResolve(bt, wk, lk, Wn, L);
     if (bt.live && P.tempSide) P.tempSide = null;
     for (const m of Game.actors) if (m.battleId === bt.id && !m.dead) { m.ctrl = 'victor'; m.battleId = null; }
   },
@@ -374,7 +374,24 @@ const War = {
     const back = s.region.id === a.k;
     this.news(back ? `${this.K[a.k].short} retomou ${s.name}!` : `⚔ ${this.K[a.k].name} conquistou ${s.name}${old ? ` de ${this.K[old].short}` : ''}!`, true, [a.k, old]);
     if (s.active) { const set = new Set(s.npcs || []); Game.actors = Game.actors.filter(x => !set.has(x)); s.active = false; s.npcs = null; }
-    Reino.onConquer(s, a);
+    Reino.onConquer(s, a, old);
+    // um reino sem nenhuma cidade deixa de existir
+    if (old && old !== 'jogador' && this.K[old] && !Game.world.settlements.some(x => this.ownerOf(x) === old)) this.extinguir(old, a.k);
+  },
+  extinto(k) { const S = this.st(); return !!(S.extintos && S.extintos[k]); },
+  extinguir(k, por) {
+    const S = this.st(); if (this.extinto(k)) return;
+    S.extintos = S.extintos || {}; S.extintos[k] = Game.day;
+    if (this.K[k]) this.K[k].extinto = true;
+    S.wars = S.wars.filter(w => w.a !== k && w.b !== k);
+    S.armies = S.armies.filter(a => a.k !== k && (a.foe !== k || (a.k === 'jogador' && a.campo)));
+    for (const a of S.armies) if (a.foe === k) { const o = this.warOf(a.k)[0]; a.foe = o ? (o.a === a.k ? o.b : o.a) : null; a.target = null; }
+    S.battles = S.battles.filter(bt => S.armies.some(x => x.id === bt.a) && S.armies.some(x => x.id === bt.b));
+    this.clearLive();
+    const P = Game.player;
+    if (P && P.army && P.army.k === k) { P.army = null; Game.toast('O exército em que você servia deixou de existir.', '#ffb080'); }
+    this.news(`👑 ${this.K[k] ? this.K[k].name : k} deixou de existir${por && this.K[por] ? `: todas as suas terras agora são de ${this.K[por].short}` : ''}.`, true, [k, por]);
+    if (Game.started) Game.centerMsg('UM REINO CAIU', `${this.K[k] ? this.K[k].name : k} deixou de existir`);
   },
 
   // ---------- Quadro a quadro ----------
@@ -476,7 +493,7 @@ const War = {
     for (let i = 0; i < cnt; i++) {
       const m = this.makeSoldier(a.k, a.k === 'jogador' ? Reino.kind(a, rng) : i === 0 ? (a.n > 50 ? 'cavaleiro' : 'soldado') : this.pickKind(a.k, rng, a.n), a.x * 16 + (i % 3 - 1) * 14, a.y * 16 + Math.floor(i / 3) * 14, rng);
       Game.findFree(m); m.armyId = a.id; m.slot = i; m.lead = i === 0; m.home = { x: m.x, y: m.y };
-      if (m.lead) m.flagC = this.K[a.k].color;
+      if (m.lead) { m.flagC = this.K[a.k].color; m.flagK = a.k; }
       Game.actors.push(m);
     }
   },
@@ -612,16 +629,20 @@ const War = {
     this._cimg && this._cimg.forEach((v, k) => { if (k.startsWith(c.k + c.kind + c.seed)) this._cimg.delete(k); });
   },
   // ---------- Desenho no mundo ----------
-  flagImg(col) {
+  flagImg(col, emb, col2) {
     this._flags = this._flags || {};
-    if (this._flags[col]) return this._flags[col];
+    const key = col + (emb || '') + (col2 || '');
+    if (this._flags[key]) return this._flags[key];
     const c = Sprites.cv(14, 30), p = Sprites.P(c.getContext('2d'));
     p(1, 0, '#e0c060', 2, 2); p(1, 2, '#6a4a2a', 2, 28);
     for (let y = 0; y < 12; y++) { const w = 10 - (y > 8 ? (y - 8) * 2 : 0); p(3, 3 + y, y % 4 === 0 ? shade(col, 0.2) : col, w, 1); }
-    p(6, 6, '#f0e0a0', 3, 4); p(7, 5, '#f0e0a0', 1, 6);
-    this._flags[col] = c;
+    const E = emb && EMBLEMAS[emb];
+    if (E) { for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++) if (E.px[y][x] === '#') p(5 + x, 5 + y, col2 || '#f0e0a0', 1, 1); }
+    else { p(6, 6, col2 || '#f0e0a0', 3, 4); p(7, 5, col2 || '#f0e0a0', 1, 6); }
+    this._flags[key] = c;
     return c;
   },
+  kFlag(k) { const K = this.K[k]; if (!K) return this.flagImg('#808080'); return this.flagImg(K.color, K.emb, K.cor2); },
   drawables(D, camX, camY, vw, vh) {
     const S = this.st(), anim = Math.floor(Game.t * 4) % 2;
     const inView = (x, y, m = 40) => x > camX - m && y > camY - m && x < camX + vw + m && y < camY + vh + m;
@@ -636,7 +657,7 @@ const War = {
       const tents = [[-50, -24], [40, -28], [-36, 30], [52, 22], [0, -44]];
       tents.forEach(([dx, dy], i) => { const s = Sprites.obj(O.TENT, (a.id + i) % 3); D.push({ y: cy + dy + 15, img: s.c, x: cx + dx + 8 - (s.w >> 1), yy: cy + dy + 16 - s.h + s.oy }); });
       const fire = Sprites.obj(O.CAMPFIRE, 0, anim); D.push({ y: cy + 15, img: fire.c, x: cx + 8 - (fire.w >> 1), yy: cy + 16 - fire.h + fire.oy });
-      const fl = this.flagImg(this.K[a.k].color); D.push({ y: cy - 10, img: fl, x: cx + 20, yy: cy - 40 });
+      const fl = this.kFlag(a.k); D.push({ y: cy - 10, img: fl, x: cx + 20, yy: cy - 40 });
     }
     // bandeiras das cidades ocupadas
     for (const s of Game.world.settlements) {
@@ -644,10 +665,10 @@ const War = {
       if (!o || o === s.region.id || !this.K[o]) continue;
       const x = s.mid.x * 16 + 30, y = s.mid.y * 16;
       if (!inView(x, y)) continue;
-      const fl = this.flagImg(this.K[o].color); D.push({ y: y + 2, img: fl, x, yy: y - 28 });
+      const fl = this.kFlag(o); D.push({ y: y + 2, img: fl, x, yy: y - 28 });
     }
     // porta-bandeira do exército
-    for (const m of Game.actors) if (m.lead && m.flagC && !m.dead && inView(m.x, m.y)) { const fl = this.flagImg(m.flagC); D.push({ y: m.y + 0.5, img: fl, x: m.x - 2, yy: m.y - 44 }); }
+    for (const m of Game.actors) if (m.lead && m.flagC && !m.dead && inView(m.x, m.y)) { const fl = m.flagK ? this.kFlag(m.flagK) : this.flagImg(m.flagC); D.push({ y: m.y + 0.5, img: fl, x: m.x - 2, yy: m.y - 44 }); }
   },
   // ---------- Itens dos exércitos ----------
   defineItems() {
@@ -749,14 +770,15 @@ const War = {
     const status = (a, b) => this.atWar(a, b) ? '<span class="bad">⚔ Guerra</span>' : this.rel(a, b) < -40 ? '<span class="warn">Tensão</span>' : this.rel(a, b) > 40 ? '<span class="good">Aliados</span>' : 'Paz';
     const mine = P.army ? `<div class="quest main"><b class="gold">${WAR_RANKS[P.army.rank].name} de ${esc(this.K[P.army.k].name)}</b><br><small>Mérito ${P.army.merit} • Inimigos abatidos: ${P.army.kills || 0} • Soldo a receber: ${(P.army.owed || 0) * WAR_RANKS[P.army.rank].pay} ouro</small></div>` : '<div class="quest"><small class="dim">Você não serve a nenhum exército. Aliste-se no castelo de um reino.</small></div>';
     const wars = S.wars.map(w => { const cA = Game.world.settlements.filter(s => this.ownerOf(s) === w.a).length, cB = Game.world.settlements.filter(s => this.ownerOf(s) === w.b).length; return `<div class="quest"><b class="bad">⚔ ${esc(this.K[w.a].short)} × ${esc(this.K[w.b].short)}</b> <small class="dim">desde o dia ${w.since}</small><br><small>Cidades: ${esc(this.K[w.a].short)} ${cA} • ${esc(this.K[w.b].short)} ${cB}${w.won[w.a].length + w.won[w.b].length ? ` • Conquistas: ${w.won[w.a].length + w.won[w.b].length}` : ''}</small></div>`; }).join('') || '<div class="quest"><small class="good">Nenhuma guerra no momento.</small></div>';
-    const rows = ks.map(k => { const cities = Game.world.settlements.filter(s => this.ownerOf(s) === k.id).length; const nb = [...k.nb].map(o => `${esc(this.K[o].short)}: ${status(k.id, o)}`).join(' • '); return `<div class="quest"><b style="color:${k.color}">■</b> <b>${esc(k.name)}</b> <small class="dim">${esc(k.ruler.title)} ${esc(k.ruler.name)} • ${cities} cidades</small><br><small>${nb}</small></div>`; }).join('');
+    const rows = ks.filter(k => !k.extinto).map(k => { const cities = Game.world.settlements.filter(s => this.ownerOf(s) === k.id).length; const nb = [...k.nb].map(o => `${esc(this.K[o].short)}: ${status(k.id, o)}`).join(' • '); return `<div class="quest"><b style="color:${k.color}">■</b> <b>${esc(k.name)}</b> <small class="dim">${esc(k.ruler.title)} ${esc(k.ruler.name)} • ${cities} cidades</small><br><small>${nb}</small></div>`; }).join('');
+    const mortos = ks.filter(k => k.extinto).map(k => `<small class="dim">✝ ${esc(k.name)} deixou de existir no dia ${S.extintos[k.id]}.</small>`).join('<br>');
     const news = S.news.slice(0, 14).map(n => `<div class="chron"><small class="dim">Dia ${n.day}</small> ${esc(n.text)}</div>`).join('') || '<small class="dim">Sem notícias.</small>';
-    return `<div class="qcol">${mine}${Reino.tabHTML()}<div class="sub">Guerras</div>${wars}<div class="sub">Reinos e diplomacia</div>${rows}<div class="sub">Notícias</div>${news}</div>`;
+    return `<div class="qcol">${mine}${Reino.tabHTML()}<div class="sub">Guerras</div>${wars}<div class="sub">Reinos e diplomacia</div>${rows}${mortos ? `<div class="quest">${mortos}</div>` : ''}<div class="sub">Notícias</div>${news}</div>`;
   },
   // ---------- Mapa ----------
   drawMap(ctx, toS, z) {
     const S = this.st();
-    Naval.drawMap(ctx, toS); Rede.drawMap(ctx, toS);
+    Fronteiras.draw(ctx, toS); Naval.drawMap(ctx, toS); Rede.drawMap(ctx, toS);
     for (const s of Game.world.settlements) { const o = S.owner[s.id]; if (!o || o === s.region.id || !this.K[o]) continue; const [x, y] = toS(s.x, s.y); ctx.strokeStyle = this.K[o].color; ctx.lineWidth = 3; ctx.strokeRect(x - 9, y - 9, 18, 18); }
     for (const a of S.armies) { const [x, y] = toS(a.x, a.y); ctx.fillStyle = '#000'; ctx.fillRect(x - 4, y - 9, 9, 7); ctx.fillStyle = this.K[a.k].color; ctx.fillRect(x - 3, y - 8, 7, 5); ctx.fillStyle = '#6a4a2a'; ctx.fillRect(x - 4, y - 9, 1, 12); if (a.state === 'camp') { ctx.fillStyle = '#e0d0a0'; ctx.fillText('⛺', x + 9, y + 4); } }
     for (const b of S.battles) { const [x, y] = toS(b.x, b.y); ctx.fillStyle = '#000'; ctx.fillText('⚔', x + 1, y + 6); ctx.fillStyle = '#ff5040'; ctx.fillText('⚔', x, y + 5); }

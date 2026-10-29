@@ -70,7 +70,7 @@ const Vila = {
     }
     for (const [k, list] of W.stampIndex) W.stampIndex.set(k, list.filter(st => !st.vilaId));
     for (const [k, d] of W.doors) if (d.settlement && d.settlement.playerVila) W.doors.delete(k);
-    const V = this.st(); if (!V) { if (old.length) this.limpaChunks(old[0]); return; }
+    const V = this.st(); if (!V) { if (old.length) this.limpaChunks(old[0]); Construcao.aplicar(); return; }
     const R = W.regions.find(r => r.id === V.region) || W.regions[W.regAt(V.cx, V.cy)];
     const pop = V.pop, b = V.built;
     const type = pop >= 20 && b.templo && b.muralha ? 'capital' : pop >= 8 ? 'town' : 'village';
@@ -78,6 +78,7 @@ const Vila = {
     this.layout(s);
     W.settlements.push(s);
     this.limpaChunks(s);
+    Construcao.aplicar();
     return s;
   },
   limpaChunks(s) {
@@ -166,7 +167,7 @@ const Vila = {
     }
     if (V.pop !== antes) this.restore();
   },
-  cap() { const V = this.st(); let c = 0; for (const [k, d] of Object.entries(VILA_PREDIOS)) if (V.built[k] && d.cap) c += d.cap; return c + (V.built.taverna ? 2 : 0); },
+  cap() { const V = this.st(); let c = Construcao.cap(); for (const [k, d] of Object.entries(VILA_PREDIOS)) if (V.built[k] && d.cap) c += d.cap; return c + (V.built.taverna ? 2 : 0); },
   ataque() {
     const G = Game, P = G.player, s = this.s; if (!s) return;
     const g = s.gates[Math.floor(Math.random() * s.gates.length)], n = 3 + Math.floor(Math.random() * 3);

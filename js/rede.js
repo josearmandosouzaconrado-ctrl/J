@@ -246,7 +246,7 @@ const Rede = {
   atualizaBotao() {
     let b = this.btn;
     const show = !!(Game.mp && Game.started);
-    if (!b) { if (!show) return; const hud = document.getElementById('hud'); if (!hud) return; b = this.btn = document.createElement('button'); b.id = 'b-sala'; hud.appendChild(b); b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); this.painel(); }); }
+    if (!b) { if (!show) return; if (!document.getElementById('hud')) return; b = this.btn = document.createElement('button'); b.id = 'b-sala'; UI.topbar().appendChild(b); b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); this.painel(); }); }
     const txt = !show ? '' : this.on ? `💬 Sala ${this.outros.size + 1}/${this.max}` : '💬 offline';
     if (txt !== this._bt) { this._bt = txt; b.textContent = txt; b.classList.toggle('hidden', !show); }
   },

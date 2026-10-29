@@ -85,6 +85,14 @@ Criar um reino é difícil e leva tempo:
 6. **Diplomacia**: no castelo de qualquer reino ou pelo Intendente, mande presentes, faça tratados de comércio (+ouro por dia), alianças (os aliados entram nas suas guerras), peça ajuda contra o seu suserano, proponha paz ou declare guerra. Matar soldados de um reino piora a relação com ele.
 7. **Mosquetes**: fique muito amigo (relação 60) de um reino de mosquetes (Aurélion ou Ferrânia). Eles dão um Mosquete Arcano de presente, vendem mosquetes e cartuchos e treinam **mosqueteiros** para o seu exército.
 
+**Invadir e conquistar**: perto de uma cidade inimiga aparece **⚔ Invadir**. A guarnição sai pelo portão e a batalha acontece ali, ao vivo. Se os defensores caírem, a cidade é sua na hora (também existe **🏰 Cercar** para esperar a cidade cair sozinha). Tomar a **capital** faz o reino inteiro se render: todas as cidades dele passam para você. Um reino que perde todas as cidades **deixa de existir**, e dá para conquistar quantos reinos você quiser.
+
+**Brasão, bandeira e uniformes**: depois da independência, em **👑 Coroa → 🎨 Brasão, bandeira e uniformes**, você escolhe o nome do reino, a cor da bandeira, a cor e o símbolo (cruz, estrela, coroa, espadas, lua, sol, torre, dragão, árvore, machado, caveira, escudo) e o uniforme dos soldados (metal da armadura, estilo dos elmos, armas, peles, chifres e quantidade de arqueiros). O Quartel forja uma **armadura real** (armadura, elmo e escudo) nas cores do seu brasão para você.
+
+**Fronteiras**: o mapa mostra o território de cada reino na cor dele, com a linha da fronteira. Ele muda sozinho a cada conquista.
+
+**🔨 Modo construção**: perto da sua vila ou de uma cidade do seu reino aparece o botão **🔨 Construir**. A **silhueta** da peça aparece na sua frente (verde: pode construir; vermelho: não pode). Ande e vire para escolher o lugar, use **↻ Girar** nos muros, portões e cercas, e toque em **✔ Construir**. Há casas (que trazem mais colonos), torres, muros, **portões**, cercas, calçada, estrada, piso, plantação e muitas decorações (estátuas, fontes, poços, estandartes, lampiões, bancos, flores, árvores, tendas, bancas, canhões...). **🗑 Remover** devolve metade do ouro.
+
 **O mundo também cresce**: com o passar dos dias, aldeias em paz viram cidades e cidades viram metrópoles. As notícias aparecem em Reinos.
 
 ## Multiplayer — Sala Oficial
@@ -133,6 +141,7 @@ Para testar no computador: `node rede/servidor.js` e abra `http://localhost:8790
 | `js/vila.js` | A vila do jogador: fundar, construir, colonos, impostos e ataques de bandidos |
 | `js/rede.js` | Multiplayer: conexão com a Sala Oficial, os outros jogadores no mundo, chat, guerra e paz entre jogadores |
 | `rede/servidor.js` | Servidor da Sala Oficial (Node.js puro, sem dependências): WebSocket em `/ws`, até 20 jogadores, e serve o jogo pelo navegador |
+| `js/construcao.js` | Modo construção: silhueta da peça na frente do jogador, girar, construir e remover casas, torres, muros, portões, cercas, chão e decorações |
 | `js/reino.js` | O reino do jogador: tropas, guerra de independência, diplomacia, tática na batalha, mosquetes por amizade e o crescimento das cidades do mundo |
 
 O modo **Multiplayer** aparece no menu inicial como "em breve".
