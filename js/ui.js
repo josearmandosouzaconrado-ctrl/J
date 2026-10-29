@@ -37,7 +37,7 @@ const UI = {
     if (!look) return '';
     const k = JSON.stringify(look);
     let u = this.portraitCache.get(k);
-    if (!u) { const S = Sprites.actor(look); const img = S.down ? S.down[0] : S.right[0]; const c = Sprites.scale(img, 4); u = c.toDataURL(); if (!S.placeholder) this.portraitCache.set(k, u); }
+    if (!u) { const S = Sprites.actor(look); let img = S.down ? S.down[0] : S.right[0]; if (S.type === 'hum' && S.h && S.h < img.height) { const t = document.createElement('canvas'); t.width = img.width; t.height = S.h + 1; t.getContext('2d').drawImage(img, 0, S.h + 1 - img.height); img = t; } const c = Sprites.scale(img, 4); u = c.toDataURL(); if (!S.placeholder) this.portraitCache.set(k, u); }
     return `<img class="portrait" src="${u}">`;
   },
   // ---------- gerenciamento de telas ----------

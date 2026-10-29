@@ -701,7 +701,7 @@ class Player extends Actor {
       this.drawShadow(ctx, camX, camY, 20);
       const img = H[hk][f];
       ctx.drawImage(img, Math.round(this.x - img.width / 2 - camX), Math.round(this.y - img.height + 3 - camY));
-      this.z = 9;
+      this.z = this.S && this.S.handY ? Math.max(2, 14 - Math.round(this.S.handY)) : 9;   // quadril na sela (pernas longas pendem do lado do cavalo)
       const sd = this.dir; this.dir = hk;
       if (blink) ctx.globalAlpha = 0.5;
       this.drawBody(ctx, camX, camY, this.S);

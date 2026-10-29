@@ -115,7 +115,7 @@ const Racas = {
     switch (L.feat) {
       case 'voralis': {
         const glow = '#a0fff0';
-        if (front) { p(6, ey + 2, glow); p(13, ey + 2, glow); p(9, hT + 1, glow, 2, 1); p(G.tx0 - 1, tT + 3, glow); p(G.tx1 + 1, tT + 4, glow); p(4, hT + 3, '#2a8ab0', 1, 3); p(15, hT + 3, '#2a8ab0', 1, 3); }
+        if (front) { p(G.hx0, ey + 2, glow); p(G.hx1, ey + 2, glow); p(9, hT + 1, glow, 2, 1); p(G.tx0 - 1, tT + 3, glow); p(G.tx1 + 1, tT + 4, glow); p(G.hx0 - 2, hT + 3, '#2a8ab0', 1, 3); p(G.hx1 + 2, hT + 3, '#2a8ab0', 1, 3); }
         else if (side) { p(11, ey + 2, glow); p(10, tT + 3, glow); p(6, hT + 2, '#2a8ab0', 1, 3); }
         else { p(9, tT + 2, glow); p(10, tT + 4, glow); }
         break;
@@ -134,7 +134,7 @@ const Racas = {
       case 'silvano': {
         const br = '#6a4a28', lf = '#7ad050';
         const antler = (x, s) => { p(x, hT - 1, br); p(x + s, hT - 2, br); p(x + s, hT - 3, br); p(x + s * 2, hT - 4, br); p(x + s * 2, hT - 5, br); p(x, hT - 3, br); p(x - s, hT - 4, br); p(x + s * 3, hT - 4, lf); p(x - s, hT - 5, lf); };
-        if (side) antler(10, -1); else { antler(7, -1); antler(12, 1); }
+        if (side) antler(10, -1); else { antler(G.hx0 + 1, -1); antler(G.hx1 - 1, 1); }
         if (L.fem && !back) { p(side ? 12 : 8, hT, '#f080b0'); p(side ? 11 : 12, hT + 1, '#f0f080'); }
         break;
       }
@@ -142,7 +142,7 @@ const Racas = {
         const m1 = '#ff7a20', m2 = '#ffd060', hc = '#5a4a48';
         if (side) { p(9, hT - 1, hc); p(8, hT - 2, hc); p(11, hT + 2, m1); p(12, hT + 3, m1); p(9, tT + 2, m1); p(10, tT + 3, m2); p(9, tT + 4, m1); }
         else {
-          p(6, hT - 1, hc); p(5, hT - 2, hc); p(13, hT - 1, hc); p(14, hT - 2, hc);
+          p(G.hx0, hT - 1, hc); p(G.hx0 - 1, hT - 2, hc); p(G.hx1, hT - 1, hc); p(G.hx1 + 1, hT - 2, hc);
           if (front) { p(7, hT + 2, m1); p(8, hT + 3, m1); p(12, hT + 5, m1); p(11, hT + 6, m2); }
           p(8, tT + 1, m1); p(9, tT + 2, m2); p(8, tT + 3, m1); p(11, tT + 3, m1); p(12, tT + 4, m1); p(G.tx0 - 2, tT + 3, m1); p(G.tx1 + 1, tT + 2, m1);
         }
@@ -160,7 +160,7 @@ const Racas = {
         break;
       }
       case 'xarqin': {
-        if (front) { p(9, hT + 1, '#ffffff', 2, 1); p(9, hT + 1, '#80f0ff'); p(6, hT + 7, '#ffe080'); p(13, hT + 6, '#ffe080'); }
+        if (front) { p(9, hT + 1, '#ffffff', 2, 1); p(9, hT + 1, '#80f0ff'); p(G.hx0, hT + 5, '#ffe080'); p(G.hx1, hT + 4, '#ffe080'); }
         else if (side) { p(12, hT + 1, '#80f0ff'); p(7, hT + 6, '#ffe080'); }
         else { p(7, hT + 5, '#ffe080'); p(12, hT + 7, '#ffe080'); }
         if (L.robe) for (let i = 0; i < 4; i++) p(7 + ((i * 5) % 6), tB + 1 + i, '#ffe080');

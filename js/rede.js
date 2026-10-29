@@ -44,7 +44,7 @@ class Remoto extends Actor {
       const img = H[hk][this.moving ? 1 + (Math.floor(this.anim * 6) % 2) : 0];
       this.drawShadow(ctx, camX, camY, 20);
       ctx.drawImage(img, Math.round(this.x - img.width / 2 - camX), Math.round(this.y - img.height + 3 - camY));
-      this.z = 9; const sd = this.dir; this.dir = hk; this.drawBody(ctx, camX, camY, this.S); this.dir = sd; this.z = 0;
+      this.z = this.S && this.S.handY ? Math.max(2, 14 - Math.round(this.S.handY)) : 9; const sd = this.dir; this.dir = hk; this.drawBody(ctx, camX, camY, this.S); this.dir = sd; this.z = 0;
     } else {
       this.drawShadow(ctx, camX, camY);
       const sa = this.swingAngle();

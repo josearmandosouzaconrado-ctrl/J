@@ -135,15 +135,17 @@ class Actor {
     if (this.hasFx('burn') && Math.random() < 0.3) Game.particle(this.x + (Math.random() - 0.5) * 8, this.y - img.height * Math.random(), 0, -20, '#ff9030', 0.4);
     if (this.slowT > 0 || this.root > 0) { ctx.fillStyle = this.root > 0 ? 'rgba(90,140,50,0.6)' : 'rgba(150,220,255,0.35)'; ctx.fillRect(x + 2, y + img.height - 4, img.width - 4, 3); }
     if (this.stun > 0) { const t = Game.t * 6; for (let i = 0; i < 3; i++) { ctx.fillStyle = '#fff060'; ctx.fillRect(Math.round(this.x - camX + Math.cos(t + i * 2.1) * 6), Math.round(y - 3 + Math.sin(t + i * 2.1) * 2), 2, 2); } }
-    return { x, y, img };
+    // y devolvido = topo visível (a imagem dos humanos tem espaço livre em cima para chapéus altos)
+    return { x, y: S.type === 'hum' && S.h ? y + img.height - S.h : y, img };
   }
   drawWeapon(ctx, camX, camY, wimg, wclass, swing) {
     if (!wimg) return;
-    let hx = this.x - camX, hy = this.y - camY - 6 - this.z;
+    const mao = this.S && this.S.handY;   // altura da mão no corpo novo
+    let hx = this.x - camX, hy = this.y - camY - (mao || 6) - this.z;
     const d = this.dir;
     const sc = this.sizeScale || 1;
     if (d === 'down') hx += 5 * sc; else if (d === 'up') hx -= 5 * sc; else if (d === 'right') hx += 2 * sc; else hx -= 2 * sc;
-    hy -= (sc - 1) * 8;
+    if (!mao) hy -= (sc - 1) * 8;
     if (this.thrustT > 0) { const k = Math.sin((1 - this.thrustT / 0.22) * Math.PI) * 7; hx += Math.cos(this.face) * k; hy += Math.sin(this.face) * k * 0.6; }
     let ang;
     if (swing) ang = swing;
