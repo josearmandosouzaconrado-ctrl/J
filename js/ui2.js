@@ -23,12 +23,7 @@ Object.assign(UI, {
     const day = Game.day;
     const statusTxt = isSpouse ? `<span class="love">${this.pron(r.sex, 'Seu marido', 'Sua esposa')}</span>` : r.status === 'dating' ? '<span class="love">Namorando</span>' : r.aff >= 60 ? 'Muito próximos' : r.aff >= 30 ? 'Amigos' : r.aff >= 10 ? 'Conhecidos' : 'Estranhos';
     const head = `${this.hearts(r.aff)} <span class="dim">${statusTxt}</span><br>`;
-    if (r.talkDay !== day) opts.push({ label: 'Conversar', fn: () => {
-      r.talkDay = day; const gain = 4 + Math.floor(P.skill('eloquencia') / 12) + (isSpouse ? 0 : Math.floor(Math.random() * 4));
-      r.aff = Math.min(100, r.aff + gain); P.train('eloquencia', 2);
-      const lines = isSpouse ? ROMANCE_LINES.spouse : ROMANCE_LINES.talk;
-      this.dialog(a.name, a.look, `${this.hearts(r.aff)}<br>${esc(lines[Math.floor(Math.random() * lines.length)])} <span class="good">(+${gain})</span>`, [{ label: 'Voltar', fn: () => this.personal(a, back) }]);
-    } });
+    if (r.talkDay !== day || (r.talkN || 0) < 3) opts.push({ label: 'Conversar 💬', fn: () => Vida.conversar(a, r, () => this.personal(a, back)) });
     if (r.giftDay !== day) opts.push({ label: 'Dar um presente', fn: () => this.giftMenu(a, back) });
     if (!isSpouse && r.status !== 'dating' && r.aff >= 25 && !P.spouse) opts.push({ label: 'Flertar 💕', fn: () => {
       if (r.flirtDay === day) return this.dialog(a.name, a.look, 'Já chega por hoje, galanteador(a)!', [{ label: 'Voltar', fn: () => this.personal(a, back) }]);

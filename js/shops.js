@@ -21,6 +21,8 @@ const Shops = {
       case 'general': case 'stall':
         ['pao', 'maca', 'queijo', 'batata', 'carne_assada', 'hidromel'].forEach(id => add(id, rng.int(3, 10)));
         add('flecha', rng.int(40, 120)); add('tocha', rng.int(2, 6));
+        ['agua', 'suco', 'leite', 'racao_viagem'].forEach(id => add(id, rng.int(3, 9))); add('saco_dormir', rng.int(1, 2));
+        if (s.type === 'capital' && rng.chance(0.7)) add('carta_fundacao');
         add('pocao_vida_p', rng.int(2, 5)); add('pocao_vigor', rng.int(1, 3)); add('antidoto', rng.int(1, 3));
         ['body_couro', 'head_couro', 'feet_couro', 'shield_couro'].forEach(id => { if (rng.chance(0.6)) add(id); });
         add('couro', rng.int(2, 6)); add('lingote_ferro', rng.int(2, 6));
@@ -69,7 +71,7 @@ const Shops = {
         break;
       }
       case 'inn':
-        ['pao', 'queijo', 'carne_assada', 'ensopado', 'torta_maca', 'hidromel', 'vinho'].forEach(id => add(id, rng.int(2, 8)));
+        ['pao', 'queijo', 'carne_assada', 'ensopado', 'torta_maca', 'hidromel', 'vinho', 'cerveja', 'agua', 'suco'].forEach(id => add(id, rng.int(2, 8)));
         break;
       case 'temple':
         add('pocao_vida_p', rng.int(4, 8)); add('pocao_vida_m', rng.int(2, 5)); add('antidoto', rng.int(2, 5));
@@ -81,12 +83,12 @@ const Shops = {
   },
   buyPrice(it) {
     const P = Game.player;
-    return Math.max(1, Math.ceil(Items.value(it) * (P.perks.has('negociante') ? 0.8 : 1) * (1 - Math.min(0.3, P.skill('eloquencia') * 0.003)) * (1 - ((P.sb && P.sb.price) || 0))));
+    return Math.max(1, Math.ceil(Items.value(it) * (P.perks.has('negociante') ? 0.8 : 1) * (1 - Math.min(0.3, P.skill('eloquencia') * 0.003)) * (1 - ((P.sb && P.sb.price) || 0)) * Vida.precoMul()));
   },
   sellPrice(it) {
     const P = Game.player;
     const d = ITEMS[it.id];
     if (d.type === 'quest') return 0;
-    return Math.max(0, Math.floor(Items.value(it) * 0.33 * (P.perks.has('negociante') ? 1.2 : 1) * (1 + Math.min(0.5, P.skill('eloquencia') * 0.005)) * (1 + ((P.sb && P.sb.price) || 0))));
+    return Math.max(0, Math.floor(Items.value(it) * 0.33 * (P.perks.has('negociante') ? 1.2 : 1) * (1 + Math.min(0.5, P.skill('eloquencia') * 0.005)) * (1 + ((P.sb && P.sb.price) || 0)) / Vida.precoMul()));
   }
 };

@@ -46,6 +46,12 @@ input { font-family: inherit; font-size: 22px; background: #140c10; color: var(-
 .bar.mp span, .bar.st span { font-size: 13px; top: -4px; }
 .bar.xp { height: 5px; width: 85%; border-width: 1px; }
 .bar.xp .fill { background: #b080ff; }
+#needs { display: flex; gap: 4px; margin-top: 3px; width: 85%; }
+#needs:empty { display: none; }
+#needs .need { flex: 1; position: relative; height: 9px; background: #1a0e10; border: 1px solid #0a0608; box-shadow: 0 0 0 1px var(--border2); padding-left: 12px; }
+#needs .need b { position: absolute; left: -2px; top: -5px; font-size: 11px; font-weight: normal; }
+#needs .need i { display: block; height: 100%; }
+#hud-honra { font-size: 15px; }
 #hud-info { margin-top: 3px; font-size: 20px; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000; }
 .coin { display: inline-block; width: 10px; height: 10px; background: var(--gold); border: 2px solid #8a5a10; margin-left: 3px; vertical-align: -1px; }
 .pulse { color: var(--gold); animation: pulse 1s infinite; }

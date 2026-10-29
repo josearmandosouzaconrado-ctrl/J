@@ -1,6 +1,6 @@
 'use strict';
 // ===================== ENTIDADES, IA E COMBATE =====================
-const HOSTILE = { enemy: { player: 1, ally: 1 }, ally: { enemy: 1 }, player: { enemy: 1 }, npc: {} };
+const HOSTILE = { enemy: { player: 1, ally: 1 }, ally: { enemy: 1 }, player: { enemy: 1, law: 1 }, npc: {}, law: { player: 1 } };
 function isHostile(a, b) { if (a.faction || b.faction) return War.hostile(a, b); const h = HOSTILE[a.team]; return !!(h && h[b.team]); }
 const BOSS_L0 = { bandido_chefe: 3, rei_goblin: 4, troll_rei: 6, cavaleiro_morto: 6, necromante: 8, yeti: 12, senhor_chamas: 14, hidra: 12, farao: 14, rainha_aranha: 8, guardiao_golem: 13, campeao_orc: 17, rei_draugr: 16, lich: 24, vorthax: 30, dragao: 7, dragao_gelo: 9 };
 
@@ -621,10 +621,13 @@ class NPC extends Actor {
     this.dir = 'down';
     this.talkT = 0;
     this.sleeper = this.role === 'citizen' && rng.chance(0.6);
+    if (spot.vilaNPC) this.vilaNPC = spot.vilaNPC;
   }
   update(dt) {
     this.moving = false;
     if (this.talkT > 0) { this.talkT -= dt; const P = Game.player; this.setDir(angleTo(this.x, this.y, P.x, P.y)); return; }
+    if (this.chatT > 0) { this.chatT -= dt; const o = this.chatWith; if (o) this.setDir(angleTo(this.x, this.y, o.x, o.y)); if (this.chatT <= 0) { this.chatT = 0; this.chatCd = 6 + Math.random() * 10; } return; }
+    if (this.chatCd > 0) this.chatCd -= dt;
     if (this.visiting) return;
     const wander = this.role === 'student' || this.role === 'citizen' || this.role === 'resident' || this.role === 'patron' || this.role === 'child' || this.role === 'kid' || this.role === 'spouse';
     if (!wander) {

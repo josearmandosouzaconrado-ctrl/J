@@ -507,7 +507,7 @@ const Ship = {
     const mins = Math.max(60, Math.round(this.eta(L) * 2 * 3));
     G.time += mins; while (G.time >= 1440) { G.time -= 1440; G.day++; G.mods.day = G.day; G.dayTick(); }
     const R = L.route; L.done = L.total; L.ri = R.length; L.x = R[R.length - 1].x; L.y = R[R.length - 1].y; L.trail = [];
-    P.hp = P.stat.maxHp; P.mp = P.stat.maxMp; P.st = P.stat.maxSt;
+    P.hp = P.stat.maxHp; P.mp = P.stat.maxMp; P.st = P.stat.maxSt; Vida.dormiu();
     L.docked = true; L.landT = 2.5;
     G.centerMsg(L.to.name, `Você dormiu ${Math.round(mins / 60)}h. O navio atracou!`);
   },

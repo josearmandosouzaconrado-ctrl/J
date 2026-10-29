@@ -211,7 +211,7 @@ const UI = {
       const tog = (k, label) => `<button class="sbtn ${S[k] ? 'on' : ''}" ${f(() => { S[k] = !S[k]; Game.saveSettings(); Sfx.unlock(); render(); })}>${label}: ${S[k] ? 'SIM' : 'NÃO'}</button>`;
       const el = this.show('options', `<div class="panel"><div class="ptitle">Opções</div>
         <div class="opts">
-          ${tog('sfx', 'Efeitos sonoros')} ${tog('music', 'Música')} ${tog('weather', 'Clima')} ${tog('showFps', 'Mostrar FPS')}
+          ${tog('sfx', 'Efeitos sonoros')} ${tog('music', 'Música')} ${tog('weather', 'Clima')} ${tog('needs', 'Fome, sede e sono')} ${tog('showFps', 'Mostrar FPS')}
           <button class="sbtn ${S.lite ? 'on' : ''}" ${f(() => { S.lite = !S.lite; Game.saveSettings(); Game.resize(); render(); })}>Modo leve (celular fraco): ${S.lite ? 'SIM' : 'NÃO'}</button>
           <div class="row"><span>Tamanho dos botões</span>${[0.8, 1, 1.2, 1.4].map(v => `<button class="sbtn small ${S.btnScale === v ? 'on' : ''}" ${f(() => { S.btnScale = v; Game.saveSettings(); render(); })}>${Math.round(v * 100)}%</button>`).join('')}</div>
           <div class="row"><span>Zoom da câmera</span>${[0.8, 1, 1.25, 1.5].map(v => `<button class="sbtn small ${S.zoom === v ? 'on' : ''}" ${f(() => { S.zoom = v; Game.saveSettings(); render(); })}>${Math.round(v * 100)}%</button>`).join('')}</div>
@@ -262,12 +262,16 @@ const UI = {
     const P = Game.player;
     if (a.shipCrew) return Ship.talk(a);
     if (a.workCust) return Work.serve(a);
+    if (a.evento) return Eventos.talk(a);
+    if (a.vilaNPC) return Vila.talkNPC(a);
     if (a.race === 'nyxar') return Nyxar.talk(a);
     if (a.angel) return Ceu.talk(a);
     if (a.guard) {
       const s = a.guardOf;
       const lines = GUARD_LINES.concat(s ? RUMORS[s.region.id] : []);
-      this.dialog(a.name, a.look, esc(lines[Math.floor(Math.random() * lines.length)]), [{ label: 'Tchau' }]);
+      const ruim = (P.honra || 0) <= -20 || Eventos.state().procurado > 0;
+      const fala = a.team === 'law' ? 'Pare aí, criminoso(a)! Pague a multa ou vá para o chão!' : ruim ? 'Estou de olho em você. Já ouvi falar do que você anda fazendo.' : esc(lines[Math.floor(Math.random() * lines.length)]);
+      this.dialog(a.name, a.look, fala, (ruim ? [Eventos.multa(a)] : []).concat([{ label: 'Tchau' }]));
       return;
     }
     if (a.isFollower && a.studentId) return Academy.followerTalk(a);
@@ -468,7 +472,7 @@ const UI = {
     if (Game.time > 7 * 60) Game.day++;
     Game.time = 7 * 60; Game.mods.day = Game.day;
     P.hp = P.stat.maxHp; P.mp = P.stat.maxMp; P.st = P.stat.maxSt; P.fx = [];
-    P.addBuff('regen', 1, 600, 'Bem descansado');
+    P.addBuff('regen', 1, 600, 'Bem descansado'); Vida.dormiu();
     this.close(); UI.fade();
     Game.saveGame(0, true);
     Game.centerMsg('Você dormiu bem', `Dia ${Game.day}, 07:00 • Jogo salvo`);
@@ -918,6 +922,8 @@ const UI = {
     this.setText('st-txt', `${Math.floor(P.st)}/${S.maxSt}`);
     this.setText('hud-lvl', `Nv ${P.level}${P.pendingLevels > 0 || P.perkPts > 0 ? ' <span class="pulse">▲</span>' : ''}`);
     this.setText('hud-gold', `${fmt(P.gold)}<span class="coin"></span>`);
+    this.setText('needs', Vida.hudHTML());
+    const ht = Vida.titulo(); this.setText('hud-honra', ht.nome === 'Comum' ? '' : `<span style="color:${ht.cor}">⚜ ${ht.nome}</span>`);
     this.setText('hud-loc', esc(Game.locationName()));
     this.setText('hud-time', `${Game.isNight() ? '☾' : '☀'} ${Game.timeStr()} • Dia ${Game.day}`);
     // buffs

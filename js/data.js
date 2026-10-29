@@ -615,17 +615,22 @@ const FOODS = [
   ['batata', 'Batata', { heal: 8 }, 2, { k: 'potato', c: '#a88050' }],
   ['carne_crua', 'Carne Crua', { heal: 5 }, 4, { k: 'meat', c: '#d06060' }],
   ['carne_assada', 'Carne Assada', { heal: 30, stam: 30 }, 12, { k: 'meat', c: '#8a4a2a' }],
-  ['ensopado', 'Ensopado', { heal: 60, stam: 60, buff: { k: 'regen', v: 2, t: 60 } }, 25, { k: 'stew', c: '#a06030' }],
+  ['ensopado', 'Ensopado', { heal: 60, stam: 60, drink: 20, buff: { k: 'regen', v: 2, t: 60 } }, 25, { k: 'stew', c: '#a06030' }],
   ['torta_maca', 'Torta de Maçã', { heal: 40, buff: { k: 'regen', v: 1, t: 60 } }, 20, { k: 'pie', c: '#d09040' }],
-  ['hidromel', 'Hidromel', { stam: 80, buff: { k: 'resFrost', v: 0.2, t: 120 } }, 15, { k: 'bottle', c: '#d0a030' }],
-  ['vinho', 'Vinho Élfico', { mana: 50 }, 30, { k: 'bottle', c: '#802040' }],
+  ['hidromel', 'Hidromel', { stam: 80, drink: 40, buff: { k: 'resFrost', v: 0.2, t: 120 } }, 15, { k: 'bottle', c: '#d0a030' }],
+  ['vinho', 'Vinho Élfico', { mana: 50, drink: 35 }, 30, { k: 'bottle', c: '#802040' }],
   ['peixe', 'Peixe', { heal: 10 }, 6, { k: 'fish', c: '#8aa0b0' }],
   ['salmao', 'Salmão', { heal: 18 }, 14, { k: 'fish', c: '#e08070' }],
   ['peixe_gelo', 'Peixe do Gelo', { heal: 15, buff: { k: 'resFire', v: 0.2, t: 60 } }, 20, { k: 'fish', c: '#c0e8ff' }],
   ['enguia', 'Enguia do Pântano', { heal: 14, mana: 15 }, 18, { k: 'fish', c: '#4a6a3a' }],
   ['peixe_dourado', 'Peixe Dourado', { heal: 40 }, 90, { k: 'fish', c: '#ffd040' }],
   ['peixe_assado', 'Peixe Assado', { heal: 35, stam: 40 }, 18, { k: 'fish', c: '#b07040' }],
-  ['bolo', 'Bolo de Festa', { heal: 50, buff: { k: 'regen', v: 2, t: 120 } }, 40, { k: 'pie', c: '#f0a0c0' }]
+  ['bolo', 'Bolo de Festa', { heal: 50, buff: { k: 'regen', v: 2, t: 120 } }, 40, { k: 'pie', c: '#f0a0c0' }],
+  ['agua', 'Cantil de Água', { drink: 55 }, 2, { k: 'bottle', c: '#5090e0' }],
+  ['cerveja', 'Caneca de Cerveja', { stam: 30, drink: 45 }, 5, { k: 'bottle', c: '#e0a020' }],
+  ['suco', 'Suco de Frutas', { heal: 4, drink: 50 }, 4, { k: 'bottle', c: '#f07040' }],
+  ['leite', 'Leite Fresco', { heal: 6, drink: 40 }, 3, { k: 'bottle', c: '#f0f0f0' }],
+  ['racao_viagem', 'Ração de Viagem', { heal: 22, drink: 10 }, 8, { k: 'bread', c: '#a07a40' }]
 ];
 for (const [id, name, eff, value, icon] of FOODS) idef(id, { name, type: 'food', use: eff, value, stack: true, icon });
 
@@ -1299,6 +1304,9 @@ const SHOP_NAMES = {
 
 // ---------- Itens extras (romance, família, pesca) ----------
 idef('amuleto_aurora', { name: 'Amuleto da Aurora', type: 'armor', slot: 'neck', armor: 0, value: 300, icon: { k: 'amulet', c: '#f0c040', g: '#ff80b0' }, ench: [{ k: 'regen', v: 1 }], desc: 'Usado por quem procura um amor. Necessário para pedir alguém em casamento.' });
+idef('saco_dormir', { name: 'Saco de Dormir', type: 'misc', value: 30, icon: { k: 'scroll', c: '#6a8a4a' }, desc: 'Use no mundo aberto para acampar e dormir (recupera o sono). Não é gasto.', use: { camp: true } });
+idef('carta_fundacao', { name: 'Carta de Fundação', type: 'misc', value: 800, icon: { k: 'scroll', c: '#ffd860' }, desc: 'Um documento real que permite fundar a sua própria vila num lugar vazio do mundo (use).', use: { vila: true } });
+idef('bolsa_roubada', { name: 'Bolsa Roubada', type: 'quest', value: 0, icon: { k: 'scroll', c: '#a0703a' }, desc: 'A bolsa que o ladrão roubou. Devolva para a dona... ou não.' });
 idef('vara_pesca', { name: 'Vara de Pesca', type: 'misc', value: 40, icon: { k: 'rod', c: '#8a6a3a' }, desc: 'Fique de frente para a água e toque em AÇÃO para pescar.' });
 idef('buque', { name: 'Buquê de Flores', type: 'misc', value: 15, stack: true, icon: { k: 'herb', c: '#ff70a0' }, desc: 'Um ótimo presente.' });
 idef('boneca', { name: 'Boneca de Pano', type: 'misc', value: 12, stack: true, icon: { k: 'doll', c: '#e0a070' }, desc: 'Brinquedo. Crianças adoram.' });

@@ -46,7 +46,7 @@ const Game = {
   loadSettings() {
     let s = null;
     try { s = JSON.parse(localStorage.getItem('eldoria_settings')); } catch (e) { }
-    this.settings = Object.assign({ sfx: true, music: true, sfxVol: 0.6, musicVol: 0.35, btnScale: 1, showFps: false, zoom: 1, weather: true }, s || {});
+    this.settings = Object.assign({ sfx: true, music: true, sfxVol: 0.6, musicVol: 0.35, btnScale: 1, showFps: false, zoom: 1, weather: true, needs: true }, s || {});
     Sfx.sfxOn = this.settings.sfx; Sfx.musicOn = this.settings.music; Sfx.sfxVol = this.settings.sfxVol; Sfx.musicVol = this.settings.musicVol;
   },
   saveSettings() {
@@ -113,6 +113,7 @@ const Game = {
   },
   startPlay() {
     this.level = this.world;
+    Vila.restore(); Vida.last = undefined;
     this.actors = []; this.projectiles = []; this.particles = []; this.fx = []; this.clouds = []; this.pickups = []; this.timers = []; this.floaters = [];
     this.started = true; this.paused = false; this.state = 'play';
     for (const s of this.world.settlements) { s.active = false; s.npcs = null; }
@@ -332,6 +333,7 @@ const Game = {
     Work.update(dt);
     Adm.update();
     Sombra.tick(dt); Ceu.tick(dt);
+    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt);
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();
@@ -757,6 +759,7 @@ const Game = {
   dayTick() {
     const P = this.player;
     this.checkHomes();
+    Vila.dia();
     if (P.babyDue && this.day >= P.babyDue) {
       P.babyDue = null;
       const sp = P.rel[P.spouse];
@@ -834,6 +837,8 @@ const Game = {
     if (m.spar) return;
     if (m.faction) { War.onDeath(m, killer); this.burst(m.x, m.y - 8, '#a02020', 12, 70); if (m.isFollower) P.follower = null; return; }
     const byPlayer = killer === P || (killer && killer.team === 'ally') || m.provoked === P;
+    if (m.guard && killer === P) Vida.honra(-10, 'matei um guarda');
+    if (m.cacador && killer === P) Vida.honra(1);
     this.burst(m.x, m.y - 8, m.def.undead ? '#d8d0c0' : '#a02020', 12, 70);
     if (m.team === 'enemy' && byPlayer) {
       Juice.kill(m);
@@ -1258,7 +1263,7 @@ const Game = {
     if (!P.dead || true) D.push({ y: P.y, a: P });
     for (const k of this.pickups) D.push({ y: k.y, pk: k });
     this.drawMountsCart(D); this.drawCarcasses(D);
-    if (L.isWorld) { War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); Nyxar.drawables(D, camX, camY, vw, vh); }
+    if (L.isWorld) { Vila.drawables(D, camX, camY, vw, vh); War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); Nyxar.drawables(D, camX, camY, vw, vh); }
     Ceu.drawables(D, camX, camY, vw, vh);
     D.sort((a, b) => a.y - b.y);
     for (const d of D) {
@@ -1283,6 +1288,7 @@ const Game = {
     // partículas e números
     for (const p of this.particles) { ctx.globalAlpha = Math.min(1, p.life / p.max * 1.5); ctx.fillStyle = p.color; ctx.fillRect(Math.round(p.x - camX), Math.round(p.y - camY), p.size, p.size); }
     ctx.globalAlpha = 1;
+    if (L.isWorld || L.isCeu) Vida.drawChats(ctx, camX, camY);
     for (const f of this.floaters) drawNum(ctx, f.text, f.x - camX, f.y - camY - f.t * 22, f.color, f.s);
     if (this.slowTime > 0) { ctx.fillStyle = 'rgba(80,120,255,0.12)'; ctx.fillRect(0, 0, vw, vh); }
     if (P.hp < P.stat.maxHp * 0.25 && !P.dead) { const a = 0.15 + Math.sin(this.t * 6) * 0.08; const g = ctx.createRadialGradient(vw / 2, vh / 2, vh * 0.3, vw / 2, vh / 2, vh * 0.8); g.addColorStop(0, 'rgba(160,0,0,0)'); g.addColorStop(1, `rgba(160,0,0,${a})`); ctx.fillStyle = g; ctx.fillRect(0, 0, vw, vh); }

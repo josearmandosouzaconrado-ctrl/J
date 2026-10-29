@@ -41,7 +41,7 @@ class Player extends Actor {
   // ---------- Serialização ----------
   toJSON() {
     const o = {};
-    for (const k of ['name', 'race', 'cls', 'app', 'level', 'xp', 'base', 'perkPts', 'gold', 'inv', 'equip', 'spells', 'spellIdx', 'shouts', 'shoutLvl', 'shoutIdx', 'souls', 'skills', 'quests', 'guilds', 'main', 'doneQuests', 'hasHorse', 'houses', 'storage', 'follower', 'stats', 'hp', 'mp', 'st', 'x', 'y', 'lastTown', 'pendingLevels', 'cds', 'rel', 'spouse', 'spouseHome', 'children', 'babyDue', 'pet', 'sign', 'style', 'mount', 'horse', 'cart', 'carrying', 'job', 'chronicle', 'freeMode', 'magicAwake', 'academy', 'army', 'visitedCont', 'ceu']) o[k] = this[k];
+    for (const k of ['name', 'race', 'cls', 'app', 'level', 'xp', 'base', 'perkPts', 'gold', 'inv', 'equip', 'spells', 'spellIdx', 'shouts', 'shoutLvl', 'shoutIdx', 'souls', 'skills', 'quests', 'guilds', 'main', 'doneQuests', 'hasHorse', 'houses', 'storage', 'follower', 'stats', 'hp', 'mp', 'st', 'x', 'y', 'lastTown', 'pendingLevels', 'cds', 'rel', 'spouse', 'spouseHome', 'children', 'babyDue', 'pet', 'sign', 'style', 'mount', 'horse', 'cart', 'carrying', 'job', 'chronicle', 'freeMode', 'magicAwake', 'academy', 'army', 'visitedCont', 'ceu', 'needs', 'honra', 'favores', 'vila', 'eventos']) o[k] = this[k];
     o.perks = [...this.perks];
     o.buffs = this.buffs.filter(b => b.t < 1e6);
     return o;
@@ -243,8 +243,10 @@ class Player extends Actor {
       return;
     }
     const u = d.use; if (!u) return;
+    if (Vida.useItem(this, it, d, u)) return;
     const mul = (this.perks.has('alquimista') ? 1.5 : 1) * (1 + ((this.sb && this.sb.potion) || 0));
     if (u.treasure) { this.removeInst(it); Game.revealTreasure(); return; }
+    if (u.drink && !u.heal && !u.mana && !u.stam && !u.buff) { this.removeInst(it); Sfx.play('drink'); return; }
     if (u.heal) this.heal(u.heal >= 9999 ? 99999 : u.heal * mul);
     if (u.mana) this.mp = Math.min(this.stat.maxMp, this.mp + (u.mana >= 9999 ? 99999 : u.mana * mul));
     if (u.stam) this.st = Math.min(this.stat.maxSt, this.st + (u.stam >= 9999 ? 99999 : u.stam * mul));
@@ -650,7 +652,7 @@ class Player extends Actor {
       if (Math.random() < 0.5) Game.particle(this.x, this.y, (Math.random() - 0.5) * 20, -8, '#c8b090', 0.3);
     } else {
       const m = Input.move;
-      let spd = this.stat.speed * (this.mounted ? 1 : tdef.slow) * this.speedFactor * (1 + this.buffVal('speed'));
+      let spd = this.stat.speed * (this.mounted ? 1 : tdef.slow) * this.speedFactor * (1 + this.buffVal('speed')) * Vida.speedMul();
       if (this.mounted) spd *= ((MOUNTS[this.mount] || MOUNTS.cavalo).speed) * (this.perks.has('cavaleiro') ? 1.25 : 1) * (this.cart && this.cart.hitched ? 0.85 : 1);
       if (this.carrying) spd *= 0.62;
       if (this.sleeping || Game.intro || Academy.cine) spd = 0;
@@ -677,7 +679,7 @@ class Player extends Actor {
     const out = this.lastHurt > 5;
     this.hp = Math.min(this.stat.maxHp, this.hp + (this.stat.regenHp + this.buffVal('regen') + (out ? 1.5 + this.stat.maxHp * 0.012 : 0.25)) * dt);
     this.mp = Math.min(this.stat.maxMp, this.mp + this.stat.regenMp * (this.buffVal('graca') ? 4 : 1) * dt);
-    if (!this.sprinting && this.rolling <= 0) this.st = Math.min(this.stat.maxSt, this.st + this.stat.regenSt * (this.atkT > 0 ? 0.4 : 1) * dt);
+    if (!this.sprinting && this.rolling <= 0) this.st = Math.min(this.stat.maxSt, this.st + this.stat.regenSt * (this.atkT > 0 ? 0.4 : 1) * Vida.regenMul() * dt);
     if (this.st < 0) this.st = 0;
   }
   die(killer) {

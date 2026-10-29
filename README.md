@@ -64,6 +64,15 @@ WASD/setas andar • Shift correr • J/Espaço atacar • K magia • Q trocar 
 - Cavalo, mercenários, invocações, casas com baú, mapas do tesouro, santuários, mercadores viajantes.
 - **Salvamento** automático e em 3 espaços (no próprio navegador).
 
+## Vida, honra e a sua própria vila
+
+- **Fome, sede e sono**: três barrinhas embaixo da vida. Coma (pão, carne, frutas...), beba (cantil de água, cerveja, suco, leite, hidromel) e durma (estalagem, a sua cama, o beliche do navio ou o **Saco de Dormir** no mundo aberto). Com sono você anda mais devagar; com fome ou sede o vigor volta mais devagar e a vida cai aos poucos. Dá para desligar em Opções → "Fome, sede e sono".
+- **Honra** (de −100 a +100): Infame, Desonrado, Comum, Honrado e Herói Lendário. Honra alta dá desconto nas lojas e elogios na rua; honra baixa encarece tudo, deixa os namoros mais difíceis, faz os guardas atacarem quem é Infame e traz **caçadores de recompensa**. Um guarda aceita uma multa para limpar o seu nome.
+- **Escolhas e consequências na estrada**: viajante ferido, comerciante atacado por bandidos, criança perdida (ela segue você até a cidade), andarilho faminto, ladrão de bolsas, duelista, bandidos que convidam você para um assalto e animal ferido. Ajudar, ignorar, roubar ou trair muda a sua honra, e muitas escolhas voltam depois: quem você ajudou aparece na cidade com um presente (um andarilho era um Duque disfarçado!), e quem rouba ganha caçadores atrás de si.
+- **Romance pela conversa**: além dos presentes, escolha o assunto (elogiar, piada, aventuras, sonhos, provocar, ser romântico). Cada pessoa tem uma personalidade e gosta de assuntos diferentes; às vezes ela faz uma pergunta e a sua resposta conta.
+- **Moradores vivos**: as pessoas conversam entre si nas ruas (balões de fala) e comentam a sua fama quando você passa.
+- **A sua vila**: compre uma **Carta de Fundação** no armazém de uma capital, use num lugar vazio e escolha o nome. O Intendente na praça constrói casas, fazenda, taverna, armazém, ferraria, alquimista, estábulo, templo, torre de vigia e muralha. Colonos chegam todo dia (mais rápido com comida e boa fama), pagam impostos no cofre e a vila cresce de **Aldeia** para **Vila** e **Cidade**. Bandidos atacam vilas sem defesa — se você estiver lá, lute por ela.
+
 ## Estrutura do código
 
 | Arquivo | Conteúdo |
@@ -83,6 +92,9 @@ WASD/setas andar • Shift correr • J/Espaço atacar • K magia • Q trocar 
 | `js/combate.js` | Impacto do combate (combo, pausa no impacto, faíscas, esquiva com rastro) e o brilho das magias |
 | `js/elyndra.js` | Os 10 biomas inventados de Elyndra: chãos, paredes, objetos e clima |
 | `js/ceu.js` | Seraphel, a cidade dos anjos acima das nuvens: o Coro dos Serafins, o duelo e o romance com anjos |
+| `js/vida.js` | Fome, sede e sono, honra e as suas consequências, moradores conversando entre si e o romance pela conversa |
+| `js/eventos.js` | Missões de mundo aberto com escolhas e consequências (favores que voltam, caçadores de recompensa) |
+| `js/vila.js` | A vila do jogador: fundar, construir, colonos, impostos e ataques de bandidos |
 
 O modo **Multiplayer** aparece no menu inicial como "em breve".
 
