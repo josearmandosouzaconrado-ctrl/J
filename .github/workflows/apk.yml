@@ -1,0 +1,29 @@
+# Publica os APKs numa Release do GitHub sempre que eles mudam.
+# Link fixo (sempre a versão mais nova):
+#   https://github.com/josearmandosouzaconrado-ctrl/J/releases/latest/download/CronicasDeEldoria.apk
+name: Publicar APK
+on:
+  push:
+    paths:
+      - 'CronicasDeEldoria.apk'
+      - 'CronicasDeEldoria-ADM.apk'
+      - '.github/workflows/apk.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Criar ou atualizar a Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER=$(sed -n "s/.*GAME_VERSION = '\([^']*\)'.*/\1/p" js/util.js)
+          TAG="v$VER"
+          NOTAS="Crônicas de Eldoria $VER (beta). Baixe CronicasDeEldoria.apk no celular Android e instale (permita instalar de fontes desconhecidas). CronicasDeEldoria-ADM.apk é a versão com o painel de testes."
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "Crônicas de Eldoria $VER" --notes "$NOTAS" --latest
+          fi
+          gh release upload "$TAG" CronicasDeEldoria.apk CronicasDeEldoria-ADM.apk --clobber

@@ -202,6 +202,14 @@ Os empregos de **Taverneiro**, **Fazendeiro** e **Minerador** não pagam mais s�
 - **Mina**: cada vila com ferreiro tem uma **mina** fora dos muros. Lá dentro há galerias escuras com trilhos, escoras e lanternas: quebre os veios com várias picaretadas, carregue até 4 pedras e despeje no carrinho de mina.
 - O turno tem tempo limitado; o pagamento depende de quanto você fez, mais gorjetas, e conta para as promoções do ofício.
 
+## Baixar o APK
+
+- **Jogo (Android):** https://github.com/josearmandosouzaconrado-ctrl/J/releases/latest/download/CronicasDeEldoria.apk
+- **Versão ADM (painel de testes):** https://github.com/josearmandosouzaconrado-ctrl/J/releases/latest/download/CronicasDeEldoria-ADM.apk
+- Todas as versões: https://github.com/josearmandosouzaconrado-ctrl/J/releases
+
+Os links acima sempre baixam a versão mais nova: toda vez que um APK novo é enviado, o GitHub Actions (`.github/workflows/apk.yml`) atualiza a Release sozinho.
+
 ## Versão Android (APK) — Beta
 
 O arquivo **`CronicasDeEldoria.apk`** (na raiz do projeto, e no botão "Baixar para Android" da tela inicial) instala o jogo no celular:
