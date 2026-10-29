@@ -113,7 +113,7 @@ const Game = {
   },
   startPlay() {
     this.level = this.world;
-    Vila.restore(); Vida.last = undefined;
+    Mundo.aplicar(); Vila.restore(); Vida.last = undefined;
     this.actors = []; this.projectiles = []; this.particles = []; this.fx = []; this.clouds = []; this.pickups = []; this.timers = []; this.floaters = [];
     this.started = true; this.paused = false; this.state = 'play';
     for (const s of this.world.settlements) { s.active = false; s.npcs = null; }
@@ -152,7 +152,7 @@ const Game = {
     const pj = P.toJSON(); pj.x = px; pj.y = py;
     const s = {
       v: 4, seed: this.world.seed, time: this.time, day: this.day, track: this.track, player: pj,
-      mods: { opened: [...M.opened], harvested: M.harvested, cleared: M.cleared, dopened: M.dopened, camps: M.camps, runes: [...M.runes], shrines: M.shrines, discovered: [...M.discovered], exrle: runs.join(','), exw: MAP_W, uniques: [...M.uniques], treasures: M.treasures, homes: M.homes.map(h => { const o = Object.assign({}, h); delete o._b; delete o._s; return o; }), war: M.war || null },
+      mods: { opened: [...M.opened], harvested: M.harvested, cleared: M.cleared, dopened: M.dopened, camps: M.camps, runes: [...M.runes], shrines: M.shrines, discovered: [...M.discovered], exrle: runs.join(','), exw: MAP_W, uniques: [...M.uniques], treasures: M.treasures, evol: M.evol || {}, homes: M.homes.map(h => { const o = Object.assign({}, h); delete o._b; delete o._s; return o; }), war: M.war || null },
       summary: { name: P.name, level: P.level, race: RACES[P.race].name, cls: P.style || 'Aventureiro', loc: this.locationName(), date: Date.now(), time: Math.floor(P.stats.playTime) }
     };
     try {
@@ -169,7 +169,7 @@ const Game = {
       const M = this.newMods();
       const m = s.mods;
       M.opened = new Set(m.opened); M.harvested = m.harvested || {}; M.cleared = m.cleared || {}; M.dopened = m.dopened || {}; M.camps = m.camps || {};
-      M.runes = new Set(m.runes || []); M.shrines = m.shrines || {}; M.discovered = new Set(m.discovered || []); M.uniques = new Set(m.uniques || []); M.treasures = m.treasures || []; M.homes = m.homes || []; M.war = m.war || null;
+      M.runes = new Set(m.runes || []); M.shrines = m.shrines || {}; M.discovered = new Set(m.discovered || []); M.uniques = new Set(m.uniques || []); M.treasures = m.treasures || []; M.homes = m.homes || []; M.war = m.war || null; M.evol = m.evol || {};
       try {
         if (m.exrle) { const w = m.exw || MAP_W; let i = 0, v = 0; for (const r of m.exrle.split(',')) { const n = parseInt(r, 36); if (v) for (let k = 0; k < n; k++) { const x = (i + k) % w, y = ((i + k) / w) | 0; if (x < MAP_W && y < MAP_H) M.explored[y * MAP_W + x] = 1; } i += n; v = 1 - v; } }
         else { const bin = atob(m.explored), w = (s.v || 1) >= 2 ? 384 : 256; for (let i = 0; i < bin.length; i++) { const x = i % w, y = (i / w) | 0; if (x < MAP_W && y < MAP_H) M.explored[y * MAP_W + x] = bin.charCodeAt(i); } }
@@ -333,7 +333,7 @@ const Game = {
     Work.update(dt);
     Adm.update();
     Sombra.tick(dt); Ceu.tick(dt);
-    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt);
+    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt);
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();

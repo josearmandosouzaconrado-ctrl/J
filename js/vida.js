@@ -139,7 +139,7 @@ const Vida = {
     const G = Game, P = G.player; if (!P || !G.level.isWorld) return;
     const mau = this.hostilGuarda() || (Eventos.state().procurado >= 3);
     for (const a of G.actors) {
-      if (!a.guard || a.dead) continue;
+      if (!a.guard || a.dead || a.faction === 'jogador' || (a.guardOf && a.guardOf.playerVila)) continue;
       if (mau && a.team !== 'law' && dist(a.x, a.y, P.x, P.y) < 150) {
         a.team = 'law'; a._fac = a.faction; a.faction = null; a.target = P; a.provoked = P;
         if (!this.gritoT || G.t - this.gritoT > 20) { this.gritoT = G.t; G.toast(`${a.name}: "Pare, criminoso(a)!"`, '#ff8070'); }

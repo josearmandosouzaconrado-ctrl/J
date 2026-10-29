@@ -53,7 +53,7 @@ const War = {
   K: null, _kList: null, liveR: 46, hourAcc: 0,
   // ---------- Reinos ----------
   kingdoms() {
-    if (this._kList && this._kSeed === Game.world.seed) return this._kList;
+    if (this._kList && this._kSeed === Game.world.seed) { Reino.inject(); return this._kList; }
     const W = Game.world;
     this.K = {};
     const list = [];
@@ -70,7 +70,8 @@ const War = {
     }
     for (const k of list) for (const o of k.nb) this.K[o].nb.add(k.id);
     this._kList = list; this._kSeed = W.seed;
-    return list;
+    Reino.inject();
+    return this._kList;
   },
   key(a, b) { return a < b ? a + '|' + b : b + '|' + a; },
   st() { const M = Game.mods; if (!M.war) M.war = this.fresh(); return M.war; },
@@ -85,10 +86,10 @@ const War = {
     if (pairs.length) { const [a, b] = pairs[0][0].split('|'); this.declare(a, b, true); }
     return S;
   },
-  rel(a, b) { const v = this.st().rel[this.key(a, b)]; return v === undefined ? 0 : v; },
+  rel(a, b) { if (a === 'jogador') return Reino.rel(b); if (b === 'jogador') return Reino.rel(a); const v = this.st().rel[this.key(a, b)]; return v === undefined ? 0 : v; },
   atWar(a, b) { if (!a || !b || a === b) return false; return this.st().wars.some(w => (w.a === a && w.b === b) || (w.a === b && w.b === a)); },
   warOf(k) { return this.st().wars.filter(w => w.a === k || w.b === k); },
-  ownerOf(s) { if (!s || s.academy || s.homeId || s.region.neutral) return null; const o = this.st().owner[s.id]; return o || (KSTYLE[s.region.id] && s.region.ruler ? s.region.id : null); },
+  ownerOf(s) { if (!s || s.academy || s.region.neutral) return null; if (s.playerVila) return Reino.owner(s); if (s.homeId) return null; const o = this.st().owner[s.id]; return o || (KSTYLE[s.region.id] && s.region.ruler ? s.region.id : null); },
   settlement(id) { return Game.world.settlements.find(s => s.id === id); },
   news(text, imp, ks) {
     const S = this.st();
@@ -98,7 +99,7 @@ const War = {
     if (imp || mine) Game.toast('📜 ' + text, imp ? '#ffd080' : '#e0d0b0');
   },
   // ---------- Lados ----------
-  playerSide() { const P = Game.player; return P.army ? P.army.k : (P.tempSide || null); },
+  playerSide() { const P = Game.player; if (Reino.ativo()) return 'jogador'; return P.army ? P.army.k : (P.tempSide || null); },
   side(a) {
     if (a.faction) return a.faction;
     if (a === Game.player || a.team === 'ally' || a.team === 'player') return 'player';
@@ -146,7 +147,7 @@ const War = {
       if (S.crest && !L.crest) L.crest = shade(K.color, 0.2);
     }
     L.boots = '#2a2018';
-    L.weapon = kind === 'arqueiro' ? 'bow' : rng.pick(S.weapons); L.wc = r >= 2 ? '#e0e8f0' : '#a0a8b0';
+    L.weapon = kind === 'arqueiro' ? 'bow' : kind === 'mosqueteiro' ? 'musketb' : rng.pick(S.weapons); L.wc = r >= 2 ? '#e0e8f0' : '#a0a8b0';
     if (r >= 1 && kind !== 'arqueiro' && !['great', 'hammer', 'spear'].includes(L.weapon)) L.shield = K.color;
     return L;
   },
@@ -175,9 +176,10 @@ const War = {
   daily() {
     const S = this.st(), rng = new RNG(Game.world.seed + Game.day * 977);
     const name = id => this.K[id].short;
-    for (const k of this._kList) for (const o of k.nb) if (k.id < o && S.rel[this.key(k.id, o)] === undefined) S.rel[this.key(k.id, o)] = KBIAS[this.key(k.id, o)] || 0;
+    for (const k of this._kList) for (const o of k.nb) if (k.id !== 'jogador' && o !== 'jogador' && k.id < o && S.rel[this.key(k.id, o)] === undefined) S.rel[this.key(k.id, o)] = KBIAS[this.key(k.id, o)] || 0;
     for (const [p, v] of Object.entries(S.rel)) {
       const [a, b] = p.split('|');
+      if (a === 'jogador' || b === 'jogador' || !this.K[a] || !this.K[b]) continue;
       if (this.atWar(a, b)) continue;
       const base = KBIAS[p] || 0;
       let nv = v + (base - v) * 0.08 + rng.range(-5, 5);
@@ -197,11 +199,12 @@ const War = {
     for (const w of S.wars.slice()) {
       const days = Game.day - w.since;
       const armiesA = S.armies.filter(x => x.k === w.a && x.foe === w.b).length, armiesB = S.armies.filter(x => x.k === w.b && x.foe === w.a).length;
-      const ch = Math.max(0, days - 3) * 0.06 + (!armiesA || !armiesB ? 0.15 : 0);
+      const ch = w.a === 'jogador' || w.b === 'jogador' ? Reino.chancePaz(w) : Math.max(0, days - 3) * 0.06 + (!armiesA || !armiesB ? 0.15 : 0);
       if (rng.chance(ch)) this.peace(w);
     }
     // reforços: cada lado mantém exércitos em campo
     for (const w of S.wars) for (const [k, foe] of [[w.a, w.b], [w.b, w.a]]) {
+      if (k === 'jogador' || !this.K[k] || !this.K[foe]) continue;
       const mine = S.armies.filter(x => x.k === k && x.foe === foe);
       if (mine.length < 2 && rng.chance(0.6)) this.raise(k, foe, rng);
       for (const a of mine) if (a.state === 'camp') a.n = Math.min(a.n0, a.n + rng.int(8, 16));
@@ -212,12 +215,13 @@ const War = {
     // soldo do jogador
     const P = Game.player;
     if (P.army) P.army.owed = Math.min(15, (P.army.owed || 0) + 1);
+    Reino.daily(); Mundo.daily();
   },
   declare(a, b, quiet) {
     const S = this.st();
     if (this.atWar(a, b)) return;
     S.wars.push({ a, b, since: Game.day, won: { [a]: [], [b]: [] } });
-    S.rel[this.key(a, b)] = -80;
+    if (a === 'jogador' || b === 'jogador') { S.prel = S.prel || {}; S.prel[a === 'jogador' ? b : a] = Math.min(Reino.rel(a === 'jogador' ? b : a), -80); } else S.rel[this.key(a, b)] = -80;
     const rng = new RNG(Game.world.seed + Game.day * 31 + S.id);
     for (let i = 0; i < 2; i++) { this.raise(a, b, rng, quiet ? 0.45 : 0); this.raise(b, a, rng, quiet ? 0.45 : 0); }
     const txt = `${this.K[a].name} declarou guerra a ${this.K[b].name}!`;
@@ -227,9 +231,9 @@ const War = {
   peace(w) {
     const S = this.st();
     S.wars = S.wars.filter(x => x !== w);
-    S.armies = S.armies.filter(x => !((x.k === w.a && x.foe === w.b) || (x.k === w.b && x.foe === w.a)));
+    S.armies = S.armies.filter(x => x.k === 'jogador' || !((x.k === w.a && x.foe === w.b) || (x.k === w.b && x.foe === w.a)));
     S.battles = S.battles.filter(bt => S.armies.some(x => x.id === bt.a) && S.armies.some(x => x.id === bt.b));
-    S.rel[this.key(w.a, w.b)] = -15; S.peaceDay[this.key(w.a, w.b)] = Game.day;
+    if (w.a !== 'jogador' && w.b !== 'jogador') S.rel[this.key(w.a, w.b)] = -15; S.peaceDay[this.key(w.a, w.b)] = Game.day;
     const keepA = w.won[w.a].map(id => this.settlement(id)).filter(s => s && this.ownerOf(s) === w.a).map(s => s.name);
     const keepB = w.won[w.b].map(id => this.settlement(id)).filter(s => s && this.ownerOf(s) === w.b).map(s => s.name);
     let txt = `🕊 Paz entre ${this.K[w.a].short} e ${this.K[w.b].short}.`;
@@ -237,10 +241,12 @@ const War = {
     if (keepB.length) txt += ` ${this.K[w.b].short} fica com ${keepB.join(', ')}.`;
     this.news(txt, true, [w.a, w.b]);
     this.clearLive();
+    Reino.onPaz(w);
   },
   // novo exército sai da cidade do reino mais próxima do inimigo
   raise(k, foe, rng, advance = 0) {
     const S = this.st(), W = Game.world;
+    if (k === 'jogador' || !this.K[k] || !this.K[foe]) return;
     const mine = W.settlements.filter(s => this.ownerOf(s) === k);
     const fc = this.K[foe].cap;
     if (!mine.length) return;
@@ -251,7 +257,7 @@ const War = {
     if (advance) { a.x = lerp(a.x, fc.x, advance * 0.6); a.y = lerp(a.y, fc.y, advance * 0.6); }
     S.armies.push(a);
   },
-  garrison(s) { return s.type === 'capital' ? 75 : s.type === 'town' ? 32 : 14; },
+  garrison(s) { if (s.playerVila) return Reino.guarnicao(); return s.type === 'capital' ? 75 : s.type === 'town' ? 32 : 14; },
   pickTarget(a) {
     let best = null, bd = Infinity;
     for (const s of Game.world.settlements) {
@@ -266,7 +272,7 @@ const War = {
   hour() {
     const S = this.st(), rng = new RNG(Game.world.seed + Game.day * 1440 + Math.floor(Game.time));
     for (const a of S.armies) {
-      if (a.state === 'battle') continue;
+      if (a.state === 'battle' || a.state === 'follow') continue;
       if (a.state === 'camp') { a.n = Math.min(a.n0, a.n + 2); if (a.n >= a.n0 * 0.8) { a.state = 'march'; a.target = null; } continue; }
       let s = a.target && this.settlement(a.target);
       if (!s || this.ownerOf(s) !== a.foe) { s = this.pickTarget(a); a.target = s ? s.id : null; if (a.state === 'siege') a.state = 'march'; }
@@ -274,6 +280,7 @@ const War = {
       if (a.state === 'siege') {
         a.siegeT++;
         if (a.siegeT >= 3) {
+          if (s.playerVila && a.k !== 'jogador') { Reino.cerco(a, s); continue; }
           const g = this.garrison(s);
           if (a.n > g) { this.conquer(s, a); a.n -= Math.round(g * 0.4); a.state = 'march'; a.target = null; }
           else { a.n -= Math.round(g * 0.35); this.retreat(a); }
@@ -344,6 +351,7 @@ const War = {
     if (wk && lk && this.K[wk] && this.K[lk]) this.news(`${bt.name}: ${this.K[wk].short} venceu ${this.K[lk].short}. ${L && L.n >= 10 ? `O exército de ${this.K[lk].short} recuou e acampou esperando reforços.` : `O exército de ${this.K[lk].short} foi destruído.`}`, !!bt.live, [wk, lk]);
     const P = Game.player;
     if (bt.live && P.army && wk === P.army.k) { P.army.merit += 8; Game.toast('Vitória! +8 de mérito', '#80ff80'); Game.chron(`Lutei na ${bt.name} e ${this.K[wk].short} venceu.`); }
+    Reino.onResolve(bt, wk, lk);
     if (bt.live && P.tempSide) P.tempSide = null;
     for (const m of Game.actors) if (m.battleId === bt.id && !m.dead) { m.ctrl = 'victor'; m.battleId = null; }
   },
@@ -358,6 +366,7 @@ const War = {
     this.dropSquad(a);
   },
   conquer(s, a) {
+    if (s.playerVila && a.k !== 'jogador') return Reino.vilaCaiu(s, a);
     const S = this.st(), old = this.ownerOf(s);
     S.owner[s.id] = a.k;
     const w = S.wars.find(x => (x.a === a.k && x.b === a.foe) || (x.b === a.k && x.a === a.foe));
@@ -365,6 +374,7 @@ const War = {
     const back = s.region.id === a.k;
     this.news(back ? `${this.K[a.k].short} retomou ${s.name}!` : `⚔ ${this.K[a.k].name} conquistou ${s.name}${old ? ` de ${this.K[old].short}` : ''}!`, true, [a.k, old]);
     if (s.active) { const set = new Set(s.npcs || []); Game.actors = Game.actors.filter(x => !set.has(x)); s.active = false; s.npcs = null; }
+    Reino.onConquer(s, a);
   },
 
   // ---------- Quadro a quadro ----------
@@ -445,7 +455,7 @@ const War = {
       for (let i = 0; i < cnt; i++) {
         const along = 5 + rng.range(0, 3), side = rng.range(-6, 6);
         const tx = bt.x + bt.ax * along * sign - bt.ay * side, ty = bt.y + bt.ay * along * sign + bt.ax * side;
-        const m = this.makeSoldier(ar.k, this.pickKind(ar.k, rng, ar.n), tx * 16 + 8, ty * 16 + 8, rng);
+        const m = this.makeSoldier(ar.k, ar.k === 'jogador' ? Reino.kind(ar, rng) : this.pickKind(ar.k, rng, ar.n), tx * 16 + 8, ty * 16 + 8, rng);
         Game.findFree(m); m.home = { x: bt.x * 16 + 8, y: bt.y * 16 + 8 };
         m.ctrl = 'battle'; m.battleId = bt.id; m.armyId = ar.id; m.repr = repr; m.aggro = m.ai === 'musket' ? 400 : 320;
         Game.actors.push(m);
@@ -464,7 +474,7 @@ const War = {
     const rng = new RNG(a.id * 17 + Game.day);
     const cnt = clamp(Math.ceil(a.n / 9), 3, 8);
     for (let i = 0; i < cnt; i++) {
-      const m = this.makeSoldier(a.k, i === 0 ? (a.n > 50 ? 'cavaleiro' : 'soldado') : this.pickKind(a.k, rng, a.n), a.x * 16 + (i % 3 - 1) * 14, a.y * 16 + Math.floor(i / 3) * 14, rng);
+      const m = this.makeSoldier(a.k, a.k === 'jogador' ? Reino.kind(a, rng) : i === 0 ? (a.n > 50 ? 'cavaleiro' : 'soldado') : this.pickKind(a.k, rng, a.n), a.x * 16 + (i % 3 - 1) * 14, a.y * 16 + Math.floor(i / 3) * 14, rng);
       Game.findFree(m); m.armyId = a.id; m.slot = i; m.lead = i === 0; m.home = { x: m.x, y: m.y };
       if (m.lead) m.flagC = this.K[a.k].color;
       Game.actors.push(m);
@@ -561,6 +571,7 @@ const War = {
       f.corpses.push({ x: m.x - 8, y: m.y, k: m.faction, kind: m.kind, seed: Math.floor(Math.random() * 1e6), f: 1 });
     }
     const byPlayer = killer === P || (killer && killer.team === 'ally');
+    if (m.faction && byPlayer && m.faction !== 'jogador') Reino.addRel(m.faction, -1);
     if (m.faction && byPlayer) {
       P.addXP(m.xp); Game.floater(m.x, m.y - 30, '+' + m.xp, '#c0a0ff'); P.stats.kills++;
       if (P.army && this.atWar(P.army.k, m.faction)) { const g = [1, 2, 2, 4, 7][['milicia', 'soldado', 'arqueiro', 'cavaleiro', 'elite'].indexOf(m.kind)] || 1; P.army.merit += g; P.army.kills = (P.army.kills || 0) + 1; }
@@ -681,7 +692,10 @@ const War = {
     const K = this.K[k];
     const wars = this.warOf(k).map(w => this.K[w.a === k ? w.b : w.a].short);
     let txt = `<br><br><b>${esc(K.name)}</b> ${wars.length ? `<span class="bad">está em guerra contra ${esc(wars.join(', '))}.</span>` : '<span class="good">está em paz.</span>'}`;
-    if (!P.army) {
+    if (k !== 'jogador') opts.push({ label: `🕊 Diplomacia com ${K.short}`, fn: () => Reino.diplo(k, () => UI.building(b)) });
+    if (k === 'jogador') { /* o seu próprio castelo */ }
+    else if (Reino.ativo()) txt += `<br><span class="dim">Você é ${Reino.titulo().toLowerCase()} do ${esc(Reino.nome())}.</span>`;
+    else if (!P.army) {
       opts.unshift({ label: `⚔ Alistar-se no exército de ${K.short}`, cls: 'gold', fn: () => this.enlist(b, k) });
     } else if (P.army.k === k) {
       const A = P.army, R = WAR_RANKS[A.rank], N = WAR_RANKS[A.rank + 1];
@@ -737,7 +751,7 @@ const War = {
     const wars = S.wars.map(w => { const cA = Game.world.settlements.filter(s => this.ownerOf(s) === w.a).length, cB = Game.world.settlements.filter(s => this.ownerOf(s) === w.b).length; return `<div class="quest"><b class="bad">⚔ ${esc(this.K[w.a].short)} × ${esc(this.K[w.b].short)}</b> <small class="dim">desde o dia ${w.since}</small><br><small>Cidades: ${esc(this.K[w.a].short)} ${cA} • ${esc(this.K[w.b].short)} ${cB}${w.won[w.a].length + w.won[w.b].length ? ` • Conquistas: ${w.won[w.a].length + w.won[w.b].length}` : ''}</small></div>`; }).join('') || '<div class="quest"><small class="good">Nenhuma guerra no momento.</small></div>';
     const rows = ks.map(k => { const cities = Game.world.settlements.filter(s => this.ownerOf(s) === k.id).length; const nb = [...k.nb].map(o => `${esc(this.K[o].short)}: ${status(k.id, o)}`).join(' • '); return `<div class="quest"><b style="color:${k.color}">■</b> <b>${esc(k.name)}</b> <small class="dim">${esc(k.ruler.title)} ${esc(k.ruler.name)} • ${cities} cidades</small><br><small>${nb}</small></div>`; }).join('');
     const news = S.news.slice(0, 14).map(n => `<div class="chron"><small class="dim">Dia ${n.day}</small> ${esc(n.text)}</div>`).join('') || '<small class="dim">Sem notícias.</small>';
-    return `<div class="qcol">${mine}<div class="sub">Guerras</div>${wars}<div class="sub">Reinos e diplomacia</div>${rows}<div class="sub">Notícias</div>${news}</div>`;
+    return `<div class="qcol">${mine}${Reino.tabHTML()}<div class="sub">Guerras</div>${wars}<div class="sub">Reinos e diplomacia</div>${rows}<div class="sub">Notícias</div>${news}</div>`;
   },
   // ---------- Mapa ----------
   drawMap(ctx, toS, z) {

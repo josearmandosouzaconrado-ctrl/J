@@ -18,6 +18,7 @@ const VILA_PREDIOS = {
   alquimista: { nome: 'Alquimista', bt: 'alchemist', x: 17, y: 3, ouro: 300, mats: { tabua: 8, pedra: 6, erva_vermelha: 4 }, renda: 10, pop: 8, desc: 'Poções e bancada de alquimia.' },
   estabulo: { nome: 'Estábulo', bt: 'stable', x: 17, y: 24, ouro: 250, mats: { tabua: 16, prego: 12 }, renda: 6, pop: 6, desc: 'Cavalos para você e para os colonos.' },
   templo: { nome: 'Templo', bt: 'temple', x: 18, y: 8, ouro: 600, mats: { bloco_pedra: 12, pedra: 10, tabua: 6 }, renda: 8, pop: 10, desc: 'Cura, bênçãos e honra para a vila.' },
+  quartel: { nome: 'Quartel', bt: 'house2', deco: true, x: 19, y: 16, ouro: 400, mats: { tabua: 16, pedra: 12, prego: 16 }, pop: 6, desc: 'Treina arqueiros e dobra o número de soldados que a vila sustenta.' },
   torre: { nome: 'Torre de Vigia', bt: 'tower', x: 25, y: 17, ouro: 300, mats: { pedra: 12, tabua: 6 }, def: 1, pop: 4, desc: 'Guardas vigiam a vila. Menos ataques de bandidos.' },
   muralha: { nome: 'Muralha', ouro: 800, mats: { bloco_pedra: 20, pedra: 20 }, def: 2, pop: 8, desc: 'Protege a vila. Quase nenhum bandido se arrisca.' }
 };
@@ -115,7 +116,8 @@ const Vila = {
     // prédios na ordem fixa (cada um tem o seu terreno)
     for (const [k, d] of Object.entries(VILA_PREDIOS)) {
       if (!V.built[k] || !d.bt) continue;
-      const b = W.placeBuilding(s, d.bt, d.x, d.y, rng, objs, occ, size, cul, d.bt === 'tower');
+      const b = W.placeBuilding(s, d.bt, d.x, d.y, rng, objs, occ, size, cul, !!d.deco || d.bt === 'tower');
+      if (d.deco) { b.name = d.nome; b.spec.banner = (Game.player.reino && Game.player.reino.cor) || reg.color; b.spec.sign = 'guild'; }
       b.vilaKey = k;
       if (k === 'casa1') { b.name = 'Casa do Fundador'; b.owner = Object.assign({}, b.owner, { name: 'Você' }); }
       // caminho da porta até a rua
@@ -133,7 +135,7 @@ const Vila = {
     // moradores: colonos na praça, guardas na torre e nos portões, e o Intendente
     const nCit = Math.min(14, Math.ceil(V.pop * 0.6));
     for (let i = 0; i < nCit; i++) s.npcSpots.push({ role: 'citizen', x: s.x0 + mid + rng.int(-4, 4), y: s.y0 + mid + rng.int(-3, 4) });
-    const nG = (V.built.torre ? 2 : 0) + (V.built.muralha ? 4 : 0);
+    const nG = Math.min(10, (V.built.torre ? 2 : 0) + (V.built.muralha ? 4 : 0) + Math.min(4, Math.floor(Reino.total() / 8)));
     for (let i = 0; i < nG; i++) { const g = s.gates[i % 4]; s.npcSpots.push({ role: 'guard', x: g.x + (g.dir === 'w' ? 2 : g.dir === 'e' ? -2 : 0), y: g.y + (g.dir === 'n' ? 2 : g.dir === 's' ? -2 : 0) }); }
     s.npcSpots.push({ role: 'guardpost', x: s.x0 + 15, y: s.y0 + 16, vilaNPC: 'intendente', race: cul.race && !RACES[cul.race].npcOnly ? cul.race : 'humano' });
     s.mid = { x: s.x0 + mid, y: s.y0 + mid };
@@ -149,7 +151,10 @@ const Vila = {
     if (V.pop < cap) V.pop = Math.min(cap, V.pop + Math.max(0, Math.round(atr * (0.5 + Math.random()))));
     // impostos e renda dos prédios
     let renda = V.pop * 3; for (const [k, d] of Object.entries(VILA_PREDIOS)) if (b[k] && d.renda) renda += d.renda;
-    V.cofre += renda;
+    renda += Reino.rendaTratados();
+    if (War.warOf('jogador').length) renda = Math.round(renda * 0.7);   // guerra atrapalha o comércio
+    const trib = Reino.tributo(renda); V.trib = trib;
+    V.cofre += renda - trib;
     if (b.fazenda) V.trigo = Math.min(60, (V.trigo || 0) + 3);
     // bandidos atacam vilas sem defesa
     const def = (b.torre ? 1 : 0) + (b.muralha ? 2 : 0);
@@ -188,11 +193,13 @@ const Vila = {
     const cap = this.cap(), b = V.built;
     const renda = V.pop * 3 + Object.entries(VILA_PREDIOS).reduce((n, [k, d]) => n + (b[k] && d.renda ? d.renda : 0), 0);
     const def = (b.torre ? 1 : 0) + (b.muralha ? 2 : 0);
-    const txt = `<b>${esc(V.nome)}</b> — ${this.titulo()}<br>Colonos: <b>${V.pop}/${cap}</b> • Renda: <b>${renda}</b> ouro/dia • Defesa: <b>${['nenhuma', 'baixa', 'boa', 'ótima'][def]}</b><br>Cofre: <b class="gold">${fmt(V.cofre)}</b> ouro${V.trigo ? ` • Celeiro: ${V.trigo} trigo` : ''}<br><span class="dim small">${V.pop >= cap ? 'Não há mais casas vazias: construa mais casas para receber colonos.' : 'Novos colonos chegam a cada dia.'}</span>`;
+    const txt = `<b>${esc(V.nome)}</b> — ${this.titulo()}<br>Colonos: <b>${V.pop}/${cap}</b> • Renda: <b>${renda + Reino.rendaTratados()}</b> ouro/dia${V.trib ? ` <span class="dim">(−${V.trib} de tributo)</span>` : ''} • Defesa: <b>${['nenhuma', 'baixa', 'boa', 'ótima'][def]}</b><br>Cofre: <b class="gold">${fmt(V.cofre)}</b> ouro${V.trigo ? ` • Celeiro: ${V.trigo} trigo` : ''}<br><span class="dim small">${V.pop >= cap ? 'Não há mais casas vazias: construa mais casas para receber colonos.' : 'Novos colonos chegam a cada dia.'}</span>`;
     const opts = [];
     if (V.cofre > 0) opts.push({ label: `Recolher o cofre (${fmt(V.cofre)} ouro)`, cls: 'gold', fn: () => { P.gold += V.cofre; Sfx.play('coin'); Game.toast(`+${fmt(V.cofre)} de ouro`, '#ffd060'); V.cofre = 0; this.talkNPC(a); } });
     if (V.trigo >= 5) opts.push({ label: `Pegar comida do celeiro`, fn: () => { const n = Math.floor(V.trigo / 5); V.trigo -= n * 5; P.addItem(Items.make('pao', n)); Game.toast(`+${n} pães feitos com o trigo da vila`, '#ffe0a0'); this.talkNPC(a); } });
     opts.push({ label: '🔨 Construir', fn: () => this.construirMenu(a) });
+    opts.push({ label: `⚔ Quartel e tropas (${Reino.total()})`, fn: () => Reino.quartel(a, () => this.talkNPC(a)) });
+    opts.push({ label: Reino.ativo() ? '👑 Coroa e diplomacia' : '👑 Suserano, independência e diplomacia', fn: () => Reino.coroa(a, () => this.talkNPC(a)) });
     opts.push({ label: 'Dar uma festa para os colonos (100 ouro)', fn: () => { if (P.gold < 100) return Game.toast('Ouro insuficiente.', '#ff8080'); P.gold -= 100; Vida.honra(2, 'dei uma festa na minha vila'); V.pop = Math.min(cap, V.pop + 1); P.addBuff('regen', 2, 600, 'Festa na vila'); Sfx.play('quest'); UI.dialog(a.name, a.look, 'Música, cerveja e dança até tarde! Os colonos adoraram. 🎉', [{ label: 'Voltar', fn: () => this.talkNPC(a) }]); } });
     opts.push({ label: 'Tchau' });
     UI.dialog(a.name, a.look, txt, opts);

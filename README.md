@@ -73,6 +73,20 @@ WASD/setas andar • Shift correr • J/Espaço atacar • K magia • Q trocar 
 - **Moradores vivos**: as pessoas conversam entre si nas ruas (balões de fala) e comentam a sua fama quando você passa.
 - **A sua vila**: compre uma **Carta de Fundação** no armazém de uma capital, use num lugar vazio e escolha o nome. O Intendente na praça constrói casas, fazenda, taverna, armazém, ferraria, alquimista, estábulo, templo, torre de vigia e muralha. Colonos chegam todo dia (mais rápido com comida e boa fama), pagam impostos no cofre e a vila cresce de **Aldeia** para **Vila** e **Cidade**. Bandidos atacam vilas sem defesa — se você estiver lá, lute por ela.
 
+## O seu próprio reino
+
+Criar um reino é difícil e leva tempo:
+
+1. **Vila e milícia**: funde a vila e, no Intendente, abra **⚔ Quartel e tropas**. Recrute milicianos (e soldados com Ferraria, arqueiros com Quartel, cavaleiros com Estábulo e Quartel). O limite de soldados depende dos colonos (o Quartel dobra). O soldo sai do cofre todo dia; sem dinheiro, eles desertam.
+2. **Vassalo**: enquanto isso, a vila paga 20% da renda de tributo ao reino dono daquelas terras. Um exército grande deixa o suserano desconfiado, e ele pode atacar antes de você estar pronto.
+3. **Cidade**: com 20 colonos, templo e muralha a vila vira Cidade.
+4. **Guerra de independência**: com uma Cidade e pelo menos 25 soldados, em **👑 Suserano, independência e diplomacia**, declare independência. O antigo senhor manda exércitos para esmagar a rebelião. Se a sua cidade cair, você perde o exército e volta a ser vassalo. Vença batalhas e conquiste cidades: com placar alto o inimigo aceita a paz e reconhece o seu reino. Você vira Rei ou Rainha.
+5. **Exército em campo**: durante uma guerra, leve todo o exército (ou metade) com você. Ao encontrar o inimigo começa a batalha e as tropas esperam a sua ordem. Botões de tática: **⚔ Atacar** (libera a batalha), **🛡 Segurar** (mantém a linha), **🚩 Seguir** (ficam com você) e **🏳 Recuar** (saem da batalha). Perto de uma cidade inimiga aparece **🏰 Cercar**: em algumas horas ela cai, se a guarnição for menor que o seu exército, e passa a ser sua.
+6. **Diplomacia**: no castelo de qualquer reino ou pelo Intendente, mande presentes, faça tratados de comércio (+ouro por dia), alianças (os aliados entram nas suas guerras), peça ajuda contra o seu suserano, proponha paz ou declare guerra. Matar soldados de um reino piora a relação com ele.
+7. **Mosquetes**: fique muito amigo (relação 60) de um reino de mosquetes (Aurélion ou Ferrânia). Eles dão um Mosquete Arcano de presente, vendem mosquetes e cartuchos e treinam **mosqueteiros** para o seu exército.
+
+**O mundo também cresce**: com o passar dos dias, aldeias em paz viram cidades e cidades viram metrópoles. As notícias aparecem em Reinos.
+
 ## Estrutura do código
 
 | Arquivo | Conteúdo |
@@ -95,6 +109,7 @@ WASD/setas andar • Shift correr • J/Espaço atacar • K magia • Q trocar 
 | `js/vida.js` | Fome, sede e sono, honra e as suas consequências, moradores conversando entre si e o romance pela conversa |
 | `js/eventos.js` | Missões de mundo aberto com escolhas e consequências (favores que voltam, caçadores de recompensa) |
 | `js/vila.js` | A vila do jogador: fundar, construir, colonos, impostos e ataques de bandidos |
+| `js/reino.js` | O reino do jogador: tropas, guerra de independência, diplomacia, tática na batalha, mosquetes por amizade e o crescimento das cidades do mundo |
 
 O modo **Multiplayer** aparece no menu inicial como "em breve".
 

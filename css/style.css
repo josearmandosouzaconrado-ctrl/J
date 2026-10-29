@@ -52,6 +52,12 @@ input { font-family: inherit; font-size: 22px; background: #140c10; color: var(-
 #needs .need b { position: absolute; left: -2px; top: -5px; font-size: 11px; font-weight: normal; }
 #needs .need i { display: block; height: 100%; }
 #hud-honra { font-size: 15px; }
+#tatica { position: absolute; top: calc(112px + var(--sa-t)); left: calc(8px + var(--sa-l)); display: flex; flex-direction: column; gap: 3px; align-items: stretch; pointer-events: auto; background: rgba(15,8,12,.72); border: 2px solid var(--border); padding: 3px; z-index: 5; }
+#tatica.hidden { display: none; }
+#tatica .tat-t { font-size: 14px; color: var(--gold); white-space: nowrap; text-align: center; }
+#tatica button { font: inherit; font-size: 14px; text-align: left; color: #f2e6cc; background: #2a1a14; border: 2px solid #5a4030; padding: 1px 5px; white-space: nowrap; }
+#tatica button.on { background: #6a4a10; border-color: var(--gold); color: #fff; }
+#tatica button.gold { border-color: var(--gold); }
 #hud-info { margin-top: 3px; font-size: 20px; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000; }
 .coin { display: inline-block; width: 10px; height: 10px; background: var(--gold); border: 2px solid #8a5a10; margin-left: 3px; vertical-align: -1px; }
 .pulse { color: var(--gold); animation: pulse 1s infinite; }

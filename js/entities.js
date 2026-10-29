@@ -450,6 +450,7 @@ class Monster extends Actor {
     this.retarget -= dt;
     if (this.retarget <= 0) { this.retarget = 0.25 + Math.random() * 0.2; this.target = this.findTarget(); }
     const t = this.target;
+    if (this.faction === 'jogador' && Reino.tatica(this, t, dt, sf)) return;
     if (this.ai === 'flee') return this.updateFlee(dt, sf);
     if (this.ai === 'flyer') return this.updateFlyer(dt, sf);
     if (!t || t.dead) { this.target = null; if (this.ctrl && War.steer(this, dt, sf)) return; return this.idle(dt, sf); }
