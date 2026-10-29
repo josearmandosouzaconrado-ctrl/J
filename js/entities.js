@@ -604,7 +604,36 @@ function npcLook(race, sex, rng, role) {
   if (role === 'merchant') { L.body = rng.pick(['#a06a30', '#8a5a2a']); L.robe = false; }
   if (role === 'quest') { L.hood = rng.chance(0.5) ? rng.pick(['#3a5a3a', '#5a3a2a', '#3a3a5a']) : undefined; }
   if (role === 'ruler') { L.crown = true; L.cape = '#a02030'; L.body = '#d0b040'; }
+  vestirNPC(L, sex, rng, role);
   return L;
+}
+// roupas em camadas e acessórios: colete e camisa, avental, cachecol, bolsa, chapéus, idosos com bengala
+const CAMISAS = ['#e8dcc0', '#d8d0c0', '#c8b89a', '#f0e8d8', '#b8c8d0', '#e0c8c0'];
+const CORES_CHAPEU = ['#c8a050', '#5a4a3a', '#3a3a4a', '#7a2a2a', '#2a4a6a', '#4a6a3a', '#6a4a7a'];
+function vestirNPC(L, sex, rng, role) {
+  if (role === 'guard' || role === 'ruler') return;
+  const r = rng, kid = role === 'kid' || role === 'child';
+  L.seed = r.int(0, 9);
+  if (!L.robe && r.chance(sex === 'm' ? 0.4 : 0.22)) { L.vest = r.pick(['#5a3a24', '#3a4a3a', '#4a3a5a', '#6a4a2a', '#2a3a4a', '#7a5a3a', '#6a2a2a']); L.shirt = r.pick(CAMISAS); }
+  else if (!L.robe && r.chance(0.18)) L.stripes = true;
+  if (L.robe && r.chance(0.5)) L.sash = r.pick(['#a03030', '#3a5a8a', '#c0a040', '#4a7a4a', '#7a3a7a']);
+  if (role === 'merchant' || (role === 'shop' && r.chance(0.65))) L.apron = r.pick(['#ece4d4', '#d8c8a8', '#8a6a4a', '#5a4a3a']);
+  else if (!kid && r.chance(L.robe ? 0.3 : 0.08)) L.apron = r.pick(['#f0ece0', '#e8dcc8', '#c8b8a0']);
+  if (r.chance(0.22)) L.scarf = r.pick(['#a03030', '#3a6a3a', '#c0a040', '#4a4a8a', '#8a5a2a', '#d07090']);
+  else if (r.chance(0.3)) L.collar = r.pick(CAMISAS);
+  if (!L.robe && r.chance(0.45)) L.pouch = true;
+  if (!kid && r.chance(role === 'merchant' ? 0.4 : 0.16)) L.bag = r.pick(['#8a5a30', '#6a4a2a', '#a07a4a', '#5a5a3a']);
+  if (!L.robe && r.chance(0.2)) L.patch = true;
+  if (!L.hood) {
+    const h = r.next();
+    if (h < 0.12) { L.hat = 'straw'; L.hatC = '#d8b868'; }
+    else if (h < 0.2 && !kid) { L.hat = 'wide'; L.hatC = r.pick(CORES_CHAPEU); if (r.chance(0.5)) L.pena = r.pick(['#e04040', '#f0f0f0', '#40a0e0', '#f0c040']); }
+    else if (h < 0.29 && sex === 'm') { L.hat = 'cap'; L.hatC = r.pick(CORES_CHAPEU); }
+    else if (h < 0.35) { L.hat = 'bandana'; L.hatC = r.pick(['#a03030', '#3a5a8a', '#c08030', '#4a7a4a']); }
+    else if (h < 0.4 && !kid) { L.hat = 'beret'; L.hatC = r.pick(CORES_CHAPEU); }
+    else if (h < 0.5 && sex === 'f') { L.hat = r.chance(0.5) ? 'flores' : 'lenco'; L.hatC = r.pick(['#e8dcc8', '#a03050', '#3a6a8a', '#c0a040']); }
+  }
+  if (!kid && r.chance(0.1)) { L.old = true; L.hair = r.pick(['#c8c8c8', '#e0e0e0', '#a8a8a8']); if (L.beard) L.beardC = L.hair; if (r.chance(0.55)) L.cane = true; }
 }
 class NPC extends Actor {
   constructor(spot, s, rng) {

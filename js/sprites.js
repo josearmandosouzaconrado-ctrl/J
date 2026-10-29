@@ -25,6 +25,27 @@ const Sprites = {};
     return c;
   }
   S.outline = outline;
+  // contorno colorido: cada borda é uma versão bem escura da cor vizinha (cabelo, roupa, pele), em vez de um preto único;
+  // os cantos de baixo ficam mais escuros, como se a luz viesse de cima
+  function outlineSel(c, base = '#140c16') {
+    const ctx = c.getContext('2d'), w = c.width, h = c.height;
+    const img = ctx.getImageData(0, 0, w, h), d = img.data, out = new Uint8ClampedArray(d);
+    const [br, bg, bb] = hexToRgb(base);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      if (d[i + 3] > 40) continue;
+      let j = -1, baixo = false;
+      if (y > 0 && d[i - w * 4 + 3] > 120) { j = i - w * 4; baixo = true; }
+      else if (x > 0 && d[i - 4 + 3] > 120) j = i - 4;
+      else if (x < w - 1 && d[i + 4 + 3] > 120) j = i + 4;
+      else if (y < h - 1 && d[i + w * 4 + 3] > 120) j = i + w * 4;
+      if (j < 0) continue;
+      const k = baixo ? 0.66 : 0.5;   // quanto puxa para o escuro
+      out[i] = d[j] * (1 - k) * 0.72 + br * k; out[i + 1] = d[j + 1] * (1 - k) * 0.72 + bg * k; out[i + 2] = d[j + 2] * (1 - k) * 0.72 + bb * k; out[i + 3] = 255;
+    }
+    img.data.set(out); ctx.putImageData(img, 0, 0);
+  }
+  S.outlineSel = outlineSel;
   function flip(c) {
     const f = cv(c.width, c.height), x = f.getContext('2d');
     x.translate(c.width, 0); x.scale(-1, 1); x.drawImage(c, 0, 0); return f;
