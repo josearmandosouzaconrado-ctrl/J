@@ -377,14 +377,27 @@ const Reino = {
     else txt = `<b class="gold">${this.titulo()} ${esc(P.name)}</b> do <b>${esc(this.nome())}</b>.<br>Cidades: ${Game.world.settlements.filter(o => War.ownerOf(o) === 'jogador').length}`;
     const opts = [];
     if (R.status === 'vassalo') {
-      const req = [[s && s.type === 'capital', 'a vila precisa ser uma Cidade (20 colonos, templo e muralha)'], [this.total() >= 25, `pelo menos 25 soldados (tem ${this.total()})`], [!P.army, 'dar baixa do exército de outro reino']];
-      const falta = req.filter(r => !r[0]).map(r => r[1]);
-      if (!falta.length) opts.push({ label: su ? `👑 Declarar independência de ${War.K[su].short}` : '👑 Proclamar o seu reino', cls: 'gold', fn: () => this.independencia(a, back) });
-      else txt += `<div class="dim small">Para ${su ? 'declarar independência' : 'proclamar um reino'}: ${esc(falta.join('; '))}.</div>`;
+      if (s && s.type !== 'capital' && V.pop >= 20 && V.built.templo && V.built.muralha) Vila.restore();
+      const req = this.requisitos(), ok = req.every(r => r[0]);
+      txt += `<div class="small" style="margin-top:4px">Para ${su ? 'declarar independência' : 'proclamar o seu reino'}:<br>${req.map(r => `${r[0] ? '✅' : '❌'} ${r[1]}`).join('<br>')}</div>`;
+      if (ok) opts.push({ label: su ? `👑 Declarar independência de ${War.K[su].short}` : '👑 Proclamar o seu reino', cls: 'gold', fn: () => this.independencia(a, back) });
     }
     opts.push({ label: '🕊 Diplomacia com os reinos', fn: () => this.listaDiplo(() => this.coroa(a, back)) });
     opts.push({ label: 'Voltar', fn: back });
     UI.dialog(a.name, a.look, txt, opts);
+  },
+  // a lista de requisitos, com o que o jogador tem agora
+  requisitos() {
+    const P = Game.player, V = Vila.st(), s = Vila.s, b = V ? V.built : {};
+    const A = this.campo(), tropas = this.total() + (A ? A.n : 0);
+    return [
+      [!!V && V.pop >= 20, `20 colonos na vila (tem ${V ? V.pop : 0})`],
+      [!!b.templo, 'Templo construído'],
+      [!!b.muralha, 'Muralha construída'],
+      [!!(s && s.type === 'capital'), 'a vila é uma Cidade'],
+      [tropas >= 25, `25 soldados (tem ${tropas})`],
+      [!P.army, P.army ? `não servir ao exército de ${War.K[P.army.k] ? War.K[P.army.k].short : 'outro reino'} (dê baixa no castelo dele)` : 'não servir ao exército de outro reino']
+    ];
   },
   independencia(a, back) {
     const R = this.st(), su = this.suserano(), V = Vila.st();
@@ -414,6 +427,7 @@ const Reino = {
     const opts = [];
     const hm = 1 + Math.max(0, (P.honra || 0)) / 200;
     if (!guerra && R.presentes[k] !== day) for (const [g, n] of [[200, 5], [600, 13], [1500, 28]]) opts.push({ label: `🎁 Mandar presente (${g} ouro)`, fn: () => { if (P.gold < g) return Game.toast('Ouro insuficiente.', '#ff8080'); P.gold -= g; R.presentes[k] = day; this.addRel(k, Math.round(n * hm), 'presente aceito'); Sfx.play('coin'); this.diplo(k, back); } });
+    if (P.vila && R.status === 'vassalo' && this.suserano() === k) opts.unshift({ label: '👑 Independência de ' + K.short, cls: 'gold', fn: () => this.coroa({ name: 'Coroa', look: null }, () => this.diplo(k, back)) });
     if (!guerra && !t.comercio && v >= 25 && P.vila) opts.push({ label: '📦 Propor tratado de comércio (+10 ouro/dia)', fn: () => { t.comercio = true; Sfx.play('quest'); Game.toast(`Tratado de comércio com ${K.short}!`, '#a0e0a0'); this.diplo(k, back); } });
     if (!guerra && !t.alianca && v >= 60 && this.ativo()) opts.push({ label: '🤝 Propor aliança militar', cls: 'gold', fn: () => { t.alianca = true; Sfx.play('quest'); Game.centerMsg('ALIANÇA!', `${K.short} lutará nas suas guerras`); this.diplo(k, back); } });
     if (!guerra && R.status === 'guerra' && R.suserano && R.suserano !== k && v >= 40 && !War.atWar(k, R.suserano)) opts.push({ label: `⚔ Pedir ajuda contra ${War.K[R.suserano].short}`, fn: () => {
