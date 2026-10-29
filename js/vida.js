@@ -86,8 +86,8 @@ const Vida = {
   // dormir no saco de dormir em qualquer lugar fora das cidades (perigoso se houver inimigos)
   acampar(it) {
     const G = Game, P = G.player;
-    if (!G.level.isWorld) return G.toast('Acampe no mundo aberto.', '#ffa0a0');
-    if (G.actors.some(a => a.team === 'enemy' && !a.dead && dist(a.x, a.y, P.x, P.y) < 260)) return G.toast('Não dá para dormir com inimigos por perto!', '#ff8080');
+    if (!G.level.isWorld) return UI.dialog('Saco de Dormir', null, 'Acampe no mundo aberto.', [{ label: 'Ok' }]);
+    if (G.actors.some(a => a.team === 'enemy' && !a.dead && dist(a.x, a.y, P.x, P.y) < 260)) return UI.dialog('Saco de Dormir', null, 'Não dá para dormir com inimigos por perto!', [{ label: 'Ok' }]);
     const h = G.time >= 20 * 60 || G.time < 5 * 60 ? 'até o amanhecer' : 'por algumas horas';
     UI.confirm(`Montar acampamento e dormir ${h}?<br><span class="dim">O saco de dormir não é gasto.</span>`, () => {
       UI.close();

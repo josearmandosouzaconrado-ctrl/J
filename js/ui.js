@@ -691,7 +691,7 @@ const UI = {
       const d = ITEMS[sel.id];
       const acts = [];
       if (d.slot) acts.push(`<button class="sbtn gold" ${f(() => { P.useItem(sel); this.openMenu('inv'); })}>${P.isEquipped(sel) ? 'Desequipar' : 'Equipar'}</button>`);
-      else if (d.use || d.type === 'tome') acts.push(`<button class="sbtn gold" ${f(() => { P.useItem(sel); this.openMenu('inv'); })}>Usar</button>`);
+      else if (d.use || d.type === 'tome') acts.push(`<button class="sbtn gold" ${f(() => { const tela = this.current; P.useItem(sel); if (this.current === tela) this.openMenu('inv'); })}>Usar</button>`);   // se o item abriu uma janela (carta, saco de dormir), não reabre a mochila por cima
       if (d.type !== 'quest') acts.push(`<button class="sbtn danger" ${f(() => { P.removeInst(sel, sel.n); Game.dropItem(P.x, P.y + 10, sel); this.invSel = null; P.recalc(); this.openMenu('inv'); })}>Largar</button>`);
       detail = `<div class="idetail">${Items.describe(sel)}${this.compareText(sel)}</div><div class="row">${acts.join('')}</div>`;
     }

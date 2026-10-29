@@ -34,7 +34,7 @@ const Vila = {
     const cx = Math.floor(P.x / 16), cy = Math.floor(P.y / 16), h = VILA_SIZE >> 1;
     const R = W.regions[W.regAt(cx, cy)];
     if (R.hostile || R.id === 'nyxhal' || R.isolatedNoBuild) return 'Esta terra não aceita colonos.';
-    for (const s of W.settlements) if (Math.abs(s.mid.x - cx) < (s.w || 30) / 2 + h + 20 && Math.abs(s.mid.y - cy) < (s.h || 30) / 2 + h + 20) return 'Muito perto de ' + s.name + '. Procure um lugar mais afastado.';
+    for (const s of W.settlements) if (Math.abs(s.mid.x - cx) < (s.w || 30) / 2 + h + 20 && Math.abs(s.mid.y - cy) < (s.h || 30) / 2 + h + 20) return 'muito perto de ' + s.name;
     for (const d of W.dungeons) if (Math.abs(d.x - cx) < h + 8 && Math.abs(d.y - cy) < h + 8) return 'Muito perto de uma masmorra.';
     for (const p of W.pois) if (Math.abs(p.x - cx) < h + 6 && Math.abs(p.y - cy) < h + 6) return 'Muito perto de ' + (p.name || 'um lugar especial') + '.';
     for (const hm of W.homes) if (Math.abs(hm.x - cx) < h + 6 && Math.abs(hm.y - cy) < h + 6) return 'Muito perto de uma casa sua.';
@@ -45,7 +45,7 @@ const Vila = {
   },
   fundar(it) {
     const G = Game, P = G.player, pos = this.podeFundar();
-    if (typeof pos === 'string') return G.toast(pos, '#ffa0a0');
+    if (typeof pos === 'string') return UI.dialog('Carta de Fundação', null, `Não dá para fundar a vila aqui: <b>${esc(pos)}</b><br><span class="dim small">Procure um campo aberto no mundo, longe de cidades, aldeias, masmorras, casas e da água, e use a carta de novo.</span>`, [{ label: 'Ok' }]);
     const nomes = new RNG(hashStr(P.name) + G.day).shuffle(VILA_NOMES.slice()).slice(0, 3).concat(['Vila de ' + P.name]);
     UI.dialog('Carta de Fundação', null, `Fundar a sua vila <b>aqui</b>, em ${esc(pos.R.short || pos.R.name)}?<br><span class="dim small">A carta é gasta. Você ganha uma casa, um poço e os primeiros colonos.</span><br><br>Qual vai ser o nome dela?`,
       nomes.map(n => ({ label: n, cls: 'gold', fn: () => { P.removeInst(it, 1); this.criar(pos, n); } })).concat([{ label: 'Agora não' }]));
