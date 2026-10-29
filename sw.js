@@ -1,5 +1,5 @@
 // Service worker: permite jogar offline depois do primeiro acesso
-const CACHE = 'eldoria-v26';
+const CACHE = 'eldoria-v27';
 const FILES = ['./', './index.html', './css/style.css', './manifest.json', './icons/icon-192.png', './icons/icon-512.png',
   './js/util.js', './js/data.js', './js/trees.js', './js/sprites.js', './js/sprites2.js', './js/items.js', './js/world.js', './js/dungeon.js', './js/interior.js', './js/ui2.js',
   './js/entities.js', './js/player.js', './js/quests.js', './js/shops.js', './js/input.js', './js/audio.js', './js/ui.js', './js/game.js', './js/game2.js', './js/academy.js', './js/war.js', './js/naval.js', './js/ship.js', './js/work.js', './js/adm.js', './js/imgdata.js', './js/sombra_frames.js', './js/sombra.js', './img/criatura_sombras.png', './js/nyxar.js', './img/nyxar.png', './js/racas.js', './js/elyndra.js', './js/casas.js', './js/combate.js', './js/ceu.js', './js/vida.js', './js/eventos.js', './js/vila.js', './js/reino.js', './js/construcao.js', './js/rede.js', './css/fonts/VT323-Regular.ttf'];

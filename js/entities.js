@@ -593,6 +593,7 @@ function npcLook(race, sex, rng, role) {
   const R = RACES[race];
   if (R.sheet) return sheetLook(race, sex, rng, role);
   const L = { k: 'hum', skin: rng.pick(R.skins), hair: rng.pick(R.hairs), hairStyle: sex === 'f' ? rng.pick([1, 1, 4, 0]) : rng.pick([0, 0, 2, 3, 0]) };
+  if (sex === 'f') L.fem = true;
   if (R.ears) L.ears = R.ears;
   if (R.tall) L.tall = 1; if (R.short) L.short = R.short; if (R.bulky) L.bulky = true;
   if (R.beard && sex === 'm' && rng.chance(0.8)) L.beard = true;
@@ -618,6 +619,7 @@ function vestirNPC(L, sex, rng, role) {
   L.seed = r.int(0, 9);
   if (!L.robe && r.chance(sex === 'm' ? 0.4 : 0.22)) { L.vest = r.pick(['#5a3a24', '#3a4a3a', '#4a3a5a', '#6a4a2a', '#2a3a4a', '#7a5a3a', '#6a2a2a']); L.shirt = r.pick(CAMISAS); }
   else if (!L.robe && r.chance(0.18)) L.stripes = true;
+  if (sex === 'f' && !L.robe && !kid && r.chance(0.65)) L.saia = r.pick(['#7a2a3a', '#3a4a6a', '#5a3a2a', '#4a5a3a', '#6a3a5a', '#8a6a4a', '#2a2a3a']);
   if (L.robe && r.chance(0.5)) L.sash = r.pick(['#a03030', '#3a5a8a', '#c0a040', '#4a7a4a', '#7a3a7a']);
   if (role === 'merchant' || (role === 'shop' && r.chance(0.65))) L.apron = r.pick(['#ece4d4', '#d8c8a8', '#8a6a4a', '#5a4a3a']);
   else if (!kid && r.chance(L.robe ? 0.3 : 0.08)) L.apron = r.pick(['#f0ece0', '#e8dcc8', '#c8b8a0']);

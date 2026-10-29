@@ -170,6 +170,7 @@ class Player extends Actor {
     const R = RACES[this.race], a = this.app;
     const L = { k: 'hum', skin: a.skin, hair: a.hair, hairStyle: a.hairStyle };
     if (R.ears) L.ears = R.ears; if (R.tall) L.tall = 1; if (R.short) L.short = R.short; if (R.bulky) L.bulky = true;
+    if (a.sex === 'f') L.fem = true;
     if (R.beard && a.beard !== false && a.sex === 'm') L.beard = true;
     if (R.tusks) L.tusks = true; if (R.snout) L.snout = true; if (R.horns) L.horns = true;
     if (R.tail) { L.tail = true; L.tailC = R.tailHair ? a.hair : a.skin; }

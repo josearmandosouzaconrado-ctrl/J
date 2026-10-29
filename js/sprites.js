@@ -40,7 +40,7 @@ const Sprites = {};
       else if (x < w - 1 && d[i + 4 + 3] > 120) j = i + 4;
       else if (y < h - 1 && d[i + w * 4 + 3] > 120) j = i + w * 4;
       if (j < 0) continue;
-      const k = baixo ? 0.66 : 0.5;   // quanto puxa para o escuro
+      const k = baixo ? 0.84 : 0.76;   // quanto puxa para o escuro (contorno firme, nada de borrado)
       out[i] = d[j] * (1 - k) * 0.72 + br * k; out[i + 1] = d[j + 1] * (1 - k) * 0.72 + bg * k; out[i + 2] = d[j + 2] * (1 - k) * 0.72 + bb * k; out[i + 3] = 255;
     }
     img.data.set(out); ctx.putImageData(img, 0, 0);

@@ -37,8 +37,11 @@
     const neck = pequeno ? 0 : 1;
     const hB = tT - 1 - neck, hT = hB - 6;
     const hx0 = pequeno ? 6 : 7, hx1 = pequeno ? 13 : 12;            // cabeça
-    const ombro0 = (anao ? 5 : 6) - bulky, ombro1 = (anao ? 14 : 13) + bulky;   // ombros
-    const tx0 = (anao ? 6 : pequeno ? 7 : 7) - bulky, tx1 = (anao ? 13 : pequeno ? 12 : 12) + bulky; // cintura
+    // mulheres adultas: ombros estreitos, cintura fina e quadril largo
+    const fem = !!L.fem && !skel && !mum && !pequeno && !anao && !bulky && !L.chestplate;
+    const ombro0 = (anao ? 5 : fem ? 7 : 6) - bulky, ombro1 = (anao ? 14 : fem ? 12 : 13) + bulky;   // ombros
+    const tx0 = (anao ? 6 : fem ? 8 : 7) - bulky, tx1 = (anao ? 13 : fem ? 11 : 12) + bulky; // cintura
+    const quadril = (y) => fem && y >= tB - 1;          // as duas últimas linhas do tronco alargam
     const robe = !!L.robe;
     const band = (x, y) => { if (mum && ((x * 2 + y) % 4 === 0)) p(x, y, '#8a7a5a'); };
     const hs = L.hairStyle || 0;
@@ -108,8 +111,8 @@
       } else {
         const bot = robe ? footY - 1 : tB;
         for (let y = tT; y <= bot; y++) {
-          const ombros = y <= tT + 1, ext = robe && y > tB ? Math.min(2, Math.floor((y - tB + 1) / 3)) : 0;
-          const a = (ombros ? ombro0 : tx0) - ext, b = (ombros ? ombro1 : tx1) + ext;
+          const ombros = y <= tT + 1, ext = robe && y > tB ? Math.min(2, Math.floor((y - tB + 1) / 3)) : 0, qd = quadril(y) || (fem && robe && y > tB) ? 1 : 0;
+          const a = (ombros ? ombro0 : tx0) - ext - qd, b = (ombros ? ombro1 : tx1) + ext + qd;
           for (let x = a; x <= b; x++) {
             let col = body;
             if (x === a) col = bH; else if (x === b) col = bD; else if (x === b - 1) col = bS;
@@ -123,7 +126,14 @@
           // decote, costura e dobras do tecido
           p(9, tT, skS, 2, 1); p(8, tT, bD); p(11, tT, bD);
           if (L.chestplate) { p(tx0 + 1, tT + 1, shade(body, 0.35), tx1 - tx0 - 1, 2); p(9, tT + 3, bH, 2, torsoH - 5); p(tx0 + 1, tT + 4, bS, tx1 - tx0 - 1, 1); }
+          else if (fem) { p(8, tT + 2, bH); p(10, tT + 2, bH); p(8, tT + 3, bS, 4, 1); p(tx0, tB - 2, bS, tx1 - tx0 + 1, 1); }   // busto e cintura
           else if (!robe) { p(9, tT + 2, bS, 1, torsoH - 4); p(tx0 + 1, tT + Math.floor(torsoH / 2), bS); }
+        }
+        if (L.saia && !robe) {
+          // saia rodada até o joelho por cima das pernas
+          const sc = L.saia, scS = shade(sc, -0.22), scH = shade(sc, 0.16), fim = legTop + Math.ceil(legH * 0.55);
+          for (let y = tB; y <= fim; y++) { const e = Math.min(2, Math.floor((y - tB + 1) / 2)), a = 7 - e, b = 12 + e; p(a, y, scH); p(a + 1, y, sc, b - a - 1, 1); p(b, y, scS); if (front && (y - tB) > 1) { p(9, y, scS); p(11, y, scS); } }
+          p(5, fim, scS, 10, 1);
         }
         if (back && !mum) { p(9, tT + 1, bS, 2, 1); p(tx0 + 1, tT + 3, bS, 1, torsoH - 5); p(tx1 - 1, tT + 3, bD, 1, torsoH - 5); }
         if (robe) {
@@ -188,6 +198,8 @@
       };
       const ax0 = ombro0 - 2, ax1 = ombro1 + 1;
       arm(ax0, frame === 1 ? 1 : 0, ax0); arm(ax1, frame === 2 ? 1 : 0, ax1 + 1);
+      // vão escuro entre braço e tronco (o braço não fica grudado no corpo)
+      if (!(skel && !L.body)) { const vao = mix('#140c16', armC, 0.25); for (let y = tT + 2; y <= tB - (fem ? 2 : 0); y++) { p(ax0 + 2, y, vao); p(ax1 - 1, y, vao); } }
       if (L.pauldron) { const pc = L.pauldron; p(ax0 - 1, tT, pc, 4, 2); p(ax1 - 1, tT, pc, 4, 2); p(ax0 - 1, tT, shade(pc, 0.35), 3, 1); p(ax1 + 2, tT + 1, shade(pc, -0.3)); }
       if (L.shield) {
         const sc = L.shield;
@@ -327,6 +339,7 @@
             p(x, y, col); band(x, y);
           }
         }
+        if (L.saia && !robe) { const sc = L.saia, fim = legTop + Math.ceil(legH * 0.55); for (let y = tB; y <= fim; y++) { const e = Math.min(2, Math.floor((y - tB + 1) / 2)); p(sx0 - e, y, shade(sc, -0.2), sx1 - sx0 + 1 + e * 2, 1); p(sx0 - e + 1, y, sc, sx1 - sx0 - 1 + e * 2, 1); } }
         if (robe) { p(sx0 + 1, footY, boots, 4, 1); p(sx1, tT + 1, L.trim || shade(body, 0.4), 1, footY - tT - 1); if (L.sash) p(sx0, tB - 2, L.sash, sx1 - sx0 + 1, 1); }
         else if (!mum && !L.fur && !L.nobelt) { p(sx0, tB, '#3a2416', sx1 - sx0 + 1, 1); p(sx1, tB, '#e0b848'); }
         if (L.chestplate) p(sx1 - 1, tT + 1, shade(body, 0.35), 2, 3);
@@ -392,9 +405,15 @@
       }
       if (L.crown) { const g = '#f4c838'; p(fx0, hT - 2, g, fx1 - fx0 + 1, 1); p(fx0, hT - 3, g); p(fx0 + 3, hT - 3, g); p(fx1, hT - 3, g); p(fx0 + 3, hT - 2, '#e02848'); }
       // braço da frente
-      const ax = 10 - swing;
-      for (let y = tT + 1; y <= tB; y++) p(ax + Math.round((y - tT) * -swing * 0.25), y, skel && !L.body ? bone : (y === tT + 1 ? armH : armC), 2, 1);
-      const hxs = ax + Math.round((tB + 1 - tT) * -swing * 0.25);
+      const ax = 10;
+      const ox = (y) => Math.round((y - tT) / (tB + 1 - tT) * -swing * 3);
+      for (let y = tT + 1; y <= tB; y++) {
+        const x = ax + ox(y);
+        if (skel && !L.body) { p(x, y, bone, 2, 1); continue; }
+        if (y > tT + 1) p(x - 1, y, mix('#140c16', armC, 0.3));          // sombra do braço sobre o tronco
+        p(x, y, y === tT + 1 ? armH : armC); p(x + 1, y, armS);
+      }
+      const hxs = ax + ox(tB + 1);
       p(hxs, tB + 1, skel ? bone : sk, 2, 1); p(hxs, tB + 2, skel ? boneS : skS, 2, 1);
       if (L.pauldron) { p(ax - 1, tT, L.pauldron, 4, 2); p(ax - 1, tT, shade(L.pauldron, 0.35), 3, 1); }
       if (det && L.cane) { p(hxs + 2, tB + 1, '#5a3a20'); p(hxs + 2, tB + 2, '#7a5030', 1, footY - tB - 1); }
@@ -402,9 +421,9 @@
     if (G && typeof Racas !== 'undefined') Racas.drawFront(p, L, dir, G);
     // feminino: cílios e lábios para dar para distinguir homens e mulheres
     if (L.fem && !skel && !covered) {
-      const lab = mix(sk, L.lips && L.lips !== shade(sk, -0.35) ? L.lips : '#c04a5a', 0.55);
-      if (front) { if (!L.snout && !L.muzzle) p(9, ey + 2, lab, 2, 1); }
-      else if (side && !L.snout && !L.muzzle) p(hx1 + 1, ey + 2, lab);
+      const lab = mix(sk, '#c83a50', 0.6), cil = '#1a1018';
+      if (front) { p(8, ey - 1, cil); p(11, ey - 1, cil); p(7, ey - 1, cil); p(12, ey - 1, cil); if (!L.snout && !L.muzzle) p(9, ey + 2, lab, 2, 1); }
+      else if (side) { p(hx1, ey - 1, cil, 2, 1); if (!L.snout && !L.muzzle) p(hx1 + 1, ey + 2, lab); }
     }
     S.outlineSel(c);
     if (L.misty) { const x = c.getContext('2d'); x.globalCompositeOperation = 'destination-in'; x.fillStyle = 'rgba(0,0,0,0.78)'; x.fillRect(0, 0, W, H); x.globalCompositeOperation = 'source-over'; }

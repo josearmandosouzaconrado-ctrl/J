@@ -190,6 +190,7 @@ const UI = {
     const R = RACES[c.race];
     const L = { k: 'hum', skin: R.skins[Math.min(c.skin, R.skins.length - 1)], hair: R.hairs[Math.min(c.hair, R.hairs.length - 1)], hairStyle: c.hairStyle, body: CLASSES[c.cls].color, legs: '#3a3028' };
     if (R.ears) L.ears = R.ears; if (R.tall) L.tall = 1; if (R.short) L.short = R.short; if (R.bulky) L.bulky = true;
+    if (c.sex === 'f') L.fem = true;
     if (R.beard && c.sex === 'm') L.beard = true; if (R.tusks) L.tusks = true; if (R.snout) L.snout = true; if (R.horns) L.horns = true;
     if (R.tail) { L.tail = true; L.tailC = L.skin; } if (R.catears) L.catears = true; if (R.muzzle) L.muzzle = true;
     return L;
