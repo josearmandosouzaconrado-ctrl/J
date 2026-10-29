@@ -392,6 +392,7 @@ const War = {
     if (P && P.army && P.army.k === k) { P.army = null; Game.toast('O exército em que você servia deixou de existir.', '#ffb080'); }
     this.news(`👑 ${this.K[k] ? this.K[k].name : k} deixou de existir${por && this.K[por] ? `: todas as suas terras agora são de ${this.K[por].short}` : ''}.`, true, [k, por]);
     if (Game.started) Game.centerMsg('UM REINO CAIU', `${this.K[k] ? this.K[k].name : k} deixou de existir`);
+    Reino.onExtinto(k);
   },
 
   // ---------- Quadro a quadro ----------

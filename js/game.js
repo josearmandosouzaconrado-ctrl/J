@@ -226,8 +226,8 @@ const Game = {
     if (!this.level.isWorld) return this.level.name;
     const P = this.player;
     const s = this.world.settlementAt(Math.floor(P.x / 16), Math.floor(P.y / 16));
-    if (s) { const o = War.ownerOf(s); return o && o !== s.region.id && War.K[o] ? `${s.name} (ocupada por ${War.K[o].short})` : s.name; }
-    return this.world.regions[this.world.regAt(Math.floor(P.x / 16), Math.floor(P.y / 16))].name;
+    if (s) { const o = War.ownerOf(s); return o === 'jogador' ? `${s.name} • ${War.K.jogador ? War.K.jogador.short : ''}` : o && o !== s.region.id && War.K[o] ? `${s.name} (ocupada por ${War.K[o].short})` : s.name; }
+    return Reino.nomeRegiao(this.world.regions[this.world.regAt(Math.floor(P.x / 16), Math.floor(P.y / 16))]);
   },
   discover(id) {
     if (this.mods.discovered.has(id)) return;
@@ -692,13 +692,14 @@ const Game = {
     for (const sp of L.spots) {
       let a;
       if (sp.role === 'guard') {
-        const look = RACES[CULTURES[s.region.culture].race].sheet ? sheetLook(CULTURES[s.region.culture].race, 'm', rng, 'guard') : Object.assign({}, ENEMIES.guarda.look, { body: shade(s.region.color, -0.25), shield: s.region.color });
-        a = new Monster('guarda', sp.x * 16 + 8, sp.y * 16 + 12, Math.max(10, P.level + 5), { look, name: 'Guarda Real' });
+        const dono = War.ownerOf(s), novo = dono && dono !== s.region.id && War.K[dono];   // castelo conquistado: os guardas são do novo dono
+        const look = novo ? War.look(dono, 'elite', rng) : RACES[CULTURES[s.region.culture].race].sheet ? sheetLook(CULTURES[s.region.culture].race, 'm', rng, 'guard') : Object.assign({}, ENEMIES.guarda.look, { body: shade(s.region.color, -0.25), shield: s.region.color });
+        a = new Monster('guarda', sp.x * 16 + 8, sp.y * 16 + 12, Math.max(10, P.level + 5), { look, name: novo ? 'Guarda Real de ' + War.K[dono].short : 'Guarda Real' });
         a.guardOf = s; const own = War.ownerOf(s); if (own) a.faction = own;
       } else {
         a = new NPC({ role: sp.role, x: sp.x, y: sp.y }, s, rng);
         if (sp.role === 'owner') {
-          const o = b.owner; a.name = o.name; a.race = o.race; a.sex = o.sex || 'm'; a.look = UI.ownerLook(b); a.S = Sprites.actor(a.look); a.h = a.S.h;
+          const o = b.player ? null : Reino.governador(b) || b.owner; a.name = o ? o.name : 'Mordomo Real'; a.race = o ? o.race : P.race; a.sex = (o && o.sex) || 'm'; a.look = o && o.look ? o.look : UI.ownerLook(b); a.S = Sprites.actor(a.look); a.h = a.S.h; if (b.player) b._mordomo = a;
           a.building = b; a.rid = this.ownerId(b);
         } else if (sp.res) {
           const r = sp.res; a.name = r.name; a.race = r.race; a.sex = r.sex; a.look = r.look; a.S = Sprites.actor(r.look); a.h = a.S.h; a.rid = r.id; a.child = r.child; a.res = r;
@@ -791,7 +792,7 @@ const Game = {
     // região
     const ri = W.regAt(ptx, pty);
     if (ri !== this.curRegion) {
-      if (this.curRegion !== -1) { const R = W.regions[ri]; this.centerMsg(R.name, `Nível ${R.lvl[0]}-${R.lvl[1]}${R.lvl[0] > P.level + 3 ? ' • PERIGOSO!' : ''}`); }
+      if (this.curRegion !== -1) { const R = W.regions[ri]; this.centerMsg(Reino.nomeRegiao(R), `Nível ${R.lvl[0]}-${R.lvl[1]}${R.lvl[0] > P.level + 3 ? ' • PERIGOSO!' : ''}`); }
       this.curRegion = ri;
     }
     const s = W.settlementAt(ptx, pty);
@@ -955,7 +956,7 @@ const Game = {
       const o = L.objAt(tx, ty);
       const od = OBJ_DEFS[o];
       if (!o || !od.interact) continue;
-      const labels = { skypillar: L.isCeu ? 'Descer' : 'Subir', sleep: 'Dormir', destiny: 'Tocar', wardrobe: 'Baú', crib: 'Ver bebê', chest: 'Abrir', harvest: o >= O.ORE_FERRO && o <= O.ORE_EBANO ? 'Minerar' : 'Coletar', cook: 'Cozinhar', forge: 'Forjar', alchemy: 'Alquimia', runestone: 'Ler', shrine: 'Orar', dungeon: 'Entrar', exit: 'Sair', sign: 'Ler', minecart: 'Despejar', hatch: L.isShip && L.floor ? 'Subir' : 'Descer', helm: 'Timão', shipbed: 'Dormir', maptable: 'Ver rota' };
+      const labels = { skypillar: L.isCeu ? 'Descer' : 'Subir', sleep: 'Dormir', destiny: 'Tocar', wardrobe: 'Baú', crib: 'Ver bebê', chest: 'Abrir', harvest: o >= O.ORE_FERRO && o <= O.ORE_EBANO ? 'Minerar' : 'Coletar', cook: 'Cozinhar', forge: 'Forjar', alchemy: 'Alquimia', runestone: 'Ler', shrine: 'Orar', dungeon: 'Entrar', exit: 'Sair', sign: 'Ler', minecart: 'Despejar', hatch: L.isShip && L.floor ? 'Subir' : 'Descer', helm: 'Timão', shipbed: 'Dormir', maptable: 'Ver rota', conselho: 'Administrar' };
       let name = od.name;
       if (od.interact === 'dungeon' && L.isWorld) { const dd = this.world.entrances.get(tkey(tx, ty)); if (dd) name = `${dd.name} (Nv ${dd.lvl})`; }
       bd = d; best = { kind: od.interact, tx, ty, o, label: labels[od.interact] || 'Usar', name };
@@ -1051,6 +1052,7 @@ const Game = {
       case 'dungeon': { const d = this.world.entrances.get(tkey(it.tx, it.ty)); if (d) UI.confirm(`Entrar em <b>${esc(d.name)}</b>?<br><span class="dim">Nível recomendado: ${d.lvl}${this.mods.cleared[d.id] ? ' • Conquistada' : ''}</span>`, () => this.enterDungeon(d)); break; }
       case 'exit': if (this.level.isNyxCave) Nyxar.exitAt(it.tx, it.ty); this.exitDungeon(); break;
       case 'nyxcave': Nyxar.enter(it.c); break;
+      case 'conselho': Vila.conselho(); break;
       case 'skypillar': if (L.isCeu) Ceu.leave(); else Ceu.enter(it.tx, it.ty); break;
       case 'hatch': if (this.level.isShip) Ship.switchFloor(); break;
       case 'work': Work.interact(it); break;

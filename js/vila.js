@@ -125,6 +125,7 @@ const Vila = {
       if (b.door) { const dx = b.door.x - s.x0, dy = b.door.y - s.y0 + 1; setT(dx, dy, T.DIRT); }
     }
     // lampiões e decoração
+    setO(16, 13, O.CONSELHO);   // o monumento onde se administra a cidade
     for (const [x, y] of [[11, 12], [18, 12], [11, 18], [18, 18]]) { setO(x, y, O.LAMP); s.lamps.push({ x: s.x0 + x, y: s.y0 + y }); }
     if (V.built.templo) { setO(13, 12, O.STATUE); setO(16, 12, O.STATUE); }
     if (V.pop >= 8) for (const [x, y] of [[12, 13], [17, 13]]) setO(x, y, O.BANNER);
@@ -186,7 +187,8 @@ const Vila = {
     if (V.noticia && this.s && dist(G.player.x / 16, G.player.y / 16, this.s.mid.x, this.s.mid.y) < 25) { const t = V.noticia; V.noticia = null; UI.dialog('Notícias da vila', null, esc(t), [{ label: 'Entendi' }]); }
   },
   drawables() { },
-  // ---------- o Intendente ----------
+  // ---------- o Intendente e o Monumento do Conselho ----------
+  conselho() { const V = this.st(); if (!V) return; this.talkNPC({ name: 'Conselho de ' + V.nome, look: null, nomeok: true }); },
   talkNPC(a) {
     const P = Game.player, V = this.st(); a.talkT = 3;
     if (!V) return UI.dialog(a.name, a.look, 'Esta vila não tem mais dono...', [{ label: 'Tchau' }]);
@@ -198,6 +200,8 @@ const Vila = {
     const opts = [];
     if (V.cofre > 0) opts.push({ label: `Recolher o cofre (${fmt(V.cofre)} ouro)`, cls: 'gold', fn: () => { P.gold += V.cofre; Sfx.play('coin'); Game.toast(`+${fmt(V.cofre)} de ouro`, '#ffd060'); V.cofre = 0; this.talkNPC(a); } });
     if (V.trigo >= 5) opts.push({ label: `Pegar comida do celeiro`, fn: () => { const n = Math.floor(V.trigo / 5); V.trigo -= n * 5; P.addItem(Items.make('pao', n)); Game.toast(`+${n} pães feitos com o trigo da vila`, '#ffe0a0'); this.talkNPC(a); } });
+    if (Reino.ativo() && !V.palacio) opts.push({ label: '🏰 Construir o Palácio Real (6000 ouro, 40 blocos de pedra, 30 pedras, 20 tábuas)', cls: 'gold', fn: () => Reino.construirPalacio() });
+    if (Reino.ativo() && (Game.player.reino.impostos || 0) >= 1) opts.push({ label: `💰 Impostos das cidades conquistadas (${Math.floor(Game.player.reino.impostos)} ouro)`, fn: () => { const P = Game.player, n = Math.floor(P.reino.impostos); P.gold += n; P.reino.impostos = 0; Sfx.play('coin'); Game.toast(`+${n} ouro`, '#ffd060'); this.talkNPC(a); } });
     opts.push({ label: '🔨 Construir', fn: () => this.construirMenu(a) });
     opts.push({ label: `⚔ Quartel e tropas (${Reino.total()})`, fn: () => Reino.quartel(a, () => this.talkNPC(a)) });
     opts.push({ label: Reino.ativo() ? '👑 Coroa e diplomacia' : '👑 Suserano, independência e diplomacia', fn: () => Reino.coroa(a, () => this.talkNPC(a)) });

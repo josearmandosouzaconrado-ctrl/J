@@ -177,6 +177,8 @@ const Reino = {
     this.painel();
     if (!this.ativo() || !G.level.isWorld) return;
     const S = War.st(), A = this.campo();
+    // sem nenhuma guerra, o exército de campo volta para a guarnição
+    if (A && A.state !== 'battle' && !War.warOf('jogador').length) { this.devolver(A); G.toast('A guerra acabou: o exército voltou para a guarnição.', '#c8e0a0'); return; }
     // exército de campo acompanha o jogador
     if (A) {
       if (A.n < 3) { S.armies = S.armies.filter(x => x !== A); War.dropSquad(A); G.toast('O que restou do seu exército se dispersou.', '#ff9080'); }
@@ -361,16 +363,23 @@ const Reino = {
   onPaz(w) {
     if (w.a !== 'jogador' && w.b !== 'jogador') return;
     const R = this.st(), foe = w.a === 'jogador' ? w.b : w.a;
+    this.independencia_(foe);
+    const S = War.st(); S.prel = S.prel || {}; S.prel[foe] = Math.max(S.prel[foe] || 0, -20);
+    // as tropas do jogador que lutavam contra esse reino voltam para casa (ou viram contra outro inimigo)
+    const outras = War.warOf('jogador').map(x => x.a === 'jogador' ? x.b : x.a);
+    for (const a of S.armies.filter(x => x.k === 'jogador' && x.foe === foe)) { if (outras.length && a.campo) a.foe = outras[0]; else this.devolver(a); }
+  },
+  // o antigo senhor reconheceu o reino (paz) ou deixou de existir (conquistado)
+  onExtinto(k) { if (Game.player && Game.player.reino) this.independencia_(k); },
+  independencia_(foe) {
+    const R = this.st();
     if (R.status === 'guerra' && foe === R.suserano) {
       R.status = 'independente'; R.indDia = Game.day;
       Game.centerMsg('INDEPENDÊNCIA!', `${War.K[foe].short} reconheceu o ${this.nome()}. ${this.titulo()} ${Game.player.name}!`);
       Game.chron(`${War.K[foe].name} reconheceu a independência. Sou ${this.titulo().toLowerCase()} do ${this.nome()}.`);
       Vida.honra(10); Sfx.play('levelup');
+      Game.later(4, () => this.coroacao());
     }
-    const S = War.st(); S.prel = S.prel || {}; S.prel[foe] = Math.max(S.prel[foe] || 0, -20);
-    // as tropas do jogador que lutavam contra esse reino voltam para casa (ou viram contra outro inimigo)
-    const outras = War.warOf('jogador').map(x => x.a === 'jogador' ? x.b : x.a);
-    for (const a of S.armies.filter(x => x.k === 'jogador' && x.foe === foe)) { if (outras.length && a.campo) a.foe = outras[0]; else this.devolver(a); }
   },
   // ---------- diária ----------
   daily() {
@@ -379,6 +388,7 @@ const Reino = {
     S.prel = S.prel || {};
     for (const k in S.prel) S.prel[k] *= 0.985;
     for (const k in R.tratados) { const t = R.tratados[k]; if (!War.K[k]) continue; if (t.comercio) this.addRel(k, 0.6); if (t.alianca) this.addRel(k, 0.4); if (War.atWar('jogador', k)) { t.comercio = false; t.alianca = false; } }
+    this.impostosDia();
     if (!V) return;
     // soldo das tropas
     let soldo = 0; for (const k in R.tropas) soldo += (R.tropas[k] || 0) * TROPAS[k].soldo;
@@ -693,3 +703,120 @@ const Fronteiras = {
     ctx.imageSmoothingEnabled = sm;
   }
 };
+
+// ===================== MAJESTADE: O POVO, OS GOVERNADORES E O PALÁCIO =====================
+const FALAS_REI = {
+  proprio: ['Vida longa a Vossa Majestade!', 'Majestade! É uma honra.', 'Que os deuses protejam o nosso {rei}!', '*faz uma reverência* Majestade.', 'Viva o {reino}!', 'Vossa Majestade por aqui? Que alegria!'],
+  guarda: ['Às suas ordens, Majestade!', '*bate continência* Majestade!', 'Tudo em ordem, Majestade. Ninguém passa por estes portões.', 'Pelo {reino}!'],
+  estrangeiro: ['Vossa Majestade, {rei} do {reino}... em que posso servi-lo(a)?', 'Um(a) monarca na nossa cidade? Que honra.', 'Saudações, Majestade. Seja bem-vindo(a).']
+};
+Object.assign(Reino, {
+  minhaCidade(s) { return !!s && (s.playerVila ? this.ativo() : War.ownerOf(s) === 'jogador'); },
+  falaRei(tipo) {
+    const L = FALAS_REI[tipo], t = L[Math.floor(Math.random() * L.length)];
+    const rei = this.titulo() === 'Rainha' ? 'Rainha' : 'Rei';
+    return t.replace('{rei}', rei).replace('{reino}', this.nome()).replace('servi-lo(a)', rei === 'Rainha' ? 'servi-la' : 'servi-lo');
+  },
+  // o que um morador ou guarda diz ao ver o jogador (null = conversa normal)
+  saudacaoRei(a, guarda) {
+    if (!this.ativo()) return null;
+    const s = a.s || a.guardOf || (Game.level && Game.level.b && Game.level.b.settlement);
+    if (this.minhaCidade(s) || a.faction === 'jogador') return this.falaRei(guarda ? 'guarda' : 'proprio');
+    return guarda ? null : this.falaRei('estrangeiro');
+  },
+  // o nome do território segue quem tem a capital da região
+  nomeRegiao(R) {
+    const K = War.K && War.K[R.id]; if (!K || !K.cap || !Game.mods) return R.name;
+    const o = War.ownerOf(K.cap);
+    return o && o !== R.id && War.K[o] ? War.K[o].name : R.name;
+  },
+  // ---------- castelos conquistados: o rei antigo vai embora e entra um governador ----------
+  governa(b) { if (!b || b.role !== 'ruler' || !b.settlement || b.player) return null; const o = War.ownerOf(b.settlement); return o && o !== b.settlement.region.id && War.K[o] ? o : null; },
+  governador(b) {
+    const k = this.governa(b); if (!k) return null;
+    b._gov = b._gov || {};
+    if (!b._gov[k]) {
+      const rng = new RNG(hashStr(b.settlement.id + k)), race = k === 'jogador' ? Game.player.race : War.K[k].race, sex = rng.chance(0.5) ? 'm' : 'f', N = NAMES[race] || NAMES.humano;
+      const look = npcLook(race, sex, rng, 'ruler'); delete look.crown; look.cape = War.K[k].color; look.body = shade(War.K[k].color, -0.2);
+      b._gov[k] = { name: (sex === 'f' ? 'Governadora ' : 'Governador ') + rng.pick(N[sex]), race, sex, look, k };
+    }
+    return b._gov[k];
+  },
+  menuGovernador(b) {
+    const g = this.governador(b), P = Game.player, s = b.settlement, R = this.st();
+    if (g.k !== 'jogador') {
+      const opts = []; const wtxt = War.castleOptions(b, opts); opts.push({ label: 'Sair' });
+      return UI.dialog(g.name, g.look, `Esta cidade agora pertence ao ${esc(War.K[g.k].name)}. O antigo governante foi deposto.${wtxt}`, opts);
+    }
+    const imp = Math.floor(R.impostos || 0);
+    const opts = [];
+    if (imp > 0) opts.push({ label: `💰 Recolher os impostos das cidades conquistadas (${imp} ouro)`, cls: 'gold', fn: () => { P.gold += imp; R.impostos = 0; Sfx.play('coin'); Game.toast(`+${imp} ouro de impostos`, '#ffd060'); this.menuGovernador(b); } });
+    opts.push({ label: '⚔ Quartel e tropas', fn: () => this.quartel({ name: g.name, look: g.look }, () => this.menuGovernador(b)) });
+    opts.push({ label: '👑 Coroa e diplomacia', fn: () => this.coroa({ name: g.name, look: g.look }, () => this.menuGovernador(b)) });
+    opts.push({ label: 'Sair' });
+    UI.dialog(g.name, g.look, `*faz uma reverência* Majestade! ${esc(s.name)} é fiel ao ${esc(this.nome())}. O antigo rei fugiu e os guardas do palácio agora servem a Vossa Majestade.<br><span class="dim small">As cidades conquistadas pagam impostos todo dia (capital 60, cidade 30, aldeia 12 de ouro).</span>`, opts);
+  },
+  impostosDia() {
+    const R = Game.player && Game.player.reino; if (!R || !this.ativo()) return;
+    let n = 0; for (const s of Game.world.settlements) if (!s.playerVila && War.ownerOf(s) === 'jogador') n += s.type === 'capital' ? 60 : s.type === 'town' ? 30 : 12;
+    R.impostos = Math.min(5000, (R.impostos || 0) + n);
+  },
+  // ---------- depois da vitória: a volta para casa e a coroação ----------
+  coroacao() {
+    const V = Vila.st(), s = Vila.s; if (!V || !s) return;
+    UI.dialog('Vitória!', null, `A guerra acabou e o <b>${esc(this.nome())}</b> é livre!<br>O povo de <b>${esc(V.nome)}</b> espera você para a coroação.`, [
+      { label: `👑 Voltar para ${V.nome} agora`, cls: 'gold', fn: () => this.voltarParaCasa(true) },
+      { label: 'Depois' }
+    ]);
+  },
+  voltarParaCasa(coroar) {
+    const G = Game, P = G.player, s = Vila.s; if (!s) return;
+    if (!G.level.isWorld) { G.level = G.world; }
+    UI.close(); UI.fade();
+    P.x = (s.mid.x + 1) * 16 + 8; P.y = (s.mid.y + 3) * 16; G.findFree(P);
+    P.mounted = false; G.camX = P.x - G.vw / 2; G.camY = P.y - G.vh / 2;
+    if (coroar && !this.st().coroado) {
+      this.st().coroado = G.day;
+      G.centerMsg('COROAÇÃO!', `Vida longa a ${this.titulo() === 'Rainha' ? 'Rainha' : 'Rei'} ${P.name}!`);
+      for (let i = 0; i < 40; i++) G.particle(P.x + (Math.random() - 0.5) * 80, P.y - 40 - Math.random() * 30, (Math.random() - 0.5) * 30, 20 + Math.random() * 20, ['#ffd860', '#ff6080', '#80c0ff', '#ffffff'][i % 4], 2.5, 2, 30);
+      Sfx.play('levelup');
+      G.chron(`Fui coroado(a) ${this.titulo().toLowerCase()} do ${this.nome()} em ${Vila.st().nome}.`);
+      G.later(3.5, () => G.toast('No centro da cidade, o Monumento do Conselho agora deixa você construir o Palácio Real.', '#ffe0a0'));
+    }
+  },
+  // ---------- o Palácio Real (fora da muralha, ligado à cidade por uma rua) ----------
+  lugarPalacio() {
+    const W = Game.world, s = Vila.s, B = BUILDINGS.castle; if (!s) return null;
+    const tenta = [[s.mid.x - (B.w >> 1), s.y0 - B.h - 3, 'n'], [s.x0 - B.w - 3, s.mid.y - (B.h >> 1), 'w'], [s.x0 + s.w + 3, s.mid.y - (B.h >> 1), 'e'], [s.mid.x - (B.w >> 1), s.y0 + s.h + 3, 's']];
+    for (const [x0, y0, dir] of tenta) {
+      let ok = true;
+      for (let y = y0 - 1; y <= y0 + B.h + 1 && ok; y++) for (let x = x0 - 1; x <= x0 + B.w && ok; x++) { const t = W.baseTile(x, y); if (TWATER[t] || t === T.LAVA || t === T.DEEP) ok = false; }
+      for (const o of W.settlements) if (o !== s && Math.abs(o.mid.x - (x0 + B.w / 2)) < (o.w || 30) / 2 + B.w && Math.abs(o.mid.y - (y0 + B.h / 2)) < (o.h || 30) / 2 + B.h) ok = false;
+      if (ok) return { x: x0, y: y0, dir };
+    }
+    return null;
+  },
+  construirPalacio() {
+    const P = Game.player, V = Vila.st(), custo = { ouro: 6000, mats: { bloco_pedra: 40, pedra: 30, tabua: 20 } };
+    if (V.palacio) return;
+    const pos = this.lugarPalacio(); if (!pos) return Game.toast('Não há espaço para o palácio em volta da cidade (água demais).', '#ff8080');
+    if (P.gold < custo.ouro) return Game.toast(`O palácio custa ${custo.ouro} de ouro.`, '#ff8080');
+    if (!Game.hasMats(custo.mats)) return Game.toast('Faltam materiais: 40 blocos de pedra, 30 pedras e 20 tábuas.', '#ff8080');
+    P.gold -= custo.ouro; Game.takeMats(custo.mats);
+    V.palacio = pos;
+    Construcao.aplicar();
+    UI.close(); UI.fade(); Sfx.play('levelup');
+    Game.centerMsg('PALÁCIO REAL CONSTRUÍDO!', 'Ao ' + ({ n: 'norte', w: 'oeste', e: 'leste', s: 'sul' }[pos.dir]) + ' da cidade, ligado por uma rua de pedra.');
+    Game.chron(`Construí o Palácio Real do ${this.nome()}.`);
+  },
+  menuPalacio(b) {
+    const P = Game.player;
+    const opts = [
+      { label: '👑 Sentar no trono', cls: 'gold', fn: () => { UI.close(); P.hp = P.stat.maxHp; P.mp = P.stat.maxMp; P.st = P.stat.maxSt; P.addBuff('regen', 2, 600, 'Majestade'); Game.centerMsg(`${this.titulo()} ${P.name}`, this.nome()); } },
+      { label: '🏛 Conselho da cidade', fn: () => Vila.conselho() },
+      { label: '🎨 Brasão, bandeira e uniformes', fn: () => this.brasao(() => this.menuPalacio(b)) },
+      { label: 'Sair' }
+    ];
+    UI.dialog('Mordomo Real', b._mordomo ? b._mordomo.look : null, `Bem-vindo(a) ao seu palácio, Majestade. O trono do ${esc(this.nome())} espera por Vossa Majestade.`, opts);
+  }
+});

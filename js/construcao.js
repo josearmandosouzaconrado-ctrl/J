@@ -68,6 +68,7 @@ const Construcao = {
   // a silhueta fica na frente do jogador
   posicao(k, rot) {
     const P = Game.player, [w, h] = this.tamanho(k, rot);
+    if (this.cur) return [this.cur.x - (w >> 1), this.cur.y - (h >> 1)];   // a setinha: o centro da peça fica onde você colocou
     const ptx = Math.floor(P.x / 16), pty = Math.floor((P.y - 2) / 16);
     switch (P.dir) {
       case 'right': return [ptx + 2, pty - (h >> 1)];
@@ -132,7 +133,28 @@ const Construcao = {
       W.addStamp(st);
       for (let cy = (ob.y >> 5) - 1; cy <= ((ob.y + h + 1) >> 5) + 1; cy++) for (let cx = (ob.x >> 5) - 1; cx <= ((ob.x + w) >> 5) + 1; cx++) sujos.add(W.ckey(cx, cy));
     }
+    if (V.palacio && vs) this.palacio(V.palacio, vs, sujos);
     this.limpar(sujos);
+  },
+  // o Palácio Real fica fora da muralha, com uma rua de pedra até o portão mais perto
+  palacio(pos, vs, sujos) {
+    const W = Game.world, P = Game.player, R = P.reino || {}, B = BUILDINGS.castle, w = B.w, h = B.h;
+    const door = { x: pos.x + (w >> 1), y: pos.y + h - 1 };
+    const g = vs.gates.find(o => o.dir === pos.dir) || vs.gates[0];
+    const rua = [];
+    if (pos.dir === 'n') for (let y = door.y + 1; y <= g.y + 1; y++) rua.push([door.x, y]);
+    else { let x = door.x, y = door.y + 1; rua.push([x, y]); const sx = Math.sign(g.x - x); while (x !== g.x) { x += sx; rua.push([x, y]); } const sy = Math.sign(g.y - y); while (y !== g.y) { y += sy; rua.push([x, y]); } }
+    let x0 = pos.x - 1, y0 = pos.y - 1, x1 = pos.x + w, y1 = pos.y + h;
+    for (const [x, y] of rua) { x0 = Math.min(x0, x - 1); y0 = Math.min(y0, y); x1 = Math.max(x1, x + 1); y1 = Math.max(y1, y); }
+    const sw = x1 - x0 + 1, sh = y1 - y0 + 1, tiles = new Uint8Array(sw * sh).fill(255), objs = new Uint8Array(sw * sh).fill(255);
+    for (let y = pos.y - 1; y <= pos.y + h; y++) for (let x = pos.x - 1; x <= pos.x + w; x++) { const i = (y - y0) * sw + (x - x0); objs[i] = x >= pos.x && x < pos.x + w && y >= pos.y && y < pos.y + h ? O.BLOCK : 0; if (y === pos.y + h) tiles[i] = T.COBBLE; }
+    for (const [x, y] of rua) for (const dx of [-1, 0, 1]) { const i = (y - y0) * sw + (x + dx - x0); if (i >= 0 && i < tiles.length) { tiles[i] = T.COBBLE; if (objs[i] !== O.BLOCK) objs[i] = 0; } }
+    W.addStamp({ x0, y0, w: sw, h: sh, tiles, objs, obra: true });
+    const spec = { type: 'castle', w, h, style: 'castle', roof: shade(R.cor || '#3050c0', -0.25), wall: '#e4e0d8', banner: R.cor || '#c03030', seed: 777, sign: null };
+    const b = { kind: 'castle', role: 'ruler', tx: pos.x, ty: pos.y, w, h, spec, name: 'Palácio Real', owner: { name: 'Mordomo Real', race: P.race, sex: 'm', seed: 99 }, settlement: vs, decorative: false, obra: true, player: true, door };
+    W.doors.set(tkey(door.x, door.y), b);
+    this.extras.push(b);
+    for (let cy = (y0 >> 5) - 1; cy <= (y1 >> 5) + 1; cy++) for (let cx = (x0 >> 5) - 1; cx <= (x1 >> 5) + 1; cx++) sujos.add(W.ckey(cx, cy));
   },
   limpar(sujos) { const W = Game.world; for (const k of sujos) { W.chunks.delete(k); W.canvases.delete(k); } },
   cap() { let c = 0; for (const ob of this.obras()) { const d = OBRAS[ob.k]; if (d && d.cap) c += d.cap; } return c; },
@@ -162,7 +184,29 @@ const Construcao = {
     Sfx.play('pickup'); G.floater((ob.x + 0.5) * 16, ob.y * 16, `+${volta} ouro`, '#ffe080');
     this.painelKey = '';
   },
-  entrar() { if (!this.pertoDeCasa()) return Game.toast('Vá até a sua vila ou a uma cidade do seu reino para construir.', '#ffa0a0'); this.on = true; this.painelKey = ''; Game.toast('Modo construção: a silhueta aparece na sua frente. Ande e vire para escolher o lugar.', '#c8e0a0'); },
+  entrar() {
+    if (!this.pertoDeCasa()) return Game.toast('Vá até a sua vila ou a uma cidade do seu reino para construir.', '#ffa0a0');
+    this.on = true; this.painelKey = ''; this.aqui();
+    this.ouvirTela();
+    Game.toast('Mova a peça com as setas ou tocando no lugar da tela. Depois toque em ✔ Construir.', '#c8e0a0');
+  },
+  // a peça volta para a frente do jogador
+  aqui() { this.cur = null; const k = this.atual(), [w, h] = this.tamanho(k, this.rot), [x, y] = this.posicao(k, this.rot); this.cur = { x: x + (w >> 1), y: y + (h >> 1) }; },
+  mover(dx, dy) { if (!this.cur) this.aqui(); this.cur.x += dx; this.cur.y += dy; const P = Game.player; this.cur.x = clamp(this.cur.x, Math.floor(P.x / 16) - 18, Math.floor(P.x / 16) + 18); this.cur.y = clamp(this.cur.y, Math.floor(P.y / 16) - 10, Math.floor(P.y / 16) + 10); },
+  // tocar (ou arrastar) na tela leva a peça até ali
+  ouvirTela() {
+    if (this._ouvindo) return; this._ouvindo = true;
+    const cv = document.getElementById('cv'); if (!cv) return;
+    let arrasto = false;
+    const mexe = e => {
+      if (!this.on || Game.paused) return;
+      const r = cv.getBoundingClientRect(), x = Game.camX + (e.clientX - r.left) / r.width * Game.vw, y = Game.camY + (e.clientY - r.top) / r.height * Game.vh;
+      this.cur = { x: Math.floor(x / 16), y: Math.floor(y / 16) };
+    };
+    cv.addEventListener('pointerdown', e => { if (!this.on) return; arrasto = true; mexe(e); });
+    cv.addEventListener('pointermove', e => { if (arrasto) mexe(e); });
+    window.addEventListener('pointerup', () => { arrasto = false; });
+  },
   sair() { this.on = false; this.painelKey = ''; },
   // ---------- quadro a quadro ----------
   tick() {
@@ -195,6 +239,10 @@ const Construcao = {
     ctx.fillRect(Math.round(px), Math.round(py), w * 16, h * 16);
     ctx.globalAlpha = 1; ctx.strokeStyle = ok ? '#80ff90' : '#ff6060'; ctx.lineWidth = 1;
     ctx.strokeRect(Math.round(px) + 0.5, Math.round(py) + 0.5, w * 16 - 1, h * 16 - 1);
+    // a setinha que marca onde a peça vai
+    const ax = Math.round(px + w * 8), ay = Math.round(py - (d.bt ? Sprites.building({ type: d.bt, w, h, style: 'timber', roof: '#000', wall: '#fff', seed: 1 }).height - h * 16 + 6 : 14) - 4 + Math.sin(t * 6) * 3);
+    ctx.fillStyle = '#10080c'; ctx.beginPath(); ctx.moveTo(ax - 6, ay - 7); ctx.lineTo(ax + 6, ay - 7); ctx.lineTo(ax, ay + 1); ctx.fill();
+    ctx.fillStyle = ok ? '#ffe060' : '#ff8060'; ctx.beginPath(); ctx.moveTo(ax - 4, ay - 6); ctx.lineTo(ax + 4, ay - 6); ctx.lineTo(ax, ay - 1); ctx.fill();
     ctx.restore();
   },
   // painel (lado esquerdo) e o botão 🔨
@@ -215,6 +263,11 @@ const Construcao = {
         else if (a === 'ok') this.construir();
         else if (a === 'del') this.remover();
         else if (a === 'sair') this.sair();
+        else if (a === 'u') this.mover(0, -1);
+        else if (a === 'd') this.mover(0, 1);
+        else if (a === 'l') this.mover(-1, 0);
+        else if (a === 'r') this.mover(1, 0);
+        else if (a === 'aqui') this.aqui();
         this.painelKey = '';
       });
     }
@@ -234,8 +287,21 @@ const Construcao = {
       <button data-a="cat">📂 ${OBRA_CATS[this.cat]} ▸</button>
       <div class="obra-sel"><button data-a="prev">◀</button><span>${esc(d.nome)}</span><button data-a="next">▶</button></div>
       <div class="obra-custo">${this.custoTxt(k)}</div>
-      ${d.gira ? '<button data-a="rot">↻ Girar</button>' : ''}
+      <div class="obra-pad"><button data-a="l">◀</button><button data-a="u">▲</button><button data-a="d">▼</button><button data-a="r">▶</button><button data-a="aqui" title="Trazer para perto">📍</button></div>
       <button data-a="ok" class="gold">✔ Construir</button>
-      <button data-a="del">🗑 Remover</button>`;
+      <div class="obra-pad">${d.gira ? '<button data-a="rot">↻ Girar</button>' : ''}<button data-a="del">🗑 Remover</button></div>`;
   }
+};
+
+// o Monumento do Conselho: pedestal de pedra com o livro da cidade e uma bandeira
+Sprites.extraObj[O.CONSELHO] = (v, f, r, mk) => {
+  const c = mk(22, 34, p => {
+    p(3, 26, '#8a8478', 16, 6); p(3, 26, '#a8a294', 16, 1); p(5, 18, '#9a948a', 12, 8); p(5, 18, '#b8b2a6', 12, 1); p(16, 19, '#7a746a', 1, 7);
+    p(6, 15, '#6a4020', 10, 3); p(6, 14, '#f0e8d0', 5, 2); p(11, 14, '#e8e0c4', 5, 2); p(10, 14, '#a08050', 1, 2);
+    p(7, 15, '#8a7a60', 3, 1); p(12, 15, '#8a7a60', 3, 1);
+    p(18, 2, '#6a4a2a', 1, 24); p(18, 1, '#e0c060', 1, 1);
+    for (let y = 0; y < 8; y++) p(19, 3 + y, y % 3 === 0 ? '#f0d060' : '#c03030', 3 - (y > 5 ? y - 5 : 0), 1);
+    p(1, 30, '#6a6458', 20, 2);
+  });
+  return { c, oy: 2 };
 };

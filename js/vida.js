@@ -125,6 +125,7 @@ const Vida = {
   // guardas atacam quem é infame
   hostilGuarda() { return ((Game.player && Game.player.honra) || 0) <= -60; },
   saudacao() {
+    if (Reino.ativo()) { const P = Game.player, s = Game.world.settlementAt(Math.floor(P.x / 16), Math.floor(P.y / 16)); if (Reino.minhaCidade(s)) return ['Vida longa a ' + (Reino.titulo() === 'Rainha' ? 'nossa Rainha!' : 'nosso Rei!'), 'Olhem, é Sua Majestade!', '*faz uma reverência*', 'Viva o ' + Reino.nome() + '!']; return ['Aquele não é o monarca do ' + Reino.nome() + '?', 'Um(a) rei/rainha andando por aqui!']; }
     const h = (Game.player && Game.player.honra) || 0;
     if (h >= 60) return ['É uma honra conhecer você, herói!', 'Todos falam das suas façanhas!', 'Bem-vindo(a), campeão(ã)!'];
     if (h >= 20) return ['Ouvi coisas boas sobre você.', 'Seja bem-vindo(a), amigo(a).'];

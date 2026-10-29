@@ -283,7 +283,7 @@ const UI = {
       const s = a.guardOf;
       const lines = GUARD_LINES.concat(s ? RUMORS[s.region.id] : []);
       const ruim = (P.honra || 0) <= -20 || Eventos.state().procurado > 0;
-      const fala = a.team === 'law' ? 'Pare aí, criminoso(a)! Pague a multa ou vá para o chão!' : ruim ? 'Estou de olho em você. Já ouvi falar do que você anda fazendo.' : esc(lines[Math.floor(Math.random() * lines.length)]);
+      const fala = Reino.saudacaoRei(a, true) || (a.team === 'law' ? 'Pare aí, criminoso(a)! Pague a multa ou vá para o chão!' : ruim ? 'Estou de olho em você. Já ouvi falar do que você anda fazendo.' : esc(lines[Math.floor(Math.random() * lines.length)]));
       this.dialog(a.name, a.look, fala, (ruim ? [Eventos.multa(a)] : []).concat([{ label: 'Tchau' }]));
       return;
     }
@@ -312,7 +312,7 @@ const UI = {
     if (a.role === 'child' || a.role === 'kid') { this.childNPC(a); return; }
     if (a.role === 'merchant') { this.shop({ settlement: s, tx: Math.round(a.home.x), ty: Math.round(a.home.y), role: 'stall', name: 'Barraca de ' + a.name.split(' ')[0], owner: { name: a.name } }, 'stall'); return; }
     if (a.role === 'quest') { this.questGiver(a); return; }
-    const greet = GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
+    const greet = Reino.saudacaoRei(a) || GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
     const rum = RUMORS[s.region.id];
     const opts = [
       { label: 'Ouviu algum boato?', fn: () => this.dialog(a.name, a.look, esc(rum[Math.floor(Math.random() * rum.length)]), [{ label: 'Interessante. Tchau.' }]) },
@@ -436,6 +436,8 @@ const UI = {
     return o.look;
   },
   ruler(b) {
+    if (b.player) return Reino.menuPalacio(b);
+    if (Reino.governa(b)) return Reino.menuGovernador(b);
     const P = Game.player, s = b.settlement, look = this.ownerLook(b);
     const st = Quests.mainStep();
     const opts = [];
@@ -821,7 +823,7 @@ const UI = {
     ctx.font = 'bold 22px VT323, monospace'; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(255,240,200,0.4)';
     { let [x, y] = toS(2048, 120); ctx.fillText('ELDORIA', x, y); [x, y] = toS(5180, 120); ctx.fillText('KAELORIA', x, y); [x, y] = toS(4250, 2048); ctx.font = 'italic 16px VT323, monospace'; ctx.fillStyle = 'rgba(200,230,255,0.45)'; ctx.fillText('Mar das Brumas', x, y); [x, y] = toS(3000, 4250); ctx.fillText('Oceano do Sul', x, y); ctx.font = 'bold 22px VT323, monospace'; ctx.fillStyle = 'rgba(255,240,200,0.4)'; [x, y] = toS(3080, 4700); ctx.fillText('VALTHERIA', x, y); ctx.fillStyle = 'rgba(200,160,255,0.55)'; [x, y] = toS(ISLE.x, ISLE.y - ISLE.ry * 1.5); ctx.fillText('NYXHAL', x, y); ctx.font = 'bold 26px VT323, monospace'; ctx.fillStyle = 'rgba(255,240,200,0.45)'; [x, y] = toS(ELYNDRA.x, 300); ctx.fillText('ELYNDRA', x, y); ctx.font = 'italic 16px VT323, monospace'; ctx.fillStyle = 'rgba(200,230,255,0.45)'; [x, y] = toS(9300, 6100); ctx.fillText('Mar do Amanhecer', x, y); }
     ctx.font = 'bold 14px VT323, monospace'; ctx.textAlign = 'center';
-    for (const r of W.regions) { const [x, y] = toS(r.cx, r.cy); ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillText(r.name.toUpperCase(), x + 1, y - 30 + 1); ctx.fillStyle = 'rgba(255,240,200,0.75)'; ctx.fillText(r.name.toUpperCase(), x, y - 30); }
+    for (const r of W.regions) { const [x, y] = toS(r.cx, r.cy), nm = Reino.nomeRegiao(r).toUpperCase(); ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillText(nm, x + 1, y - 30 + 1); ctx.fillStyle = nm !== r.name.toUpperCase() ? 'rgba(255,220,120,0.95)' : 'rgba(255,240,200,0.75)'; ctx.fillText(nm, x, y - 30); }
     ctx.font = '15px VT323, monospace';
     War.drawMap(ctx, toS, z);
     for (const m of this.mapMarkers()) {
