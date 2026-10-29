@@ -15,6 +15,10 @@
     const skel = !!L.skeleton, mum = !!L.mummy, det = !skel && !mum;
     const sk = skel ? '#e8e0c8' : (L.skin || '#e0ac69');
     const skS = shade(sk, -0.16), skD = shade(sk, -0.32), skH = shade(sk, 0.14);
+    // rosto: sombras suaves (o contorno já separa a cabeça do fundo)
+    const fS = shade(sk, -0.1), fM = shade(sk, -0.05), fH = shade(sk, 0.06);
+    const lum = sk.length !== 7 ? 0.5 : (parseInt(sk.slice(1, 3), 16) * 0.3 + parseInt(sk.slice(3, 5), 16) * 0.59 + parseInt(sk.slice(5, 7), 16) * 0.11) / 255;
+    const escura = !skel && lum < 0.42, boca = mix(sk, '#5a2020', escura ? 0.45 : 0.32);
     const hair = L.hair || '#3a2a1a', hS = shade(hair, -0.28), hH = shade(hair, 0.28), hD = shade(hair, -0.45);
     const body = L.body !== undefined && L.body !== null ? L.body : (skel ? null : '#6a5a4a');
     const bH = body ? shade(body, 0.18) : null, bS = body ? shade(body, -0.18) : null, bD = body ? shade(body, -0.36) : null;
@@ -195,14 +199,14 @@
       for (let y = hT; y <= hB; y++) for (let x = hx0; x <= hx1; x++) {
         if ((y === hT || y === hB) && (x === hx0 || x === hx1)) continue;
         let col = skel ? bone : sk;
-        if (!skel) { if (x === hx1 || y === hB) col = skS; if (x === hx0 && y > hT && y < hB) col = skH; }
+        if (!skel) { if (x === hx1 && y > ey) col = fS; else if (x === hx1 || y === hB) col = fM; }
         else if (x === hx1 || y === hB) col = boneS;
         p(x, y, col); band(x, y);
       }
       // orelhas
       if (L.ears === 'elf') { p(hx0 - 1, ey, sk); p(hx0 - 2, ey - 1, sk); p(hx0 - 3, ey - 2, skH); p(hx1 + 1, ey, skS); p(hx1 + 2, ey - 1, sk); p(hx1 + 3, ey - 2, skH); }
       else if (L.ears === 'goblin') { p(hx0 - 3, ey - 1, sk, 3, 1); p(hx0 - 4, ey - 2, sk, 2, 1); p(hx1 + 1, ey - 1, sk, 3, 1); p(hx1 + 3, ey - 2, sk, 2, 1); }
-      else if (!covered && (noHair || hs !== 1) && !L.catears) { p(hx0 - 1, ey, skS, 1, 2); p(hx1 + 1, ey, skS, 1, 2); }
+      else if (!covered && (noHair || hs === 3) && !L.catears && !skel) { p(hx0 - 1, ey + 1, fM); p(hx1 + 1, ey + 1, fS); }   // orelhas só aparecem sem cabelo dos lados
       if (L.catears) { p(hx0, hT - 1, hair, 2, 1); p(hx0, hT - 2, hair); p(hx0 + 1, hT - 1, '#f0a0b0'); p(hx1 - 1, hT - 1, hair, 2, 1); p(hx1, hT - 2, hair); p(hx1 - 1, hT - 1, '#f0a0b0'); }
       const exL = pequeno ? 8 : 8, exR = pequeno ? 11 : 11;
       if (front) {
@@ -210,19 +214,23 @@
           p(exL, ey, '#1a1010', 1, 2); p(exR, ey, '#1a1010', 1, 2); p(exL, ey, eyeC); p(exR, ey, eyeC); p(9, ey + 2, '#3a3028', 2, 1);
           for (let x = hx0 + 1; x < hx1; x += 2) p(x, hB - 1, '#4a4034');
         } else {
+          // olhos: um ponto escuro com o branco do olho do lado de fora (pele escura ou rosto pequeno)
           p(exL, ey, eyeC); p(exR, ey, eyeC);
-          if (pequeno) { p(exL - 1, ey, '#f4f0ec'); p(exR + 1, ey, '#f4f0ec'); }
-          if (det && !covered && !L.snout && !L.muzzle) { const br = shade(L.old ? '#909090' : hair, -0.15); p(exL, ey - 1, br); p(exR, ey - 1, br); if (!L.old) { p(exL - 1, ey - 1, br); p(exR + 1, ey - 1, br); } }
-          if (!L.snout && !L.muzzle) { p(10, ey + 1, skS); if (!L.beard) p(9, ey + 2, skD, 2, 1); }
-          if ((L.blush || L.child || pequeno) && !L.snout) { p(exL, ey + 1, mix(sk, '#ff6070', 0.3)); p(exR, ey + 1, mix(sk, '#ff6070', 0.3)); }
-          if (L.old) { p(exL, ey + 2, skS); p(exR, ey + 2, skS); }
+          if (pequeno || escura) { const br = pequeno ? '#f4f0ec' : mix('#f0ece4', sk, 0.35); p(exL - 1, ey, br); p(exR + 1, ey, br); }
+          if (!L.snout && !L.muzzle) {
+            p(10, ey + 1, fS);                                   // sombra do nariz
+            if (!L.beard) p(9, ey + 2, boca, 2, 1);              // boca discreta
+            p(exL, ey + 1, fH);                                  // maçã do rosto
+          }
+          if ((L.blush || L.child || pequeno || L.fem) && !L.snout && !L.muzzle) { p(exL, ey + 1, mix(sk, '#ff6878', L.fem && !L.blush ? 0.16 : 0.26)); p(exR, ey + 1, mix(sk, '#ff6878', L.fem && !L.blush ? 0.16 : 0.26)); }
+          if (L.old) { p(exL, ey + 1, fS); p(exR, ey + 1, fS); }
           if (L.snout) { p(hx0, hT + 4, skH, hx1 - hx0 + 1, 3); p(8, hT + 4, skD); p(11, hT + 4, skD); p(hx0, hB, skS, hx1 - hx0 + 1, 1); }
           if (L.muzzle) { p(9, ey + 1, '#e07888', 2, 1); p(8, ey + 2, skH, 4, 1); }
           if (L.tusks) { p(8, hB - 1, '#f4f0e0'); p(11, hB - 1, '#f4f0e0'); p(8, hB, '#f4f0e0'); p(11, hB, '#f4f0e0'); }
           if (L.beard) {
             const bc = L.beardC || hair, bcS = shade(bc, -0.25), longa = anao || L.short >= 2;
             p(hx0, ey + 1, bc, 1, hB - ey); p(hx1, ey + 1, bcS, 1, hB - ey);
-            p(hx0, hB - 1, bc, hx1 - hx0 + 1, 2); p(9, ey + 2, skD, 2, 1);
+            p(hx0, hB - 1, bc, hx1 - hx0 + 1, 2); p(9, ey + 2, shade(bc, -0.35), 2, 1);
             p(hx0 + 1, hB + 1, bc, hx1 - hx0 - 1, 1);
             if (longa) { p(hx0 + 1, hB + 2, bc, hx1 - hx0 - 1, 2); p(9, hB + 4, bcS, 2, 2); }
             p(hx0 + 1, hB, hH);
@@ -238,7 +246,7 @@
           p(hx0, hT + 1, hair, 3, 1); p(hx0 + 3, hT + 1, hS, hx1 - hx0 - 2, 1); p(hx0, hT + 2, hS); p(hx1, hT + 2, hS);
           p(hx0 + 1, hT - 1, hH, 2, 1); p(hx0, hT, hH); p(hx0 + 2, hT, hH, 2, 1);
           if (hs === 1) { p(hx0 - 1, hT + 1, hair, 1, 7); p(hx1 + 1, hT + 1, hS, 1, 7); p(hx0 - 1, hT + 8, hS); p(hx1 + 1, hT + 8, hD); }
-          if (hs === 3) { for (let y = hT - 3; y <= hT; y++) p(9, y, y < hT - 1 ? hH : hair, 2, 1); p(hx0 - 1, hT + 1, skS, 1, 2); p(hx1 + 1, hT + 1, skS, 1, 2); p(hx0, hT, skS); p(hx1, hT, skS); }
+          if (hs === 3) { for (let y = hT - 3; y <= hT; y++) p(9, y, y < hT - 1 ? hH : hair, 2, 1); p(hx0, hT, fM); p(hx1, hT, fS); }
           if (hs === 4) { p(8, hT - 3, hair, 4, 2); p(9, hT - 3, hH, 2, 1); }
         } else {
           for (let y = hT - 1; y <= hB - 1; y++) { const a = y === hT - 1 ? hx0 + 1 : hx0 - 1, w = y === hT - 1 ? hx1 - hx0 - 1 : hx1 - hx0 + 3; p(a, y, y % 3 === 0 ? hS : hair, w, 1); }
@@ -337,16 +345,16 @@
       // cabeça
       for (let y = hT; y <= hB; y++) for (let x = fx0; x <= fx1; x++) {
         if ((y === hT || y === hB) && (x === fx0 || x === fx1)) continue;
-        let col = skel ? bone : sk; if (y === hB || x === fx0) col = skel ? boneS : skS; else if (x === fx1) col = skel ? bone : skH;
+        let col = skel ? bone : sk; if (y === hB || x === fx0) col = skel ? boneS : fM;
         p(x, y, col); band(x, y);
       }
-      if (!skel && !L.snout) { p(fx1 + 1, ey + 1, skS); }
+      if (!skel && !L.snout) { p(fx1 + 1, ey + 1, sk); p(fx1 + 1, ey + 2, fM); }   // nariz
       if (skel) { p(fx1 - 1, ey, '#1a1010', 2, 2); p(fx1, ey, eyeC); p(fx1, hB - 1, '#4a4034'); }
       else {
         p(fx1 - 1, ey, eyeC);
-        if (det && !covered && !L.snout) p(fx1 - 1, ey - 1, shade(L.old ? '#909090' : hair, -0.15), 2, 1);
-        if (!L.snout && !L.muzzle && !L.beard) p(fx1, ey + 2, skD);
-        if (L.blush || L.child || pequeno) p(fx1 - 1, ey + 1, mix(sk, '#ff6070', 0.3));
+        if (escura) p(fx1, ey, mix('#f0ece4', sk, 0.35));
+        if (!L.snout && !L.muzzle && !L.beard) p(fx1, ey + 2, boca);
+        if (L.blush || L.child || pequeno || L.fem) p(fx1 - 1, ey + 1, mix(sk, '#ff6878', 0.2));
       }
       if (L.snout) { p(fx1, hT + 3, sk, 3, 3); p(fx1 + 2, hT + 3, skD); p(fx1, hT + 5, skS, 3, 1); }
       if (L.muzzle) { p(fx1 + 1, ey + 1, '#e07888'); p(fx1, ey + 2, skH, 2, 1); }
@@ -394,8 +402,9 @@
     if (G && typeof Racas !== 'undefined') Racas.drawFront(p, L, dir, G);
     // feminino: cílios e lábios para dar para distinguir homens e mulheres
     if (L.fem && !skel && !covered) {
-      if (front) { p(7, ey, '#1a1018'); p(12, ey, '#1a1018'); if (!L.snout && !L.muzzle) p(9, ey + 2, L.lips || '#c04a5a', 2, 1); }
-      else if (side) p(hx1 + 1, ey - 1, '#1a1018');
+      const lab = mix(sk, L.lips && L.lips !== shade(sk, -0.35) ? L.lips : '#c04a5a', 0.55);
+      if (front) { if (!L.snout && !L.muzzle) p(9, ey + 2, lab, 2, 1); }
+      else if (side && !L.snout && !L.muzzle) p(hx1 + 1, ey + 2, lab);
     }
     S.outlineSel(c);
     if (L.misty) { const x = c.getContext('2d'); x.globalCompositeOperation = 'destination-in'; x.fillStyle = 'rgba(0,0,0,0.78)'; x.fillRect(0, 0, W, H); x.globalCompositeOperation = 'source-over'; }
