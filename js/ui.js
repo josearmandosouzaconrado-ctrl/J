@@ -274,7 +274,9 @@ const UI = {
   talkNPC(a) {
     const P = Game.player;
     if (a.remote) return Rede.menu(a);
+    if (a.shipCrew === 'imediato') return Mar.falarImediato(a);
     if (a.shipCrew) return Ship.talk(a);
+    if (a.s && a.s.pirata && (a.role === 'corsario' || a.role === 'receptador' || a.role === 'pirata')) return Mar.falar(a);
     if (a.workCust) return Work.serve(a);
     if (a.evento) return Eventos.talk(a);
     if (a.vilaNPC) return Vila.talkNPC(a);

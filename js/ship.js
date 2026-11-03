@@ -498,6 +498,7 @@ const Ship = {
   },
   sleepPrompt() {
     const L = Game.level; if (!L || !L.isShip) return;
+    if (L.proprio) return UI.dialog('Beliche', null, 'Dormir 8 horas no beliche?', [{ label: '💤 Dormir', cls: 'gold', fn: () => Mar.dormir() }, { label: 'Ficar acordado' }]);
     if (L.docked) return Game.toast('O navio já atracou.', '#c0e0ff');
     UI.dialog('Beliche', null, `Deitar no beliche e dormir até o navio chegar a <b>${esc(L.to.name)}</b>?`, [{ label: '💤 Dormir', cls: 'gold', fn: () => this.sleep() }, { label: 'Ficar acordado' }]);
   },

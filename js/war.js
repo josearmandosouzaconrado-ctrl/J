@@ -89,7 +89,7 @@ const War = {
   rel(a, b) { if (a === 'jogador') return Reino.rel(b); if (b === 'jogador') return Reino.rel(a); const v = this.st().rel[this.key(a, b)]; return v === undefined ? 0 : v; },
   atWar(a, b) { if (!a || !b || a === b) return false; return this.st().wars.some(w => (w.a === a && w.b === b) || (w.a === b && w.b === a)); },
   warOf(k) { return this.st().wars.filter(w => w.a === k || w.b === k); },
-  ownerOf(s) { if (!s || s.academy || s.region.neutral) return null; if (s.playerVila) return Reino.owner(s); if (s.homeId) return null; const o = this.st().owner[s.id]; return o || (KSTYLE[s.region.id] && s.region.ruler ? s.region.id : null); },
+  ownerOf(s) { if (!s || s.academy || s.pirata || s.region.neutral) return null; if (s.playerVila) return Reino.owner(s); if (s.homeId) return null; const o = this.st().owner[s.id]; return o || (KSTYLE[s.region.id] && s.region.ruler ? s.region.id : null); },
   settlement(id) { return Game.world.settlements.find(s => s.id === id); },
   news(text, imp, ks) {
     const S = this.st();
@@ -779,7 +779,7 @@ const War = {
   // ---------- Mapa ----------
   drawMap(ctx, toS, z) {
     const S = this.st();
-    Fronteiras.draw(ctx, toS); Naval.drawMap(ctx, toS); Rede.drawMap(ctx, toS);
+    Fronteiras.draw(ctx, toS); Naval.drawMap(ctx, toS); Rede.drawMap(ctx, toS); Mar.drawMap(ctx, toS);
     for (const s of Game.world.settlements) { const o = S.owner[s.id]; if (!o || o === s.region.id || !this.K[o]) continue; const [x, y] = toS(s.x, s.y); ctx.strokeStyle = this.K[o].color; ctx.lineWidth = 3; ctx.strokeRect(x - 9, y - 9, 18, 18); }
     for (const a of S.armies) { const [x, y] = toS(a.x, a.y); ctx.fillStyle = '#000'; ctx.fillRect(x - 4, y - 9, 9, 7); ctx.fillStyle = this.K[a.k].color; ctx.fillRect(x - 3, y - 8, 7, 5); ctx.fillStyle = '#6a4a2a'; ctx.fillRect(x - 4, y - 9, 1, 12); if (a.state === 'camp') { ctx.fillStyle = '#e0d0a0'; ctx.fillText('⛺', x + 9, y + 4); } }
     for (const b of S.battles) { const [x, y] = toS(b.x, b.y); ctx.fillStyle = '#000'; ctx.fillText('⚔', x + 1, y + 6); ctx.fillStyle = '#ff5040'; ctx.fillText('⚔', x, y + 5); }

@@ -213,6 +213,26 @@ Os empregos de **Taverneiro**, **Fazendeiro** e **Minerador** não pagam mais s�
 - **Mina**: cada vila com ferreiro tem uma **mina** fora dos muros. Lá dentro há galerias escuras com trilhos, escoras e lanternas: quebre os veios com várias picaretadas, carregue até 4 pedras e despeje no carrinho de mina.
 - O turno tem tempo limitado; o pagamento depende de quanto você fez, mais gorjetas, e conta para as promoções do ofício.
 
+## Expansão do Mar: ilhas, navio próprio e piratas
+- **83 ilhas** pequenas e médias espalhadas pelos oceanos, com praias, palmeiras e mata:
+  enseadas piratas, ilhas do tesouro (acampamento pirata e baú enterrado), ilhas rochosas e
+  desertas com restos de naufrágio. Cada ilha tem nome e aparece no mapa quando é descoberta.
+- **Navio próprio**: compre no estaleiro de qualquer porto (Chalupa, Bergantim ou Galeão).
+  Chegue perto dele e toque em **Embarcar**. No convés, vá até o **timão** na popa e toque em
+  **Pilotar**: o joystick vira o leme e o mundo passa por baixo do navio.
+- Painel do leme: velas, canhões de **bombordo** e **estibordo**, bandeira negra, desembarcar de
+  bote na praia mais próxima e largar o timão. Setas na borda da tela mostram os navios por perto.
+- **Pirataria**: navios mercantes, fragatas da marinha e piratas navegam pelo mar. Com a bandeira
+  negra os mercantes costumam se render; os outros você avaria com os canhões e **aborda** (a
+  tripulação inimiga invade o seu convés e seus marujos lutam junto). Saque dá ouro, seda,
+  especiarias, rum e joias.
+- Atacar mercantes ou a marinha gera **recompensa pela sua cabeça**: a marinha passa a caçar
+  você, os portos dos reinos não consertam nem vendem navios, e guardas ficam desconfiados.
+- **Enseadas piratas**: o Capitão da enseada limpa seu nome (suborno), recruta marujos, conserta
+  e vende navios; o Receptador compra o saque melhor que qualquer mercador. Fama: Marujo →
+  Corsário → Capitão Pirata → Terror dos Mares → Rei dos Piratas.
+- Se o casco chegar a zero o navio afunda e você acorda na praia do porto mais próximo.
+
 ## Baixar o APK
 
 - **Jogo (Android):** https://github.com/josearmandosouzaconrado-ctrl/J/releases/latest/download/CronicasDeEldoria.apk

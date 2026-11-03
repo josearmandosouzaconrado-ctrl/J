@@ -54,6 +54,12 @@ input { font-family: inherit; font-size: 22px; background: #140c10; color: var(-
 #hud-honra { font-size: 15px; }
 #tatica { position: absolute; top: calc(112px + var(--sa-t)); left: calc(8px + var(--sa-l)); display: flex; flex-direction: column; gap: 3px; align-items: stretch; pointer-events: auto; background: rgba(15,8,12,.72); border: 2px solid var(--border); padding: 3px; z-index: 5; }
 #tatica.hidden { display: none; }
+#leme { position: absolute; top: calc(112px + var(--sa-t)); left: calc(8px + var(--sa-l)); display: grid; grid-template-columns: auto auto; gap: 2px; align-items: stretch; max-width: 46vw; pointer-events: auto; background: rgba(8,14,24,.74); border: 2px solid var(--border); padding: 3px; z-index: 5; }
+#leme.hidden { display: none; }
+#leme .tat-t { font-size: 13px; color: var(--gold); white-space: nowrap; text-align: center; grid-column: 1 / -1; }
+#leme button { font: inherit; font-size: 13px; text-align: left; color: #f2e6cc; background: #14202e; border: 2px solid #3a5070; padding: 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#leme button.wide { grid-column: 1 / -1; }
+#leme button.on { background: #6a4a10; border-color: var(--gold); color: #fff; }
 #obra { position: absolute; top: calc(108px + var(--sa-t)); left: calc(8px + var(--sa-l)); display: flex; flex-direction: column; gap: 3px; pointer-events: auto; background: rgba(15,8,12,.78); border: 2px solid var(--border); padding: 3px; z-index: 5; max-width: 190px; }
 #obra.hidden { display: none; }
 #obra .tat-t { font-size: 14px; color: var(--gold); text-align: center; }

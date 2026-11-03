@@ -227,7 +227,7 @@ const Game = {
     const P = this.player;
     const s = this.world.settlementAt(Math.floor(P.x / 16), Math.floor(P.y / 16));
     if (s) { const o = War.ownerOf(s); return o === 'jogador' ? `${s.name} • ${War.K.jogador ? War.K.jogador.short : ''}` : o && o !== s.region.id && War.K[o] ? `${s.name} (ocupada por ${War.K[o].short})` : s.name; }
-    return Reino.nomeRegiao(this.world.regions[this.world.regAt(Math.floor(P.x / 16), Math.floor(P.y / 16))]);
+    return Mar.nomeLocal(Math.floor(P.x / 16), Math.floor(P.y / 16)) || Reino.nomeRegiao(this.world.regions[this.world.regAt(Math.floor(P.x / 16), Math.floor(P.y / 16))]);
   },
   discover(id) {
     if (this.mods.discovered.has(id)) return;
@@ -337,7 +337,7 @@ const Game = {
     Work.update(dt);
     Adm.update();
     Sombra.tick(dt); Ceu.tick(dt);
-    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt); Rede.tick(dt); Construcao.tick(dt);
+    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt); Rede.tick(dt); Construcao.tick(dt); Mar.tick(dt);
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();
@@ -383,7 +383,7 @@ const Game = {
     this.interactT -= dt; if (this.interactT <= 0) { this.interactT = 0.12; this.findInteract(); }
     this.updateMusic();
     // câmera
-    const lookX = P.x + Input.move.x * 18, lookY = P.y - 8 + Input.move.y * 14;
+    const co = this.level.camOff, lookX = P.x + Input.move.x * 18 + (co ? co.x : 0), lookY = P.y - 8 + Input.move.y * 14 + (co ? co.y : 0);
     this.camX = lerp(this.camX, lookX - this.vw / 2, Math.min(1, dt * 6));
     this.camY = lerp(this.camY, lookY - this.vh / 2, Math.min(1, dt * 6));
     if (!this.level.isWorld) {
@@ -519,7 +519,7 @@ const Game = {
             if (own && War.K[own] && (own !== s.region.id || KSTYLE[own].musket)) { const lk = War.look(own, own === s.region.id ? rng.pick(['soldado', 'mosqueteiro']) : 'soldado', rng); a = new Monster('guarda', spot.x * 16 + 8, spot.y * 16 + 12, Math.max(10, P.level + 5), { look: lk, name: own === s.region.id ? 'Guarda de ' + s.name : 'Ocupante de ' + War.K[own].short }); }
             else a = new Monster('guarda', spot.x * 16 + 8, spot.y * 16 + 12, Math.max(10, P.level + 5), { look, name: 'Guarda de ' + s.name });
             a.guardOf = s; if (own) a.faction = own;
-          } else { a = new NPC(spot, s, rng); if (spot.role === 'captain') { a.name = (a.sex === 'f' ? 'Capitã ' : 'Capitão ') + a.name; a.look = Object.assign({}, a.look, { body: '#2a3a6a', hood: '#1a1a2a', robe: false }); a.S = Sprites.actor(a.look); } }
+          } else { a = new NPC(spot, s, rng); if (s.pirata) Mar.vestir(a, rng); if (spot.role === 'captain') { a.name = (a.sex === 'f' ? 'Capitã ' : 'Capitão ') + a.name; a.look = Object.assign({}, a.look, { body: '#2a3a6a', hood: '#1a1a2a', robe: false }); a.S = Sprites.actor(a.look); } }
           a.spotIndex = i;
           this.findFree(a);
           a.home = { x: a.x, y: a.y };
@@ -564,7 +564,7 @@ const Game = {
         if (W.solidAt(tx, ty) || TWATER[W.tileAt(tx, ty)] || W.tileAt(tx, ty) === T.LAVA) continue;
         if (W.settlementAt(tx, ty)) continue;
         const R = W.regions[W.regAt(tx, ty)];
-        const table = SPAWNS[R.id][night ? 'night' : 'day'];
+        const table = Mar.spawns(tx, ty, night) || SPAWNS[R.id][night ? 'night' : 'day'];
         const pick = new RNG(Math.floor(Math.random() * 1e9)).weighted(table.map(e => ({ id: e[0], w: e[1] })), 'w').id;
         const d = ENEMIES[pick];
         if (d.passive && passiveCount > 6) continue;
@@ -614,7 +614,8 @@ const Game = {
     p.spawned = true;
     const rid = p.region.id;
     let mobs, chief;
-    if (rid === 'gorthak') { mobs = ['orc_renegado', 'orc_renegado', 'orc_renegado', 'salamandra']; chief = 'ogro'; }
+    if (p.pirata) { mobs = ['pirata', 'pirata', 'pirata_arqueiro', 'esqueleto', 'pirata']; chief = 'bandido_chefe'; }
+    else if (rid === 'gorthak') { mobs = ['orc_renegado', 'orc_renegado', 'orc_renegado', 'salamandra']; chief = 'ogro'; }
     else if (rid === 'morvath') { mobs = ['cultista', 'cultista', 'esqueleto', 'esqueleto_arqueiro']; chief = 'cavaleiro_morto'; }
     else if (rid === 'nordheim') { mobs = ['bandido', 'bandido_arqueiro', 'bandido', 'draugr']; chief = 'bandido_chefe'; }
     else { mobs = ['bandido', 'bandido', 'bandido_arqueiro', 'bandido_mago']; chief = 'bandido_chefe'; }
@@ -956,7 +957,7 @@ const Game = {
       const o = L.objAt(tx, ty);
       const od = OBJ_DEFS[o];
       if (!o || !od.interact) continue;
-      const labels = { skypillar: L.isCeu ? 'Descer' : 'Subir', sleep: 'Dormir', destiny: 'Tocar', wardrobe: 'Baú', crib: 'Ver bebê', chest: 'Abrir', harvest: o >= O.ORE_FERRO && o <= O.ORE_EBANO ? 'Minerar' : 'Coletar', cook: 'Cozinhar', forge: 'Forjar', alchemy: 'Alquimia', runestone: 'Ler', shrine: 'Orar', dungeon: 'Entrar', exit: 'Sair', sign: 'Ler', minecart: 'Despejar', hatch: L.isShip && L.floor ? 'Subir' : 'Descer', helm: 'Timão', shipbed: 'Dormir', maptable: 'Ver rota', conselho: 'Administrar' };
+      const labels = { skypillar: L.isCeu ? 'Descer' : 'Subir', sleep: 'Dormir', destiny: 'Tocar', wardrobe: 'Baú', crib: 'Ver bebê', chest: 'Abrir', harvest: o >= O.ORE_FERRO && o <= O.ORE_EBANO ? 'Minerar' : 'Coletar', cook: 'Cozinhar', forge: 'Forjar', alchemy: 'Alquimia', runestone: 'Ler', shrine: 'Orar', dungeon: 'Entrar', exit: 'Sair', sign: 'Ler', minecart: 'Despejar', hatch: L.isShip && L.floor ? 'Subir' : 'Descer', helm: L.proprio ? (L.leme ? 'Largar' : 'Pilotar') : 'Timão', shipbed: 'Dormir', maptable: 'Ver rota', conselho: 'Administrar' };
       let name = od.name;
       if (od.interact === 'dungeon' && L.isWorld) { const dd = this.world.entrances.get(tkey(tx, ty)); if (dd) name = `${dd.name} (Nv ${dd.lvl})`; }
       bd = d; best = { kind: od.interact, tx, ty, o, label: labels[od.interact] || 'Usar', name };
@@ -985,6 +986,8 @@ const Game = {
     if (wi && (!best || best.kind !== 'npc' || wi.d < bd)) best = wi;
     const ni = Nyxar.findInteract(fx, fy);
     if (ni && (!best || ni.d < bd)) best = ni;
+    const mi = Mar.findInteract(fx, fy);
+    if (mi && (!best || mi.d < bd)) best = mi;
     if (best && best.kind === 'npc' && best.a.workCust) best.label = best.a.workCust.state === 'wait' ? 'Servir' : 'Falar';
     if (!best && P.carrying) best = { kind: 'drop', label: 'Soltar', name: ENEMIES[P.carrying.eid].name };
     if (!best && L.isWorld && P.count('vara_pesca')) {
@@ -1053,13 +1056,14 @@ const Game = {
       case 'exit': if (this.level.isNyxCave) Nyxar.exitAt(it.tx, it.ty); this.exitDungeon(); break;
       case 'nyxcave': Nyxar.enter(it.c); break;
       case 'conselho': Vila.conselho(); break;
+      case 'mar': it.fn(); break;
       case 'skypillar': if (L.isCeu) Ceu.leave(); else Ceu.enter(it.tx, it.ty); break;
       case 'hatch': if (this.level.isShip) Ship.switchFloor(); break;
       case 'work': Work.interact(it); break;
       case 'minecart': Work.unload(); break;
       case 'shipbed': Ship.sleepPrompt(); break;
       case 'maptable': UI.openMap(); break;
-      case 'helm': this.toast(this.level.isShip ? `O capitão segura o timão firme. Rumo: ${this.level.to.name} (${Math.round(this.level.progress() * 100)}%)` : 'Timão', '#c0e0ff'); break;
+      case 'helm': if (this.level.proprio) { Mar.leme(); break; } this.toast(this.level.isShip ? `O capitão segura o timão firme. Rumo: ${this.level.to.name} (${Math.round(this.level.progress() * 100)}%)` : 'Timão', '#c0e0ff'); break;
     }
   },
   openChest(tx, ty, o) {
@@ -1270,7 +1274,7 @@ const Game = {
     if (!P.dead || true) D.push({ y: P.y, a: P });
     for (const k of this.pickups) D.push({ y: k.y, pk: k });
     this.drawMountsCart(D); this.drawCarcasses(D);
-    if (L.isWorld) { Vila.drawables(D, camX, camY, vw, vh); War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); Nyxar.drawables(D, camX, camY, vw, vh); }
+    if (L.isWorld) { Vila.drawables(D, camX, camY, vw, vh); War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); Nyxar.drawables(D, camX, camY, vw, vh); Mar.drawables(D, camX, camY, vw, vh); }
     Ceu.drawables(D, camX, camY, vw, vh);
     D.sort((a, b) => a.y - b.y);
     Visual.sombras(ctx, D, camX, camY, vw, vh);

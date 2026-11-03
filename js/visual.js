@@ -86,7 +86,7 @@ const Visual = {
   },
   // cor do ar: calor de dia, dourado no fim da tarde, névoa rosada no alto e raios de sol
   luz(ctx, vw, vh) {
-    if (!this.ligado() || !Game.level.isWorld) return;
+    if (!this.ligado() || !(Game.level.isWorld || (Game.level.isShip && !Game.level.floor))) return;
     const g = this.dourado(), h = Game.time / 60, dia = h >= 5.5 && h < 20;
     const chuva = Game.weather.kind === 'rain' || Game.weather.kind === 'storm';
     if (dia) {
