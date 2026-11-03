@@ -37,7 +37,7 @@ const UI = {
     if (!look) return '';
     const k = JSON.stringify(look);
     let u = this.portraitCache.get(k);
-    if (!u) { const S = Sprites.actor(look); let img = S.down ? S.down[0] : S.right[0]; if (S.type === 'hum' && S.h && S.h < img.height) { const t = document.createElement('canvas'); t.width = img.width; t.height = S.h + 1; t.getContext('2d').drawImage(img, 0, S.h + 1 - img.height); img = t; } const c = Sprites.scale(img, 4); u = c.toDataURL(); if (!S.placeholder) this.portraitCache.set(k, u); }
+    if (!u) { const S = Sprites.actor(look); const img = S.down ? S.down[0] : S.right[0]; const c = Sprites.scale(img, 4); u = c.toDataURL(); if (!S.placeholder) this.portraitCache.set(k, u); }
     return `<img class="portrait" src="${u}">`;
   },
   // ---------- gerenciamento de telas ----------
@@ -190,7 +190,6 @@ const UI = {
     const R = RACES[c.race];
     const L = { k: 'hum', skin: R.skins[Math.min(c.skin, R.skins.length - 1)], hair: R.hairs[Math.min(c.hair, R.hairs.length - 1)], hairStyle: c.hairStyle, body: CLASSES[c.cls].color, legs: '#3a3028' };
     if (R.ears) L.ears = R.ears; if (R.tall) L.tall = 1; if (R.short) L.short = R.short; if (R.bulky) L.bulky = true;
-    if (c.sex === 'f') L.fem = true;
     if (R.beard && c.sex === 'm') L.beard = true; if (R.tusks) L.tusks = true; if (R.snout) L.snout = true; if (R.horns) L.horns = true;
     if (R.tail) { L.tail = true; L.tailC = L.skin; } if (R.catears) L.catears = true; if (R.muzzle) L.muzzle = true;
     return L;
@@ -226,6 +225,7 @@ const UI = {
         <div class="opts">
           ${tog('sfx', 'Efeitos sonoros')} ${tog('music', 'Música')} ${tog('weather', 'Clima')} ${tog('needs', 'Fome, sede e sono')} ${tog('showFps', 'Mostrar FPS')}
           <button class="sbtn ${S.lite ? 'on' : ''}" ${f(() => { S.lite = !S.lite; Game.saveSettings(); Game.resize(); render(); })}>Modo leve (celular fraco): ${S.lite ? 'SIM' : 'NÃO'}</button>
+          <button class="sbtn ${S.visual !== false ? 'on' : ''}" ${f(() => { S.visual = S.visual === false; Game.saveSettings(); render(); })}>Visual top (sombras do sol e luz dourada): ${S.visual !== false ? 'SIM' : 'NÃO'}</button>
           <div class="row"><span>Tamanho dos botões</span>${[0.8, 1, 1.2, 1.4].map(v => `<button class="sbtn small ${S.btnScale === v ? 'on' : ''}" ${f(() => { S.btnScale = v; Game.saveSettings(); render(); })}>${Math.round(v * 100)}%</button>`).join('')}</div>
           <div class="row"><span>Zoom da câmera</span>${[0.8, 1, 1.25, 1.5].map(v => `<button class="sbtn small ${S.zoom === v ? 'on' : ''}" ${f(() => { S.zoom = v; Game.saveSettings(); render(); })}>${Math.round(v * 100)}%</button>`).join('')}</div>
           <div class="row"><span>Volume música</span>${[0.15, 0.35, 0.6].map(v => `<button class="sbtn small ${S.musicVol === v ? 'on' : ''}" ${f(() => { S.musicVol = v; Game.saveSettings(); render(); })}>${v === 0.15 ? 'Baixo' : v === 0.35 ? 'Médio' : 'Alto'}</button>`).join('')}</div>

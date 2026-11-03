@@ -1273,6 +1273,7 @@ const Game = {
     if (L.isWorld) { Vila.drawables(D, camX, camY, vw, vh); War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); Nyxar.drawables(D, camX, camY, vw, vh); }
     Ceu.drawables(D, camX, camY, vw, vh);
     D.sort((a, b) => a.y - b.y);
+    Visual.sombras(ctx, D, camX, camY, vw, vh);
     for (const d of D) {
       if (d.a) d.a.draw(ctx, camX, camY);
       else if (d.pk) this.drawPickup(ctx, d.pk, camX, camY);
@@ -1290,7 +1291,8 @@ const Game = {
     if (L.drawOverlay) L.drawOverlay(ctx, camX, camY);
     Work.drawOverlay(ctx, camX, camY);
     if (L.isWorld || (L.isShip && !L.floor)) this.drawWeather(ctx, vw, vh);
-    // iluminação
+    // luz do sol (hora dourada, névoa e raios) e iluminação da noite
+    Visual.luz(ctx, vw, vh);
     this.drawLighting(ctx, camX, camY);
     Sombra.drawFog(ctx);
     // partículas e números

@@ -170,7 +170,6 @@ class Player extends Actor {
     const R = RACES[this.race], a = this.app;
     const L = { k: 'hum', skin: a.skin, hair: a.hair, hairStyle: a.hairStyle };
     if (R.ears) L.ears = R.ears; if (R.tall) L.tall = 1; if (R.short) L.short = R.short; if (R.bulky) L.bulky = true;
-    if (a.sex === 'f') L.fem = true;
     if (R.beard && a.beard !== false && a.sex === 'm') L.beard = true;
     if (R.tusks) L.tusks = true; if (R.snout) L.snout = true; if (R.horns) L.horns = true;
     if (R.tail) { L.tail = true; L.tailC = R.tailHair ? a.hair : a.skin; }
@@ -702,7 +701,7 @@ class Player extends Actor {
       this.drawShadow(ctx, camX, camY, 20);
       const img = H[hk][f];
       ctx.drawImage(img, Math.round(this.x - img.width / 2 - camX), Math.round(this.y - img.height + 3 - camY));
-      this.z = this.S && this.S.handY ? Math.max(2, 14 - Math.round(this.S.handY)) : 9;   // quadril na sela (pernas longas pendem do lado do cavalo)
+      this.z = 9;
       const sd = this.dir; this.dir = hk;
       if (blink) ctx.globalAlpha = 0.5;
       this.drawBody(ctx, camX, camY, this.S);

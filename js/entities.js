@@ -135,17 +135,15 @@ class Actor {
     if (this.hasFx('burn') && Math.random() < 0.3) Game.particle(this.x + (Math.random() - 0.5) * 8, this.y - img.height * Math.random(), 0, -20, '#ff9030', 0.4);
     if (this.slowT > 0 || this.root > 0) { ctx.fillStyle = this.root > 0 ? 'rgba(90,140,50,0.6)' : 'rgba(150,220,255,0.35)'; ctx.fillRect(x + 2, y + img.height - 4, img.width - 4, 3); }
     if (this.stun > 0) { const t = Game.t * 6; for (let i = 0; i < 3; i++) { ctx.fillStyle = '#fff060'; ctx.fillRect(Math.round(this.x - camX + Math.cos(t + i * 2.1) * 6), Math.round(y - 3 + Math.sin(t + i * 2.1) * 2), 2, 2); } }
-    // y devolvido = topo visível (a imagem dos humanos tem espaço livre em cima para chapéus altos)
-    return { x, y: S.type === 'hum' && S.h ? y + img.height - S.h : y, img };
+    return { x, y, img };
   }
   drawWeapon(ctx, camX, camY, wimg, wclass, swing) {
     if (!wimg) return;
-    const mao = this.S && this.S.handY;   // altura da mão no corpo novo
-    let hx = this.x - camX, hy = this.y - camY - (mao || 6) - this.z;
+    let hx = this.x - camX, hy = this.y - camY - 6 - this.z;
     const d = this.dir;
     const sc = this.sizeScale || 1;
     if (d === 'down') hx += 5 * sc; else if (d === 'up') hx -= 5 * sc; else if (d === 'right') hx += 2 * sc; else hx -= 2 * sc;
-    if (!mao) hy -= (sc - 1) * 8;
+    hy -= (sc - 1) * 8;
     if (this.thrustT > 0) { const k = Math.sin((1 - this.thrustT / 0.22) * Math.PI) * 7; hx += Math.cos(this.face) * k; hy += Math.sin(this.face) * k * 0.6; }
     let ang;
     if (swing) ang = swing;
@@ -593,7 +591,6 @@ function npcLook(race, sex, rng, role) {
   const R = RACES[race];
   if (R.sheet) return sheetLook(race, sex, rng, role);
   const L = { k: 'hum', skin: rng.pick(R.skins), hair: rng.pick(R.hairs), hairStyle: sex === 'f' ? rng.pick([1, 1, 4, 0]) : rng.pick([0, 0, 2, 3, 0]) };
-  if (sex === 'f') L.fem = true;
   if (R.ears) L.ears = R.ears;
   if (R.tall) L.tall = 1; if (R.short) L.short = R.short; if (R.bulky) L.bulky = true;
   if (R.beard && sex === 'm' && rng.chance(0.8)) L.beard = true;
@@ -619,7 +616,6 @@ function vestirNPC(L, sex, rng, role) {
   L.seed = r.int(0, 9);
   if (!L.robe && r.chance(sex === 'm' ? 0.4 : 0.22)) { L.vest = r.pick(['#5a3a24', '#3a4a3a', '#4a3a5a', '#6a4a2a', '#2a3a4a', '#7a5a3a', '#6a2a2a']); L.shirt = r.pick(CAMISAS); }
   else if (!L.robe && r.chance(0.18)) L.stripes = true;
-  if (sex === 'f' && !L.robe && !kid && r.chance(0.65)) L.saia = r.pick(['#7a2a3a', '#3a4a6a', '#5a3a2a', '#4a5a3a', '#6a3a5a', '#8a6a4a', '#2a2a3a']);
   if (L.robe && r.chance(0.5)) L.sash = r.pick(['#a03030', '#3a5a8a', '#c0a040', '#4a7a4a', '#7a3a7a']);
   if (role === 'merchant' || (role === 'shop' && r.chance(0.65))) L.apron = r.pick(['#ece4d4', '#d8c8a8', '#8a6a4a', '#5a4a3a']);
   else if (!kid && r.chance(L.robe ? 0.3 : 0.08)) L.apron = r.pick(['#f0ece0', '#e8dcc8', '#c8b8a0']);
