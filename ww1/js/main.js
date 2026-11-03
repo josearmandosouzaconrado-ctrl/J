@@ -15,7 +15,10 @@
   WW1.time = 0;
 
   const FOG = 0x787a77;
+  // modo: campanha do Somme (padrão) ou mundo aberto ('open:soldier', 'open:tank', ...)
+  const modeStr = sessionStorage.getItem('ww1_mode') || 'somme';
   const g = WW1.game = {
+    mode: modeStr.startsWith('open') ? 'open' : 'somme', role: modeStr.split(':')[1] || 'soldier',
     state: 'loading', player: null, mg: null, gasActive: false,
     playTime: 0, kills: 0, shots: 0, hits: 0, fade: 1, timers: [], menuT: 0,
     get quality() { return WW1.settings.quality; },
@@ -41,8 +44,10 @@
 
     const scene = g.scene = new THREE.Scene();
     scene.background = new THREE.Color(FOG);
-    scene.fog = new THREE.FogExp2(FOG, low ? 0.014 : 0.0115);
-    g.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.05, 320);
+    const open = g.mode === 'open';
+    g.fogDensity = open ? (low ? 0.0075 : 0.0058) : (low ? 0.014 : 0.0115);
+    scene.fog = new THREE.FogExp2(FOG, g.fogDensity);
+    g.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.05, open ? 760 : 320);
     g.camera.rotation.order = 'YXZ';
 
     // Luz de céu encoberto
@@ -72,19 +77,38 @@
 
     WW1.tex.init();
     WW1.fx.init(scene, WW1.settings.quality);
-    W.build(scene);
+    if (open) {
+      WW1.ow.build(scene);
+      WW1.ow.activate();
+    } else W.build(scene);
     WW1.soldierInit(scene);
     WW1.artillery.reset();
-    const px = 0;
-    g.player = new WW1.Player(g.camera, g.vmScene, px, W.trenchZ(px, W.PLAYER_TRENCH) - 0.2);
-    g.player.pos.y = W.S(g.player.pos.x, g.player.pos.z);
-    WW1.mission.setup();
+    if (open) {
+      WW1.vehInit(scene);
+      g.player = new WW1.Player(g.camera, g.vmScene, 0, -900);
+      WW1.og.start(g.role);
+    } else {
+      const px = 0;
+      g.player = new WW1.Player(g.camera, g.vmScene, px, W.trenchZ(px, W.PLAYER_TRENCH) - 0.2);
+      g.player.pos.y = W.S(g.player.pos.x, g.player.pos.z);
+      WW1.mission.setup();
+    }
     WW1.ui.init();
     resize();
     addEventListener('resize', resize);
     applyQualityRuntime();
 
-    if (sessionStorage.getItem('ww1_skip') === '1') {
+    if (open) {
+      // carrega o terreno em volta do ponto de partida antes de começar
+      WW1.og.controlPlayer(g.player, 0.016);
+      g.camera.updateMatrixWorld();
+      for (let i = 0; i < 400 && WW1.ow.update(g.camera, 0, 50) > 0; i++);
+      g.state = 'playing';
+      WW1.ui.show(null);
+      g.player.controls = true;
+      g.fade = 1;
+      WW1.audio.start();
+    } else if (sessionStorage.getItem('ww1_skip') === '1') {
       sessionStorage.removeItem('ww1_skip');
       g.begin();
     } else {
@@ -108,7 +132,7 @@
 
   function applyQualityRuntime() {
     const low = WW1.settings.quality === 'low';
-    g.scene.fog.density = low ? 0.014 : 0.0115;
+    g.scene.fog.density = g.fogDensity;
     WW1.fx.setFog(g.scene.fog.density, new THREE.Vector3(0x78 / 255, 0x7a / 255, 0x77 / 255));
   }
 
@@ -145,6 +169,7 @@
 
   g.playerDied = function () {
     g.gasActive = false;
+    if (g.mode === 'open') { g.later(2.8, () => { g.fade = 1; WW1.og.respawn(); }); return; }
     g.later(2.2, () => {
       g.state = 'dead';
       WW1.ui.deathStats(g);
@@ -162,32 +187,43 @@
 
   g.restart = function (skipMenu) {
     if (skipMenu) sessionStorage.setItem('ww1_skip', '1');
+    else sessionStorage.removeItem('ww1_mode');
+    location.reload();
+  };
+  // Entra no mundo aberto com a função escolhida
+  g.openWorld = function (role) {
+    sessionStorage.setItem('ww1_mode', 'open:' + role);
     location.reload();
   };
 
   let last = 0;
   function loop(now) {
     requestAnimationFrame(loop);
-    const real = Math.min(0.25, (now - last) / 1000);
+    const real = WW1.clamp((now - last) / 1000, 0, 0.25); // nunca negativo (o 1º quadro pode vir antes do fim do carregamento)
     let dt = Math.min(0.05, real);
     last = now;
     if (g.state === 'paused') dt = 0;
+    if (g.mode === 'open' && WW1.ui.overlayOpen && WW1.ui.overlayOpen() && WW1.og.mode !== 'command') dt = 0; // mapa e ordens pausam o jogo
     WW1.time += dt;
     const playing = g.state === 'playing';
 
     for (let i = g.timers.length - 1; i >= 0; i--) if (WW1.time >= g.timers[i].at) { const t = g.timers.splice(i, 1)[0]; t.fn(); }
 
-    if (playing) {
+    WW1.pad.update();
+    const overlay = WW1.ui.overlayOpen();
+    if (!playing || overlay) WW1.ui.padMenus(real);
+
+    if (playing && g.fade > 0 && !(g.victoryT >= 0)) g.fade = Math.max(0, g.fade - real * 0.8);
+    if (playing && !overlay) {
       g.playTime += dt;
-      WW1.ui.input();
-      if (g.fade > 0) g.fade = Math.max(0, g.fade - real * 0.8);
+      WW1.ui.input(dt);
     } else if (g.state === 'menu' || g.state === 'briefing') g.fade = Math.max(0, g.fade - real * 0.6);
 
     // sequência de vitória: escurece, mostra a tela final
     if (g.victoryT !== undefined && g.victoryT >= 0) {
-      g.victoryT += dt;
+      g.victoryT += real;
       if (g.victoryT < 2) g.fade = g.victoryT / 2;
-      else if (g.state === 'playing') { g.state = 'victory'; WW1.ui.winStats(g); WW1.ui.show('victory1'); if (document.exitPointerLock) document.exitPointerLock(); }
+      else if (g.state === 'playing') { g.state = 'victory'; WW1.ui.winStats(g); if (g.mode === 'open') { WW1.ui.closeOverlays(); WW1.ui.openVictoryTexts(); } WW1.ui.show('victory1'); if (document.exitPointerLock) document.exitPointerLock(); }
       else g.fade = Math.max(0, 1 - (g.victoryT - 2) / 1.5);
     }
 
@@ -196,10 +232,12 @@
       for (const s of WW1.soldiers.slice()) s.update(dt, playing);
       if (g.mg) g.mg.update(dt, playing);
       WW1.artillery.update(dt);
-      if (playing) WW1.mission.update(dt);
+      if (playing && g.mode === 'somme') WW1.mission.update(dt);
+      if (g.mode === 'open' && (playing || g.state === 'victory')) WW1.og.update(dt);
     }
 
     const cam = g.camera;
+    if (g.mode === 'open') WW1.ow.update(cam, dt, 2);
     if (g.state === 'menu' || g.state === 'briefing') {
       g.menuT += dt;
       const x = -14 + Math.sin(g.menuT * 0.05) * 10, z = W.trenchZ(x, W.PLAYER_TRENCH) + 2.6;
@@ -211,7 +249,8 @@
 
     g.sun.position.set(-40, 70, -50);
 
-    const yaw = g.state === 'menu' || g.state === 'briefing' ? cam.rotation.y - Math.PI : g.player.yaw;
+    const cf = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion);
+    const yaw = Math.atan2(cf.x, cf.z);
     WW1.audio.setListener(cam.position.x, cam.position.y, cam.position.z, yaw);
     const hp = g.player.hp / g.player.max;
     WW1.audio.setLoop('heart', playing && hp < 0.4 ? 0.4 + (0.4 - hp) : 0);
@@ -225,7 +264,7 @@
     const r = g.renderer;
     r.clear();
     r.render(g.scene, cam);
-    if ((playing || g.state === 'paused') && !g.player.dead) {
+    if ((playing || g.state === 'paused') && !g.player.dead && (g.mode !== 'open' || WW1.og.mode === 'foot')) {
       g.vmCam.fov = cam.fov;
       g.vmCam.updateProjectionMatrix();
       r.clearDepth();

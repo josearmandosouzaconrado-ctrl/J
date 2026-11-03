@@ -21,7 +21,7 @@
   }
 
   U.show = function (name) {
-    for (const s of ['loading', 'menu', 'briefing', 'pause', 'dead', 'victory1', 'victory2']) $(s).classList.toggle('on', s === name);
+    for (const s of ['loading', 'menu', 'roles', 'briefing', 'pause', 'dead', 'victory1', 'victory2']) $(s).classList.toggle('on', s === name);
     $('hud').classList.toggle('on', name === null || name === 'pause' || name === 'dead');
     $('touch').classList.toggle('on', name === null);
   };
@@ -71,21 +71,57 @@
     place('crouch', W - 9 * u, H - 9.5 * u, 5.8 * u);
     place('mask', W - 63 * u, H - 31 * u, 7.2 * u);
     place('pause', W - 6.5 * u, 6.5 * u, 4.5 * u);
+    place('use', W - 64 * u, H - 48 * u, 6.5 * u);
+    place('map', W - 17 * u, 6.5 * u, 4.5 * u);
+    place('observe', W - 46 * u, H - 16 * u, 8 * u);
+    place('mg', W - 44 * u, H - 39 * u, 6.7 * u);
     joy.r = 14 * u; joy.homeX = 25 * u; joy.homeY = H - 26 * u;
   };
 
   function hitButton(x, y) {
     for (const b in btns) {
       const c = btns[b]._c;
-      if (!c || btns[b].style.display === 'none') continue;
+      if (!c || btns[b].style.display === 'none' || btns[b].offsetParent === null) continue;
       if (Math.hypot(x - c.x, y - c.y) <= c.r * 1.12) return b;
     }
     return null;
   }
 
+  // ---- janelas sobrepostas (missões, mapa, comando) ----
+  U.overlayOpen = () => !!document.querySelector('.overlay.on');
+  U.openOverlay = id => { document.querySelectorAll('.overlay').forEach(o => o.classList.toggle('on', o.id === id)); U.resetTouches(); if (document.exitPointerLock) document.exitPointerLock(); };
+  U.closeOverlays = () => { document.querySelectorAll('.overlay').forEach(o => o.classList.remove('on')); if (WW1.og && WW1.og.mode === 'command') WW1.og.mode = 'foot'; };
+
+  const pmode = () => (WW1.game.mode === 'open' && WW1.og ? WW1.og.mode : 'foot');
+  // Ação do jogador conforme o modo (a pé, dirigindo, no canhão...)
+  function action(b, down) {
+    const p = WW1.game.player, og = WW1.og, m = pmode();
+    if (!p) return;
+    if (b === 'pause') return WW1.game.pause();
+    if (b === 'map') return U.openMap && U.openMap();
+    if (b === 'use') return og && og.interact();
+    if (b === 'observe') return og && og.toggleObserve();
+    if (m === 'drive' || m === 'gun') {
+      if (b === 'fire') p.wantFire = true;
+      return;
+    }
+    if (m !== 'foot') return;
+    switch (b) {
+      case 'fire': p.fire(); break;
+      case 'aim': p.ads = !p.ads; break;
+      case 'reload': p.reload(); break;
+      case 'grenade': p.throwGrenade(); break;
+      case 'melee': p.melee(); break;
+      case 'crouch': p.crouch = !p.crouch; break;
+      case 'mask': toggleMask(); break;
+    }
+  }
+  U.action = action;
+
   function press(b) {
     const p = WW1.game.player;
     if (!p) return;
+    if (WW1.game.mode === 'open') return action(b);
     switch (b) {
       case 'fire': p.fire(); break;
       case 'aim': p.ads = !p.ads; break;
@@ -120,6 +156,13 @@
 
     const tap = (id, fn) => $(id).addEventListener('click', e => { WW1.audio.start(); WW1.audio.play2D('click', 0.6, 0.9); fn(e); });
     tap('bStart', () => WW1.game.briefing());
+    tap('bOpen', () => U.show('roles'));
+    tap('rSoldier', () => WW1.game.openWorld('soldier'));
+    tap('rTank', () => WW1.game.openWorld('tank'));
+    tap('rArt', () => WW1.game.openWorld('artillery'));
+    tap('rCmd', () => WW1.game.openWorld('commander'));
+    tap('rReset', () => { WW1.og.reset(); $('rReset').textContent = 'Progresso apagado'; });
+    tap('rBack', () => U.show('menu'));
     tap('bDiff', () => { WW1.settings.diff = (WW1.settings.diff + 1) % 3; WW1.saveSettings(); refreshMenu(); });
     tap('bQual', () => { WW1.settings.quality = WW1.settings.quality === 'low' ? 'high' : 'low'; WW1.saveSettings(); refreshMenu(); WW1.game.applyQuality(); });
     tap('bSensM', () => { WW1.settings.sens = Math.max(0.3, WW1.settings.sens - 0.1); WW1.saveSettings(); refreshMenu(); });
@@ -137,7 +180,7 @@
     document.addEventListener('pointerdown', () => WW1.audio.start(), { once: false });
 
     // ----- toque -----
-    const playing = () => WW1.game.state === 'playing' && WW1.game.player && WW1.game.player.controls;
+    const playing = () => WW1.game.state === 'playing' && WW1.game.player && WW1.game.player.controls && !U.overlayOpen();
     document.addEventListener('touchstart', e => {
       if (!playing()) return;
       e.preventDefault();
@@ -181,8 +224,16 @@
     addEventListener('keydown', e => {
       keys[e.code] = true;
       const g = WW1.game, p = g.player;
+      if (e.code === 'Escape' && U.overlayOpen()) { U.closeOverlays(); return; }
       if (e.code === 'Escape' || e.code === 'KeyP') { if (g.state === 'playing') g.pause(); else if (g.state === 'paused') g.resume(); }
-      if (g.state !== 'playing' || !p) return;
+      if (g.state !== 'playing' || !p || U.overlayOpen()) return;
+      if (g.mode === 'open') {
+        if (e.code === 'KeyE' || e.code === 'KeyF' && pmode() !== 'foot') action('use');
+        if (e.code === 'Tab') { e.preventDefault(); action('map'); }
+        if (e.code === 'KeyQ') action('observe');
+        if (e.code === 'Space' && pmode() !== 'foot') action('fire');
+        if (pmode() !== 'foot') return;
+      }
       if (e.code === 'KeyC' || e.code === 'ControlLeft') p.crouch = !p.crouch;
       if (e.code === 'KeyR') p.reload();
       if (e.code === 'KeyG') p.throwGrenade();
@@ -194,10 +245,11 @@
     document.addEventListener('mousedown', e => {
       if (isTouch || WW1.game.state !== 'playing') return;
       if (document.pointerLockElement !== canvas) { if (e.target === canvas || e.target.closest('#hud')) canvas.requestPointerLock && canvas.requestPointerLock(); return; }
-      if (e.button === 0) WW1.game.player.fire();
-      if (e.button === 2) WW1.game.player.ads = true;
+      if (U.overlayOpen()) return;
+      if (e.button === 0) action('fire');
+      if (e.button === 2) { WW1.game.player.ads = true; WW1.game.player.wantMG = true; }
     });
-    document.addEventListener('mouseup', e => { if (e.button === 2 && WW1.game.player) WW1.game.player.ads = false; });
+    document.addEventListener('mouseup', e => { if (e.button === 2 && WW1.game.player) { WW1.game.player.ads = false; WW1.game.player.wantMG = false; } });
     document.addEventListener('contextmenu', e => e.preventDefault());
     document.addEventListener('mousemove', e => {
       if (document.pointerLockElement !== canvas || WW1.game.state !== 'playing') return;
@@ -205,13 +257,13 @@
       p.lookDX += e.movementX * s; p.lookDY -= e.movementY * s;
     });
     // botão "voltar" do Android (chamado pelo APK)
-    window.androidBack = () => { const g = WW1.game; if (g.state === 'playing') g.pause(); else if (g.state === 'paused') g.resume(); };
+    window.androidBack = () => { const g = WW1.game; if (U.overlayOpen()) return U.closeOverlays(); if (g.state === 'playing') g.pause(); else if (g.state === 'paused') g.resume(); };
     document.addEventListener('visibilitychange', () => { if (document.hidden && WW1.game.state === 'playing') WW1.game.pause(); });
   };
 
-  // Entrada contínua (joystick e teclas) — chamado a cada quadro
-  U.input = function () {
-    const p = WW1.game.player;
+  // Entrada contínua (joystick, teclas e controle) — chamado a cada quadro
+  U.input = function (dt) {
+    const p = WW1.game.player, pad = WW1.pad, m = pmode();
     if (!p) return;
     let mx = 0, my = 0, sprint = false;
     if (joy.active) {
@@ -226,13 +278,81 @@
     if (keys.KeyD || keys.ArrowRight) mx = 1;
     if (keys.KeyA || keys.ArrowLeft) mx = -1;
     if (keys.ShiftLeft || keys.ShiftRight) sprint = true;
+    if (isTouch) p.wantMG = held.has('mg');
+
+    // ---- controle de PS4 / Xbox ----
+    if (pad.connected) {
+      if (Math.abs(pad.lx) + Math.abs(pad.ly) > 0.05) { mx = pad.lx; my = -pad.ly; }
+      const sens = WW1.settings.sens * (p.ads ? 0.5 : 1);
+      const curve = v => Math.sign(v) * Math.pow(Math.abs(v), 1.6);
+      p.lookDX += curve(pad.rx) * 170 * sens * dt;
+      p.lookDY -= curve(pad.ry) * 120 * sens * dt;
+      if (m === 'drive') {
+        if (pad.r2 > 0.05 || pad.l2 > 0.05) my = pad.r2 - pad.l2;
+        if (pad.pressed('r1')) action('fire');
+        p.wantMG = pad.held('l1');
+        if (pad.pressed('triangle')) action('use');
+      } else if (m === 'gun') {
+        if (pad.pressed('r2b') || pad.pressed('cross')) action('fire');
+        if (pad.pressed('square')) action('observe');
+        if (pad.pressed('triangle') || pad.pressed('circle')) action('use');
+        if (pad.held('up')) p.lookDY += 6 * dt * 10; if (pad.held('down')) p.lookDY -= 6 * dt * 10;
+        if (pad.held('left')) p.lookDX -= 6 * dt * 10; if (pad.held('right')) p.lookDX += 6 * dt * 10;
+      } else if (m === 'ride') {
+        if (pad.pressed('triangle') || pad.pressed('cross')) action('use');
+      } else {
+        if (pad.pressed('r2b')) action('fire');
+        p.ads = pad.held('l2b') || (p.ads && !pad.connected);
+        if (pad.pressed('square')) action('reload');
+        if (pad.pressed('circle')) action('crouch');
+        if (pad.pressed('l1')) action('grenade');
+        if (pad.pressed('r1') || pad.pressed('r3')) action('melee');
+        if (pad.pressed('up')) action('mask');
+        if (pad.pressed('triangle')) action('use');
+        if (pad.held('l3') || -pad.ly > 0.95) sprint = true;
+      }
+      if (pad.pressed('touch') || pad.pressed('share') || pad.pressed('down') && m === 'foot') action('map');
+      if (pad.pressed('options')) action('pause');
+    }
     p.moveX = mx; p.moveY = my; p.sprint = sprint;
     if (sprint && p.crouch && my > 0.5) p.crouch = false;
   };
 
+  // Navegação dos menus e janelas com o controle
+  U.padMenus = function (dt) {
+    const pad = WW1.pad, g = WW1.game;
+    if (!pad.connected) return;
+    if (U.overlayOpen()) {
+      if (pad.pressed('circle') || pad.pressed('options')) { U.closeOverlays(); return; }
+      if (U.overlayPad) U.overlayPad(pad);
+      const ov = document.querySelector('.overlay.on');
+      navOverlay(ov, pad, dt);
+      return;
+    }
+    if (g.state === 'paused' && (pad.pressed('options') || pad.pressed('circle'))) { g.resume(); return; }
+    if (g.state === 'menu' || g.state === 'roles') { if (pad.pressed('circle') && $('roles').classList.contains('on')) { U.show('menu'); return; } }
+    pad.menuNav(dt);
+  };
+  let ovIdx = 0, ovT = 0;
+  function navOverlay(ov, pad, dt) {
+    const list = Array.from(ov.querySelectorAll('button')).filter(b => b.offsetParent !== null);
+    if (!list.length) return;
+    ovT -= dt;
+    let dir = 0;
+    if (pad.pressed('up') || pad.pressed('left')) dir = -1;
+    if (pad.pressed('down') || pad.pressed('right')) dir = 1;
+    if (!dir && Math.abs(pad.ly) > 0.6 && ovT <= 0) { dir = Math.sign(pad.ly); ovT = 0.22; }
+    if (Math.abs(pad.ly) < 0.3) ovT = 0;
+    ovIdx = (ovIdx + dir + list.length) % list.length;
+    list.forEach((b, i) => b.classList.toggle('focus', i === ovIdx));
+    if (dir) list[ovIdx].scrollIntoView({ block: 'nearest' });
+    if (pad.pressed('cross')) { list[ovIdx].click(); ovIdx = Math.min(ovIdx, list.length - 1); }
+  }
+
   // HUD — chamado a cada quadro
   U.update = function () {
-    const g = WW1.game, p = g.player, m = WW1.mission, now = performance.now() / 1000;
+    const g = WW1.game, p = g.player, m = g.mode === 'open' ? WW1.og : WW1.mission, now = performance.now() / 1000;
+    if (g.mode === 'open' && U.updateOpen) U.updateOpen(p, isTouch);
     if (!p) return;
     const W = innerWidth, H = innerHeight, u = Math.min(H / 100, W / 100 * 0.56);
 

@@ -21,7 +21,7 @@
         if (h.dead && h.team === 'central' && !spareCentral) g.kills++;
       }
     }
-    if (!spareCentral && g.mg) g.mg.explosionAt(p, radius);
+    if (!spareCentral) for (const n of (WW1.mgNests && WW1.mgNests.length ? WW1.mgNests : g.mg ? [g.mg] : [])) n.explosionAt(p, radius);
   };
 
   const A = WW1.artillery = {

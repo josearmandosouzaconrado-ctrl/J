@@ -33,6 +33,8 @@ function hash2(x, y, seed) {
   return (h & 0xffffff) / 16777215;
 }
 
+WW1.hash = hash2;
+
 // Ruído de valor suave (com período opcional para texturas sem emenda)
 WW1.vnoise = function (x, y, seed, period) {
   const xi = Math.floor(x), yi = Math.floor(y);

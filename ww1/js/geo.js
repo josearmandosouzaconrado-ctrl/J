@@ -48,6 +48,21 @@
       _m.compose(new THREE.Vector3((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2), _q, _s.set(r * 2, len, r * 2));
       return this.add(hi ? WW1.prim.cylHi() : WW1.prim.cyl(), _m.clone(), color);
     }
+    // Tronco de cone entre dois pontos (membros), com raios diferentes nas pontas
+    seg(a, b, r0, r1, color, sides) {
+      const d = new THREE.Vector3(b.x - a.x, b.y - a.y, b.z - a.z);
+      const len = d.length();
+      if (len < 0.001) return this;
+      const g = new THREE.CylinderGeometry(r1, r0, len, sides || 8, 1);
+      const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.divideScalar(len));
+      this.add(g, new THREE.Matrix4().compose(new THREE.Vector3((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2), q, new THREE.Vector3(1, 1, 1)), color);
+      g.dispose();
+      return this;
+    }
+    // Esfera (juntas, cabeça, mãos)
+    ball(x, y, z, sx, sy, sz, color, rot) {
+      return this.add(WW1.prim.sph(), WW1.trs(x, y, z, rot || null, sx * 2, (sy || sx) * 2, (sz || sx) * 2), color);
+    }
     build() {
       const g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
@@ -74,7 +89,10 @@
     if (rot instanceof THREE.Quaternion) _q.copy(rot);
     else if (rot) _q.setFromEuler(_e.set(rot[0] * Math.PI / 180, rot[1] * Math.PI / 180, rot[2] * Math.PI / 180, 'YXZ'));
     else _q.identity();
-    return new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), _q, new THREE.Vector3(sx, sy, sz === undefined ? sx : sz));
+    if (sx === undefined) sx = 1;
+    if (sy === undefined) sy = sx;
+    if (sz === undefined) sz = sx;
+    return new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), _q, new THREE.Vector3(sx, sy, sz));
   };
 
   // Extrusão de perfil convexo (z,y) com largura em x (casco do tanque)

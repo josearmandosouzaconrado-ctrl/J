@@ -84,6 +84,46 @@
   .tb.on { background: rgba(150,125,75,0.55); }
   .tb.pulse { background: rgba(115,150,25,0.6); animation: pulse 0.5s infinite alternate; }
   @keyframes pulse { to { background: rgba(160,200,40,0.8); } }
+  button.b.focus, .tb.focus { outline: calc(var(--u)*0.6) solid #f0c060; }
+  .overlay { position: fixed; inset: 0; display: none; pointer-events: auto; background: rgba(8,8,6,0.9); overflow: hidden; }
+  .overlay.on { display: block; }
+  .ov-head { display: flex; align-items: center; justify-content: space-between; padding: calc(var(--u)*2) calc(var(--u)*3); }
+  .ov-head h3 { margin: 0; color: var(--gold); font-size: calc(var(--u)*4); letter-spacing: 0.05em; }
+  .ov-head button.b { width: calc(var(--u)*24); margin: 0; text-align: center; padding: 0; height: calc(var(--u)*7); }
+  #missionList { padding: 0 calc(var(--u)*4); }
+  .mcard { background: rgba(40,36,28,0.92); border-left: calc(var(--u)*0.8) solid #8a6f3e; margin-bottom: calc(var(--u)*2); padding: calc(var(--u)*1.6) calc(var(--u)*2.4); cursor: pointer; }
+  .mcard b { color: var(--gold); font-size: calc(var(--u)*3.2); }
+  .mcard div { color: var(--paper); font-size: calc(var(--u)*2.6); margin-top: calc(var(--u)*0.6); }
+  .mcard button.b { width: auto; height: auto; padding: calc(var(--u)*1) calc(var(--u)*3); margin: calc(var(--u)*1) 0 0; font-size: calc(var(--u)*2.8); }
+  #mapWrap, #mapWrap2 { position: absolute; left: calc(var(--u)*3); right: calc(var(--u)*3); top: calc(var(--u)*12); bottom: calc(var(--u)*2); display: flex; gap: calc(var(--u)*2); }
+  #mapCanvas, #cmdCanvas { position: static; inset: auto; display: block; }
+  #mapCanvas { height: 100%; width: auto; max-width: 56vw; background: #222; touch-action: none; flex: none; }
+  #cmdCanvas { width: 62vw; height: auto; max-height: 100%; background: #222; touch-action: none; flex: none; align-self: flex-start; }
+  #mapSide, #cmdSide { flex: 1; overflow: auto; min-width: 0; }
+  #mapSide button.b:disabled { color: #888; }
+  #mapSide button.b, #cmdSide button.b { width: 100%; height: calc(var(--u)*6.5); font-size: calc(var(--u)*2.6); margin: calc(var(--u)*1) 0; }
+  #cmdLog { font-size: calc(var(--u)*2.4); color: #ddd; line-height: 1.45; margin-top: calc(var(--u)*1); }
+  .side-title { color: var(--gold); font-size: calc(var(--u)*2.6); margin-top: calc(var(--u)*1.5); }
+  #roles .wrap { position: absolute; left: calc(var(--u)*8); top: calc(var(--u)*7); }
+  #roles p.txt { width: 55vw; }
+  #prompt { position: absolute; left: 50%; bottom: calc(var(--u)*10); transform: translateX(-50%); background: rgba(10,10,8,0.65); padding: calc(var(--u)*1) calc(var(--u)*2.4);
+    font: bold calc(var(--u)*2.7) Georgia, serif; color: #ffe7a8; display: none; white-space: nowrap; }
+  #vehHud { position: absolute; left: calc(var(--u)*3); bottom: calc(var(--u)*3); font: bold calc(var(--u)*2.8) Georgia, serif; display: none; }
+  #rankHud { position: absolute; left: calc(var(--u)*2.5); top: calc(var(--u)*17); font-size: calc(var(--u)*2.3); color: #e8dcc0; }
+  body.open #objective { top: calc(var(--u)*2.5); }
+  body:not(.open) #rankHud { display: none; }
+  body:not(.open) .tb.only-open { display: none; }
+  body.m-drive .joy, body.m-drive .knob { opacity: 0.9; }
+  body.m-gun .joy, body.m-gun .knob, body.m-ride .joy, body.m-ride .knob { display: none; }
+  body.m-drive .tb:not([data-b=use]):not([data-b=pause]):not([data-b=map]):not([data-b=fire]):not([data-b=mg]) { display: none; }
+  body.m-drive:not(.m-tank) .tb[data-b=fire] { display: none; }
+  body:not(.m-tank) .tb[data-b=mg] { display: none; }
+  body.m-gun .tb:not([data-b=use]):not([data-b=pause]):not([data-b=fire]):not([data-b=observe]):not([data-b=map]) { display: none; }
+  body:not(.m-gun) .tb[data-b=observe] { display: none; }
+  body.m-ride .tb:not([data-b=use]):not([data-b=pause]) { display: none; }
+  body.m-drive #cross, body.m-ride #cross { display: none !important; }
+  body.m-drive #ammo, body.m-gun #ammo, body.m-ride #ammo, body.m-command #ammo { display: none; }
+  body.pad #touch { display: none !important; }
   #loading.on { display: flex; align-items: center; justify-content: center; background: #1b1a16; font-size: calc(var(--u)*4); color: var(--gold); }
   #hint { position: absolute; bottom: calc(var(--u)*10); width: 100%; text-align: center; font-size: calc(var(--u)*2.4); opacity: 0.85; }
 </style>
@@ -106,6 +146,9 @@
   <div id="msg" class="shadow"></div>
   <div id="warn" class="shadow"></div>
   <div id="hint" class="shadow"></div>
+  <div id="prompt" class="shadow"></div>
+  <div id="vehHud" class="shadow"></div>
+  <div id="rankHud" class="shadow"></div>
   <div id="touch" class="layer">
     <div class="joy" id="joy"></div><div class="knob" id="knob"></div>
     <div class="tb" data-b="fire">ATIRAR</div>
@@ -116,6 +159,10 @@
     <div class="tb" data-b="crouch">AGACHAR</div>
     <div class="tb" data-b="mask">MÁSCARA</div>
     <div class="tb" data-b="pause">II</div>
+    <div class="tb only-open" data-b="use">USAR</div>
+    <div class="tb only-open" data-b="map">MAPA</div>
+    <div class="tb only-open" data-b="observe">OBSERVAR</div>
+    <div class="tb only-open" data-b="mg">METRALH.</div>
   </div>
 </div>
 
@@ -123,12 +170,41 @@
   <div class="wrap shadow">
     <h1>FRENTE OCIDENTAL</h1>
     <h2>1916 · A Batalha do Somme</h2>
-    <button class="b" id="bStart">INICIAR CAMPANHA</button>
+    <button class="b" id="bStart">CAMPANHA: SOMME 1916</button>
+    <button class="b" id="bOpen">MUNDO ABERTO</button>
     <button class="b" id="bDiff"></button>
     <button class="b" id="bQual"></button>
     <div class="row"><button class="b" id="bSensM">−</button><div class="val" id="sensVal"></div><button class="b" id="bSensP">+</button></div>
   </div>
   <div class="foot shadow">Use fones de ouvido. Celular: joystick à esquerda, arraste à direita para olhar.<br>PC: WASD, mouse, clique atira, botão direito mira, R recarrega, G granada, F baioneta, C agacha, M máscara, Esc pausa.</div>
+</div>
+
+<div id="roles" class="screen dark">
+  <div class="wrap shadow">
+    <h3 class="title" style="text-align:left">MUNDO ABERTO — FRENTE DO SOMME</h3>
+    <p class="txt">Um mapa de 6 × 6 km com cidades, estradas, rio, florestas e a linha de frente. Você chega de caminhão a Albert. Escolha a sua função:</p>
+    <button class="b" id="rSoldier">Soldado de infantaria</button>
+    <button class="b" id="rTank">Tanquista (Mark IV)</button>
+    <button class="b" id="rArt">Artilheiro (canhão de 18 libras)</button>
+    <button class="b" id="rCmd">Comandante de divisão</button>
+    <button class="b" id="rReset" style="font-size:calc(var(--u)*2.6)">Apagar progresso do mundo aberto</button>
+    <button class="b" id="rBack">Voltar</button>
+  </div>
+</div>
+
+<div id="missions" class="overlay">
+  <div class="ov-head"><h3 id="missionsTitle">ORDENS DO QUARTEL-GENERAL</h3><button class="b" id="mClose">Fechar</button></div>
+  <div id="missionList"></div>
+</div>
+
+<div id="map" class="overlay">
+  <div class="ov-head"><h3>MAPA DA FRENTE DO SOMME</h3><button class="b" id="mapClose">Fechar</button></div>
+  <div id="mapWrap"><canvas id="mapCanvas" width="640" height="640"></canvas><div id="mapSide"></div></div>
+</div>
+
+<div id="command" class="overlay">
+  <div class="ov-head"><h3>COMANDO DA DIVISÃO</h3><button class="b" id="cmdClose">Sair do comando</button></div>
+  <div id="mapWrap2"><canvas id="cmdCanvas" width="1000" height="500"></canvas><div id="cmdSide"></div></div>
 </div>
 
 <div id="briefing" class="screen dark">
@@ -178,6 +254,7 @@
 
 <script src="lib/three.min.js"></script>
 <script src="js/util.js"></script>
+<script src="js/gamepad.js"></script>
 <script src="js/textures.js"></script>
 <script src="js/geo.js"></script>
 <script src="js/fx.js"></script>
@@ -188,6 +265,10 @@
 <script src="js/player.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/mission.js"></script>
+<script src="js/ow/world.js"></script>
+<script src="js/ow/vehicles.js"></script>
+<script src="js/ow/game.js"></script>
+<script src="js/ow/ui.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

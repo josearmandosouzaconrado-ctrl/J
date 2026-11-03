@@ -10,64 +10,160 @@
   const DEG = Math.PI / 180;
 
   // ---------- Modelos (geometrias com cores por vértice, compartilhadas) ----------
-  function buildGeos(team) {
-    const brit = team === 'allies';
-    const tunic = brit ? [0.46, 0.41, 0.27] : [0.43, 0.45, 0.40];
-    const trousers = brit ? [0.44, 0.39, 0.26] : [0.37, 0.38, 0.35];
-    const legwear = brit ? [0.36, 0.31, 0.21] : [0.13, 0.11, 0.09];
-    const helmet = brit ? [0.35, 0.36, 0.26] : [0.32, 0.35, 0.32];
-    const web = brit ? [0.58, 0.53, 0.38] : [0.26, 0.19, 0.12];
-    const skin = [0.78, 0.6, 0.49], boot = [0.16, 0.11, 0.08], wood = [0.42, 0.3, 0.2], steel = [0.25, 0.26, 0.27];
-    const P = WW1.prim, trs = WW1.trs;
-    const cap = (r, len) => new THREE.CapsuleGeometry(r, len, 3, 8);
+  const V3 = (x, y, z) => ({ x, y, z });
+  const tint = (c, k) => [c[0] * k, c[1] * k, c[2] * k];
 
-    const thigh = new WW1.GeoBuilder(true).add(cap(0.085, 0.33), trs(0, -0.23, 0, null, 1), trousers).build();
-    const shin = new WW1.GeoBuilder(true)
-      .add(cap(0.07, 0.32), trs(0, -0.22, 0, null, 1), legwear)
-      .box(0, -0.45, 0.05, 0.12, 0.08, 0.27, null, boot).build();
-
-    const u = new WW1.GeoBuilder(true);
-    u.box(0, 0.3, 0, 0.42, 0.6, 0.25, null, tunic);
-    u.box(0, -0.02, 0, 0.44, 0.14, 0.27, null, tunic);
-    u.box(0, 0.07, 0, 0.45, 0.06, 0.28, null, web);
-    u.box(0, 0.33, 0.01, 0.05, 0.62, 0.27, [0, 0, 28], web);
-    u.box(0.12, 0.13, 0.14, 0.14, 0.1, 0.06, null, web);
-    u.box(-0.12, 0.13, 0.14, 0.14, 0.1, 0.06, null, web);
-    u.box(0, 0.36, -0.18, 0.32, 0.34, 0.13, null, web);
-    u.add(P.cyl(), trs(0, 0.63, 0, null, 0.1, 0.1, 0.1), skin);
-    u.add(P.sph(), trs(0, 0.76, 0, null, 0.2, 0.23, 0.21), skin);
-    if (brit) {
-      u.add(P.lowSph(), trs(0, 0.83, 0, null, 0.27, 0.13, 0.29), helmet);
-      u.add(P.cylHi(), trs(0, 0.825, 0, null, 0.38, 0.012, 0.40), helmet);
-    } else {
-      u.add(P.lowSph(), trs(0, 0.81, -0.005, null, 0.25, 0.2, 0.27), helmet);
-      u.add(P.cylHi(), trs(0, 0.755, -0.012, null, 0.28, 0.09, 0.3), helmet);
-      u.box(0, 0.79, 0.125, 0.2, 0.02, 0.05, [-20, 0, 0], helmet);
-    }
-    // braços em posição de tiro (matriz do ombro × peça)
-    const arm = (x, rx, ry, color) => {
-      const sh = trs(x, 0.53, 0, [rx, ry, 0], 1);
-      u.add(cap(0.06, 0.48), sh.clone().multiply(trs(0, -0.28, 0, null, 1)), color);
-      u.add(P.sph(), sh.clone().multiply(trs(0, -0.58, 0, null, 0.08, 0.09, 0.08)), skin);
-    };
-    arm(0.25, -62, 0, tunic);
-    arm(-0.25, -78, 28, tunic);
-    // fuzil com baioneta
-    const rf = trs(0.06, 0.36, 0.22, null, 1);
-    u.add(P.box(), rf.clone().multiply(trs(0, -0.03, -0.15, null, 0.045, 0.1, 0.38)), wood);
-    u.add(P.box(), rf.clone().multiply(trs(0, 0, 0.32, null, 0.045, 0.05, 0.6)), wood);
-    u.add(P.cyl(), rf.clone().multiply(trs(0, 0.01, 0.68, [90, 0, 0], 0.02, 0.16, 0.02)), steel);
-    u.add(P.box(), rf.clone().multiply(trs(0, -0.01, 0.92, null, 0.008, 0.025, 0.38)), steel);
-    return { thigh, shin, upper: u.build() };
+  // Capacetes feitos por revolução de perfil (formato real)
+  function lathe(points, segs) {
+    return new THREE.LatheGeometry(points.map(p => new THREE.Vector2(p[0], p[1])), segs || 14);
   }
+  const HELMETS = {
+    brodie: () => lathe([[0, 0.105], [0.05, 0.1], [0.1, 0.082], [0.13, 0.05], [0.145, 0.018], [0.15, 0.004], [0.2, -0.004], [0.207, -0.012], [0.19, -0.016], [0.14, -0.006], [0, -0.006]]),
+    stahl: () => lathe([[0, 0.125], [0.06, 0.12], [0.11, 0.095], [0.14, 0.055], [0.15, 0.0], [0.152, -0.04], [0.168, -0.085], [0.18, -0.098], [0.17, -0.1], [0.14, -0.06], [0, -0.06]]),
+    pickel: () => lathe([[0, 0.12], [0.07, 0.11], [0.12, 0.075], [0.14, 0.03], [0.142, -0.03], [0.15, -0.045], [0.12, -0.04], [0, -0.04]]),
+  };
+
+  // variant: { team, k (tom), mustache, hat: 'brodie'|'stahl'|'pickel'|'cap', officer }
+  function buildGeos(v) {
+    const brit = v.team === 'allies';
+    const k = v.k || 1;
+    const tunic = tint(brit ? [0.47, 0.41, 0.27] : [0.44, 0.46, 0.41], k);
+    const trousers = tint(brit ? [0.45, 0.39, 0.26] : [0.38, 0.39, 0.36], k);
+    const putt = tint(brit ? [0.38, 0.33, 0.22] : [0.38, 0.39, 0.36], k);
+    const helmet = brit ? [0.36, 0.37, 0.27] : [0.33, 0.36, 0.33];
+    const web = brit ? [0.6, 0.55, 0.4] : [0.27, 0.19, 0.12];
+    const leather = [0.33, 0.21, 0.12], boot = brit ? [0.2, 0.13, 0.08] : [0.1, 0.085, 0.07];
+    const skin = tint([0.8, 0.61, 0.5], 0.92 + (v.k || 1) * 0.08), hair = [0.22, 0.15, 0.1], dark = [0.06, 0.05, 0.05];
+    const wood = [0.45, 0.31, 0.19], steel = [0.24, 0.25, 0.26], brass = [0.6, 0.48, 0.2];
+    const P = WW1.prim, trs = WW1.trs;
+    if (v.officer) { tunic[0] *= 1.05; tunic[1] *= 1.03; }
+
+    // ---- coxa (da cintura ao joelho) ----
+    const thigh = new WW1.GeoBuilder(true);
+    thigh.ball(0, -0.02, 0, 0.095, 0.08, 0.095, trousers);
+    thigh.seg(V3(0, 0, 0), V3(0, -0.44, 0.01), 0.098, 0.074, trousers, 10);
+    thigh.ball(0, -0.2, 0.0, 0.1, 0.09, 0.09, trousers); // culote mais largo
+    // ---- canela + bota ----
+    const shin = new WW1.GeoBuilder(true);
+    shin.ball(0, 0, 0.005, 0.074, 0.074, 0.074, trousers); // joelho
+    if (brit) {
+      shin.seg(V3(0, 0, 0), V3(0, -0.12, 0), 0.07, 0.066, trousers, 10);
+      shin.seg(V3(0, -0.11, 0), V3(0, -0.4, -0.005), 0.068, 0.055, putt, 10); // perneiras enroladas
+      for (let i = 0; i < 6; i++) shin.seg(V3(0, -0.14 - i * 0.045, 0), V3(0, -0.15 - i * 0.045, 0), 0.07 - i * 0.002, 0.069 - i * 0.002, tint(putt, 0.85), 10);
+      shin.seg(V3(0, -0.39, 0), V3(0, -0.46, 0), 0.058, 0.06, boot, 10);
+    } else {
+      shin.seg(V3(0, 0, 0), V3(0, -0.06, 0), 0.07, 0.068, trousers, 10);
+      shin.seg(V3(0, -0.05, 0), V3(0, -0.46, 0), 0.074, 0.062, boot, 10);   // bota alta de cano
+    }
+    shin.box(0, -0.475, 0.045, 0.105, 0.07, 0.25, null, boot);  // pé
+    shin.box(0, -0.505, 0.04, 0.11, 0.02, 0.26, null, dark);     // sola
+
+    // ---- tronco, braços, cabeça e equipamento ----
+    const u = new WW1.GeoBuilder(true);
+    // quadril e túnica
+    u.add(new THREE.CylinderGeometry(0.17, 0.165, 0.2, 12), trs(0, 0.02, 0, null, 1, 1, 0.68), trousers);
+    u.add(new THREE.CylinderGeometry(0.205, 0.172, 0.5, 12), trs(0, 0.36, 0.005, null, 1, 1, 0.64), tunic);
+    u.add(new THREE.CylinderGeometry(0.19, 0.205, 0.17, 12), trs(0, 0.04, 0, null, 1, 1, 0.7), tunic); // aba da túnica
+    u.add(new THREE.SphereGeometry(0.205, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), trs(0, 0.6, 0.005, null, 1, 0.38, 0.64), tunic); // ombros
+    u.add(new THREE.CylinderGeometry(0.06, 0.07, 0.06, 10), trs(0, 0.66, 0.0, null, 1), tunic); // gola
+    u.box(0.09, 0.47, 0.125, 0.09, 0.09, 0.012, null, tint(tunic, 0.9));  // bolsos do peito
+    u.box(-0.09, 0.47, 0.125, 0.09, 0.09, 0.012, null, tint(tunic, 0.9));
+    u.box(0.09, 0.515, 0.13, 0.095, 0.03, 0.014, null, tint(tunic, 0.82));
+    u.box(-0.09, 0.515, 0.13, 0.095, 0.03, 0.014, null, tint(tunic, 0.82));
+    for (let i = 0; i < 4; i++) u.ball(0, 0.57 - i * 0.1, 0.13, 0.009, 0.009, 0.006, brass);
+    // cinto e equipamento
+    u.add(new THREE.CylinderGeometry(0.19, 0.19, 0.055, 12), trs(0, 0.13, 0, null, 1, 1, 0.68), v.officer ? leather : web);
+    if (v.officer) {
+      u.box(0, 0.38, 0.0, 0.035, 0.6, 0.3, [0, 0, 32], leather);                // cinto Sam Browne
+      u.box(0.19, 0.08, 0.04, 0.06, 0.14, 0.1, null, leather);                  // coldre
+    } else {
+      u.box(0.06, 0.38, 0.0, 0.045, 0.62, 0.285, [0, 0, 26], web);              // suspensórios cruzados
+      u.box(-0.06, 0.38, 0.0, 0.045, 0.62, 0.285, [0, 0, -26], web);
+      for (const sx of [-1, 1]) for (let i = 0; i < (brit ? 3 : 2); i++)        // cartucheiras
+        u.box(sx * (0.06 + i * 0.045), 0.2, 0.125, 0.042, brit ? 0.1 : 0.075, 0.05, null, brit ? web : leather);
+      u.box(0, 0.4, -0.17, 0.3, 0.3, 0.12, null, brit ? web : [0.42, 0.35, 0.25]); // mochila
+      u.add(P.cylHi(), trs(-0.19, 0.06, -0.06, [0, 0, 90], 0.11, 0.06, 0.11), brit ? [0.3, 0.33, 0.3] : [0.3, 0.27, 0.2]); // cantil
+      u.box(0.19, 0.05, -0.06, 0.06, 0.16, 0.16, null, brit ? web : leather);   // embornal
+      u.seg(V3(0.05, 0.3, -0.24), V3(0.0, -0.05, -0.2), 0.012, 0.012, wood);    // cabo da pá
+      if (!brit) u.add(P.cyl(), trs(-0.12, 0.13, 0.12, [0, 0, 0], 0.03, 0.12, 0.03), steel); // granada de cabo no cinto
+    }
+    // cabeça
+    u.add(P.cyl(), trs(0, 0.69, 0, null, 0.1, 0.09, 0.1), skin);
+    u.ball(0, 0.79, 0.005, 0.095, 0.112, 0.102, skin);
+    u.ball(0, 0.735, 0.04, 0.072, 0.05, 0.07, skin);       // queixo
+    u.box(0, 0.79, 0.1, 0.028, 0.05, 0.035, [12, 0, 0], tint(skin, 0.95)); // nariz
+    u.ball(0.096, 0.79, 0, 0.018, 0.028, 0.012, tint(skin, 0.92));
+    u.ball(-0.096, 0.79, 0, 0.018, 0.028, 0.012, tint(skin, 0.92));
+    u.ball(0.034, 0.81, 0.088, 0.011, 0.008, 0.006, dark);   // olhos
+    u.ball(-0.034, 0.81, 0.088, 0.011, 0.008, 0.006, dark);
+    u.box(0, 0.83, 0.09, 0.09, 0.008, 0.01, null, hair);    // sobrancelhas
+    if (v.mustache) u.box(0, 0.755, 0.098, 0.06, 0.014, 0.012, null, hair);
+    u.ball(0, 0.81, -0.03, 0.094, 0.1, 0.09, hair);         // cabelo atrás
+    // chapéu / capacete
+    if (v.hat === 'brodie') {
+      u.add(HELMETS.brodie(), trs(0, 0.885, 0, [6, 0, 0], 1, 1, 1.06), helmet);
+      u.box(0, 0.74, 0.05, 0.16, 0.008, 0.01, [0, 0, 0], leather); // jugular
+    } else if (v.hat === 'stahl') {
+      u.add(HELMETS.stahl(), trs(0, 0.905, -0.012, [4, 0, 0], 1, 1, 1.08), helmet);
+      u.ball(0.15, 0.88, 0.0, 0.012, 0.012, 0.012, tint(helmet, 0.8));
+      u.ball(-0.15, 0.88, 0.0, 0.012, 0.012, 0.012, tint(helmet, 0.8));
+    } else if (v.hat === 'pickel') {
+      u.add(HELMETS.pickel(), trs(0, 0.885, 0, [4, 0, 0], 1, 1, 1.1), [0.42, 0.42, 0.36]);   // capa de pano
+      u.add(new THREE.ConeGeometry(0.022, 0.1, 8), trs(0, 1.05, 0.0, null, 1), [0.42, 0.42, 0.36]);
+      u.box(0, 0.85, 0.135, 0.17, 0.012, 0.06, [-15, 0, 0], leather);
+    } else {
+      // quepe de oficial
+      u.add(new THREE.CylinderGeometry(0.12, 0.105, 0.075, 14), trs(0, 0.89, -0.005, [-4, 0, 0], 1, 1, 1.08), tunic);
+      u.add(new THREE.CylinderGeometry(0.125, 0.125, 0.012, 14), trs(0, 0.925, -0.005, [-4, 0, 0], 1, 1, 1.08), tint(tunic, 0.9));
+      u.box(0, 0.86, 0.11, 0.14, 0.012, 0.07, [-18, 0, 0], leather);
+      u.ball(0, 0.89, 0.115, 0.016, 0.016, 0.006, brass);
+    }
+    // braços (ombro -> cotovelo -> mão segurando o fuzil, ou baixos no oficial)
+    const arm = (sh, el, ha) => {
+      u.ball(sh.x, sh.y, sh.z, 0.07, 0.07, 0.07, tunic);
+      u.seg(sh, el, 0.064, 0.056, tunic, 10);
+      u.ball(el.x, el.y, el.z, 0.056, 0.056, 0.056, tunic);
+      u.seg(el, ha, 0.055, 0.045, tunic, 10);
+      u.seg(V3(el.x + (ha.x - el.x) * 0.82, el.y + (ha.y - el.y) * 0.82, el.z + (ha.z - el.z) * 0.82), ha, 0.05, 0.05, tint(tunic, 0.88), 10); // punho
+      u.ball(ha.x, ha.y, ha.z, 0.045, 0.04, 0.055, skin);
+    };
+    if (v.officer) {
+      arm(V3(0.22, 0.56, 0), V3(0.25, 0.33, 0.02), V3(0.22, 0.12, 0.08));
+      arm(V3(-0.22, 0.56, 0), V3(-0.25, 0.33, 0.0), V3(-0.22, 0.12, 0.04));
+      u.box(0.22, 0.09, 0.14, 0.03, 0.05, 0.12, null, dark); // pistola na mão
+    } else {
+      arm(V3(0.22, 0.56, 0), V3(0.25, 0.36, 0.02), V3(0.08, 0.33, 0.17));
+      arm(V3(-0.22, 0.56, 0), V3(-0.17, 0.39, 0.25), V3(0.045, 0.36, 0.47));
+      // fuzil (Lee-Enfield / Gewehr 98) com baioneta
+      const rf = trs(0.06, 0.36, 0.22, null, 1);
+      const R = (x, y, z, sx, sy, sz, col, rot) => u.add(P.box(), rf.clone().multiply(trs(x, y, z, rot || null, sx, sy, sz)), col);
+      R(0, -0.04, -0.2, 0.042, 0.11, 0.3, wood, [8, 0, 0]);   // coronha
+      R(0, -0.01, -0.03, 0.038, 0.06, 0.12, wood);
+      R(0, 0.01, 0.07, 0.035, 0.045, 0.18, steel);             // culatra
+      R(0.025, 0.02, 0.0, 0.03, 0.012, 0.012, steel);           // alavanca
+      R(0, -0.035, 0.08, 0.03, 0.045, 0.07, steel);             // carregador
+      R(0, 0.0, 0.38, 0.042, 0.045, 0.48, wood);                // guarda-mão
+      u.add(P.cyl(), rf.clone().multiply(trs(0, 0.012, 0.68, [90, 0, 0], 0.018, 0.14, 0.018)), steel);
+      R(0, -0.012, 0.93, 0.006, 0.024, 0.4, [0.5, 0.52, 0.55]); // baioneta
+      R(0, 0.03, 0.62, 0.006, 0.02, 0.006, steel);
+    }
+    return { thigh: thigh.build(), shin: shin.build(), upper: u.build() };
+  }
+
+  const VARIANTS = {
+    allies: [{ team: 'allies', hat: 'brodie', k: 1 }, { team: 'allies', hat: 'brodie', k: 0.93, mustache: true }, { team: 'allies', hat: 'brodie', k: 1.06 }],
+    central: [{ team: 'central', hat: 'stahl', k: 1 }, { team: 'central', hat: 'stahl', k: 0.94, mustache: true }, { team: 'central', hat: 'pickel', k: 1.04, mustache: true }],
+    alliesOfficer: [{ team: 'allies', hat: 'cap', officer: true, mustache: true, k: 1.03 }],
+    centralOfficer: [{ team: 'central', hat: 'cap', officer: true, mustache: true, k: 1 }],
+  };
+  let variantSeed = 0;
 
   WW1.soldierInit = function (sc) {
     scene = sc;
     actors.length = 0; soldiers.length = 0;
     if (!mat) {
-      mat = new THREE.MeshStandardMaterial({ vertexColors: true, map: WW1.tex.cloth, roughness: 0.88, metalness: 0 });
-      geos.allies = buildGeos('allies');
-      geos.central = buildGeos('central');
+      mat = new THREE.MeshStandardMaterial({ vertexColors: true, map: WW1.tex.cloth, roughness: 0.86, metalness: 0 });
+      for (const key in VARIANTS) geos[key] = VARIANTS[key].map(buildGeos);
     }
   };
 
@@ -81,8 +177,10 @@
   }
 
   class Rig {
-    constructor(team) {
-      const g = geos[team];
+    constructor(team, officer) {
+      const list = geos[team + (officer ? 'Officer' : '')];
+      const g = list[(variantSeed++) % list.length];
+      this.officer = !!officer;
       this.root = new THREE.Group();
       this.hips = new THREE.Group(); this.hips.position.y = 0.95; this.root.add(this.hips);
       this.thighL = part(g.thigh, this.hips, -0.11, 0, 0);
@@ -106,8 +204,8 @@
       this.hips.position.y = 0.95 - k * 0.45 + Math.abs(Math.cos(this.phase)) * 0.05 * mv;
       this.upper.rotation.x = (12 * mv + WW1.clamp(aimPitch, -30, 30) * 0.6) * DEG;
     }
-    muzzle(out) { return this.upper.localToWorld(out.set(0.06, 0.37, 0.99)); }
-    head(out) { return this.upper.localToWorld(out.set(0, 0.76, 0)); }
+    muzzle(out) { return this.officer ? this.upper.localToWorld(out.set(0.22, 0.1, 0.22)) : this.upper.localToWorld(out.set(0.06, 0.37, 0.99)); }
+    head(out) { return this.upper.localToWorld(out.set(0, 0.79, 0)); }
     dispose() { scene.remove(this.root); }
   }
   WW1.Rig = Rig;
@@ -171,7 +269,7 @@
   class Soldier {
     constructor(team, role, x, y, z, yaw) {
       this.team = team; this.role = role;
-      this.rig = new Rig(team);
+      this.rig = new Rig(team, role === 'officer');
       this.pos = this.rig.root.position;
       this.pos.set(x, y, z);
       this.yaw = yaw; this.faceYaw = yaw;

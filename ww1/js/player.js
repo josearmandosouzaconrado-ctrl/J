@@ -44,6 +44,7 @@
 
     damage(amt, from) {
       if (this.dead || amt <= 0) return;
+      if (this.armor) amt *= this.armor;
       this.hp = Math.max(0, this.hp - amt);
       this.lastHit = WW1.time;
       if (amt >= 1) {
@@ -59,6 +60,12 @@
       }
     }
     heal(a) { if (!this.dead) this.hp = Math.min(this.max, this.hp + a); }
+    revive() {
+      this.hp = this.max; this.dead = false; this.controls = true; this.camH = 1.6; this.deathT = 0;
+      this.mantle = null; this.vy = 0; this.maskOn = false; this.ads = false; this.crouch = false;
+      this.reloading = false; this.busyUntil = 0; this.pendingActions = [];
+      this.vm.visible = true;
+    }
 
     nearMiss(from, end) {
       const c = this.camera.position, d = new V().subVectors(end, from);
@@ -71,6 +78,7 @@
     blocked(x, z, dirx, dirz) {
       if (x < W.MINX + 7 || x > W.MAXX - 7 || z < W.MINZ + 7 || z > W.MAXZ - 9) return true;
       const h = Math.max(W.S(x, z), W.S(x + dirx * 0.3, z + dirz * 0.3));
+      if (WW1.ow && WW1.game.mode === 'open' && WW1.ow.H(x, z) < WW1.ow.WATER - 0.9) return true; // rio fundo
       return h - this.pos.y > 0.78;
     }
 
@@ -83,6 +91,8 @@
         this.vm.visible = false;
         return;
       }
+      if (WW1.og && g.mode === 'open' && WW1.og.controlPlayer(this, dt)) { this.speedNow = 0; return; }
+      this.vm.visible = !this.maskOn;
       const playing = this.controls && g.state === 'playing';
       if (!playing) { this.moveX = this.moveY = 0; }
       if (playing && !this.mantle) {

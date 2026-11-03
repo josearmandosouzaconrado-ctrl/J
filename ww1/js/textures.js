@@ -89,6 +89,52 @@
       return mix(c, [0.38, 0.21, 0.12], rust * 0.8);
     }, true);
 
+    // ---- mundo aberto ----
+    T.grass = canvasTex(256, (u, v) => {
+      const n = WW1.fbm(u, v, 8, 4, 71), f = WW1.fbm(u, v, 64, 2, 72);
+      const blade = WW1.vnoise(u * 256, v * 64, 73, 256);
+      let c = mix([0.25, 0.33, 0.14], [0.42, 0.48, 0.22], n * 0.8 + f * 0.3);
+      c = mix(c, [0.48, 0.45, 0.28], S(0.6, 0.8, WW1.fbm(u, v, 4, 3, 74)) * 0.5);
+      return c.map(x => x * (0.85 + 0.25 * blade));
+    }, true);
+    T.plaster = canvasTex(128, (u, v) => {
+      const n = WW1.fbm(u, v, 8, 4, 81), st = WW1.fbm(u, v, 3, 3, 82);
+      const g = 0.82 + 0.14 * n - 0.18 * S(0.55, 0.8, st);
+      return [g, g * 0.98, g * 0.93];
+    }, true);
+    T.tiles = canvasTex(128, (u, v) => {
+      const row = Math.floor(v * 16), off = (row % 2) * 0.5;
+      const cu = (u * 8 + off) % 1, cv = (v * 16) % 1;
+      const edge = Math.min(cu, 1 - cu) * 4 < 0.25 || cv > 0.85 ? 0.7 : 1;
+      const n = 0.85 + 0.15 * WW1.fbm(u, v, 16, 3, 91) + 0.1 * (WW1.hash(Math.floor(u * 8 + off), row, 92) - 0.5);
+      return [n * edge, n * edge, n * edge];
+    }, true);
+    T.road = canvasTex(256, (u, v) => {
+      const n = WW1.fbm(u, v, 8, 5, 101), pebble = S(0.7, 0.85, WW1.vnoise(u * 128, v * 128, 102, 128));
+      const rut = Math.exp(-Math.pow((u - 0.3) / 0.06, 2)) + Math.exp(-Math.pow((u - 0.7) / 0.06, 2));
+      let c = mix([0.36, 0.32, 0.26], [0.5, 0.46, 0.38], n);
+      c = mix(c, [0.58, 0.56, 0.5], pebble * 0.5);
+      return c.map(x => x * (1 - rut * 0.18));
+    }, true);
+    T.flag = (function () {
+      // bandeira do Reino Unido
+      const c = document.createElement('canvas'); c.width = 128; c.height = 64;
+      const x = c.getContext('2d');
+      x.fillStyle = '#1f3a7a'; x.fillRect(0, 0, 128, 64);
+      x.strokeStyle = '#fff'; x.lineWidth = 13; x.beginPath(); x.moveTo(0, 0); x.lineTo(128, 64); x.moveTo(128, 0); x.lineTo(0, 64); x.stroke();
+      x.strokeStyle = '#c8202e'; x.lineWidth = 5; x.beginPath(); x.moveTo(0, 0); x.lineTo(128, 64); x.moveTo(128, 0); x.lineTo(0, 64); x.stroke();
+      x.fillStyle = '#fff'; x.fillRect(52, 0, 24, 64); x.fillRect(0, 22, 128, 20);
+      x.fillStyle = '#c8202e'; x.fillRect(57, 0, 14, 64); x.fillRect(0, 26, 128, 12);
+      const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; return t;
+    })();
+    T.flagDE = (function () {
+      // bandeira de guerra alemã simplificada (preto, branco e vermelho)
+      const c = document.createElement('canvas'); c.width = 96; c.height = 64;
+      const x = c.getContext('2d');
+      x.fillStyle = '#111'; x.fillRect(0, 0, 96, 22); x.fillStyle = '#eee'; x.fillRect(0, 21, 96, 22); x.fillStyle = '#b0151c'; x.fillRect(0, 42, 96, 22);
+      const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; return t;
+    })();
+
     T.soft = canvasTex(64, (u, v) => {
       const d = Math.hypot(u - 0.5, v - 0.5) * 2, a = WW1.clamp01(1 - d);
       return [1, 1, 1, a * a];
