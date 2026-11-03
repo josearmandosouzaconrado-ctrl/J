@@ -20,6 +20,26 @@ asset da loja** — é só abrir no Unity e apertar Play.
 
 ## Gerar o APK para o celular
 
+### Opção 1: automático no GitHub (sem instalar nada no PC)
+
+O repositório tem o workflow `.github/workflows/ww1-apk.yml`, que compila o APK nos servidores do GitHub
+e publica na página **Releases** (tag `ww1-apk`), de onde dá para baixar direto no celular.
+O Unity exige uma licença (a Personal é gratuita), então é preciso cadastrar 3 segredos uma única vez:
+
+1. Crie uma conta grátis em unity.com.
+2. Ative a licença **Personal** uma vez no Unity Hub (em qualquer PC). Isso cria o arquivo de licença:
+   - Windows: `C:\ProgramData\Unity\Unity_lic.ulf`
+   - Mac: `/Library/Application Support/Unity/Unity_lic.ulf`
+   - Linux: `~/.local/share/unity3d/Unity/Unity_lic.ulf`
+3. No GitHub, abra o repositório → **Settings → Secrets and variables → Actions → New repository secret** e crie:
+   - `UNITY_EMAIL`: o e-mail da conta Unity
+   - `UNITY_PASSWORD`: a senha
+   - `UNITY_LICENSE`: o conteúdo inteiro do arquivo `Unity_lic.ulf`
+4. Vá em **Actions → APK Frente Ocidental 1916 → Run workflow**. Leva de 20 a 40 minutos.
+5. Quando terminar, abra **Releases → Frente Ocidental 1916 (APK Android)** no celular e baixe `FrenteOcidental1916.apk`.
+
+### Opção 2: no seu PC com o Unity
+
 - Menu **WW1 → 2. Gerar APK Android**. O arquivo sai em `WW1Unity/Builds/FrenteOcidental1916.apk`.
 - Copie o APK para o celular e instale (permita "instalar apps de fontes desconhecidas").
 - Pela linha de comando:
