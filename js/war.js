@@ -254,6 +254,7 @@ const War = {
     const from = mine[0];
     const n = rng.int(45, 75);
     const a = { id: S.id++, k, foe, x: from.mid.x, y: from.mid.y + from.h / 2 + 4, n, n0: n, state: 'march', target: null, siegeT: 0, from: from.id };
+    const po = Postos.deReino(k, fc); if (po) { a.x = po.x; a.y = po.y + 7; }   // o exército sai do posto avançado
     if (advance) { a.x = lerp(a.x, fc.x, advance * 0.6); a.y = lerp(a.y, fc.y, advance * 0.6); }
     S.armies.push(a);
   },
@@ -278,6 +279,7 @@ const War = {
       if (!s || this.ownerOf(s) !== a.foe) { s = this.pickTarget(a); a.target = s ? s.id : null; if (a.state === 'siege') a.state = 'march'; }
       if (!s) continue;
       if (a.state === 'siege') {
+        if (a.k === 'jogador' && Muralhas.murada(s)) continue;   // muralha: só cai no assalto
         a.siegeT++;
         if (a.siegeT >= 3) {
           if (s.playerVila && a.k !== 'jogador') { Reino.cerco(a, s); continue; }
@@ -475,6 +477,7 @@ const War = {
         const tx = bt.x + bt.ax * along * sign - bt.ay * side, ty = bt.y + bt.ay * along * sign + bt.ax * side;
         const m = this.makeSoldier(ar.k, ar.k === 'jogador' ? Reino.kind(ar, rng) : this.pickKind(ar.k, rng, ar.n), tx * 16 + 8, ty * 16 + 8, rng);
         Game.findFree(m); m.home = { x: bt.x * 16 + 8, y: bt.y * 16 + 8 };
+        const mul = (ar.fraco || 1) * (ar.forte || 1); if (mul !== 1) { m.maxHp = m.hp = Math.round(m.maxHp * mul); m.dmg *= ar.fraco || 1; }
         m.ctrl = 'battle'; m.battleId = bt.id; m.armyId = ar.id; m.repr = repr; m.aggro = m.ai === 'musket' ? 400 : 320;
         Game.actors.push(m);
       }
@@ -549,6 +552,51 @@ const War = {
     m.aimT = ready && g.t < 1.3 ? 0.3 : Math.max(0, (m.aimT || 0) - dt);
     if (ready && g.fireT > (m.lastVolley || -9) && Game.t - g.fireT < 0.5) { m.lastVolley = g.fireT; m.fireDelay = Math.random() * 0.3; }
     if (m.fireDelay !== undefined) { m.fireDelay -= dt; if (m.fireDelay <= 0) { m.fireDelay = undefined; m.aimT = 0.5; m.startAttack('shoot', 0.02); } }
+  },
+  // ---------- IA de batalha ----------
+  // escolhe o alvo pensando: perto, ferido, perigoso (atiradores para a cavalaria) e sem amontoar
+  alvo(m) {
+    const P = Game.player, cand = [];
+    for (const a of P && !P.dead ? [P].concat(Game.actors) : Game.actors) { if (a.dead || a === m || !isHostile(m, a)) continue; const d = dist(m.x, m.y, a.x, a.y); if (d < 380) cand.push([a, d]); }
+    if (!cand.length) return null;
+    let best = null, bs = Infinity;
+    for (const [a, d] of cand) {
+      let s = d;
+      if (a.maxHp) s -= 50 * (1 - a.hp / a.maxHp);                                   // termina os feridos
+      if (m.kind === 'cavaleiro' && (a.ai === 'ranged' || a.ai === 'musket')) s -= 110;   // cavalaria caça atiradores
+      if ((m.ai === 'ranged' || m.ai === 'musket') && a.kind === 'cavaleiro') s -= 40;
+      if (a === m.target) s -= 25;                                                      // não fica trocando
+      let n = 0; for (const o of Game.actors) if (o !== m && o.target === a && o.faction === m.faction && !o.dead) n++;
+      s += n * 22;                                                                      // espalha os ataques
+      if (s < bs) { bs = s; best = a; }
+    }
+    return best;
+  },
+  // feridos recuam para trás da linha e voltam; cavalaria flanqueia; arqueiros não ficam na frente
+  ia(m, t, dt, sf) {
+    const bt = this.st().battles.find(b => b.id === m.battleId); if (!bt) return false;
+    const lado = m.armyId === bt.a ? 1 : -1, retx = (bt.x + bt.ax * 14 * lado) * 16 + 8, rety = (bt.y + bt.ay * 14 * lado) * 16 + 8;
+    if (m.recuo > 0) {
+      m.recuo -= dt; m.hp = Math.min(m.maxHp, m.hp + m.maxHp * 0.035 * dt);
+      if (dist(m.x, m.y, retx, rety) > 10) m.moveToward(retx, rety, m.spd * 1.1 * sf, dt); else if (t) m.setDir(angleTo(m.x, m.y, t.x, t.y));
+      return true;
+    }
+    if (!m.recuou && m.kind !== 'elite' && m.hp < m.maxHp * 0.25 && t && dist(m.x, m.y, t.x, t.y) < 90) { m.recuou = true; m.recuo = 6; if (Math.random() < 0.4) Game.floater(m.x, m.y - 26, 'Ferido! Recuando!', '#ffb0a0'); return true; }
+    if (!t) return false;
+    const d = dist(m.x, m.y, t.x, t.y);
+    if (m.kind === 'cavaleiro' && (t.ai === 'ranged' || t.ai === 'musket') && d > 60) {
+      const a = angleTo(t.x, t.y, m.x, m.y) + ((m.id % 2) ? 1 : -1) * 0.9;
+      m.moveToward(t.x + Math.cos(a) * 34, t.y + Math.sin(a) * 34, m.spd * 1.2 * sf, dt);
+      return true;
+    }
+    if (m.ai === 'ranged' && d < 75) {
+      // recua para trás dos companheiros antes de atirar de novo
+      const a = angleTo(t.x, t.y, m.x, m.y);
+      m.moveToward(m.x + Math.cos(a) * 40, m.y + Math.sin(a) * 40, m.spd * sf, dt);
+      if (m.atkCd <= 0 && d > 30) m.startAttack('shoot');
+      return true;
+    }
+    return false;
   },
   // movimento sem alvo (chamado pela IA dos monstros)
   steer(m, dt, sf) {
@@ -774,12 +822,12 @@ const War = {
     const rows = ks.filter(k => !k.extinto).map(k => { const cities = Game.world.settlements.filter(s => this.ownerOf(s) === k.id).length; const nb = [...k.nb].map(o => `${esc(this.K[o].short)}: ${status(k.id, o)}`).join(' • '); return `<div class="quest"><b style="color:${k.color}">■</b> <b>${esc(k.name)}</b> <small class="dim">${esc(k.ruler.title)} ${esc(k.ruler.name)} • ${cities} cidades</small><br><small>${nb}</small></div>`; }).join('');
     const mortos = ks.filter(k => k.extinto).map(k => `<small class="dim">✝ ${esc(k.name)} deixou de existir no dia ${S.extintos[k.id]}.</small>`).join('<br>');
     const news = S.news.slice(0, 14).map(n => `<div class="chron"><small class="dim">Dia ${n.day}</small> ${esc(n.text)}</div>`).join('') || '<small class="dim">Sem notícias.</small>';
-    return `<div class="qcol">${mine}${Reino.tabHTML()}<div class="sub">Guerras</div>${wars}<div class="sub">Reinos e diplomacia</div>${rows}${mortos ? `<div class="quest">${mortos}</div>` : ''}<div class="sub">Notícias</div>${news}</div>`;
+    return `<div class="qcol">${mine}${Reino.tabHTML()}${Postos.botoesTab(f)}${Nobreza.botoesTab(f)}<div class="sub">Guerras</div>${wars}<div class="sub">Reinos e diplomacia</div>${rows}${mortos ? `<div class="quest">${mortos}</div>` : ''}<div class="sub">Notícias</div>${news}</div>`;
   },
   // ---------- Mapa ----------
   drawMap(ctx, toS, z) {
     const S = this.st();
-    Fronteiras.draw(ctx, toS); Naval.drawMap(ctx, toS); Rede.drawMap(ctx, toS); Mar.drawMap(ctx, toS);
+    Fronteiras.draw(ctx, toS); Naval.drawMap(ctx, toS); Rede.drawMap(ctx, toS); Mar.drawMap(ctx, toS); Postos.drawMap(ctx, toS);
     for (const s of Game.world.settlements) { const o = S.owner[s.id]; if (!o || o === s.region.id || !this.K[o]) continue; const [x, y] = toS(s.x, s.y); ctx.strokeStyle = this.K[o].color; ctx.lineWidth = 3; ctx.strokeRect(x - 9, y - 9, 18, 18); }
     for (const a of S.armies) { const [x, y] = toS(a.x, a.y); ctx.fillStyle = '#000'; ctx.fillRect(x - 4, y - 9, 9, 7); ctx.fillStyle = this.K[a.k].color; ctx.fillRect(x - 3, y - 8, 7, 5); ctx.fillStyle = '#6a4a2a'; ctx.fillRect(x - 4, y - 9, 1, 12); if (a.state === 'camp') { ctx.fillStyle = '#e0d0a0'; ctx.fillText('⛺', x + 9, y + 4); } }
     for (const b of S.battles) { const [x, y] = toS(b.x, b.y); ctx.fillStyle = '#000'; ctx.fillText('⚔', x + 1, y + 6); ctx.fillStyle = '#ff5040'; ctx.fillText('⚔', x, y + 5); }

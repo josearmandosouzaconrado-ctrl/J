@@ -117,6 +117,7 @@ const Vila = {
     // prédios na ordem fixa (cada um tem o seu terreno)
     for (const [k, d] of Object.entries(VILA_PREDIOS)) {
       if (!V.built[k] || !d.bt) continue;
+      if (k === 'casa1' && V.palacio) continue;   // a família real mora no palácio: a casa antiga foi demolida
       const b = W.placeBuilding(s, d.bt, d.x, d.y, rng, objs, occ, size, cul, !!d.deco || d.bt === 'tower');
       if (d.deco) { b.name = d.nome; b.spec.banner = (Game.player.reino && Game.player.reino.cor) || reg.color; b.spec.sign = 'guild'; }
       b.vilaKey = k;
@@ -146,6 +147,7 @@ const Vila = {
   // ---------- tempo: colonos, impostos e ataques ----------
   dia() {
     const V = this.st(); if (!V) return;
+    Recursos.dia();
     const G = Game, P = G.player, cap = this.cap(), b = V.built;
     // colonos chegam se há casa, comida e boa fama
     const atr = 1 + (b.fazenda ? 1 : 0) + (b.taverna ? 1 : 0) + ((P.honra || 0) >= 20 ? 1 : 0) - ((P.honra || 0) <= -20 ? 1 : 0);
@@ -199,6 +201,7 @@ const Vila = {
     const txt = `<b>${esc(V.nome)}</b> — ${this.titulo()}<br>Colonos: <b>${V.pop}/${cap}</b> • Renda: <b>${renda + Reino.rendaTratados()}</b> ouro/dia${V.trib ? ` <span class="dim">(−${V.trib} de tributo)</span>` : ''} • Defesa: <b>${['nenhuma', 'baixa', 'boa', 'ótima'][def]}</b><br>Cofre: <b class="gold">${fmt(V.cofre)}</b> ouro${V.trigo ? ` • Celeiro: ${V.trigo} trigo` : ''}<br><span class="dim small">${V.pop >= cap ? 'Não há mais casas vazias: construa mais casas para receber colonos.' : 'Novos colonos chegam a cada dia.'}</span>`;
     const opts = [];
     if (V.cofre > 0) opts.push({ label: `Recolher o cofre (${fmt(V.cofre)} ouro)`, cls: 'gold', fn: () => { P.gold += V.cofre; Sfx.play('coin'); Game.toast(`+${fmt(V.cofre)} de ouro`, '#ffd060'); V.cofre = 0; this.talkNPC(a); } });
+    if (Recursos.minas() || Recursos.total()) opts.push(Recursos.opcao(() => this.talkNPC(a)));
     if (V.trigo >= 5) opts.push({ label: `Pegar comida do celeiro`, fn: () => { const n = Math.floor(V.trigo / 5); V.trigo -= n * 5; P.addItem(Items.make('pao', n)); Game.toast(`+${n} pães feitos com o trigo da vila`, '#ffe0a0'); this.talkNPC(a); } });
     if (Reino.ativo() && !V.palacio) opts.push({ label: '🏰 Construir o Palácio Real (6000 ouro, 40 blocos de pedra, 30 pedras, 20 tábuas)', cls: 'gold', fn: () => Reino.construirPalacio() });
     if (Reino.ativo() && (Game.player.reino.impostos || 0) >= 1) opts.push({ label: `💰 Impostos das cidades conquistadas (${Math.floor(Game.player.reino.impostos)} ouro)`, fn: () => { const P = Game.player, n = Math.floor(P.reino.impostos); P.gold += n; P.reino.impostos = 0; Sfx.play('coin'); Game.toast(`+${n} ouro`, '#ffd060'); this.talkNPC(a); } });

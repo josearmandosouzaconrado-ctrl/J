@@ -588,7 +588,7 @@
       let fn;
       switch (L.k) {
         case 'slime': fn = slime; break; case 'bat': fn = bat; break; case 'ghost': fn = ghost; break;
-        case 'golem': fn = golem; break; case 'elemental': fn = elemental; break; case 'dragon': fn = dragon; break;
+        case 'golem': fn = golem; break; case 'elemental': fn = elemental; break; case 'dragon': fn = S.dragao || dragon; break;
         default: fn = quad;
       }
       const right = [0, 1, 2].map(f => fn(L, f));

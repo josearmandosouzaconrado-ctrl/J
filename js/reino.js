@@ -280,7 +280,7 @@ const Reino = {
     if (!el) {
       const hud = document.getElementById('hud'); if (!hud) return;
       el = this.el = document.createElement('div'); el.id = 'tatica'; el.className = 'hidden'; hud.appendChild(el);
-      el.addEventListener('pointerdown', e => { const b = e.target.closest('button'); if (!b) return; e.preventDefault(); e.stopPropagation(); if (b.dataset.o === 'cercar') this.cercar(); else if (b.dataset.o === 'invadir') this.invadir(); else if (b.dataset.o === 'reunir') this.formar(1); else this.darOrdem(b.dataset.o); this.painelKey = ''; });
+      el.addEventListener('pointerdown', e => { const b = e.target.closest('button'); if (!b) return; e.preventDefault(); e.stopPropagation(); if (b.dataset.o === 'cercar') this.cercar(); else if (b.dataset.o === 'invadir') this.invadir(); else if (b.dataset.o === 'armas') Cerco.menuArmas(); else if (b.dataset.o === 'esperar') Cerco.esperar(); else if (b.dataset.o === 'assalto') Cerco.assaltar(); else if (b.dataset.o === 'reunir') this.formar(1); else this.darOrdem(b.dataset.o); this.painelKey = ''; });
     }
     const P = Game.player, A = this.ativo() && Game.level.isWorld ? this.campo() : null;
     const emBatalha = this.ativo() && Game.actors.some(m => m.faction === 'jogador' && m.ctrl === 'battle' && !m.dead);
@@ -288,13 +288,14 @@ const Reino = {
     const reunir = !A && !emBatalha && this.ativo() && Game.level.isWorld && War.warOf('jogador').length > 0 && this.total() >= 5;
     const show = !!(A || emBatalha || reunir) && !Game.paused;
     const cerco = A && A.state === 'follow' && this.cidadeInimiga();
-    const key = show + this.ordem + !!cerco + (A ? A.state + A.n : '') + (reunir ? 'r' + this.total() : '');
+    const C = Cerco.atual();
+    const key = show + this.ordem + !!cerco + (A ? A.state + A.n : '') + (reunir ? 'r' + this.total() : '') + (C ? JSON.stringify(C.armas) + Cerco.pronto() + Cerco.diasCerco() : '');
     if (key === this.painelKey) return;
     this.painelKey = key;
     el.classList.toggle('hidden', !show);
     if (!show) return;
     if (reunir) { el.innerHTML = `<div class="tat-t">⚔ Em guerra</div><button data-o="reunir" class="gold">🚩 Reunir exército (${this.total()})</button>`; return; }
-    el.innerHTML = `<div class="tat-t">${A ? `🚩 ${A.n} soldados${A.state === 'siege' ? ' • cercando' : ''}` : 'Batalha'}</div>` + Object.entries(ORDENS).map(([o, l]) => `<button data-o="${o}" class="${this.ordem === o ? 'on' : ''}">${l}</button>`).join('') + (cerco ? `<button data-o="invadir" class="gold">⚔ Invadir ${esc(cerco.name)}</button><button data-o="cercar">🏰 Cercar (esperar)</button>` : '');
+    el.innerHTML = `<div class="tat-t">${A ? `🚩 ${A.n} soldados${A.state === 'siege' ? ' • cercando' : ''}` : 'Batalha'}</div>` + Object.entries(ORDENS).map(([o, l]) => `<button data-o="${o}" class="${this.ordem === o ? 'on' : ''}">${l}</button>`).join('') + (cerco ? (Muralhas.murada(cerco) ? `<button data-o="cercar" class="gold">🏰 Montar cerco a ${esc(cerco.name)}</button>` : `<button data-o="invadir" class="gold">⚔ Invadir ${esc(cerco.name)}</button><button data-o="cercar">🏰 Cercar (esperar)</button>`) : '') + (A && A.state === 'siege' && C ? Cerco.botoes() : '');
     void P;
   },
 
@@ -572,6 +573,7 @@ const Reino = {
         P.gold -= preco; if (w) War.peace(w); UI.close();
       } });
     } else if (this.ativo()) opts.push({ label: '⚔ Declarar guerra', cls: 'danger', fn: () => UI.confirm(`Declarar guerra a ${esc(K.name)}?`, () => { if (v > 25) Vida.honra(-8, 'traí um reino amigo'); t.comercio = t.alianca = false; War.declare('jogador', k); this.addRel(k, -40); UI.close(); }, () => this.diplo(k, back)) });
+    opts.push({ label: '👑 Família real e casamentos', fn: () => Nobreza.verReino(k, () => this.diplo(k, back)) });
     opts.push({ label: 'Voltar', fn: back });
     UI.dialog('Diplomacia', null, txt, opts);
   },
@@ -804,9 +806,10 @@ Object.assign(Reino, {
     if (!Game.hasMats(custo.mats)) return Game.toast('Faltam materiais: 40 blocos de pedra, 30 pedras e 20 tábuas.', '#ff8080');
     P.gold -= custo.ouro; Game.takeMats(custo.mats);
     V.palacio = pos;
-    Construcao.aplicar();
+    if (P.spouse) P.spouseHome = 'palacio';
+    Vila.restore();
     UI.close(); UI.fade(); Sfx.play('levelup');
-    Game.centerMsg('PALÁCIO REAL CONSTRUÍDO!', 'Ao ' + ({ n: 'norte', w: 'oeste', e: 'leste', s: 'sul' }[pos.dir]) + ' da cidade, ligado por uma rua de pedra.');
+    Game.centerMsg('PALÁCIO REAL CONSTRUÍDO!', 'Ao ' + ({ n: 'norte', w: 'oeste', e: 'leste', s: 'sul' }[pos.dir]) + ' da cidade. A antiga Casa do Fundador foi demolida: a família real agora mora no palácio.');
     Game.chron(`Construí o Palácio Real do ${this.nome()}.`);
   },
   menuPalacio(b) {

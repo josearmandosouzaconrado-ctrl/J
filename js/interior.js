@@ -122,6 +122,7 @@ class Interior {
         this.spot('owner', dx, 3);
         this.spot('guard', dx - 2, 4); this.spot('guard', dx + 2, 4); this.spot('guard', dx - 2, H - 3); this.spot('guard', dx + 2, H - 3);
         this.spot('patron', 4, 8); this.spot('patron', W - 5, 9);
+        if (this.b.player) Nobreza.quartos(this, W, H, dx);
         break;
       }
       case 'grandhall': {

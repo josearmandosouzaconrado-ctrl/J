@@ -337,7 +337,7 @@ const Game = {
     Work.update(dt);
     Adm.update();
     Sombra.tick(dt); Ceu.tick(dt);
-    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt); Rede.tick(dt); Construcao.tick(dt); Mar.tick(dt); Estacoes.tick(dt); Abertura.tick(dt);
+    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt); Rede.tick(dt); Construcao.tick(dt); Mar.tick(dt); Estacoes.tick(dt); Abertura.tick(dt); Muralhas.tick(dt); Postos.tick(dt);
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();
@@ -597,13 +597,13 @@ const Game = {
     // dragões
     this.dragonT -= 1.2;
     if (this.dragonT <= 0) {
-      this.dragonT = 40;
+      this.dragonT = 240;   // dragões são raros: um teste a cada 4 minutos e com pouca chance
       const hasDragon = this.actors.some(a => a.def && a.def.dragon && !a.dead);
-      if (!hasDragon && P.level >= 5 && Math.random() < 0.12 + (this.regionAtPlayer().id === 'nordheim' ? 0.1 : 0)) {
+      if (!hasDragon && P.level >= 12 && Math.random() < 0.035 + (this.regionAtPlayer().id === 'nordheim' ? 0.03 : 0)) {
         const R = this.regionAtPlayer();
         const id = (R.id === 'nordheim' || R.id === 'khazdurim') ? 'dragao_gelo' : 'dragao';
         const ang = Math.random() * Math.PI * 2;
-        const m = new Monster(id, P.x + Math.cos(ang) * 420, P.y + Math.sin(ang) * 420, Math.max(P.level, 6));
+        const m = new Monster(id, P.x + Math.cos(ang) * 420, P.y + Math.sin(ang) * 420, Math.max(P.level + 3, 14), { hpMul: 1.7, dmgMul: 1.35 });
         m.provoked = P;
         this.actors.push(m);
         this.centerMsg('UM DRAGÃO SE APROXIMA!', 'Prepare-se para lutar ou fuja!');
@@ -712,9 +712,9 @@ const Game = {
       this.actors.push(a);
     }
     // família na casa do jogador
-    if (b.role === 'playerhouse' && P.houses.includes(s.id)) {
+    if ((b.role === 'playerhouse' && P.houses.includes(s.id)) || b.player) {
       const fam = [];
-      if (P.spouse && P.rel[P.spouse] && P.spouseHome === s.id && !(P.follower && P.follower.spouse)) fam.push({ kind: 'spouse', r: P.rel[P.spouse] });
+      if (P.spouse && P.rel[P.spouse] && (P.spouseHome === s.id || (b.player && P.spouseHome === 'palacio')) && !(P.follower && P.follower.spouse)) fam.push({ kind: 'spouse', r: P.rel[P.spouse] });
       for (const c of P.children || []) fam.push({ kind: 'kid', r: c });
       fam.forEach((f, i) => {
         if (f.kind === 'kid' && this.day - f.r.born < 3) { const cx = L.w - 3, cy = L.h - 4; L.objs[L.idx(cx, cy)] = O.CRIB; L.canvas = null; return; }
@@ -960,7 +960,7 @@ const Game = {
       const o = L.objAt(tx, ty);
       const od = OBJ_DEFS[o];
       if (!o || !od.interact) continue;
-      const labels = { skypillar: L.isCeu ? 'Descer' : 'Subir', sleep: 'Dormir', destiny: 'Tocar', wardrobe: 'Baú', crib: 'Ver bebê', chest: 'Abrir', harvest: o >= O.ORE_FERRO && o <= O.ORE_EBANO ? 'Minerar' : 'Coletar', cook: 'Cozinhar', forge: 'Forjar', alchemy: 'Alquimia', runestone: 'Ler', shrine: 'Orar', dungeon: 'Entrar', exit: 'Sair', sign: 'Ler', minecart: 'Despejar', hatch: L.isShip && L.floor ? 'Subir' : 'Descer', helm: L.proprio ? (L.leme ? 'Largar' : 'Pilotar') : 'Timão', shipbed: 'Dormir', maptable: 'Ver rota', conselho: 'Administrar' };
+      const labels = { cama: 'Dormir', mina: 'Mina', skypillar: L.isCeu ? 'Descer' : 'Subir', sleep: 'Dormir', destiny: 'Tocar', wardrobe: 'Baú', crib: 'Ver bebê', chest: 'Abrir', harvest: o >= O.ORE_FERRO && o <= O.ORE_EBANO ? 'Minerar' : 'Coletar', cook: 'Cozinhar', forge: 'Forjar', alchemy: 'Alquimia', runestone: 'Ler', shrine: 'Orar', dungeon: 'Entrar', exit: 'Sair', sign: 'Ler', minecart: 'Despejar', hatch: L.isShip && L.floor ? 'Subir' : 'Descer', helm: L.proprio ? (L.leme ? 'Largar' : 'Pilotar') : 'Timão', shipbed: 'Dormir', maptable: 'Ver rota', conselho: 'Administrar' };
       let name = od.name;
       if (od.interact === 'dungeon' && L.isWorld) { const dd = this.world.entrances.get(tkey(tx, ty)); if (dd) name = `${dd.name} (Nv ${dd.lvl})`; }
       bd = d; best = { kind: od.interact, tx, ty, o, label: labels[od.interact] || 'Usar', name };
@@ -991,6 +991,10 @@ const Game = {
     if (ni && (!best || ni.d < bd)) best = ni;
     const mi = Mar.findInteract(fx, fy);
     if (mi && (!best || mi.d < bd)) best = mi;
+    const gi = Muralhas.findInteract(fx, fy);
+    if (gi && !best) best = gi;
+    const pi = Postos.findInteract(fx, fy);
+    if (pi && (!best || pi.d < bd)) best = pi;
     if (best && best.kind === 'npc' && best.a.workCust) best.label = best.a.workCust.state === 'wait' ? 'Servir' : 'Falar';
     if (!best && P.carrying) best = { kind: 'drop', label: 'Soltar', name: ENEMIES[P.carrying.eid].name };
     if (!best && L.isWorld && P.count('vara_pesca')) {
@@ -1034,7 +1038,9 @@ const Game = {
       case 'wardrobe': if (this.level.isInterior && this.level.b.role === 'playerhouse' && this.player.houses.includes(this.level.s.id)) UI.storage(this.level.s); else this.toast('Isso não é seu.', '#ffa0a0'); break;
       case 'crib': UI.babyCrib(); break;
       case 'corpse': War.loot(it.c); break;
-      case 'sleep': if (Academy.state().enrolled) UI.rest(null, 0); else this.toast('Esta cama é de um aluno da Academia.', '#ffa0a0'); break;
+      case 'sleep': if (Academy.state().enrolled) UI.rest(null, 0); else Camas.usar(); break;
+      case 'cama': Camas.usar(); break;
+      case 'mina': Recursos.menu(); break;
       case 'sign': UI.sign(it.s); break;
       case 'chest': this.openChest(it.tx, it.ty, it.o); break;
       case 'harvest': {
@@ -1277,7 +1283,7 @@ const Game = {
     if (!P.dead || true) D.push({ y: P.y, a: P });
     for (const k of this.pickups) D.push({ y: k.y, pk: k });
     this.drawMountsCart(D); this.drawCarcasses(D);
-    if (L.isWorld) { Vila.drawables(D, camX, camY, vw, vh); War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); Nyxar.drawables(D, camX, camY, vw, vh); Mar.drawables(D, camX, camY, vw, vh); Abertura.drawables(D, camX, camY); }
+    if (L.isWorld) { Vila.drawables(D, camX, camY, vw, vh); War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); Nyxar.drawables(D, camX, camY, vw, vh); Mar.drawables(D, camX, camY, vw, vh); Abertura.drawables(D, camX, camY); Muralhas.drawables(D, camX, camY, vw, vh); Cerco.drawables(D, camX, camY); }
     Ceu.drawables(D, camX, camY, vw, vh);
     D.sort((a, b) => a.y - b.y);
     Visual.sombras(ctx, D, camX, camY, vw, vh);

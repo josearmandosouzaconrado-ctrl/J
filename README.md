@@ -213,6 +213,32 @@ Os empregos de **Taverneiro**, **Fazendeiro** e **Minerador** não pagam mais s�
 - **Mina**: cada vila com ferreiro tem uma **mina** fora dos muros. Lá dentro há galerias escuras com trilhos, escoras e lanternas: quebre os veios com várias picaretadas, carregue até 4 pedras e despeje no carrinho de mina.
 - O turno tem tempo limitado; o pagamento depende de quanto você fez, mais gorjetas, e conta para as promoções do ofício.
 
+## Muralhas, cerco e armas de cerco
+- Muralhas altas com adarve, ameias, seteiras e torres (ou paliçada de troncos nos povos do
+  norte e dos orcs); guardas patrulham em cima.
+- Cidade murada sitiada **fecha os portões** (grade levadiça). Quem não está em guerra pode pedir
+  passagem aos guardas.
+- Para tomar uma cidade murada: **Montar cerco** → construir **armas de cerco** (aríete, escadas,
+  torre de cerco, trabuco, catapulta incendiária, balista, manteletes) → **esperar o amanhecer
+  do dia seguinte** → **Assaltar a muralha**. Aríete, escadas ou torre abrem o portão; as outras
+  armas derrubam defensores; a guarnição sitiada chega fraca (fome e medo).
+
+## Reino: postos avançados, minas, nobreza e palácio
+- Cada reino tem **postos avançados** (paliçada, tendas, bandeira e guarda) no caminho dos
+  rivais; os exércitos partem deles. Em guerra, destrua um posto matando a guarda. Depois da
+  independência você monta os seus onde quiser (até 4): suas tropas se reúnem e você descansa lá.
+- **Minas** no Modo Construção: pedra, minério de ferro e ouro todo dia no armazém da cidade; as
+  obras e as armas de cerco usam o armazém quando falta material na bolsa.
+- **Famílias nobres**: cada reino tem família real e casas nobres. Como rei ou rainha você casa os
+  filhos com príncipes, princesas e herdeiros (alianças de sangue ou dote e honra).
+- O **Palácio Real** tem quartos para a família, que passa a morar lá; a antiga Casa do Fundador
+  é demolida.
+- **Camas**: durma em qualquer cama sua (casas compradas ou construídas, vila, palácio, castelos
+  do seu reino) e alugue na hora a da taverna.
+- Exércitos mais espertos: escolhem alvos (feridos, atiradores), espalham os ataques, feridos
+  recuam, a cavalaria flanqueia, arqueiros mantêm distância.
+- **Dragões** muito mais raros (nível 12+) e bem mais fortes. Dragões e cavalos redesenhados.
+
 ## Estações do ano e o inverno longo
 - O ano tem 60 dias: **Inverno (24)**, Primavera (12), Verão (12) e Outono (12). O jogo começa
   no meio do inverno, com neve alta, e ele demora a acabar.
