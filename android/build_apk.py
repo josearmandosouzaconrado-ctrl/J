@@ -12,6 +12,7 @@ normalmente gera:
 Uso: python3 android/build_apk.py         ->  CronicasDeEldoria.apk (jogo normal)
      python3 android/build_apk.py --adm   ->  CronicasDeEldoria-ADM.apk (painel de testes,
                                              instala separado do jogo normal)
+     python3 android/build_apk.py --ww1   ->  FrenteOcidental1916.apk (jogo 3D da 1ª Guerra, pasta ww1/)
 Requer apenas Python 3 e o pacote `cryptography`.
 """
 import datetime
@@ -26,16 +27,19 @@ import zlib
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HERE = os.path.join(ROOT, 'android')
 ADM = '--adm' in sys.argv
-OUT = os.path.join(ROOT, 'CronicasDeEldoria-ADM.apk' if ADM else 'CronicasDeEldoria.apk')
+WW1 = '--ww1' in sys.argv
+OUT = os.path.join(ROOT, 'FrenteOcidental1916.apk' if WW1 else 'CronicasDeEldoria-ADM.apk' if ADM else 'CronicasDeEldoria.apk')
 
-PACKAGE = 'com.eldoria.cronicas.adm' if ADM else 'com.eldoria.cronicas'
+PACKAGE = 'com.ww1studio.frenteocidental' if WW1 else 'com.eldoria.cronicas.adm' if ADM else 'com.eldoria.cronicas'
 ACTIVITY = PACKAGE + '.MainActivity'
-APP_NAME = 'Eldoria ADM' if ADM else 'Crônicas de Eldoria'
-UA_TAG = ' EldoriaAPK EldoriaADM' if ADM else ' EldoriaAPK'
-VERSION_CODE = 11
-VERSION_NAME = '0.9.2-beta'
+APP_NAME = 'Frente Ocidental 1916' if WW1 else 'Eldoria ADM' if ADM else 'Crônicas de Eldoria'
+UA_TAG = ' WW1APK' if WW1 else ' EldoriaAPK EldoriaADM' if ADM else ' EldoriaAPK'
+VERSION_CODE = 1 if WW1 else 11
+VERSION_NAME = '1.0' if WW1 else '0.9.2-beta'
 MIN_SDK, TARGET_SDK = 24, 34
-WEB_FILES = ['index.html', 'manifest.json', 'css', 'js', 'icons']
+# pasta de onde saem os arquivos do jogo (vão para assets/ no APK)
+WEB_ROOT = os.path.join(ROOT, 'ww1') if WW1 else ROOT
+WEB_FILES = ['index.html', 'lib', 'js'] if WW1 else ['index.html', 'manifest.json', 'css', 'js', 'icons']
 
 
 # ======================================================================
@@ -411,12 +415,12 @@ def load_key():
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.asymmetric import rsa
     from cryptography.x509.oid import NameOID
-    d = os.path.join(HERE, 'signing')
+    d = os.path.join(HERE, 'signing-ww1' if WW1 else 'signing')
     kp, cp = os.path.join(d, 'key.pem'), os.path.join(d, 'cert.pem')
     if not os.path.exists(kp):
         os.makedirs(d, exist_ok=True)
         key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-        name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'Cronicas de Eldoria'), x509.NameAttribute(NameOID.ORGANIZATION_NAME, 'Eldoria')])
+        name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'Frente Ocidental 1916' if WW1 else 'Cronicas de Eldoria'), x509.NameAttribute(NameOID.ORGANIZATION_NAME, 'WW1 Studio' if WW1 else 'Eldoria')])
         now = datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc)
         cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key())
                 .serial_number(x509.random_serial_number()).not_valid_before(now)
@@ -471,14 +475,14 @@ def sign_v2(apk):
 # ======================================================================
 def web_files():
     for item in WEB_FILES:
-        p = os.path.join(ROOT, item)
+        p = os.path.join(WEB_ROOT, item)
         if os.path.isfile(p):
             yield p, item
         else:
             for d, _, fs in os.walk(p):
                 for f in sorted(fs):
                     full = os.path.join(d, f)
-                    yield full, os.path.relpath(full, ROOT).replace(os.sep, '/')
+                    yield full, os.path.relpath(full, WEB_ROOT).replace(os.sep, '/')
 
 
 def add(z, name, data, store=False):
@@ -494,7 +498,7 @@ def add(z, name, data, store=False):
 
 
 def main():
-    icon = os.path.join(ROOT, 'icons', 'icon-adm-192.png' if ADM else 'icon-192.png')
+    icon = os.path.join(ROOT, 'ww1', 'icon-192.png') if WW1 else os.path.join(ROOT, 'icons', 'icon-adm-192.png' if ADM else 'icon-192.png')
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'w') as z:
         add(z, 'AndroidManifest.xml', build_manifest())
