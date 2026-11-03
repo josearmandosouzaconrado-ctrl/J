@@ -83,7 +83,7 @@ const Shops = {
   },
   buyPrice(it) {
     const P = Game.player;
-    return Math.max(1, Math.ceil(Items.value(it) * (P.perks.has('negociante') ? 0.8 : 1) * (1 - Math.min(0.3, P.skill('eloquencia') * 0.003)) * (1 - ((P.sb && P.sb.price) || 0)) * Vida.precoMul()));
+    return Math.max(1, Math.ceil(Items.value(it) * (P.perks.has('negociante') ? 0.8 : 1) * (1 - Math.min(0.3, P.skill('eloquencia') * 0.003)) * (1 - ((P.sb && P.sb.price) || 0)) * Vida.precoMul() * Estacoes.precoComida(it) * Abertura.imposto()));
   },
   sellPrice(it) {
     const P = Game.player;

@@ -41,7 +41,7 @@ class Player extends Actor {
   // ---------- Serialização ----------
   toJSON() {
     const o = {};
-    for (const k of ['name', 'race', 'cls', 'app', 'level', 'xp', 'base', 'perkPts', 'gold', 'inv', 'equip', 'spells', 'spellIdx', 'shouts', 'shoutLvl', 'shoutIdx', 'souls', 'skills', 'quests', 'guilds', 'main', 'doneQuests', 'hasHorse', 'houses', 'storage', 'follower', 'stats', 'hp', 'mp', 'st', 'x', 'y', 'lastTown', 'pendingLevels', 'cds', 'rel', 'spouse', 'spouseHome', 'children', 'babyDue', 'pet', 'sign', 'style', 'mount', 'horse', 'cart', 'carrying', 'job', 'chronicle', 'freeMode', 'magicAwake', 'academy', 'army', 'visitedCont', 'ceu', 'needs', 'honra', 'favores', 'vila', 'eventos', 'reino', 'mar']) o[k] = this[k];
+    for (const k of ['name', 'race', 'cls', 'app', 'level', 'xp', 'base', 'perkPts', 'gold', 'inv', 'equip', 'spells', 'spellIdx', 'shouts', 'shoutLvl', 'shoutIdx', 'souls', 'skills', 'quests', 'guilds', 'main', 'doneQuests', 'hasHorse', 'houses', 'storage', 'follower', 'stats', 'hp', 'mp', 'st', 'x', 'y', 'lastTown', 'pendingLevels', 'cds', 'rel', 'spouse', 'spouseHome', 'children', 'babyDue', 'pet', 'sign', 'style', 'mount', 'horse', 'cart', 'carrying', 'job', 'chronicle', 'freeMode', 'magicAwake', 'academy', 'army', 'visitedCont', 'ceu', 'needs', 'honra', 'favores', 'vila', 'eventos', 'reino', 'mar', 'tirania']) o[k] = this[k];
     o.perks = [...this.perks];
     o.buffs = this.buffs.filter(b => b.t < 1e6);
     return o;
@@ -652,10 +652,10 @@ class Player extends Actor {
       if (Math.random() < 0.5) Game.particle(this.x, this.y, (Math.random() - 0.5) * 20, -8, '#c8b090', 0.3);
     } else {
       const m = Input.move;
-      let spd = this.stat.speed * (this.mounted ? 1 : tdef.slow) * this.speedFactor * (1 + this.buffVal('speed')) * Vida.speedMul();
+      let spd = this.stat.speed * (this.mounted ? 1 : tdef.slow) * this.speedFactor * (1 + this.buffVal('speed')) * Vida.speedMul() * Estacoes.vel(this);
       if (this.mounted) spd *= ((MOUNTS[this.mount] || MOUNTS.cavalo).speed) * (this.perks.has('cavaleiro') ? 1.25 : 1) * (this.cart && this.cart.hitched ? 0.85 : 1);
       if (this.carrying) spd *= 0.62;
-      if (this.sleeping || Game.intro || Academy.cine || Game.level.leme) spd = 0;
+      if (this.sleeping || Game.intro || Academy.cine || Game.level.leme || Abertura.ativa) spd = 0;
       if (this.castT > 0 || (this.atkT > 0 && this.swing)) spd *= 0.8;
       if (m.mag > 0.12) {
         if ((Input.sprint || m.mag > 0.94) && this.st > 1 && !this.carrying) { spd *= 1.45; this.st -= (this.mounted ? 7 : 15) * dt; this.sprinting = true; }
@@ -677,13 +677,14 @@ class Player extends Actor {
     }
     // regeneração
     const out = this.lastHurt > 5;
-    this.hp = Math.min(this.stat.maxHp, this.hp + (this.stat.regenHp + this.buffVal('regen') + (out ? 1.5 + this.stat.maxHp * 0.012 : 0.25)) * dt);
+    this.hp = Math.min(this.stat.maxHp, this.hp + (this.stat.regenHp + this.buffVal('regen') + (out ? (1.5 + this.stat.maxHp * 0.012) * Dificuldade.regen() : 0.25)) * dt);
     this.mp = Math.min(this.stat.maxMp, this.mp + this.stat.regenMp * (this.buffVal('graca') ? 4 : 1) * dt);
     if (!this.sprinting && this.rolling <= 0) this.st = Math.min(this.stat.maxSt, this.st + this.stat.regenSt * (this.atkT > 0 ? 0.4 : 1) * Vida.regenMul() * dt);
     if (this.st < 0) this.st = 0;
   }
   die(killer) {
     if (this.dead) return;
+    if (Dificuldade.desmaio(killer)) return;
     this.dead = true;
     this.stats.deaths++;
     Game.onPlayerDeath(killer);

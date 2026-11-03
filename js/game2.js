@@ -275,6 +275,7 @@ Object.assign(Game, {
         this.chron(`Acordei em ${v}, sem memória. ${n.name}, ${title}, me ajudou a recomeçar.`);
         this.centerMsg(v, 'Sua história começa agora. Viva como quiser!');
         this.saveGame(0, true);
+        Abertura.iniciar(I.vill, n);
         const tips = ['Dica: arraste o lado esquerdo da tela para andar.', 'Dica: entre nas casas e lojas tocando no botão de AÇÃO perto da porta.', 'Dica: peça emprego na taverna, armazém ou ferraria para ganhar dinheiro.', 'Dica: o diário (Menu > Missões) guarda a sua história.', 'Dica: compre um Machado de Lenhador no armazém para cortar árvores e construir sua casa.', 'Dica: você nasceu sem magia. A Academia Real de Astralis (marcada em azul no mapa) pode despertá-la.'];
         tips.forEach((t, k) => this.later(4 + k * 9, () => this.toast(t, '#a0e0ff')));
       }

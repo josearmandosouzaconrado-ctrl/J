@@ -192,7 +192,7 @@ const Combat = {
       if (P.rolling > 0 || P.invuln > 0 || Game.godMode) return 0;
       if (elem === 'phys') dmg *= 100 / (100 + P.stat.armor);
       else dmg *= (100 / (100 + P.stat.armor * 0.35)) * (1 - clamp(P.res(elem), 0, 0.85));
-      dmg *= P.dmgTakenMul();
+      dmg *= P.dmgTakenMul() * Dificuldade.dano();
       if (!o.dot && P.equip.offhand && ITEMS[P.equip.offhand.id].akind === 'shield' && Math.random() < 0.18 + P.skill('armadura') * 0.002) {
         dmg *= 0.25; Game.floatText(P.x, P.y - 22, 'BLOQUEIO', '#c0d0ff'); Sfx.play('block');
       }
@@ -279,7 +279,7 @@ class Monster extends Actor {
     const hpMul = d.boss ? Math.max(0.55, 1 + 0.08 * (this.lvl - L0)) : 1 + 0.12 * (this.lvl - 1);
     const dmgMul = d.boss ? Math.max(0.6, 1 + 0.07 * (this.lvl - L0)) : 1 + 0.1 * (this.lvl - 1);
     const gH = d.ally ? 1 : d.boss ? 1.2 : 1.35, gD = d.ally ? 1 : 1.4;
-    this.maxHp = this.hp = Math.round(d.hp * hpMul * gH * (opts.hpMul || 1));
+    this.maxHp = this.hp = Math.round(d.hp * hpMul * gH * (opts.hpMul || 1) * (d.ally ? 1 : Dificuldade.vida()));
     this.dmg = d.dmg * dmgMul * gD * (opts.dmgMul || 1);
     this.spd = d.spd * (opts.spdMul || 1);
     this.r = d.r || 5; this.fly = !!d.fly; this.ai = d.ai; this.aggro = d.aggro || 130;

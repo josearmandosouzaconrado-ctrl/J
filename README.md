@@ -213,6 +213,32 @@ Os empregos de **Taverneiro**, **Fazendeiro** e **Minerador** não pagam mais s�
 - **Mina**: cada vila com ferreiro tem uma **mina** fora dos muros. Lá dentro há galerias escuras com trilhos, escoras e lanternas: quebre os veios com várias picaretadas, carregue até 4 pedras e despeje no carrinho de mina.
 - O turno tem tempo limitado; o pagamento depende de quanto você fez, mais gorjetas, e conta para as promoções do ofício.
 
+## Estações do ano e o inverno longo
+- O ano tem 60 dias: **Inverno (24)**, Primavera (12), Verão (12) e Outono (12). O jogo começa
+  no meio do inverno, com neve alta, e ele demora a acabar.
+- A neve **gruda de verdade**: cobre o chão (com bordas suaves), os telhados das casas, as copas
+  das árvores, pedras e cercas; flores, capim e plantações somem debaixo dela. Ela chega aos
+  poucos no fim do outono e derrete devagar no fim do inverno. Não neva em desertos, vulcões e
+  ilhas tropicais.
+- Andar na neve é mais lento (a pé −22%, a cavalo −38%), e o frio já pesa um pouco fora dela.
+- **Caça escassa**: no inverno quase não aparecem animais; eles voltam aos poucos na primavera.
+  A comida fica cara nas lojas (o dobro nas vilas), as fazendas não produzem e os moradores
+  reclamam da fome.
+
+## Abertura: o reino tirano
+- Depois que o prefeito acorda você, guardas do rei arrancam uma família de casa, acusam os pais
+  de tramar uma rebelião e os executam. A filha pequena é levada para quebrar pedra nas minas
+  do rei. Desde então o seu reino natal é conhecido como tirano: guardas ameaçam, e as lojas
+  cobram 15% a mais de imposto.
+
+## Dificuldade Brutal (estilo Kenshi)
+- Nova opção em **Opções → Dificuldade** (Normal, Difícil, Brutal). A padrão é **Brutal**:
+  inimigos causam +80% de dano e têm +45% de vida, a vida quase não volta sozinha, aparecem mais
+  inimigos e morrer custa 25% do ouro.
+- Derrotado por bandidos, soldados ou piratas você **desmaia** em vez de morrer: é roubado
+  (35% do ouro e um item da bolsa), acorda horas depois no mesmo lugar e fica ferido (mais lento)
+  por um tempo. Apanhar de novo logo em seguida mata.
+
 ## Expansão do Mar: ilhas, navio próprio e piratas
 - **83 ilhas** pequenas e médias espalhadas pelos oceanos, com praias, palmeiras e mata:
   enseadas piratas, ilhas do tesouro (acampamento pirata e baú enterrado), ilhas rochosas e

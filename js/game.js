@@ -46,7 +46,7 @@ const Game = {
   loadSettings() {
     let s = null;
     try { s = JSON.parse(localStorage.getItem('eldoria_settings')); } catch (e) { }
-    this.settings = Object.assign({ sfx: true, music: true, sfxVol: 0.6, musicVol: 0.35, btnScale: 1, showFps: false, zoom: 1, weather: true, needs: true }, s || {});
+    this.settings = Object.assign({ sfx: true, music: true, sfxVol: 0.6, musicVol: 0.35, btnScale: 1, showFps: false, zoom: 1, weather: true, needs: true, dif: 'brutal' }, s || {});
     Sfx.sfxOn = this.settings.sfx; Sfx.musicOn = this.settings.music; Sfx.sfxVol = this.settings.sfxVol; Sfx.musicVol = this.settings.musicVol;
   },
   saveSettings() {
@@ -337,7 +337,7 @@ const Game = {
     Work.update(dt);
     Adm.update();
     Sombra.tick(dt); Ceu.tick(dt);
-    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt); Rede.tick(dt); Construcao.tick(dt); Mar.tick(dt);
+    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt); Rede.tick(dt); Construcao.tick(dt); Mar.tick(dt); Estacoes.tick(dt); Abertura.tick(dt);
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();
@@ -555,7 +555,7 @@ const Game = {
     let count = 0;
     for (const a of this.actors) if (a.team === 'enemy' && !a.camp && !a.boss && dist(a.x, a.y, P.x, P.y) < 480) count++;
     const passiveCount = this.actors.filter(a => a.passive).length;
-    const cap = night ? 8 : 6;
+    const cap = (night ? 8 : 6) + Dificuldade.extra();
     if (count < cap) {
       for (let tries = 0; tries < 5; tries++) {
         const ang = Math.random() * Math.PI * 2, r = 230 + Math.random() * 110;
@@ -568,6 +568,7 @@ const Game = {
         const pick = new RNG(Math.floor(Math.random() * 1e9)).weighted(table.map(e => ({ id: e[0], w: e[1] })), 'w').id;
         const d = ENEMIES[pick];
         if (d.passive && passiveCount > 6) continue;
+        if (d.passive && Math.random() > Estacoes.fauna()) continue;   // inverno: quase não há caça
         const n = (pick === 'lobo' || pick === 'lobo_gelo' || pick === 'goblin' || pick === 'esqueleto' || pick === 'bandido' || pick === 'orc_renegado') ? 1 + Math.floor(Math.random() * 3) : (d.passive ? 1 + Math.floor(Math.random() * 2) : 1 + (Math.random() < 0.25 ? 1 : 0));
         const lvl = clamp(P.level + Math.floor(Math.random() * 4) - 2, R.lvl[0], R.lvl[1] + 2);
         for (let k = 0; k < n; k++) {
@@ -810,7 +811,9 @@ const Game = {
       const R = this.regionAtPlayer();
       const r = Math.random();
       const b = R.biome;
+      const inv = Estacoes.tempo(R, r);
       if (!this.settings.weather) w.kind = null;
+      else if (inv !== undefined) w.kind = inv;
       else if (b === 'snow' || b === 'mountain') w.kind = r < 0.55 ? 'snow' : null;
       else if (b === 'desert') w.kind = r < 0.2 ? 'sand' : null;
       else if (b === 'volcanic' || b === 'dead') w.kind = r < 0.6 ? 'ash' : null;
@@ -903,7 +906,7 @@ const Game = {
   },
   respawn() {
     const P = this.player, W = this.world;
-    const lost = Math.floor(P.gold * 0.1);
+    const lost = Math.floor(P.gold * Dificuldade.perda());
     P.gold -= lost;
     P.dead = false; P.hp = P.stat.maxHp; P.mp = P.stat.maxMp; P.st = P.stat.maxSt; P.fx = []; P.buffs = []; P.recalc();
     let s = W.settlements.find(s => s.id === P.lastTown) || W.nearestSettlement(P.x / 16, P.y / 16);
@@ -978,7 +981,7 @@ const Game = {
         const tx = ptx + dx, ty = Math.floor(P.y / 16) + dy, o = L.objAt(tx, ty);
         if (axe && TREE_OBJS.has(o)) best = { kind: 'chop', tx, ty, o, label: 'Cortar', name: OBJ_DEFS[o].name };
         else if (pick && QUARRY_OBJS.has(o)) best = { kind: 'quarry', tx, ty, o, label: 'Quebrar', name: OBJ_DEFS[o].name };
-        else if (o === O.CROP && L.isWorld) best = { kind: 'reap', tx, ty, o, label: 'Colher', name: 'Trigo' };
+        else if (o === O.CROP && L.isWorld && !(Estacoes.nivelPintado >= 0.6 && Estacoes.neveEm(tx, ty, L.tileAt(tx, ty)))) best = { kind: 'reap', tx, ty, o, label: 'Colher', name: 'Trigo' };
       }
     }
     // trabalhos: barril, lareira, canteiros, entrada da mina
@@ -1245,7 +1248,7 @@ const Game = {
       for (let cy = Math.max(0, ty0 >> 5); cy <= Math.min(WORLD_H / 32 - 1, ty1 >> 5); cy++) for (let cx = Math.max(0, tx0 >> 5); cx <= Math.min(WORLD_W / 32 - 1, tx1 >> 5); cx++) {
         for (const [tx, ty, o, v] of L.objList(cx, cy)) {
           if (tx < tx0 || tx > tx1 || ty < ty0 || ty > ty1) continue;
-          const s = Sprites.obj(o, v, OBJ_ANIM[o] ? anim : 0);
+          const s = Estacoes.objeto(o, v, OBJ_ANIM[o] ? anim : 0, tx, ty); if (!s) continue;
           D.push({ y: ty * 16 + 15, img: s.c, x: tx * 16 + 8 - (s.w >> 1), yy: ty * 16 + 16 - s.h + s.oy });
         }
       }
@@ -1260,7 +1263,7 @@ const Game = {
       for (const b of this.world.buildingsInView(camX, camY, camX + vw, camY + vh)) {
         let img;
         if (b.site) { const pk = Math.floor(b.home.progress * 4); if (!b._scaf || b._scafK !== pk) { b._scaf = Sprites.scaffold(b.w, b.h, b.home.progress); b._scafK = pk; } img = b._scaf; }
-        else img = Sprites.building(b.spec);
+        else img = Sprites.building(Estacoes.predio(b));
         const H = img.height - 1;
         D.push({ y: (b.ty + b.h) * 16, img, x: b.tx * 16 - 1, yy: (b.ty + b.h) * 16 - H });
       }
@@ -1274,7 +1277,7 @@ const Game = {
     if (!P.dead || true) D.push({ y: P.y, a: P });
     for (const k of this.pickups) D.push({ y: k.y, pk: k });
     this.drawMountsCart(D); this.drawCarcasses(D);
-    if (L.isWorld) { Vila.drawables(D, camX, camY, vw, vh); War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); Nyxar.drawables(D, camX, camY, vw, vh); Mar.drawables(D, camX, camY, vw, vh); }
+    if (L.isWorld) { Vila.drawables(D, camX, camY, vw, vh); War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); Nyxar.drawables(D, camX, camY, vw, vh); Mar.drawables(D, camX, camY, vw, vh); Abertura.drawables(D, camX, camY); }
     Ceu.drawables(D, camX, camY, vw, vh);
     D.sort((a, b) => a.y - b.y);
     Visual.sombras(ctx, D, camX, camY, vw, vh);
@@ -1303,6 +1306,7 @@ const Game = {
     for (const p of this.particles) { ctx.globalAlpha = Math.min(1, p.life / p.max * 1.5); ctx.fillStyle = p.color; ctx.fillRect(Math.round(p.x - camX), Math.round(p.y - camY), p.size, p.size); }
     ctx.globalAlpha = 1;
     if (L.isWorld || L.isCeu) Vida.drawChats(ctx, camX, camY);
+    if (L.isWorld) Abertura.desenhar(ctx, camX, camY);
     for (const f of this.floaters) drawNum(ctx, f.text, f.x - camX, f.y - camY - f.t * 22, f.color, f.s);
     if (this.slowTime > 0) { ctx.fillStyle = 'rgba(80,120,255,0.12)'; ctx.fillRect(0, 0, vw, vh); }
     if (P.hp < P.stat.maxHp * 0.25 && !P.dead) { const a = 0.15 + Math.sin(this.t * 6) * 0.08; const g = ctx.createRadialGradient(vw / 2, vh / 2, vh * 0.3, vw / 2, vh / 2, vh * 0.8); g.addColorStop(0, 'rgba(160,0,0,0)'); g.addColorStop(1, `rgba(160,0,0,${a})`); ctx.fillStyle = g; ctx.fillRect(0, 0, vw, vh); }

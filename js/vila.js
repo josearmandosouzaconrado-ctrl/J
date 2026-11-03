@@ -157,7 +157,7 @@ const Vila = {
     if (War.warOf('jogador').length) renda = Math.round(renda * 0.7);   // guerra atrapalha o comércio
     const trib = Reino.tributo(renda); V.trib = trib;
     V.cofre += renda - trib;
-    if (b.fazenda) V.trigo = Math.min(60, (V.trigo || 0) + 3);
+    if (b.fazenda) V.trigo = Math.min(60, (V.trigo || 0) + Math.round(3 * Estacoes.colheita()));
     // bandidos atacam vilas sem defesa
     const def = (b.torre ? 1 : 0) + (b.muralha ? 2 : 0);
     if (V.pop >= 5 && G.day - (V.ultimoAtaque || V.fund) > 3 && Math.random() < [0.3, 0.16, 0.08, 0.03][def]) {

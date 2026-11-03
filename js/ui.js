@@ -225,6 +225,7 @@ const UI = {
         <div class="opts">
           ${tog('sfx', 'Efeitos sonoros')} ${tog('music', 'Música')} ${tog('weather', 'Clima')} ${tog('needs', 'Fome, sede e sono')} ${tog('showFps', 'Mostrar FPS')}
           <button class="sbtn ${S.lite ? 'on' : ''}" ${f(() => { S.lite = !S.lite; Game.saveSettings(); Game.resize(); render(); })}>Modo leve (celular fraco): ${S.lite ? 'SIM' : 'NÃO'}</button>
+          <button class="sbtn on" ${f(() => { Dificuldade.proxima(); render(); })}>Dificuldade: ${Dificuldade.cfg().nome}</button>
           <button class="sbtn ${S.visual !== false ? 'on' : ''}" ${f(() => { S.visual = S.visual === false; Game.saveSettings(); render(); })}>Visual top (sombras do sol e luz dourada): ${S.visual !== false ? 'SIM' : 'NÃO'}</button>
           <div class="row"><span>Tamanho dos botões</span>${[0.8, 1, 1.2, 1.4].map(v => `<button class="sbtn small ${S.btnScale === v ? 'on' : ''}" ${f(() => { S.btnScale = v; Game.saveSettings(); render(); })}>${Math.round(v * 100)}%</button>`).join('')}</div>
           <div class="row"><span>Zoom da câmera</span>${[0.8, 1, 1.25, 1.5].map(v => `<button class="sbtn small ${S.zoom === v ? 'on' : ''}" ${f(() => { S.zoom = v; Game.saveSettings(); render(); })}>${Math.round(v * 100)}%</button>`).join('')}</div>
@@ -274,6 +275,7 @@ const UI = {
   talkNPC(a) {
     const P = Game.player;
     if (a.remote) return Rede.menu(a);
+    if (a.cena) return Abertura.falar(a);
     if (a.shipCrew === 'imediato') return Mar.falarImediato(a);
     if (a.shipCrew) return Ship.talk(a);
     if (a.s && a.s.pirata && (a.role === 'corsario' || a.role === 'receptador' || a.role === 'pirata')) return Mar.falar(a);
@@ -286,7 +288,7 @@ const UI = {
       const s = a.guardOf;
       const lines = GUARD_LINES.concat(s ? RUMORS[s.region.id] : []);
       const ruim = (P.honra || 0) <= -20 || Eventos.state().procurado > 0;
-      const fala = Reino.saudacaoRei(a, true) || (a.team === 'law' ? 'Pare aí, criminoso(a)! Pague a multa ou vá para o chão!' : ruim ? 'Estou de olho em você. Já ouvi falar do que você anda fazendo.' : esc(lines[Math.floor(Math.random() * lines.length)]));
+      const fala = Reino.saudacaoRei(a, true) || Abertura.falaGuarda(s) || (a.team === 'law' ? 'Pare aí, criminoso(a)! Pague a multa ou vá para o chão!' : ruim ? 'Estou de olho em você. Já ouvi falar do que você anda fazendo.' : esc(lines[Math.floor(Math.random() * lines.length)]));
       this.dialog(a.name, a.look, fala, (ruim ? [Eventos.multa(a)] : []).concat([{ label: 'Tchau' }]));
       return;
     }
@@ -770,7 +772,7 @@ const UI = {
       <button class="mbtn" ${f(() => this.options())}>Opções</button>
       <button class="mbtn" ${f(() => this.help())}>Como Jogar</button>
       <button class="mbtn danger" ${f(() => this.confirm('Voltar ao título? O progresso desde o último salvamento será perdido.', () => { Game.saveGame(0, true); Game.toTitle(); }, () => this.openMenu('system')))}>Sair para o Título</button>
-      <div class="dim small">Dia ${Game.day} • ${Game.timeStr()} • Semente do mundo: ${Game.world.seed}</div>
+      <div class="dim small">Dia ${Game.day} • ${Game.timeStr()} • ${Estacoes.rotulo()} • Semente do mundo: ${Game.world.seed}</div>
     </div>`;
   },
 
@@ -943,7 +945,7 @@ const UI = {
     this.setText('needs', Vida.hudHTML());
     const ht = Vida.titulo(); this.setText('hud-honra', ht.nome === 'Comum' ? '' : `<span style="color:${ht.cor}">⚜ ${ht.nome}</span>`);
     this.setText('hud-loc', esc(Game.locationName()));
-    this.setText('hud-time', `${Game.isNight() ? '☾' : '☀'} ${Game.timeStr()} • Dia ${Game.day}`);
+    this.setText('hud-time', `${Game.isNight() ? '☾' : '☀'} ${Game.timeStr()} • Dia ${Game.day} • ${Estacoes.atual().e.icon} ${Estacoes.atual().e.nome}`);
     // buffs
     const bk = P.buffs.map(b => b.k + Math.ceil(b.t / 10)).join(',') + P.fx.map(e => e.k).join(',');
     if (this.hudCache.buffs !== bk) {
