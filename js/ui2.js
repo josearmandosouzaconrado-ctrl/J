@@ -177,7 +177,7 @@ Object.assign(UI, {
       <h3>Relacionamentos</h3><div class="spells">${rels || '<div class="dim pad">Ninguém ainda.</div>'}</div>
       <h3>Casas</h3><div class="dim">${P.houses.length ? P.houses.map(id => esc((W.settlements.find(s => s.id === id) || W.homes.find(h => h.id === id) || {}).name || id)).join(', ') : 'Nenhuma. Compre uma casa nas capitais ou construa a sua.'}</div>
       ${W.homes.filter(h => !h.done).map(h => `<div class="good">🔨 Em obra: ${esc(h.name)} (${Math.round(h.progress * 100)}%)</div>`).join('')}
-      <div class="row"><button class="sbtn gold" ${f(() => this.buildMenu())}>🔨 Construir uma casa aqui</button></div>
+      <div class="row"><button class="sbtn gold" ${f(() => this.buildMenu())}>🔨 Construir uma casa aqui</button><button class="sbtn" ${f(() => Familia.menu())}>🎨 Personalizar a família</button></div>
       <h3>Montaria e carroça</h3><div class="dim">${P.mount ? MOUNTS[P.mount].name : 'Nenhuma montaria'}${P.cart ? ` • Carroça com ${(P.cart.load || []).length}/${CART_CAP} caças` : ''}</div>`;
   }
 });

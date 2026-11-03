@@ -213,6 +213,23 @@ Os empregos de **Taverneiro**, **Fazendeiro** e **Minerador** não pagam mais s�
 - **Mina**: cada vila com ferreiro tem uma **mina** fora dos muros. Lá dentro há galerias escuras com trilhos, escoras e lanternas: quebre os veios com várias picaretadas, carregue até 4 pedras e despeje no carrinho de mina.
 - O turno tem tempo limitado; o pagamento depende de quanto você fez, mais gorjetas, e conta para as promoções do ofício.
 
+## A corte: mobília, família, casamentos, vassalos, magos e missionários
+- **Mobília**: dentro das suas casas (e do palácio) aparece o botão 🪑 Mobília: 26 móveis (camas,
+  berço, mesa, poltrona, estante, lareira, fogão, tapete, piano, armadura, troféu...) montados no
+  chão à sua frente; dá para tirar. Fica salvo em cada casa.
+- **Personalizar a família** (aba Família): nome, cor e penteado do cabelo, pele, roupa, calça,
+  vestido, chapéu e barba do cônjuge e dos filhos.
+- **Casamentos diplomáticos**: case-se você mesmo(a) com um príncipe, princesa ou herdeiro nobre
+  (sendo monarca ou herói lendário); em guerra, proponha **paz selada com casamento** de um filho;
+  os outros reinos também casam os herdeiros entre si.
+- **Vassalagem**: exija vassalagem de reinos mais fracos (ou derrotados na guerra). Vassalos pagam
+  tributo diário ao seu cofre e entram nas suas guerras; os reinos da IA também juram vassalagem.
+- **Magos de batalha** (Alquimista + Templo) lançam bolas de fogo; **cavaleiros** agora vão
+  montados e são mais rápidos. Os exércitos dos reinos também usam magos.
+- **Missionários** (precisa de Templo, no Conselho): espalham a sua fé nos outros reinos. A fé
+  melhora as relações e ajuda em casamentos, tratados e vassalagem; missões podem falhar e
+  missionários podem ser martirizados.
+
 ## Muralhas, cerco e armas de cerco
 - Muralhas altas com adarve, ameias, seteiras e torres (ou paliçada de troncos nos povos do
   norte e dos orcs); guardas patrulham em cima.

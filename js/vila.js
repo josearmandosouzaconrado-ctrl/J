@@ -201,6 +201,7 @@ const Vila = {
     const txt = `<b>${esc(V.nome)}</b> — ${this.titulo()}<br>Colonos: <b>${V.pop}/${cap}</b> • Renda: <b>${renda + Reino.rendaTratados()}</b> ouro/dia${V.trib ? ` <span class="dim">(−${V.trib} de tributo)</span>` : ''} • Defesa: <b>${['nenhuma', 'baixa', 'boa', 'ótima'][def]}</b><br>Cofre: <b class="gold">${fmt(V.cofre)}</b> ouro${V.trigo ? ` • Celeiro: ${V.trigo} trigo` : ''}<br><span class="dim small">${V.pop >= cap ? 'Não há mais casas vazias: construa mais casas para receber colonos.' : 'Novos colonos chegam a cada dia.'}</span>`;
     const opts = [];
     if (V.cofre > 0) opts.push({ label: `Recolher o cofre (${fmt(V.cofre)} ouro)`, cls: 'gold', fn: () => { P.gold += V.cofre; Sfx.play('coin'); Game.toast(`+${fmt(V.cofre)} de ouro`, '#ffd060'); V.cofre = 0; this.talkNPC(a); } });
+    if (Missionarios.pode()) opts.push({ label: '✝ Missionários', fn: () => Missionarios.menu(() => this.talkNPC(a)) });
     if (Recursos.minas() || Recursos.total()) opts.push(Recursos.opcao(() => this.talkNPC(a)));
     if (V.trigo >= 5) opts.push({ label: `Pegar comida do celeiro`, fn: () => { const n = Math.floor(V.trigo / 5); V.trigo -= n * 5; P.addItem(Items.make('pao', n)); Game.toast(`+${n} pães feitos com o trigo da vila`, '#ffe0a0'); this.talkNPC(a); } });
     if (Reino.ativo() && !V.palacio) opts.push({ label: '🏰 Construir o Palácio Real (6000 ouro, 40 blocos de pedra, 30 pedras, 20 tábuas)', cls: 'gold', fn: () => Reino.construirPalacio() });

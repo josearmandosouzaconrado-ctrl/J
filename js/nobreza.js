@@ -70,7 +70,7 @@ const Nobreza = {
     const txt = `<b style="color:${K.color}">■</b> <b>${esc(K.name)}</b><br>${esc(K.ruler.title)} ${esc(K.ruler.name)}<br><br><b>Família real</b><br>${F.herdeiros.map(p => this.linha(p)).join('<br>')}<br><br><b>Casas nobres</b><br>` +
       F.casas.map(c => `${esc(c.nome)} — ${esc(c.chefe.titulo)} ${esc(c.chefe.nome)}`).join('<br>');
     const opts = [];
-    if (Reino.ativo()) for (const p of F.herdeiros.concat(...F.casas.map(c => c.herdeiros))) if (!this.casado(p)) opts.push({ label: `💍 Propor casamento com ${p.titulo.split(' ')[0]} ${p.nome.split(' ')[0]}`, fn: () => this.escolherFilho(p, () => this.verReino(k, back)) });
+    for (const p of F.herdeiros.concat(...F.casas.map(c => c.herdeiros))) if (!this.casado(p)) opts.push({ label: `💍 ${p.titulo.split(' ')[0]} ${p.nome.split(' ')[0]} (${this.idade(p)} anos)`, fn: () => this.casarCom(p, () => this.verReino(k, back)) });
     opts.push({ label: 'Voltar', fn: back });
     UI.dialog('Família real de ' + K.short, F.herdeiros[0] ? F.herdeiros[0].look : null, txt, opts);
   },
@@ -78,9 +78,18 @@ const Nobreza = {
     const F = this.familiaPropria();
     const txt = `As casas nobres que juraram lealdade ao <b>${esc(Reino.nome())}</b>:<br><br>` + F.casas.map(c => `<b>${esc(c.nome)}</b> — ${esc(c.chefe.titulo)} ${esc(c.chefe.nome)}<br>${c.herdeiros.map(p => this.linha(p)).join('<br>')}`).join('<br><br>');
     const opts = [];
-    for (const c of F.casas) for (const p of c.herdeiros) if (!this.casado(p)) opts.push({ label: `💍 Casar um filho com ${p.nome}`, fn: () => this.escolherFilho(p, () => this.verProprio(back)) });
+    for (const c of F.casas) for (const p of c.herdeiros) if (!this.casado(p)) opts.push({ label: `💍 ${p.nome} (${this.idade(p)} anos)`, fn: () => this.casarCom(p, () => this.verProprio(back)) });
     opts.push({ label: 'Voltar', fn: back });
     UI.dialog('Nobreza do seu reino', null, txt, opts);
+  },
+  // casar com quem: um dos seus filhos ou você mesmo(a)
+  casarCom(par, back) {
+    const P = Game.player, o = [];
+    if (Reino.ativo()) o.push({ label: '👪 Casar com um dos meus filhos', fn: () => this.escolherFilho(par, () => this.casarCom(par, back)) });
+    if (!P.spouse) o.push({ label: '💍 Pedir a mão para mim', cls: 'gold', fn: () => CasamentoDiplo.meu(par, () => this.casarCom(par, back)) });
+    if (!o.length) return UI.dialog('Casamento', par.look, 'Só monarcas arranjam casamentos para os filhos, e você já é casado(a).', [{ label: 'Voltar', fn: back }]);
+    o.push({ label: 'Voltar', fn: back });
+    UI.dialog(`${par.titulo} ${par.nome}`, par.look, `${esc(par.titulo)} <b>${esc(par.nome)}</b>, ${this.idade(par)} anos. Um casamento une famílias e reinos.`, o);
   },
   escolherFilho(par, back) {
     const l = this.filhos();
@@ -93,7 +102,7 @@ const Nobreza = {
     const idade = this.idadeFilho(filho);
     if (k !== 'jogador') {
       if (War.atWar('jogador', k)) return UI.dialog(reino, null, 'Estamos em guerra! Nenhum filho do nosso sangue se casa com o inimigo.', [{ label: 'Voltar', fn: back }]);
-      const rel = Reino.rel(k), chance = clamp(0.25 + rel / 100 + (P.honra || 0) / 250 + (/Príncipe|Princesa/.test(par.titulo) ? -0.1 : 0.1), 0.05, 0.95);
+      const rel = Reino.rel(k), chance = clamp(0.25 + rel / 100 + (P.honra || 0) / 250 + Missionarios.bonus(k) + (/Príncipe|Princesa/.test(par.titulo) ? -0.1 : 0.1), 0.05, 0.95);
       if (rel < -10 || Math.random() > chance) { Reino.addRel(k, -3); return UI.dialog(reino, null, `${esc(War.K[k].ruler.title)} ${esc(War.K[k].ruler.name)} recusou a proposta. <span class="dim">Melhore as relações (presentes, comércio) e tente de novo.</span>`, [{ label: 'Voltar', fn: back }]); }
     }
     S.casados[par.id] = true;

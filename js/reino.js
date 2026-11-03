@@ -546,6 +546,7 @@ const Reino = {
     const P = Game.player, K = War.K[k], R = this.st(), t = this.trat(k), v = this.rel(k), guerra = War.atWar('jogador', k), day = Game.day;
     const mus = KSTYLE[k] && KSTYLE[k].musket;
     let txt = `<b style="color:${K.color}">■</b> <b>${esc(K.name)}</b> — ${esc(K.ruler.title)} ${esc(K.ruler.name)}<br>Relação: ${this.relTxt(v)} <span class="dim">(${Math.round(v)})</span>${t.comercio ? ' • 📦 Comércio' : ''}${t.alianca ? ' • 🤝 Aliança' : ''}${guerra ? ' • <span class="bad">⚔ Em guerra com você</span>' : ''}`;
+    txt += Corte.textoDiplo(k);
     if (mus) txt += `<br><span class="dim small">Este reino fabrica mosquetes. ${v >= 60 ? 'Eles vendem armas para você!' : 'Fique muito amigo (60) e eles vendem armas e treinam mosqueteiros para você.'}</span>`;
     const opts = [];
     const hm = 1 + Math.max(0, (P.honra || 0)) / 200;
@@ -573,6 +574,7 @@ const Reino = {
         P.gold -= preco; if (w) War.peace(w); UI.close();
       } });
     } else if (this.ativo()) opts.push({ label: '⚔ Declarar guerra', cls: 'danger', fn: () => UI.confirm(`Declarar guerra a ${esc(K.name)}?`, () => { if (v > 25) Vida.honra(-8, 'traí um reino amigo'); t.comercio = t.alianca = false; War.declare('jogador', k); this.addRel(k, -40); UI.close(); }, () => this.diplo(k, back)) });
+    opts.push(...Corte.opcoesDiplo(k, () => this.diplo(k, back)));
     opts.push({ label: '👑 Família real e casamentos', fn: () => Nobreza.verReino(k, () => this.diplo(k, back)) });
     opts.push({ label: 'Voltar', fn: back });
     UI.dialog('Diplomacia', null, txt, opts);
