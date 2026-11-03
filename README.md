@@ -1,6 +1,6 @@
 # ⚔️ Crônicas de Eldoria
 
-> 🎖️ **Novo:** este repositório também traz **Frente Ocidental 1916**, um jogo de tiro 3D da 1ª Guerra Mundial para celular. Baixe o [`FrenteOcidental1916.apk`](FrenteOcidental1916.apk) ou veja [`ww1/README.md`](ww1/README.md).
+> 🎖️ **Novo:** este repositório também traz **Frente Ocidental 1916**, um jogo de tiro 3D da 1ª Guerra Mundial para celular. Baixe o [APK](https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/frente-ocidental-1916/FrenteOcidental1916.apk) ou veja [`ww1/README.md`](ww1/README.md).
 
 RPG medieval de fantasia em **mundo aberto**, todo em **pixel art**, feito para **celular** (também funciona no PC).
 Roda direto no navegador, sem instalar nada — e pode ser instalado como aplicativo (PWA) e jogado offline.

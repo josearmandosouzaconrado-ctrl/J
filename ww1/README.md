@@ -10,21 +10,24 @@ gerados por código, sem nenhum arquivo de arte.
 
 ## Instalar no celular (Android)
 
-1. Baixe o **[`FrenteOcidental1916.apk`](../FrenteOcidental1916.apk)** (na raiz do repositório).
-2. Abra o arquivo no celular e permita "instalar apps de fontes desconhecidas".
+1. No celular, baixe o APK pelo link fixo (sempre a versão mais nova):
+   **https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/frente-ocidental-1916/FrenteOcidental1916.apk**
+2. Abra o arquivo e permita "instalar apps de fontes desconhecidas".
 3. O jogo abre em tela cheia, deitado. Use fones de ouvido.
 
 Também roda no navegador do PC: abra `ww1/index.html`.
 
-### Gerar o APK de novo
+### Como o APK é gerado
 
-```
-python3 android/build_apk.py --ww1
-```
+O GitHub Actions (`.github/workflows/frente-ocidental-apk.yml`) compila o projeto Android da pasta
+`ww1-android/` com o Android SDK e o Gradle oficiais, coloca o jogo da pasta `ww1/` dentro do APK e publica
+na Release `frente-ocidental-1916`. Isso acontece sozinho a cada mudança em `ww1/` ou `ww1-android/`,
+ou pela aba **Actions → APK Frente Ocidental 1916 → Run workflow**.
 
-Só precisa de Python 3 e do pacote `cryptography`. O APK sai em `FrenteOcidental1916.apk`.
-A chave de assinatura fica em `android/signing-ww1/key.pem` (fora do git). Se ela mudar, desinstale a versão
-antiga antes de instalar a nova.
+Sem configuração extra, o APK é assinado com uma chave de teste nova a cada compilação, então para
+instalar uma versão nova é preciso desinstalar a antiga antes. Para atualizar sem desinstalar, crie uma
+chave (`keytool -genkeypair -keystore ww1.jks -alias ww1 -keyalg RSA -validity 10000`) e cadastre os
+segredos `WW1_KEYSTORE_BASE64` (o arquivo em base64) e `WW1_KEYSTORE_PASSWORD` no repositório.
 
 ## Controles
 

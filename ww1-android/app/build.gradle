@@ -1,0 +1,54 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.ww1studio.frenteocidental'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.ww1studio.frenteocidental'
+        minSdk 24
+        targetSdk 34
+        // o GitHub Actions passa o número da execução para cada APK ser uma versão nova
+        versionCode Integer.parseInt(System.getenv('VERSION_CODE') ?: '1')
+        versionName '1.0.' + (System.getenv('VERSION_CODE') ?: '0')
+    }
+
+    // Assinatura fixa quando o segredo existe (permite atualizar sem desinstalar);
+    // sem ele, usa a chave de depuração do Android.
+    def ks = System.getenv('KEYSTORE_FILE')
+    signingConfigs {
+        if (ks && file(ks).exists()) {
+            release {
+                storeFile file(ks)
+                storePassword System.getenv('KEYSTORE_PASSWORD')
+                keyAlias System.getenv('KEY_ALIAS') ?: 'ww1'
+                keyPassword System.getenv('KEY_PASSWORD') ?: System.getenv('KEYSTORE_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig (ks && file(ks).exists()) ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    // o jogo (HTML/JS) vem direto da pasta ww1/ do repositório
+    sourceSets {
+        main {
+            assets.srcDirs = ['../../ww1']
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.11.0'
+}
