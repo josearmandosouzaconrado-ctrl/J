@@ -18,8 +18,9 @@ android {
     // Assinatura fixa quando o segredo existe (permite atualizar sem desinstalar);
     // sem ele, usa a chave de depuração do Android.
     def ks = System.getenv('KEYSTORE_FILE')
+    def hasKey = ks != null && file(ks).exists()
     signingConfigs {
-        if (ks && file(ks).exists()) {
+        if (hasKey) {
             release {
                 storeFile file(ks)
                 storePassword System.getenv('KEYSTORE_PASSWORD')
@@ -32,7 +33,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            signingConfig (ks && file(ks).exists()) ? signingConfigs.release : signingConfigs.debug
+            signingConfig = hasKey ? signingConfigs.getByName('release') : signingConfigs.getByName('debug')
         }
     }
 
