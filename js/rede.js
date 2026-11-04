@@ -1,5 +1,7 @@
 'use strict';
-// ===================== MULTIPLAYER: SALA OFICIAL =====================
+// ===================== MULTIPLAYER =====================
+// Salas P2P de até 4 jogadores com código de convite (js/p2p.js). O servidor próprio (rede/servidor.js)
+// continua funcionando como opção avançada.
 // Até 20 jogadores no mesmo mundo. Cada um vê os outros andando, conversa pelo chat e pode declarar
 // guerra a outro jogador: em guerra, os golpes, flechas e magias acertam de verdade (o servidor confere).
 // Monstros, cidades e reinos de NPCs continuam sendo simulados em cada aparelho.
@@ -118,7 +120,7 @@ const Rede = {
     if (ws) try { ws.close(); } catch (e) { }
     for (const o of this.outros.values()) this.tirar(o);
     this.outros.clear(); this.guerras.clear();
-    if (!silencioso) { Game.mp = false; this.pendente = false; }
+    if (!silencioso) { Game.mp = false; this.pendente = false; P2P.modo = null; }
     this.atualizaBotao();
   },
   send(m) { if (this.ws && this.ws.readyState === 1) this.ws.send(JSON.stringify(m)); },
@@ -129,8 +131,8 @@ const Rede = {
         this.id = m.id; this.seed = m.seed; this.max = m.max;
         this.guerras = new Set(m.wars.map(([a, b]) => this.k(a, b)));
         for (const p of m.players) this.outros.set(p.id, new Remoto(p));
-        this.status = `Conectado à ${m.sala}: ${m.players.length + 1}/${m.max} jogadores.`;
-        if (G.mp && G.started) { this.on = true; this.perfil(); G.toast('Reconectado à Sala Oficial.', '#a0ffa0'); }
+        this.salaNome = m.sala; this.status = `Conectado à ${m.sala}: ${m.players.length + 1}/${m.max} jogadores.`;
+        if (G.mp && G.started) { this.on = true; this.perfil(); G.toast(`Reconectado à ${m.sala}.`, '#a0ffa0'); }
         else this.pendente = true;
         cb && cb();
         break;
@@ -191,8 +193,9 @@ const Rede = {
     if (!this.pendente || !this.ws) return;
     this.pendente = false; this.on = true; Game.mp = true;
     this.perfil();
-    Game.toast(`Você está na Sala Oficial (${this.outros.size + 1}/${this.max}).`, '#a0ffa0');
-    this.addLog('Bem-vindo(a) à Sala Oficial! Toque em 💬 para ver os jogadores e conversar.', '#ffe0a0');
+    const sala = this.salaNome || 'sala';
+    Game.toast(`Você está na ${sala} (${this.outros.size + 1}/${this.max}).`, '#a0ffa0');
+    this.addLog(P2P.modo === 'anfitriao' ? `Você é o anfitrião. Código de convite: ${P2P.codigo} — passe para até ${P2P_MAX - 1} amigos. Toque em 💬 para conversar.` : `Bem-vindo(a) à ${sala}! Toque em 💬 para ver os jogadores e conversar.`, '#ffe0a0');
   },
   perfil() {
     const P = Game.player; if (!P) return;
@@ -256,7 +259,8 @@ const Rede = {
     const P = Game.player, l = [...this.outros.values()].sort((a, b) => dist(a.x, a.y, P.x, P.y) - dist(b.x, b.y, P.x, P.y));
     const lista = l.map(o => `${this.emGuerra(o.id) ? '⚔ ' : ''}<b style="color:${this.emGuerra(o.id) ? '#ff8070' : '#a0e8ff'}">${esc(o.nome)}</b> Nv${o.lv}${o.reino ? ` • <span style="color:${o.cor}">${esc(o.reino)}</span>` : ''} <span class="dim small">${o.area === 'w' ? Math.round(dist(o.x, o.y, P.x, P.y) / 16 * 2) + ' m' : 'em um interior'}</span>`).join('<br>') || '<span class="dim">Ninguém mais está na sala agora.</span>';
     const msgs = this.log.slice(-8).map(m => `<div style="color:${m.cor}" class="small">${esc(m.txt)}</div>`).join('');
-    UI.dialog('Sala Oficial', null, `${this.on ? `<span class="good">${this.outros.size + 1}/${this.max} jogadores online</span>` : '<span class="bad">Desconectado</span>'}<br>${lista}<div class="chatbox">${msgs}</div><input id="chat-in" maxlength="140" placeholder="Escreva uma mensagem..." style="width:100%">`,
+    const conv = P2P.codigo && P2P.modo ? `<br>Código de convite: <b class="gold" style="font-size:1.4em;letter-spacing:3px;user-select:text">${P2P.codigo}</b>${P2P.modo === 'anfitriao' ? ' <span class="dim small">(você é o anfitrião: se você sair, a sala fecha)</span>' : ''}` : '';
+    UI.dialog(this.salaNome || 'Sala', null, `${this.on ? `<span class="good">${this.outros.size + 1}/${this.max} jogadores online</span>` : '<span class="bad">Desconectado</span>'}${conv}<br>${lista}<div class="chatbox">${msgs}</div><input id="chat-in" maxlength="140" placeholder="Escreva uma mensagem..." style="width:100%">`,
       [{ label: '💬 Enviar', cls: 'gold', fn: () => { const i = document.getElementById('chat-in'); const v = i && i.value.trim(); if (v) this.send({ t: 'chat', txt: v }); this.painel(); } }]
         .concat(l.slice(0, 6).map(o => ({ label: `${this.emGuerra(o.id) ? '⚔ ' : ''}${o.nome}`, fn: () => this.menu(o) })))
         .concat([{ label: 'Fechar' }]));

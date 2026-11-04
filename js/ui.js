@@ -106,7 +106,7 @@ const UI = {
           ${saves.length ? `<button class="mbtn gold" ${f(() => Game.loadGame(saves[0].i))}>Continuar<br><small>${esc(saves[0].s ? saves[0].s.name + ' • Nv ' + saves[0].s.level : '')}</small></button>` : ''}
           <button class="mbtn" ${f(() => this.showCreate())}>Novo Jogo</button>
           ${saves.length ? `<button class="mbtn" ${f(() => this.slots('load'))}>Carregar</button>` : ''}
-          <button class="mbtn" ${f(() => this.multiplayer())}>Multiplayer <small>Sala Oficial • até 20</small></button>
+          <button class="mbtn" ${f(() => this.multiplayer())}>Multiplayer <small>com amigos • até 4 • código de convite</small></button>
           <button class="mbtn" ${f(() => this.options())}>Opções</button>
           <button class="mbtn" ${f(() => this.help())}>Como Jogar</button>
           ${IS_APK ? '' : `<a class="mbtn apk hidden" id="apk-dl" href="CronicasDeEldoria.apk" download="CronicasDeEldoria.apk">📱 Baixar para Android (APK)<small>joga com a tela deitada</small></a>`}
@@ -124,16 +124,25 @@ const UI = {
     const cb = () => { if (this.current && this.current.name === 'multi') this.multiplayer(); };
     const pronto = Rede.pendente && Rede.ws;
     const heroi = sv && sv.seed === Rede.seed && sv.summary;
-    const el = this.show('multi', `<div class="panel small"><div class="ptitle">Multiplayer — Sala Oficial</div>
-      <div class="ctext">Uma única sala para até <b>20 jogadores</b> no mesmo mundo. Vocês se veem andando, conversam pelo chat 💬 e podem <b>declarar guerra</b> uns aos outros.<br><span class="dim small">O herói do multiplayer fica separado dos jogos salvos do modo solo.</span></div>
-      ${pronto ? '' : `<label class="small">Endereço do servidor</label><input id="mp-url" value="${esc(Rede.url())}" style="width:100%">`}
+    const host = P2P.modo === 'anfitriao' && pronto;
+    let meu = null; try { meu = localStorage.getItem('eldoria_p2p_sala'); } catch (e) { }
+    const copiar = () => { const c = P2P.codigo; try { navigator.clipboard.writeText(c).then(() => Game.toast('Código copiado: ' + c, '#a0ffa0'), () => Game.toast('Código: ' + c, '#ffe0a0')); } catch (e) { Game.toast('Código: ' + c, '#ffe0a0'); } };
+    const el = this.show('multi', `<div class="panel small"><div class="ptitle">Multiplayer com amigos</div>
+      ${host ? `<div style="text-align:center;margin:4px 0">Código da sua sala — passe para até ${P2P_MAX - 1} amigos<div class="gold" style="font-size:40px;letter-spacing:6px;user-select:text">${P2P.codigo}</div><button class="sbtn" ${f(copiar)}>📋 Copiar o código</button></div>` : ''}
+      ${pronto ? '' : `<div class="ctext">Até <b>4 jogadores</b> no mesmo mundo. Um jogador cria a sala e passa o <b>código de convite</b>; os outros entram com o código. A conexão é direta entre os aparelhos, sem servidor (precisa de internet).<br><span class="dim small">O herói do multiplayer fica separado dos jogos salvos do modo solo e entra em qualquer sala.</span></div>`}
       <div class="small ${pronto ? 'good' : 'dim'}" style="margin:6px 0">${esc(Rede.status || '')}</div>
       <div class="menu-col">
         ${pronto ? `${heroi ? `<button class="mbtn gold" ${f(() => { Game.mp = true; Game.loadGame('mp'); })}>Continuar com ${esc(sv.summary.name)}<br><small>Nível ${sv.summary.level}</small></button>` : ''}
           <button class="mbtn ${heroi ? '' : 'gold'}" ${f(() => heroi ? this.confirm('Criar um herói novo? O herói atual do multiplayer será substituído quando você salvar.', () => this.showCreate(), () => this.multiplayer()) : this.showCreate())}>${heroi ? 'Novo herói' : 'Criar herói e entrar'}</button>`
-        : `<button class="mbtn gold" ${f(() => { const u = (document.getElementById('mp-url').value || '').trim(); if (u) Rede.conectar(u, cb); })}>Entrar na Sala Oficial</button>`}
+        : `<button class="mbtn gold" ${f(() => P2P.criar(cb))}>🏰 Criar sala${meu ? ` <small>(código ${meu})</small>` : ''}</button>
+          ${meu ? `<button class="mbtn small" ${f(() => P2P.criar(cb, true))}>Criar sala com um código novo</button>` : ''}
+          <label class="small" style="margin-top:8px">Código de convite de um amigo</label>
+          <input id="mp-cod" maxlength="6" placeholder="EX: K7QM2P" autocapitalize="characters" style="width:100%;text-transform:uppercase;letter-spacing:4px;font-size:24px">
+          <button class="mbtn" ${f(() => P2P.entrar(document.getElementById('mp-cod').value, cb))}>🔑 Entrar na sala</button>
+          <details class="small dim" style="margin-top:6px"><summary>Avançado: servidor próprio</summary><input id="mp-url" value="${esc(Rede.url())}" style="width:100%"><button class="sbtn" ${f(() => { const u = (document.getElementById('mp-url').value || '').trim(); if (u) Rede.conectar(u, cb); })}>Conectar ao servidor</button></details>`}
         <button class="mbtn" ${f(() => { Rede.sair(); Rede.status = ''; this.showTitle(); })}>Voltar</button></div></div>`, { cls: 'transparent', onBack: () => { Rede.sair(); this.showTitle(); } });
     this.bind(el, f);
+    const i = document.getElementById('mp-cod'); if (i) i.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') P2P.entrar(i.value, cb); });
   },
   // ---------- Criação de personagem ----------
   showCreate() {
@@ -160,7 +169,7 @@ const UI = {
               <label>Pele</label><div class="row swatches">${R.skins.map((s, i) => `<button class="sw ${c.skin === i ? 'on' : ''}" style="background:${s}" ${f(() => { c.skin = i; render(); })}></button>`).join('')}</div>
               <label>${c.race === 'draconato' ? 'Detalhes' : 'Cabelo'}</label><div class="row swatches">${R.hairs.map((s, i) => `<button class="sw ${c.hair === i ? 'on' : ''}" style="background:${s}" ${f(() => { c.hair = i; render(); })}></button>`).join('')}</div>
               <label>Estilo</label><div class="row">${['Curto', 'Longo', 'Careca', 'Moicano', 'Coque'].map((n, i) => `<button class="sbtn small ${c.hairStyle === i ? 'on' : ''}" ${f(() => { c.hairStyle = i; render(); })}>${n}</button>`).join('')}</div>
-              ${Rede.pendente ? '<label>Mundo</label><div class="gold">🌐 Mundo da Sala Oficial</div><input id="cc-seed" type="hidden" value="">' : `<label>Semente do mundo (opcional)</label>
+              ${Rede.pendente ? '<label>Mundo</label><div class="gold">🌐 Mundo do multiplayer</div><input id="cc-seed" type="hidden" value="">' : `<label>Semente do mundo (opcional)</label>
               <input id="cc-seed" placeholder="aleatória" value="${esc(c.seed)}" inputmode="numeric">`}
             </div>
             <div class="create-right">
