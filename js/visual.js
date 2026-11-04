@@ -92,7 +92,7 @@ const Visual = {
     if (dia) {
       // tudo mais quente e saturado; no fim da tarde, laranja forte por cima
       ctx.globalCompositeOperation = 'overlay';
-      ctx.fillStyle = `rgba(255,${Math.round(190 - 60 * g)},${Math.round(100 - 60 * g)},${(chuva ? 0.08 : 0.24) + 0.3 * g})`;
+      ctx.fillStyle = `rgba(255,${Math.round(190 - 60 * g)},${Math.round(100 - 60 * g)},${(chuva ? 0.05 : 0.1) + 0.3 * g})`;
       ctx.fillRect(0, 0, vw, vh);
       if (g > 0.03 && !chuva) { ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = `rgba(255,196,150,${0.38 * g})`; ctx.fillRect(0, 0, vw, vh); }
       ctx.globalCompositeOperation = 'source-over';

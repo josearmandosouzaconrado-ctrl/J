@@ -25,7 +25,7 @@ const Trees = (() => {
   function groundShadow(c, cx, cy, rx, ry) {
     const ctx = c.getContext('2d');
     ctx.save(); ctx.globalCompositeOperation = 'destination-over';
-    ctx.fillStyle = 'rgba(8,20,8,0.16)'; ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(8,24,8,0.2)'; ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = 'rgba(8,20,8,0.16)'; ctx.beginPath(); ctx.ellipse(cx, cy, rx * 0.7, ry * 0.7, 0, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
@@ -103,13 +103,14 @@ const Trees = (() => {
   // ---------- Carvalho / árvore de outono ----------
   T.broadleaf = function (v, autumn) {
     const rng = new RNG(1234 + v * 97 + (autumn ? 5000 : 0));
-    const sz = v % 3, W = 34 + sz * 2, H = 44 + sz * 3;
+    const sz = v % 3, W = 40 + sz * 2, H = 50 + sz * 3;
     const c = cv(W, H), ctx = c.getContext('2d');
     const bx = W / 2 + (v % 2 ? 1 : -1), by = H - 5;
-    const cx = W / 2, cy = 16 + sz, rx = 13.5 + sz, ry = 12 + sz * 0.6;
-    const greens = [['#4a8a34', '#3f7f2e'], ['#558f38', '#457e30'], ['#4c8a3e', '#3d7a34']][sz];
-    const pals = autumn ? [ramp(['#d06a1e', '#c8452a', '#d89a22'][sz]), ramp('#e0a828'), ramp('#b83a22')] : [ramp(greens[0]), ramp(greens[1])];
-    trunk(ctx, rng, bx, by, cy + 4, 7, 4, '#6e5236', 0, 7);
+    const cx = W / 2, cy = 18 + sz, rx = 16.5 + sz, ry = 14.5 + sz * 0.6;
+    const greens = [['#3c9a2a', '#2f8a26'], ['#46a630', '#36922a'], ['#3a9a36', '#2c862c']][sz];
+    const vivo = [-0.62, -0.42, -0.2, 0, 0.24, 0.5];   // mais contraste: sombra funda embaixo, luz forte em cima
+    const pals = autumn ? [ramp(['#e8861a', '#e26a1c', '#eaa020'][sz], vivo), ramp('#f4b42a', vivo), ramp('#d0561a', vivo)] : [ramp(greens[0], vivo), ramp(greens[1], vivo)];
+    trunk(ctx, rng, bx, by, cy + 4, 8, 5, '#7a5634', 0, 7);
     // camada escura interna (profundidade)
     const base = Buf(W, H); darkBase(base, cx, cy + 1, rx - 1.5, ry - 1.5, 0); paintBuf(ctx, base, pals);
     // galhos visíveis entre as folhas
@@ -125,7 +126,7 @@ const Trees = (() => {
     paintBuf(ctx, buf, pals);
     if (autumn) for (let i = 0; i < 7; i++) { ctx.fillStyle = rng.pick(['#d06a1e', '#e0a828', '#b83a22']); ctx.fillRect(Math.round(bx + rng.range(-9, 9)), by + rng.int(-1, 2), 1, 1); }
     outline(c, shade(pals[0][0], -0.45));
-    groundShadow(c, bx + 2, by + 1, rx * 0.85, 3.5);
+    groundShadow(c, bx + 2, by + 1, rx * 0.9, 4);
     return { c, oy: 4 };
   };
 
@@ -135,7 +136,7 @@ const Trees = (() => {
     const W = 28, H = 50 + (v % 3) * 4;
     const c = cv(W, H), ctx = c.getContext('2d');
     const bx = W / 2, by = H - 5;
-    const pal = [ramp(['#2e6a40', '#2a6248', '#356e3a'][v % 3]), ramp('#c8d6e6', [-0.42, -0.28, -0.14, 0, 0.1, 0.2])];
+    const pal = [ramp(['#2a7a3c', '#267246', '#327e36'][v % 3], [-0.6, -0.4, -0.2, 0, 0.2, 0.42]), ramp('#c8d6e6', [-0.42, -0.28, -0.14, 0, 0.1, 0.2])];
     trunk(ctx, rng, bx, by, H - 16, 4, 3, '#5e4028', 0, 4);
     const buf = Buf(W, H), sd = rng.int(1, 9999);
     const tiers = 6, top = 2, bottom = H - 11, step = (bottom - top) / tiers;

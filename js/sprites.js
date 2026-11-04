@@ -112,8 +112,13 @@ const Sprites = {};
   // ---------- TILES ----------
   const TP = {}; // pintores por tile
   S.TP = TP; S.slabs = (p, r, b, l, n) => slabs(p, r, b, l, n);
-  TP[T.GRASS] = (p, r) => { fill(p, '#4f9a3c'); speck(p, r, ['#3f8a30', '#458f34'], 34); speck(p, r, ['#62ad48', '#5aa542'], 18); for (let i = 0; i < 4; i++) { const x = r.int(1, 14), y = r.int(2, 14); p(x, y, '#6fbf50'); p(x, y - 1, '#7acb58'); } };
-  TP[T.DGRASS] = (p, r) => { fill(p, '#3a7330'); speck(p, r, ['#2f6228', '#336a2b'], 36); speck(p, r, ['#4a8a3a', '#447f36'], 16); speck(p, r, ['#6a5a2a', '#7a6a32'], 3); };
+  TP[T.GRASS] = (p, r, v) => {
+    // grama viva: verde forte, tufinhos em V com a ponta clara e, de vez em quando, uma florzinha
+    fill(p, '#4ea630'); speck(p, r, ['#3f9426', '#45992a'], 40); speck(p, r, ['#62b83a', '#68bc40'], 22);
+    for (let i = 0; i < 6; i++) { const x = r.int(1, 14), y = r.int(2, 14); p(x, y, '#358420'); p(x - 1, y - 1, '#76c84a'); p(x + 1, y - 1, '#6cc044'); p(x, y - 2, '#86d456'); }
+    if (v === 3 && r.chance(0.7)) { const x = r.int(2, 13), y = r.int(2, 13), c = r.pick(['#f8f8f0', '#f8d838', '#c890e8', '#f8a0c0']); p(x, y, c); p(x + 1, y + 1, c); p(x - 1, y + 1, c); p(x, y + 1, '#f8e070'); }
+  };
+  TP[T.DGRASS] = (p, r) => { fill(p, '#3c8a2c'); speck(p, r, ['#2f7624', '#347c27'], 38); speck(p, r, ['#4e9e36', '#54a43a'], 18); speck(p, r, ['#6a5a2a', '#7a6a32'], 3); for (let i = 0; i < 4; i++) { const x = r.int(1, 14), y = r.int(2, 14); p(x, y, '#2a6a1e'); p(x - 1, y - 1, '#5eae3e'); p(x + 1, y - 1, '#5eae3e'); } };
   TP[T.ELFGRASS] = (p, r) => { fill(p, '#3d9a72'); speck(p, r, ['#2f8a62', '#358f68'], 30); speck(p, r, ['#52b088', '#5abb90'], 14); if (r.chance(0.5)) p(r.int(1, 14), r.int(1, 14), '#c0fff0'); };
   TP[T.SAND] = (p, r) => { fill(p, '#dcc98a'); speck(p, r, ['#cbb878', '#d2bf80'], 26); speck(p, r, ['#ead9a0', '#f0e2b0'], 14); };
   TP[T.DESERT] = (p, r) => { fill(p, '#e6b765'); speck(p, r, ['#dcae5c', '#f0c470'], 24); const y0 = r.int(2, 6); for (let x = 0; x < 16; x++) { p(x, y0 + Math.round(Math.sin(x / 2.5 + r.next()) * 1), '#d4a454'); p(x, y0 + 8 + Math.round(Math.sin(x / 3) * 1), '#d4a454'); } };
