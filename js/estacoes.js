@@ -16,7 +16,7 @@ const INICIO_ANO = 5;   // o dia 1 do jogo cai no 6º dia do inverno (já com ne
 // biomas quentes ou estranhos demais para nevar
 const SEM_NEVE = new Set(['desert', 'volcanic', 'savanna', 'dusk', 'obsidian', 'reef', 'cosmic', 'dead', 'crystal']);
 // chão que fica coberto (e quanto: estradas e pisos de cidade são pisoteados)
-const CHAO_NEVE = new Map([[T.GRASS, 1], [T.DGRASS, 1], [T.TUNDRA, 1], [T.DEADGRASS, 1], [T.ELFGRASS, 1], [T.DIRT, 0.9], [T.MUD, 0.8], [T.WINDGRASS, 1], [T.LIVEMOSS, 1], [T.MISTHEATH, 1], [T.ROAD, 0.4], [T.FARM, 1]]);
+const CHAO_NEVE = new Map([[T.GRASS, 1], [T.DGRASS, 1], [T.TUNDRA, 1], [T.DEADGRASS, 1], [T.ELFGRASS, 1], [T.DIRT, 0.9], [T.MUD, 0.8], [T.WINDGRASS, 1], [T.LIVEMOSS, 1], [T.MISTHEATH, 1], [T.FARM, 1]]);   // a estrada fica limpa: é o caminho pisado
 const MIUDOS = new Set([O.FLOWERS, O.TALLGRASS, O.CROP]);   // somem debaixo da neve funda (nada cresce no inverno)
 
 const Estacoes = {

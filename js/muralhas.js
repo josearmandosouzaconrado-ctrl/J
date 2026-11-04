@@ -79,9 +79,17 @@ const Muralhas = {
         else { const ax = lado2 ? 12 : 0; for (let y = 0; y < 16; y += 5) { p(ax, y, hi, 4, 3); p(ax + (lado2 ? -1 : 4), y, dk, 1, 3); } }
       };
       if (lado === 'n' || lado === 's') ameia(false); else ameia(true, lado === 'e');
-      // face da muralha com blocos
-      for (let y = 16; y < 16 + H; y++) p(0, y, y === 16 ? hi : base, 16, 1);
-      for (let row = 0; row * 4 < H; row++) { const y = 16 + row * 4; p(0, y + 3, sh, 16, 1); for (let x = (row % 2) * 4 + (var_ % 3); x < 16; x += 8) p(x, y, sh, 1, 4); }
+      // face da muralha: blocos de pedra cada um com o seu tom, junta escura, luz em cima e musgo na base
+      for (let row = 0; row * 4 < H; row++) {
+        const y = 16 + row * 4, off = (row % 2) * 4 + (var_ % 3) - 8;
+        for (let x = off; x < 16; x += 8) {
+          const tom = shade(base, (hash2(x + var_ * 31, row, 77) - 0.5) * 0.22), bx = Math.max(0, x), bw = Math.min(16, x + 8) - bx; if (bw <= 0) continue;
+          p(bx, y, tom, bw, 4); p(bx, y, shade(tom, 0.14), bw, 1); p(bx, y + 3, sh, bw, 1); if (x >= 0) p(x, y, dk, 1, 4);
+          if (hash2(x, row + var_, 13) < 0.25) p(bx + 2, y + 1, shade(tom, -0.12), 2, 1);   // rachadura
+        }
+      }
+      p(0, 16, hi, 16, 1);
+      for (let x = 0; x < 16; x++) { const m = hash2(x, var_, 91); if (m < 0.55) p(x, 16 + H - 2 - (m < 0.2 ? 1 : 0), m < 0.3 ? '#4a6a34' : '#5a7a3a', 1, m < 0.2 ? 2 : 1); }
       if (var_ % 4 === 1 && (lado === 'n' || lado === 's')) { p(7, 19, '#1a1418', 2, 6); p(6, 21, '#1a1418', 4, 1); }   // seteira
       p(0, 16 + H - 1, dk, 16, 1);
     }
@@ -89,11 +97,12 @@ const Muralhas = {
     if (neve) img = Estacoes.capa(c, 2);
     return (this._img[k] = img);
   },
-  torreImg(wt) {
+  torreImg(wt, cor) {
     this._img = this._img || {};
-    const neve = Estacoes.nivelPintado >= 0.4 ? 1 : 0, k = 't' + wt + neve;
+    cor = cor || '#a03030';
+    const neve = Estacoes.nivelPintado >= 0.4 ? 1 : 0, k = 't' + wt + neve + cor;
     if (this._img[k]) return this._img[k];
-    const H = MURO_H + 12, c = Sprites.cv(24, 20 + H), p = Sprites.P(c.getContext('2d'));
+    const H = MURO_H + 12, TOP = 22, c = Sprites.cv(24, 20 + H + TOP), p0 = Sprites.P(c.getContext('2d')), p = (x, y, col, w, h) => p0(x, y + TOP, col, w, h);
     const pal = wt === T.LOGWALL, base = pal ? '#6a4428' : (MURO_COR[wt] || '#8a8478'), hi = shade(base, 0.22), sh = shade(base, -0.22), dk = shade(base, -0.45);
     p(1, 4, shade(base, 0.08), 22, 18); for (let y = 8; y < 22; y += 4) p(1, y, sh, 22, 1);
     for (let x = 1; x < 23; x += 5) { p(x, 0, hi, 3, 5); p(x, 5, dk, 3, 1); }
@@ -102,6 +111,13 @@ const Muralhas = {
     for (let row = 0; row * 4 < H - 2; row++) { const y = 22 + row * 4; p(1, y + 3, sh, 22, 1); for (let x = 1 + (row % 2) * 4; x < 23; x += 8) p(x, y, sh, 1, 4); }
     p(11, 26, '#1a1418', 2, 7); p(10, 28, '#1a1418', 4, 1); p(5, 36, '#1a1418', 2, 4); p(17, 36, '#1a1418', 2, 4);
     p(1, 4, hi, 1, 16 + H); p(22, 4, dk, 1, 16 + H); p(1, 19 + H, dk, 22, 1);
+    if (!pal) {
+      // telhado cônico de ardósia e a bandeira do reino no alto
+      const rf = '#4a4458', rfC = '#625a74', rfE = '#322e3e';
+      for (let y = 0; y < 22; y++) { const hw = Math.round(1 + y * 0.52), x0 = 12 - hw; p0(x0, y + 4, rf, hw * 2, 1); p0(x0, y + 4, rfC, Math.max(1, Math.round(hw * 0.6)), 1); p0(x0 + hw * 2 - 1, y + 4, rfE, 1, 1); if (y % 4 === 3) p0(x0, y + 4, rfE, hw * 2, 1); }
+      p0(1, 25, rfE, 22, 2);
+      p0(11, 0, '#3a3a40', 1, 6); for (let y = 0; y < 4; y++) p0(12, y, y === 0 ? shade(cor, 0.3) : cor, 5 - (y > 2 ? 1 : 0), 1);
+    }
     Sprites.outline(c);
     let img = c; if (neve) img = Estacoes.capa(c, 2);
     return (this._img[k] = img);
@@ -149,7 +165,7 @@ const Muralhas = {
         const img = this.pecaImg(g.wt, pc.lado, hash2(pc.x, pc.y, 3) * 8 | 0);
         D.push({ y: y + 15, img, x, yy: y + 16 - img.height });
         // torres a cada 12 blocos e nos cantos
-        if ((pc.i === 0 || pc.i === pc.n - 1 || pc.i % 12 === 6) && !(s.type === 'capital' && (pc.i < 3 || pc.i > pc.n - 4))) { const t = this.torreImg(g.wt); D.push({ y: y + 15.5, img: t, x: x - 4, yy: y + 16 - t.height + 2 }); }
+        if ((pc.i === 0 || pc.i === pc.n - 1 || pc.i % 12 === 6) && !(s.type === 'capital' && (pc.i < 3 || pc.i > pc.n - 4))) { const t = this.torreImg(g.wt, s.region.color); D.push({ y: y + 15.5, img: t, x: x - 4, yy: y + 16 - t.height + 2 }); }
       }
       // portões: arco (ou grade fechada) por cima da passagem, com uma torre de cada lado
       for (const v of g.vaos) {
@@ -157,7 +173,7 @@ const Muralhas = {
         if (horiz) {
           const img = this.portaoImg(n, fechado, pal);
           D.push({ y: ay * 16 + 15, img, x: ax * 16, yy: ay * 16 + 16 - img.height });
-          const t = this.torreImg(g.wt);
+          const t = this.torreImg(g.wt, s.region.color);
           D.push({ y: ay * 16 + 15.6, img: t, x: ax * 16 - 20, yy: ay * 16 + 16 - t.height + 2 });
           D.push({ y: ay * 16 + 15.6, img: t, x: (ax + n) * 16 - 4, yy: ay * 16 + 16 - t.height + 2 });
         } else {

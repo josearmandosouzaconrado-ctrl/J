@@ -122,8 +122,14 @@ const Sprites = {};
   TP[T.ELFGRASS] = (p, r) => { fill(p, '#3d9a72'); speck(p, r, ['#2f8a62', '#358f68'], 30); speck(p, r, ['#52b088', '#5abb90'], 14); if (r.chance(0.5)) p(r.int(1, 14), r.int(1, 14), '#c0fff0'); };
   TP[T.SAND] = (p, r) => { fill(p, '#dcc98a'); speck(p, r, ['#cbb878', '#d2bf80'], 26); speck(p, r, ['#ead9a0', '#f0e2b0'], 14); };
   TP[T.DESERT] = (p, r) => { fill(p, '#e6b765'); speck(p, r, ['#dcae5c', '#f0c470'], 24); const y0 = r.int(2, 6); for (let x = 0; x < 16; x++) { p(x, y0 + Math.round(Math.sin(x / 2.5 + r.next()) * 1), '#d4a454'); p(x, y0 + 8 + Math.round(Math.sin(x / 3) * 1), '#d4a454'); } };
-  TP[T.DIRT] = (p, r) => { fill(p, '#8a6a43'); speck(p, r, ['#7a5a38', '#80603c'], 30); speck(p, r, ['#9a7a50', '#a08058'], 16); speck(p, r, ['#a89478'], 3); };
-  TP[T.SNOW] = (p, r) => { fill(p, '#e6edf5'); speck(p, r, ['#d5e0ec', '#dbe4ee'], 26); speck(p, r, ['#ffffff'], 10); };
+  TP[T.DIRT] = (p, r) => { fill(p, '#8a6a43'); speck(p, r, ['#7a5a38', '#80603c'], 30); speck(p, r, ['#9a7a50', '#a08058'], 16); for (let i = 0; i < 3; i++) { const x = r.int(1, 14), y = r.int(1, 14); p(x, y, '#6e6458', 2, 1); p(x, y - 1, '#a89c8a'); } if (r.chance(0.4)) p(r.int(1, 14), r.int(1, 14), '#5a8a34'); };
+  TP[T.SNOW] = (p, r, v) => {
+    // neve fofa: branco azulado, montinhos com sombra azul embaixo e brilhos de gelo
+    fill(p, '#eef3fa'); speck(p, r, ['#e2eaf4', '#e8eef7'], 24);
+    for (let i = 0; i < 2; i++) { const x = r.int(0, 10), y = r.int(3, 14), w = r.int(4, 7); p(x, y, '#d4e0ee', w, 1); p(x + 1, y - 1, '#fbfdff', w - 2, 1); }
+    for (let i = 0; i < 3; i++) p(r.int(0, 15), r.int(0, 15), '#ffffff');
+    if (v % 2) p(r.int(1, 14), r.int(1, 14), '#cfe2ff');
+  };
   TP[T.ICE] = (p, r) => { fill(p, '#a6d6ee'); speck(p, r, ['#9acde8', '#b4dff2'], 20); let x = r.int(0, 15), y = 0; for (let i = 0; i < 18; i++) { p(x, y, '#e0f6ff'); x += r.int(-1, 1); y++; if (x < 0 || x > 15 || y > 15) break; } p(r.int(2, 13), r.int(2, 13), '#ffffff'); };
   TP[T.SWAMP] = (p, r) => { fill(p, '#4d5a2e'); speck(p, r, ['#3d4a24', '#45522a'], 30); speck(p, r, ['#5d6a3a', '#66733f'], 14); if (r.chance(0.5)) { const x = r.int(2, 9), y = r.int(2, 10); p(x, y, '#38483e', 5, 3); p(x + 1, y, '#4a5a50', 2, 1); } };
   TP[T.MUD] = (p, r) => { fill(p, '#5e4b35'); speck(p, r, ['#4e3d2a', '#544330'], 30); speck(p, r, ['#6e5a42'], 14); };
@@ -131,7 +137,12 @@ const Sprites = {};
   TP[T.DEEP] = (p, r) => { fill(p, '#1f4a8a'); speck(p, r, ['#1b4380', '#245294'], 30); for (let i = 0; i < 2; i++) { const x = r.int(0, 12), y = r.int(1, 14); p(x, y, '#2e62a8', 4, 1); } };
   TP[T.LAVA] = (p, r) => { fill(p, '#ff5a1a'); speck(p, r, ['#e84a10', '#ff6a2a'], 30); for (let i = 0; i < 4; i++) { const x = r.int(0, 13), y = r.int(0, 13); p(x, y, '#ffb030', 3, 2); p(x + 1, y, '#ffe070'); } speck(p, r, ['#a02808'], 6, 2); };
   TP[T.ASH] = (p, r) => { fill(p, '#4a4246'); speck(p, r, ['#3a3438', '#403a3e'], 30); speck(p, r, ['#5a5256', '#625a5e'], 14); if (r.chance(0.3)) p(r.int(0, 15), r.int(0, 15), '#ff6020'); };
-  TP[T.ROAD] = (p, r) => { fill(p, '#b09163'); speck(p, r, ['#a08355', '#a88a5c'], 30); speck(p, r, ['#c0a173', '#c8aa7c'], 16); speck(p, r, ['#8a7050'], 4); };
+  TP[T.ROAD] = (p, r) => {
+    // estrada de terra batida: tons de areia, pedrinhas e marcas das rodas das carroças
+    fill(p, '#b09163'); speck(p, r, ['#a08355', '#a88a5c'], 30); speck(p, r, ['#c0a173', '#c8aa7c'], 16);
+    if (r.chance(0.6)) { const y = r.int(3, 12); for (let x = 0; x < 16; x++) if (r.chance(0.7)) p(x, y + (x % 7 === 0 ? 1 : 0), '#977a50'); }
+    for (let i = 0; i < 3; i++) { const x = r.int(1, 14), y = r.int(1, 14); p(x, y, '#8a8070', 2, 1); p(x, y - 1, '#b8b0a0'); }
+  };
   const cobble = (base, mortar) => (p, r) => {
     fill(p, mortar);
     for (let y = 0; y < 16; y += 4) { const off = (y / 4) % 2 * 2; for (let x = -off; x < 16; x += 4) { const c = shade(base, r.range(-0.1, 0.1)); p(x + 1, y + 1, c, 3, 3); p(x + 1, y + 1, shade(c, 0.15), 3, 1); } }
@@ -240,7 +251,7 @@ const Sprites = {};
   // Prioridade para mistura de bordas
   const BLEND = [];
   [[T.DEEP, 0], [T.WATER, 1], [T.LAVA, 2], [T.ICE, 3], [T.SAND, 4], [T.MUD, 5], [T.SWAMP, 6], [T.DESERT, 7], [T.DIRT, 8], [T.BADLAND, 9], [T.ASH, 9],
-    [T.TUNDRA, 10], [T.DEADGRASS, 10], [T.GRASS, 12], [T.DGRASS, 13], [T.ELFGRASS, 13], [T.SNOW, 14], [T.CFLOOR, 2], [T.IFLOOR, 2], [T.VFLOOR, 2]].forEach(([t, v]) => BLEND[t] = v);
+    [T.TUNDRA, 10], [T.DEADGRASS, 10], [T.ROAD, 7.5], [T.PAVED, 7.6], [T.COBBLE, 7], [T.FARM, 7], [T.GRASS, 12], [T.DGRASS, 13], [T.ELFGRASS, 13], [T.SNOW, 14], [T.CFLOOR, 2], [T.IFLOOR, 2], [T.VFLOOR, 2]].forEach(([t, v]) => BLEND[t] = v);
   S.BLEND = BLEND;
 
   // Pinta um bloco de tiles num contexto (usado por chunks e masmorras)
@@ -255,10 +266,13 @@ const Sprites = {};
     c = cv(16, 16); const x = c.getContext('2d'); x.fillStyle = col;
     for (let i = 0; i < 16; i++) {
       const hv = hash2(i * 7 + v * 131, k * 17 + v * 3, foam ? 41 : 97);
-      const dd = foam ? (hv * 2) | 0 : 1 + ((hv * 3.2) | 0);
+      // borda ondulada (onda suave + um pouco de ruído), com uma linha mais escura na ponta
+      const dd = foam ? (hv * 2) | 0 : Math.max(1, Math.round(2.2 + 1.3 * Math.sin(i * 0.8 + v * 1.9) + (hv - 0.5) * 1.6));
       if (!dd) continue;
+      x.fillStyle = col;
       if (k === 0) x.fillRect(i, 0, 1, dd); else if (k === 2) x.fillRect(i, 16 - dd, 1, dd);
       else if (k === 1) x.fillRect(16 - dd, i, dd, 1); else x.fillRect(0, i, dd, 1);
+      if (!foam) { x.fillStyle = shade(col, -0.18); if (k === 0) x.fillRect(i, dd, 1, 1); else if (k === 2) x.fillRect(i, 15 - dd, 1, 1); else if (k === 1) x.fillRect(15 - dd, i, 1, 1); else x.fillRect(dd, i, 1, 1); }
     }
     edgeCache.set(key, c);
     return c;

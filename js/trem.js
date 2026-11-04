@@ -165,11 +165,20 @@ const Trem = {
     const H = this.horario(l), alvoU = de === 'a' ? TREM_PARADA - 2.5 : 2 * TREM_PARADA + H.T - 2.5;
     l.ofs = alvoU - Game.t;   // o trem já está na plataforma esperando você
     P.mounted = false; P.trem = { id: l.id, para: de === 'a' ? 'b' : 'a', saiu: false, chegada: Game.t + 2.5 + H.T + 0.5 };
-    UI.close(); G.toast(`🚂 Todos a bordo! Destino: ${de === 'a' ? l.bn : l.an}`, '#ffe0a0');
+    UI.close(); G.worldPos = { x: P.x, y: P.y }; Vagao.entrar(l, de);
+    G.toast(`🚂 Todos a bordo! Destino: ${de === 'a' ? l.bn : l.an}. Fale com o cobrador.`, '#ffe0a0');
   },
   viajando(dt) {
     const G = Game, P = G.player, l = this.linhas().find(l => l.id === P.trem.id);
-    if (!l || !G.level.isWorld) { P.trem = null; return; }
+    if (!l) { P.trem = null; return; }
+    // dentro do vagão: o herói anda à vontade; o trem segue lá fora
+    if (G.level && G.level.isTrem) {
+      const H = this.horario(l), C = this.carros(l, H);
+      G.worldPos = { x: C[2].x, y: C[2].y };
+      if (P.trem.chegada && G.t >= P.trem.chegada) this.descer(l, P.trem.para);
+      return;
+    }
+    if (!G.level.isWorld) { P.trem = null; return; }
     const H = this.horario(l), C = this.carros(l, H), c = C[2];
     P.x = c.x; P.y = c.y; P.invuln = 0.5; P.moving = false;
     this.fumaca(C[0], H, dt);
@@ -178,8 +187,11 @@ const Trem = {
     if ((P.trem.saiu && H.parado && H.onde === P.trem.para) || (P.trem.chegada && Game.t >= P.trem.chegada)) this.descer(l, P.trem.para);
   },
   descer(l, onde) {
-    const G = Game, P = G.player, c = onde === 'a' ? l.sa : l.sb;
-    P.trem = null; P.x = c[0] * 16 + 8 + 20; P.y = c[1] * 16 + 8 + 20; G.findFree(P);
+    const G = Game, P = G.player, c = onde === 'a' ? l.sa : l.sb, e = this.predio(l, onde);
+    P.trem = null;
+    if (G.level && G.level.isTrem) { G.worldPos = { x: e.x, y: e.y + 26 }; G.exitDungeon(); }
+    else { P.x = e.x; P.y = e.y + 26; G.findFree(P); }
+    void c;
     G.toast(`🚉 Chegamos: ${onde === 'a' ? l.an : l.bn}`, '#ffe0a0'); Sfx.play('quest');
   },
   bilheteria(l, de) {
@@ -194,11 +206,16 @@ const Trem = {
   },
   findInteract(fx, fy) {
     const P = Game.player;
-    if (P.trem) { const l = this.linhas().find(l => l.id === P.trem.id); return l ? { kind: 'mar', fn: () => { const H = this.horario(l), C = this.carros(l, H); P.trem = null; P.x = C[2].x + 24; P.y = C[2].y + 10; Game.findFree(P); Game.toast('Você desceu do trem.', '#ffe0a0'); }, label: 'Descer', name: 'do trem', d: 1, prio: true } : null; }
+    if (P.trem) {
+      const l = this.linhas().find(l => l.id === P.trem.id); if (!l) return null;
+      const L = Game.level;
+      if (L && L.isTrem) { for (const p of L.portas) if (dist(fx, fy, p.x * 16 + 8, p.y * 16 + 8) < 24) return { kind: 'mar', fn: () => Vagao.varanda(), label: 'Varanda', name: 'ver o trem por fora', d: 2, prio: true }; return null; }
+      return { kind: 'mar', fn: () => { Game.worldPos = { x: P.x, y: P.y }; Vagao.entrar(l, P.trem.para === 'b' ? 'a' : 'b'); }, label: 'Entrar', name: 'no vagão', d: 1, prio: true };
+    }
     if (!Game.level.isWorld) return null;
     for (const l of this.linhas()) for (const de of ['a', 'b']) {
       const e = this.predio(l, de);
-      if (dist(fx, fy, e.x, e.y + 6) < 30) return { kind: 'mar', fn: () => this.bilheteria(l, de), label: 'Trem', name: 'Estação de ' + (de === 'a' ? l.an : l.bn), d: 5 };
+      if (dist(fx, fy, e.x, e.y + 14) < 46) return { kind: 'mar', fn: () => this.bilheteria(l, de), label: 'Trem', name: 'Estação de ' + (de === 'a' ? l.an : l.bn), d: 5 };
     }
     return null;
   },
@@ -207,7 +224,7 @@ const Trem = {
     const L = this.pts(l), i = de === 'a' ? 0 : L.length - 1, j = de === 'a' ? Math.min(4, L.length - 1) : Math.max(0, L.length - 5);
     const ang = Math.atan2(L[j][1] - L[i][1], L[j][0] - L[i][0]), px = -Math.sin(ang), py = Math.cos(ang);
     const meio = this.noPonto(L, de === 'a' ? 70 : L.cum[L.length - 1] - 70);
-    return { x: meio.x + px * 34, y: meio.y + py * 34 + 8 };
+    return { x: meio.x + px * 52, y: meio.y + py * 52 + 10 };
   },
   // ---------- desenho ----------
   trilhoImg(m) {
@@ -300,16 +317,35 @@ const Trem = {
     ctx.restore();
   },
   desenha(w, h, fn) { const c = Sprites.cv(w, h), x = c.getContext('2d'); fn((a, b, cor, ww = 1, hh = 1) => { x.fillStyle = cor; x.fillRect(a, b, ww, hh); }); return c; },
+  // a estação: prédio de tijolos com telhado de ardósia, torre do relógio, cobertura sobre a plataforma, bancos e lampiões
   estacaoImg() {
     if (this._ei) return this._ei;
-    return (this._ei = this.desenha(40, 36, (p) => {
-      p(0, 30, '#6a4a2a', 40, 6); for (let x = 0; x < 40; x += 4) p(x, 30, '#5a3a1e', 1, 6);
-      p(4, 12, '#a04a30', 32, 18); for (let y = 14; y < 30; y += 3) p(4, y, '#8a3a24', 32, 1);
-      p(1, 6, '#3a3a44', 38, 7); p(3, 4, '#4a4a54', 34, 3); p(1, 6, '#5a5a64', 38, 1);
-      p(17, 7, '#f0f0e8', 6, 5); p(19, 8, '#1e1e24', 1, 2); p(20, 9, '#1e1e24', 2, 1);
-      p(8, 17, '#f0e0a0', 6, 6); p(26, 17, '#f0e0a0', 6, 6); p(17, 18, '#3a2414', 6, 12);
-      p(10, 13, '#2a2420', 20, 3); p(12, 14, '#e8d080', 16, 1);
-      p(37, 14, '#2a2a30', 1, 16); p(35, 12, '#f0d060', 4, 3);
+    return (this._ei = this.desenha(84, 72, (p) => {
+      const tij = '#a8503a', tijE = '#7a3424', tijC = '#c8684a', ard = '#3e4658', ardC = '#56607a', ardE = '#2a3040', ouro = '#d8a838';
+      // plataforma de madeira com a faixa amarela
+      p(0, 60, '#6a4a2a', 84, 12); for (let x = 0; x < 84; x += 6) p(x, 60, '#4a3018', 1, 12); p(0, 60, '#e0c040', 84, 1); p(0, 71, '#3a2414', 84, 1);
+      // paredes de tijolo
+      p(10, 30, tij, 64, 30); for (let y = 31; y < 60; y += 3) { p(10, y, tijE, 64, 1); for (let x = 10 + ((y / 3) % 2 ? 0 : 3); x < 74; x += 6) p(x, y + 1, tijE, 1, 2); }
+      p(10, 30, tijC, 64, 1); p(10, 30, tijE, 1, 30); p(73, 30, tijE, 1, 30);
+      // janelas em arco acesas e a porta dupla
+      for (const x of [15, 27, 51, 63]) { p(x, 38, '#2a1a10', 8, 13); p(x + 1, 40, '#ffd870', 6, 10); p(x + 2, 38, '#2a1a10', 4, 2); p(x + 1, 40, '#fff2b0', 2, 3); p(x + 4, 40, '#c8a050', 1, 10); p(x, 51, '#d8c8a8', 8, 1); }
+      p(37, 38, '#3a2414', 10, 22); p(38, 40, '#6a4424', 4, 20); p(42, 40, '#6a4424', 4, 20); p(41, 40, '#2a1a10', 1, 20); p(39, 46, ouro, 1, 2); p(44, 46, ouro, 1, 2); p(36, 36, '#c8b898', 12, 2);
+      // placa da estação
+      p(30, 32, '#1a2440', 24, 5); p(31, 33, ouro, 22, 1); p(31, 35, ouro, 22, 1);
+      // telhado de ardósia
+      for (let y = 14; y < 30; y++) { const k = (30 - y); p(8 + Math.floor(k * 0.25), y, ard, 68 - Math.floor(k * 0.5), 1); if (y % 3 === 0) p(8 + Math.floor(k * 0.25), y, ardE, 68 - Math.floor(k * 0.5), 1); }
+      p(7, 29, ardC, 70, 2); p(12, 14, ardC, 60, 1);
+      p(64, 8, '#6a3a2a', 5, 9); p(63, 7, '#4a2a1a', 7, 2);
+      // torre do relógio no meio
+      p(34, 2, tij, 16, 14); p(34, 2, tijC, 16, 1); p(33, 0, ard, 18, 3); p(41, -1, ouro, 2, 2);
+      for (let y = 3; y < 16; y += 3) p(34, y, tijE, 16, 1);
+      p(37, 4, '#f4f0e0', 10, 10); p(38, 5, '#fffcf0', 8, 8); p(41, 6, '#1a1a1a', 1, 4); p(41, 9, '#1a1a1a', 3, 1); p(37, 4, '#2a2a30', 10, 1); p(37, 13, '#2a2a30', 10, 1);
+      // cobertura verde sobre a plataforma, com colunas de ferro
+      p(0, 50, '#2a5a3a', 84, 4); p(0, 50, '#3a7a4a', 84, 1); for (let x = 0; x < 84; x += 4) p(x, 54, '#2a5a3a', 2, 1);
+      for (const x of [3, 41, 79]) { p(x, 54, '#2a2a30', 2, 6); p(x - 1, 59, '#3a3a44', 4, 1); }
+      // bancos e lampiões
+      for (const x of [14, 58]) { p(x, 64, '#7a5030', 12, 2); p(x, 62, '#8a6038', 12, 1); p(x + 1, 66, '#3a2414', 1, 3); p(x + 10, 66, '#3a2414', 1, 3); }
+      for (const x of [1, 81]) { p(x, 56, '#2a2a30', 2, 14); p(x - 1, 53, '#3a3a44', 4, 3); p(x, 54, '#ffe070', 2, 2); }
     }));
   },
   // os trechos visíveis da curva da ferrovia
@@ -392,6 +428,6 @@ const Trem = {
   };
   const fi0 = Muralhas.findInteract; Muralhas.findInteract = function (fx, fy) { return Trem.findInteract(fx, fy) || fi0.call(this, fx, fy); };
   // o herói dentro do trem não aparece andando no trilho
-  const pd0 = Player.prototype.draw; Player.prototype.draw = function () { if (this.trem) return; return pd0.apply(this, arguments); };
+  const pd0 = Player.prototype.draw; Player.prototype.draw = function () { if (this.trem && !(Game.level && Game.level.isTrem)) return; return pd0.apply(this, arguments); };
   const m0 = War.drawMap; War.drawMap = function (ctx, toS, z) { m0.call(this, ctx, toS, z); Trem.drawMap(ctx, toS); };
 })();

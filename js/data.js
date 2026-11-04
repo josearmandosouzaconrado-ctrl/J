@@ -19,10 +19,10 @@ function tdef(id, o) { TILE_DEFS[id] = Object.assign({ solid: false, slow: 1, hu
 tdef(T.DEEP, { name: 'Mar', solid: true, c: '#1f4a8a', water: true });
 tdef(T.WATER, { name: 'Água rasa', slow: 0.5, c: '#3a78c8', water: true });
 tdef(T.SAND, { name: 'Areia', c: '#dcc98a' });
-tdef(T.GRASS, { name: 'Grama', c: '#4f9a3c' });
-tdef(T.DGRASS, { name: 'Bosque', c: '#3a7330' });
+tdef(T.GRASS, { name: 'Grama', c: '#3e9226' });
+tdef(T.DGRASS, { name: 'Bosque', c: '#3c8a2c' });
 tdef(T.DIRT, { name: 'Terra', c: '#8a6a43' });
-tdef(T.SNOW, { name: 'Neve', slow: 0.88, c: '#e6edf5' });
+tdef(T.SNOW, { name: 'Neve', slow: 0.88, c: '#eef3fa' });
 tdef(T.ICE, { name: 'Gelo', slow: 1.1, c: '#a6d6ee' });
 tdef(T.SWAMP, { name: 'Pântano', slow: 0.75, c: '#4d5a2e' });
 tdef(T.DESERT, { name: 'Deserto', slow: 0.92, c: '#e6b765' });
