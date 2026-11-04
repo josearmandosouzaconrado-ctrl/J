@@ -152,9 +152,9 @@ const Trem = {
   fumaca(loco, H, dt) {
     this._fT = (this._fT || 0) - dt; if (this._fT > 0) return;
     this._fT = H.parado ? 0.5 : 0.16;
-    const c = Math.cos(loco.ang), sn = Math.sin(loco.ang), vert = Math.abs(c) < 0.4, k = vert ? 0 : 10;   // a chaminé fica na frente da locomotiva
+    const c = Math.cos(loco.ang), sn = Math.sin(loco.ang), k = 14;   // a chaminé fica na frente da locomotiva
     const F = this.puffs || (this.puffs = []);
-    F.push({ x: loco.x + c * k + (Math.random() - 0.5) * 2, y: loco.y + sn * k - (vert ? 30 : 28), vx: (H.parado ? 0 : c * TREM_V * 0.82) + (Math.random() - 0.5) * 8, vy: (H.parado ? 0 : sn * TREM_V * 0.82) - 24 - Math.random() * 10, r: 4, t: 0, vida: H.parado ? 2 : 1.1 });
+    F.push({ x: loco.x + c * k + (Math.random() - 0.5) * 2, y: loco.y + sn * k - 28, vx: (H.parado ? 0 : c * TREM_V * 0.82) + (Math.random() - 0.5) * 8, vy: (H.parado ? 0 : sn * TREM_V * 0.82) - 24 - Math.random() * 10, r: 3, t: 0, vida: H.parado ? 2 : 1.1 });
     if (F.length > 60) F.shift();
   },
   // ---------- viagem do herói ----------
@@ -225,40 +225,79 @@ const Trem = {
     }
     c.set(m, im); return im;
   },
-  carroImg(j, lado) {
-    const k = j + ':' + lado, c = this._ci || (this._ci = new Map()); let im = c.get(k); if (im) return im;
-    const cores = [null, '#2f5a3a', '#7a2228', '#2a3256'], ouro = '#d8a838', ouroE = '#8a6420';
-    const roda = (p, cx, cy, r, aro, cubo) => { for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) { const d = x * x + y * y; if (d <= r * r) p(cx + x, cy + y, d >= (r - 1) * (r - 1) ? '#141418' : aro); } p(cx, cy, cubo); if (r >= 4) { p(cx - r + 2, cy, '#141418'); p(cx + r - 2, cy, '#141418'); p(cx, cy - r + 2, '#141418'); p(cx, cy + r - 2, '#141418'); } };
-    if (lado === 'h') {
-      if (j === 0) im = this.desenha(46, 34, (p) => {
-        // cabine vermelha atrás, caldeira preta com cintas douradas, chaminé alta, farol e limpa-trilhos vermelho
-        p(2, 6, '#8a2228', 12, 20); p(2, 6, '#a83038', 12, 2); p(3, 10, '#ffd870', 7, 6); p(4, 11, '#fff2b0', 3, 3); p(2, 25, ouro, 12, 1); p(2, 8, ouroE, 12, 1);
-        p(0, 2, '#22222a', 16, 4); p(1, 1, '#3a3a46', 14, 2);
-        p(14, 12, '#1a1a22', 26, 12); p(14, 12, '#3e3e4c', 26, 2); p(14, 21, '#101016', 26, 3);
-        for (const x of [19, 27, 35]) { p(x, 12, ouro, 2, 12); p(x, 12, '#f0d070', 1, 12); }
-        p(25, 8, ouro, 6, 4); p(26, 7, '#f0d070', 4, 2);
-        p(34, 2, '#1a1a22', 5, 10); p(33, 0, '#2a2a34', 7, 3); p(33, 0, '#4a4a58', 7, 1);
-        p(40, 13, '#2a2a34', 3, 5); p(41, 14, '#ffe070', 3, 3); p(43, 15, '#fffac0', 1, 1);
-        for (let i = 0; i < 6; i++) p(39 + i, 24 + i, '#c02828', 7 - i, 1); p(39, 24, '#e04040', 6, 1);
-        p(10, 24, '#2a2a30', 30, 2);
-        roda(p, 8, 28, 4, '#a82020', '#f0d070'); roda(p, 19, 27, 5, '#a82020', '#f0d070'); roda(p, 30, 27, 5, '#a82020', '#f0d070'); roda(p, 39, 29, 3, '#a82020', '#f0d070');
-        p(17, 27, '#b8b8c4', 15, 1); p(17, 26, '#6a6a74', 15, 1);
-      });
-      else im = this.desenha(40, 30, (p) => {
-        const b = cores[j];
-        p(1, 3, '#22222a', 38, 5); p(3, 1, '#2e2e38', 34, 3); p(3, 1, '#4a4a58', 34, 1); for (const x of [10, 20, 30]) p(x, 0, '#3a3a46', 3, 2);
-        p(1, 7, b, 38, 15); p(1, 7, shade(b, 0.25), 38, 1); p(1, 9, ouro, 38, 1); p(1, 20, ouro, 38, 1); p(1, 21, shade(b, -0.35), 38, 1);
-        for (const x of [4, 12, 20, 28]) { p(x, 11, '#3a2a14', 7, 7); p(x + 1, 12, '#ffd870', 5, 5); p(x + 2, 13, '#fff2b0', 2, 2); }
-        p(36, 11, '#1a1410', 2, 9);
-        p(3, 22, '#1a1a20', 34, 2);
-        roda(p, 7, 25, 3, '#3a3a44', '#c03030'); roda(p, 14, 25, 3, '#3a3a44', '#c03030'); roda(p, 26, 25, 3, '#3a3a44', '#c03030'); roda(p, 33, 25, 3, '#3a3a44', '#c03030');
-      });
-    } else {
-      // vista de frente / de trás (subindo ou descendo a tela)
-      if (j === 0) im = this.desenha(24, 36, (p) => { p(3, 8, '#1a1a22', 18, 20); p(4, 9, '#3e3e4c', 16, 14); for (let y = 10; y < 22; y += 5) p(4, y, ouro, 16, 1); p(8, 12, '#2a2a34', 8, 7); p(9, 13, '#ffe070', 6, 5); p(10, 14, '#fffac0', 3, 3); p(9, 0, '#1a1a22', 6, 9); p(8, 0, '#4a4a58', 8, 2); p(2, 26, '#c02828', 20, 4); p(4, 30, '#e04040', 16, 2); roda(p, 5, 32, 3, '#a82020', '#f0d070'); roda(p, 18, 32, 3, '#a82020', '#f0d070'); });
-      else im = this.desenha(22, 32, (p) => { const b = cores[j]; p(1, 3, '#22222a', 20, 4); p(2, 1, '#3a3a46', 18, 3); p(1, 6, b, 20, 20); p(1, 8, ouro, 20, 1); p(1, 24, ouro, 20, 1); p(8, 10, '#1a1410', 6, 14); p(9, 11, '#3a2a1a', 4, 12); p(3, 10, '#ffd870', 4, 6); p(15, 10, '#ffd870', 4, 6); roda(p, 5, 28, 3, '#3a3a44', '#c03030'); roda(p, 16, 28, 3, '#3a3a44', '#c03030'); });
-    }
-    c.set(k, im); return im;
+  // ---------- o trem em 3D: cada vagão é uma caixa com textura no lado, no teto e nas pontas ----------
+  // (vale para qualquer ângulo do trilho: reto, diagonal, subindo ou descendo a tela)
+  texturas() {
+    if (this._tx) return this._tx;
+    const D = (w, h, fn) => this.desenha(w, h, fn), ouro = '#d8a838', ouroE = '#8a6420', vidro = '#ffd870', brilho = '#fff2b0';
+    const roda = (p, cx, cy, r, aro, cubo) => { for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) { const d = x * x + y * y; if (d <= r * r + 0.5) p(cx + x, cy + y, d >= (r - 0.6) * (r - 0.6) ? '#121216' : aro); } p(cx, cy, cubo); if (r >= 3) { p(cx - r + 1, cy, '#121216'); p(cx + r - 1, cy, '#121216'); p(cx, cy - r + 1, '#121216'); p(cx, cy + r - 1, '#121216'); } };
+    const vagao = (cor) => {
+      const esc = shade(cor, -0.35), cla = shade(cor, 0.22);
+      return {
+        side: D(40, 22, p => {
+          p(0, 0, cor, 40, 16); p(0, 0, cla, 40, 1); p(0, 2, ouro, 40, 1); p(0, 13, ouro, 40, 1); p(0, 15, esc, 40, 1);
+          for (const x of [3, 11, 19, 27]) { p(x, 4, '#2a1a10', 7, 8); p(x + 1, 5, vidro, 5, 6); p(x + 1, 5, brilho, 2, 2); p(x + 1, 10, '#e0b050', 5, 1); }
+          p(35, 3, '#3a2414', 4, 11); p(36, 5, vidro, 2, 3);
+          p(1, 16, '#16161c', 38, 3); p(3, 19, '#1e1e24', 34, 1);
+          for (const x of [6, 12, 27, 33]) roda(p, x, 19, 2.6, '#3a3a44', '#c03030');
+        }),
+        top: D(40, 14, p => { p(0, 0, '#2a2c38', 40, 14); p(0, 0, '#1a1a24', 40, 1); p(0, 13, '#14141c', 40, 1); p(0, 6, '#3c3e4e', 40, 2); p(0, 5, '#33354a', 40, 1); for (const x of [7, 18, 29]) { p(x, 5, '#4a4c5c', 4, 4); p(x, 5, '#62647a', 4, 1); p(x + 1, 7, '#1a1a24', 2, 1); } }),
+        end: D(14, 22, p => { p(0, 0, cor, 14, 16); p(0, 0, cla, 14, 1); p(0, 2, ouro, 14, 1); p(0, 13, ouro, 14, 1); p(4, 3, '#3a2414', 6, 12); p(5, 4, vidro, 4, 4); p(5, 4, brilho, 2, 1); p(0, 16, '#16161c', 14, 3); p(1, 17, '#5a5a64', 2, 2); p(11, 17, '#5a5a64', 2, 2); })
+      };
+    };
+    const T = this._tx = { vagoes: [null, vagao('#2f5a3a'), vagao('#7a2228'), vagao('#2a3256')] };
+    T.cab = {
+      side: D(12, 26, p => { p(0, 0, '#22222a', 12, 3); p(0, 0, '#3a3a46', 12, 1); p(0, 3, '#8a2228', 12, 17); p(0, 3, '#a83038', 12, 1); p(2, 6, '#2a1a10', 8, 7); p(3, 7, vidro, 6, 5); p(3, 7, brilho, 2, 2); p(0, 15, ouro, 12, 1); p(0, 19, ouroE, 12, 1); p(0, 20, '#16161c', 12, 3); roda(p, 6, 23, 2.6, '#a82020', '#f0d070'); }),
+      top: D(12, 14, p => { p(0, 0, '#22222a', 12, 14); p(0, 0, '#3a3a46', 12, 1); p(0, 13, '#121216', 12, 1); p(0, 6, '#303040', 12, 2); }),
+      end: D(14, 26, p => { p(0, 0, '#22222a', 14, 3); p(0, 3, '#8a2228', 14, 17); p(0, 3, '#a83038', 14, 1); p(3, 6, '#2a1a10', 8, 6); p(4, 7, vidro, 6, 4); p(0, 15, ouro, 14, 1); p(0, 20, '#16161c', 14, 6); })
+    };
+    T.caldeira = {
+      side: D(28, 20, p => {
+        p(0, 0, '#1c1c24', 28, 12); p(0, 1, '#3e3e4c', 28, 2); p(0, 0, '#2a2a34', 28, 1); p(0, 10, '#121218', 28, 2);
+        for (const x of [5, 13, 21]) { p(x, 0, ouro, 2, 12); p(x, 0, '#f0d070', 1, 12); }
+        p(25, 2, '#2a2a34', 3, 6); p(26, 3, '#ffe070', 2, 3);
+        p(0, 12, '#2a2a30', 28, 2);
+        roda(p, 6, 15, 4.4, '#a82020', '#f0d070'); roda(p, 16, 15, 4.4, '#a82020', '#f0d070'); roda(p, 24, 17, 2.6, '#a82020', '#f0d070');
+        p(6, 15, '#c8c8d2', 11, 1); p(6, 16, '#6a6a74', 11, 1);
+        for (let i = 0; i < 5; i++) p(23 + i, 14 + i, '#c02828', 5 - i > 0 ? 1 : 1, 1); p(27, 13, '#e04040', 1, 6);
+      }),
+      top: D(28, 11, p => { p(0, 0, '#1c1c24', 28, 11); p(0, 4, '#3a3a48', 28, 2); p(0, 0, '#121218', 28, 1); p(0, 10, '#121218', 28, 1); for (const x of [5, 13, 21]) p(x, 0, ouro, 2, 11); }),
+      end: D(11, 20, p => { p(0, 0, '#1c1c24', 11, 12); p(1, 1, '#2e2e3a', 9, 10); p(3, 2, '#2a2a34', 5, 5); p(4, 3, '#ffe070', 3, 3); p(5, 3, '#fffac0', 1, 1); p(3, 8, ouro, 5, 2); p(0, 12, '#2a2a30', 11, 2); for (let y = 14; y < 20; y++) p(y - 14, y, '#c02828', 11 - 2 * (y - 14) > 0 ? 11 - 2 * (y - 14) : 1, 1); p(0, 14, '#e04040', 11, 1); })
+    };
+    T.chamine = { side: D(5, 10, p => { p(0, 0, '#3a3a46', 5, 2); p(0, 2, '#1a1a22', 5, 8); p(0, 2, '#2e2e3a', 1, 8); }), top: D(5, 5, p => { p(0, 0, '#3a3a46', 5, 5); p(1, 1, '#08080a', 3, 3); }), end: D(5, 10, p => { p(0, 0, '#3a3a46', 5, 2); p(0, 2, '#1a1a22', 5, 8); p(0, 2, '#2e2e3a', 1, 8); }) };
+    T.domo = { side: D(6, 4, p => { p(0, 0, '#f0d070', 6, 1); p(0, 1, ouro, 6, 3); }), top: D(6, 6, p => { p(0, 0, ouro, 6, 6); p(1, 1, '#f0d070', 3, 3); }), end: D(6, 4, p => { p(0, 0, '#f0d070', 6, 1); p(0, 1, ouro, 6, 3); }) };
+    return T;
+  },
+  // as caixas de cada carro: [textura, centro ao longo do trilho, comprimento, largura, altura, altura da base]
+  caixas(j) {
+    const T = this.texturas();
+    if (j === 0) return [[T.cab, -14, 12, 13, 25, 0], [T.caldeira, 6, 28, 10, 17, 0], [T.domo, 4, 6, 6, 4, 17], [T.chamine, 15, 5, 5, 10, 17]];
+    return [[T.vagoes[j], 0, 40, 12, 22, 0]];
+  },
+  caixa(ctx, X, Y, dx, dy, nx, ny, B) {
+    const [tx, uc, L, W, H, z0] = B, cx = X + dx * uc, cy = Y + dy * uc;
+    const face = (img, a, b, c, d, e, f) => { ctx.setTransform(a, b, c, d, e, f); ctx.drawImage(img, 0, 0); };
+    // lado virado para a câmera: comprimento ao longo do trilho, altura para cima
+    face(tx.side, dx * L / tx.side.width, dy * L / tx.side.width, 0, H / tx.side.height, cx + nx * W / 2 - dx * L / 2, cy + ny * W / 2 - dy * L / 2 - H - z0);
+    // a ponta que aparece (a frente se o trem desce a tela, a traseira se sobe)
+    const s = dy >= 0 ? 1 : -1, ue = s * L / 2;
+    if (Math.abs(dy) > 0.05) face(tx.end, nx * W / tx.end.width, ny * W / tx.end.width, 0, H / tx.end.height, cx + dx * ue - nx * W / 2, cy + dy * ue - ny * W / 2 - H - z0);
+    // o teto, visto de cima
+    face(tx.top, dx * L / tx.top.width, dy * L / tx.top.width, nx * W / tx.top.height, ny * W / tx.top.height, cx - dx * L / 2 - nx * W / 2, cy - dy * L / 2 - ny * W / 2 - H - z0);
+  },
+  desenhaCarro(ctx, c, X, Y) {
+    const dx = Math.cos(c.ang), dy = Math.sin(c.ang);
+    // a lateral visível é a que olha para baixo da tela
+    let nx = -dy, ny = dx; if (ny < 0 || (Math.abs(ny) < 1e-3 && nx > 0)) { nx = -nx; ny = -ny; }
+    const B = this.caixas(c.j), L = c.j === 0 ? 42 : 40, W = 14;
+    ctx.save();
+    // sombra no chão
+    ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath();
+    for (const [u, w] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { const x = X + dx * u * L / 2 + nx * w * W / 2 + 2, y = Y + dy * u * L / 2 + ny * w * W / 2 + 2; if (u === -1 && w === -1) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+    ctx.fill();
+    const chao = B.filter(b => !b[5]).sort((a, b) => dy * a[1] - dy * b[1]), alto = B.filter(b => b[5]);
+    for (const b of chao.concat(alto)) this.caixa(ctx, X, Y, dx, dy, nx, ny, b);
+    ctx.restore();
   },
   desenha(w, h, fn) { const c = Sprites.cv(w, h), x = c.getContext('2d'); fn((a, b, cor, ww = 1, hh = 1) => { x.fillStyle = cor; x.fillRect(a, b, ww, hh); }); return c; },
   estacaoImg() {
@@ -316,29 +355,7 @@ const Trem = {
       }
       for (const c of this.carros(l)) {
         if (c.x < camX - 50 || c.x > camX + vw + 50 || c.y < camY - 50 || c.y > camY + vh + 50) continue;
-        const co = Math.cos(c.ang), si = Math.sin(c.ang), vert = Math.abs(co) < 0.4, im = this.carroImg(c.j, vert ? 'v' : 'h');
-        D.push({ y: c.y + 8, fn: (ctx) => {
-          const x = Math.round(c.x - camX), y = Math.round(c.y - camY);
-          ctx.save();
-          if (vert) {
-            ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.fillRect(x - im.width / 2 + 2, y - 2, im.width - 4, 9);
-            ctx.drawImage(im, x - Math.round(im.width / 2), y - im.height + 8);
-          } else {
-            // vagão inclinado na direção do trilho: o lado aparece, a frente aponta para onde vai e o teto aparece por cima
-            const nx = co > 0 ? -si : si, ny = Math.abs(co), prof = 6, topo = im.height - 6, meio = im.width / 2;
-            const pt = (u, v) => [x + co * u - nx * prof * v, y + si * u - topo - ny * prof * v];
-            const A = pt(-meio + 1, 0), B = pt(meio - 1, 0), Cc = pt(meio - 1, 1), Dd = pt(-meio + 1, 1);
-            ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.moveTo(x - co * meio, y - si * meio + 4); ctx.lineTo(x + co * meio, y + si * meio + 4); ctx.lineTo(x + co * meio - nx * prof, y + si * meio + 4 - ny * prof); ctx.lineTo(x - co * meio - nx * prof, y - si * meio + 4 - ny * prof); ctx.fill();
-            ctx.fillStyle = c.j === 0 ? '#16161c' : '#262630'; ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.lineTo(Cc[0], Cc[1]); ctx.lineTo(Dd[0], Dd[1]); ctx.fill();
-            ctx.strokeStyle = c.j === 0 ? '#3e3e4c' : '#4a4a5a'; ctx.lineWidth = 1; ctx.beginPath(); const m1 = pt(-meio + 2, 0.5), m2 = pt(meio - 2, 0.5); ctx.moveTo(m1[0], m1[1]); ctx.lineTo(m2[0], m2[1]); ctx.stroke();
-            if (c.j === 0) { const ch = pt(13, 0.5); ctx.fillStyle = '#1a1a22'; ctx.fillRect(Math.round(ch[0]) - 3, Math.round(ch[1]) - 6, 6, 7); ctx.fillStyle = '#4a4a58'; ctx.fillRect(Math.round(ch[0]) - 4, Math.round(ch[1]) - 7, 8, 2); const dm = pt(4, 0.5); ctx.fillStyle = '#d8a838'; ctx.fillRect(Math.round(dm[0]) - 2, Math.round(dm[1]) - 3, 5, 4); }
-            else for (const u of [-10, 0, 10]) { const q = pt(u, 0.5); ctx.fillStyle = '#3a3a46'; ctx.fillRect(Math.round(q[0]) - 2, Math.round(q[1]) - 1, 4, 2); }
-            ctx.transform(co, si, 0, 1, x, y);
-                        ctx.drawImage(im, -Math.round(im.width / 2), -im.height + 6);
-          }
-          ctx.restore();
-          if (P.trem && P.trem.id === l.id && c.j === 2) { ctx.fillStyle = '#f0c8a0'; ctx.fillRect(x - 2, y - 20, 4, 4); }
-        } });
+        D.push({ y: c.y + 8, fn: (ctx) => this.desenhaCarro(ctx, c, Math.round(c.x - camX), Math.round(c.y - camY)) });
       }
     }
     const F = this.puffs; if (!F || !F.length) return;
