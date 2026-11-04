@@ -100,10 +100,12 @@ Object.assign(SCENARIOS.pacifico.unitMap, { panther: 'chiha', kingtiger: 'chiha'
 /* ---------- renderizador e cena ---------- */
 const $ = (id) => document.getElementById(id);
 const canvas = $('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+// celular (ou o app Android): sem antisserrilhado e gráficos leves por padrão
+const IS_MOBILE = /Android|iPhone|iPad|iPod|Mobile|GuerraMundialApp/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && Math.min(screen.width, screen.height) < 900);
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !IS_MOBILE, powerPreference: 'high-performance' });
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-let GFX = 'high';
-try { if (localStorage.getItem('diad-gfx') === 'low') GFX = 'low'; } catch (e) { /* sem armazenamento */ }
+let GFX = IS_MOBILE ? 'low' : 'high';
+try { const g = localStorage.getItem('diad-gfx'); if (g === 'low' || g === 'high') GFX = g; } catch (e) { /* sem armazenamento */ }
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x9ba6ab);
@@ -154,6 +156,7 @@ buildWorld(scene);
 function applyGfx() {
   const hi = GFX === 'high';
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, hi ? 1.75 : 1));
+  if (typeof Perf !== 'undefined') Perf.reset();
   renderer.shadowMap.enabled = hi; sun.castShadow = hi;
   scene.traverse(o => { if (o.material) o.material.needsUpdate = true; });
   $('gfx').textContent = 'Gráficos: ' + (hi ? 'Alto' : 'Leve');
@@ -921,7 +924,7 @@ function animSoldier(u, dt, moving, aiming) {
   const ud = u.mesh.userData, k = Math.min(1, dt * 12);
   u.crouch = (!moving && u.cover === 1) || !!u.kneel;
   const aim = (aiming && !moving) || S.time - u.fireT < 1.0;
-  if (ud.s3) { Soldado3.animate(u, dt, moving, aim); return; }
+  if (ud.s3) { if (!u.imp) Soldado3.animate(u, dt, moving, aim); return; }   // longe: a pose fica com o impostor (desempenho.js)
   let tL = 0, tR = 0, sL = 0.08, sR = 0.08;
   if (moving) {
     u.ph += dt * Math.max(2, u.speedNow) * 1.45;
@@ -2286,7 +2289,9 @@ let lastT = performance.now();
 function frame(now) {
   requestAnimationFrame(frame);
   let dt = (now - lastT) / 1000; lastT = now;
-  if (dt <= 0) return; if (dt > 0.05) dt = 0.05;
+  if (dt <= 0) return;
+  if (typeof Perf !== 'undefined') Perf.tick(dt);
+  if (dt > 0.05) dt = 0.05;
   pollPad(dt);
   if (MODE !== 'tactical') { worldFrame(dt); return; }
   S.time += dt;
@@ -2294,6 +2299,7 @@ function frame(now) {
   updateCamera(dt);
   updateWater(S.time);
   updBars();
+  if (typeof Perf !== 'undefined') Perf.impostors(dt);
   renderer.render(scene, camera);
 }
 

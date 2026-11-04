@@ -97,6 +97,7 @@ function qbKinds(side) {
 }
 function qbStart() {
   initAudio();
+  qbFix('p'); qbFix('e');
   if (!qbKinds('p').length || !qbKinds('e').length) { toast('Cada lado precisa de pelo menos uma unidade.', 'bad'); return; }
   // as nações (bandeiras, uniformes, nomes) vêm do mesmo estado da campanha, criado só para esta batalha
   newCampaign(QB.p);

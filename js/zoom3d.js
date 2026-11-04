@@ -341,7 +341,7 @@ const Z3 = (() => {
   function buildCities(cities) {
     // de perto as casas encolhem (de longe são exageradas para aparecer); cs = fator de tamanho
     const cs = Math.max(0.1, Math.min(1, S.alt / 40)), rs = Math.max(0.4, Math.min(1, 0.3 + cs)), more = Math.min(2.5, 1 / Math.sqrt(cs));
-    let n = 0; const ku = KU() / cs, lim = houses.instanceMatrix.count;
+    let n = 0; const ku = KU() / cs, lim = low() ? 2000 : houses.instanceMatrix.count;
     if (S.g) S.g.cityAlt = S.alt;
     cities.sort((a, b) => b.cap - a.cap);
     for (const ct of cities) {
@@ -508,7 +508,7 @@ const Z3 = (() => {
   function vehModel(kind, biome) {
     if (typeof Blindado3 === 'undefined' || !Blindado3.has(kind)) return null;
     const y = curYear(), key = 'V|' + kind + '|' + (y < 1943.15 ? 'a' : y < 1944.75 ? 'b' : 'c') + '|' + biome;
-    return bk(key, () => withSC(y, biome, () => Blindado3.make(kind)), 90);
+    return bk(key, () => withSC(y, biome, () => Blindado3.make(kind)), low() ? 36 : 90);
   }
   function soldierNat(tag) {
     const n = NATK[tag] || tag; if (Soldado3.LOOK[n]) return n;
@@ -522,7 +522,7 @@ const Z3 = (() => {
       for (let i = 0; i < 5; i++) Soldado3.pose(g, st, 1);
       if (fr[0] === 'w') { g.userData.ph = (+fr.slice(1)) * Math.PI / 2; Soldado3.pose(g, st, 1e-6); }
       return g;
-    }, 160);
+    }, low() ? 60 : 160);
   }
   const shipModel = () => (typeof Navio3 === 'undefined' ? null : bk('S|lst', () => Navio3.lst(), 24));
   function putD(e, lon, lat, hd, s) {
@@ -570,7 +570,7 @@ const Z3 = (() => {
         o.x = cx; o.y = cy;
         const at = (ox, oz) => offLL(cx, cy, hd, ox * km, oz * km);
         // perto da câmera: os modelos detalhados da batalha 3D; longe: miniaturas simples
-        const det = Math.hypot((((cx - flon + 540) % 360) - 180) * Math.cos(flat * D2R), cy - flat) * 111 < Math.max(45, S.alt * 2.4);
+        const det = Math.hypot((((cx - flon + 540) % 360) - 180) * Math.cos(flat * D2R), cy - flat) * 111 < Math.max(45, S.alt * (low() ? 1.4 : 2.4));
         const pv = WG.provs[d.prov], biome = pv.terr === 'D' ? 'desert' : winterOn(pv) ? 'winter' : '';
         const moving = !!(d.path.length || d.naval);
         const veh = (kind, cls, ox, oz) => { const [a, b] = at(ox, oz); if (det && putD(vehModel(kind, biome), a, b, hd, US / 1.3)) return; put(cls, a, b, hd, US, pc.veh); };

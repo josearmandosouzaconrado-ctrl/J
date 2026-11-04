@@ -1204,7 +1204,7 @@ function worldFrame(dt) {
   if (W) worldTick(dt);
   // giro automático do globo no menu
   if (!W || $('intro').hidden === false) { if (mapStyle === 'globo') WV.lon += dt * 3; }
-  if (W && mapDirty) { mapT -= dt; if (mapT <= 0) { mapT = 1.2; drawMap(); } }
+  if (W && mapDirty) { mapT -= dt; if (mapT <= 0) { mapT = GFX === 'low' ? 2.5 : 1.2; drawMap(); } }   // no modo leve redesenha menos (textura grande)
   const K2 = cam.keys, sp2 = (mapStyle === 'globo' ? 260 : 380) * dt;
   if (K2.w || K2.arrowup) worldPan(0, sp2); if (K2.s || K2.arrowdown) worldPan(0, -sp2);
   if (K2.a || K2.arrowleft) worldPan(sp2, 0); if (K2.d || K2.arrowright) worldPan(-sp2, 0);

@@ -670,7 +670,7 @@ const Soldado3 = (() => {
     // escala externa igual à do soldado antigo (1,12); o resto fica no grupo interno
     root.scale.setScalar(o.scale !== undefined ? o.scale : 1.12);
     body.scale.setScalar(o.scale !== undefined ? 1 : GAME_SCALE / 1.12);
-    root.userData = { s3: true, J, W, st: null, ph: Math.random() * 6, nat,
+    root.userData = { s3: true, J, W, st: null, ph: Math.random() * 6, nat, mk: Object.assign({}, o, { variant, skin }),
       legL: J.hipL, legR: J.hipR, shinL: J.kneeL, shinR: J.kneeR, armL: J.shL, armR: J.shR, foreL: J.elL, foreR: J.elR, rifle, tube: W.hold === 'tube' };
     pose(root, {}, 1);
     return root;
