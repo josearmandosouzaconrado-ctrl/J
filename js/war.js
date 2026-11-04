@@ -258,6 +258,8 @@ const War = {
     if (advance) { a.x = lerp(a.x, fc.x, advance * 0.6); a.y = lerp(a.y, fc.y, advance * 0.6); }
     S.armies.push(a);
   },
+  // a árvore de tecnologia (tecnologia.js) troca estes fatores
+  fatorBatalha() { return 1; }, fatorCerco() { return 1; }, fatorMarcha() { return 1; },
   garrison(s) { if (s.playerVila) return Reino.guarnicao(); return s.type === 'capital' ? 75 : s.type === 'town' ? 32 : 14; },
   pickTarget(a) {
     let best = null, bd = Infinity;
@@ -274,7 +276,7 @@ const War = {
     const S = this.st(), rng = new RNG(Game.world.seed + Game.day * 1440 + Math.floor(Game.time));
     for (const a of S.armies) {
       if (a.state === 'battle' || a.state === 'follow') continue;
-      if (a.state === 'camp') { a.n = Math.min(a.n0, a.n + 2); if (a.n >= a.n0 * 0.8) { a.state = 'march'; a.target = null; } continue; }
+      if (a.state === 'camp') { a.n = Math.min(a.n0, a.n + (War.fatorMarcha(a.k) > 1 ? 3 : 2)); if (a.n >= a.n0 * 0.8) { a.state = 'march'; a.target = null; } continue; }
       let s = a.target && this.settlement(a.target);
       if (!s || this.ownerOf(s) !== a.foe) { s = this.pickTarget(a); a.target = s ? s.id : null; if (a.state === 'siege') a.state = 'march'; }
       if (!s) continue;
@@ -284,7 +286,7 @@ const War = {
         if (a.siegeT >= 3) {
           if (s.playerVila && a.k !== 'jogador') { Reino.cerco(a, s); continue; }
           const g = this.garrison(s);
-          if (a.n > g) { this.conquer(s, a); a.n -= Math.round(g * 0.4); a.state = 'march'; a.target = null; }
+          if (a.n * War.fatorCerco(a.k) > g) { this.conquer(s, a); a.n -= Math.round(g * 0.4); a.state = 'march'; a.target = null; }
           else { a.n -= Math.round(g * 0.35); this.retreat(a); }
         }
         continue;
@@ -292,7 +294,7 @@ const War = {
       if (a.squad) continue; // movido pelos soldados visíveis
       const d = dist(a.x, a.y, s.mid.x, s.mid.y);
       if (d < 10) { a.state = 'siege'; a.siegeT = 0; continue; }
-      const sp = Math.min(d, 9);
+      const sp = Math.min(d, 9 * War.fatorMarcha(a.k));
       a.x += (s.mid.x - a.x) / d * sp; a.y += (s.mid.y - a.y) / d * sp;
     }
     // encontros
@@ -306,7 +308,7 @@ const War = {
       const A = this.army(bt.a), B = this.army(bt.b);
       if (!A || !B) { S.battles = S.battles.filter(x => x !== bt); continue; }
       bt.h++;
-      const la = Math.ceil(B.n * rng.range(0.07, 0.16)), lb = Math.ceil(A.n * rng.range(0.07, 0.16));
+      const la = Math.ceil(B.n * rng.range(0.07, 0.16) * War.fatorBatalha(B.k, A.k)), lb = Math.ceil(A.n * rng.range(0.07, 0.16) * War.fatorBatalha(A.k, B.k));
       A.n = Math.max(0, A.n - la); B.n = Math.max(0, B.n - lb); bt.dead += la + lb; bt.deadA += la; bt.deadB += lb;
       if (A.n <= bt.a0 * 0.4 || B.n <= bt.b0 * 0.4 || bt.h >= 5) this.resolve(bt, A.n / bt.a0 < B.n / bt.b0 ? 'a' : 'b');
     }

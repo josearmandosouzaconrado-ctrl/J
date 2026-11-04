@@ -485,6 +485,12 @@ const Reino = {
       for (const id of ['armadura_reino', 'elmo_reino', 'escudo_reino']) P.addItem(Items.make(id), true);
       Sfx.play('forge'); Game.toast('A armadura real está na sua mochila, nas cores do seu brasão!', '#ffd860'); this.quartel(a, back);
     } });
+    if (Tecnologia.temJ('gotica')) opts.push({ label: '🛡 Forjar armadura gótica (armadura + elmo: 3200 ouro)', fn: () => {
+      if (P.gold < 3200) return Game.toast('Ouro insuficiente.', '#ff8080');
+      P.gold -= 3200; for (const id of ['armadura_gotica', 'elmo_gotico']) P.addItem(Items.make(id), true);
+      Sfx.play('forge'); Game.toast('A Armadura Gótica está na sua mochila!', '#ffd860'); this.quartel(a, back);
+    } });
+    opts.push({ label: '🔬 Árvore de tecnologia', fn: () => Tecnologia.tela(() => this.quartel(a, back)) });
     if (A && A.state !== 'battle') opts.push({ label: 'Mandar o exército de campo de volta para a guarnição', fn: () => { this.devolver(A); this.quartel(a, back); } });
     opts.push({ label: 'Voltar', fn: back });
     UI.dialog(a.name, a.look, txt + (falta.length ? `<div class="dim small">${esc(falta.join(' • '))}</div>` : ''), opts);
@@ -506,6 +512,7 @@ const Reino = {
     }
     if (this.ativo()) opts.push({ label: '🎨 Brasão, bandeira e uniformes', cls: 'gold', fn: () => this.brasao(() => this.coroa(a, back)) });
     opts.push({ label: '🕊 Diplomacia com os reinos', fn: () => this.listaDiplo(() => this.coroa(a, back)) });
+    opts.push({ label: '🔬 Árvore de tecnologia', fn: () => Tecnologia.tela(() => this.coroa(a, back)) });
     opts.push({ label: 'Voltar', fn: back });
     UI.dialog(a.name, a.look, txt, opts);
   },

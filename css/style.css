@@ -387,3 +387,19 @@ a.mbtn.apk small { display: block; font-size: 13px; opacity: .8; }
 .row.wrap { flex-wrap: wrap; gap: 4px; }
 .sw.nada { background: #1a0e10; color: var(--dim); font-size: 14px; line-height: 1; }
 .create-left .mbtn.small { width: 100%; margin-top: 6px; }
+/* árvore de tecnologia */
+.tec-tree { display: flex; gap: 6px; overflow-x: auto; padding: 6px 0; -webkit-overflow-scrolling: touch; }
+.tec-col { flex: 1 0 128px; display: flex; flex-direction: column; gap: 4px; }
+.tec-h { text-align: center; color: var(--gold, #f0c060); border-bottom: 2px solid var(--border2, #5a3a2a); padding-bottom: 2px; white-space: nowrap; }
+.tec-c { display: flex; flex-direction: column; align-items: flex-start; text-align: left; font: inherit; font-size: 15px; line-height: 1; padding: 4px 6px; background: #2a1c24; color: #f2e6cc; border: 2px solid #4a3440; cursor: pointer; }
+.tec-c .tec-s { font-size: 13px; opacity: .85; margin-top: 2px; }
+.tec-c.feita { background: #1f3a24; border-color: #4a8a50; }
+.tec-c.atual { background: #3a3218; border-color: #e0b040; }
+.tec-c.livre { border-color: #a08060; }
+.tec-c.trava { opacity: .55; }
+.tec-c.sel { box-shadow: 0 0 0 2px #fff; }
+.tec-info { background: rgba(0,0,0,.3); border: 2px solid #4a3440; padding: 6px 8px; margin: 4px 0; }
+.tec-panel > * { flex-shrink: 0; }
+#tatica { max-height: calc(100% - 120px - var(--sa-t)); overflow-y: auto; }
+#tatica.muitos { display: grid; grid-template-columns: auto auto; }
+#tatica.muitos .tat-t { grid-column: 1 / -1; }
