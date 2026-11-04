@@ -32,8 +32,8 @@ PACKAGE = 'com.eldoria.cronicas.adm' if ADM else 'com.eldoria.cronicas'
 ACTIVITY = PACKAGE + '.MainActivity'
 APP_NAME = 'Eldoria ADM' if ADM else 'Crônicas de Eldoria'
 UA_TAG = ' EldoriaAPK EldoriaADM' if ADM else ' EldoriaAPK'
-VERSION_CODE = 45
-VERSION_NAME = '0.26.0-beta'
+VERSION_CODE = 46
+VERSION_NAME = '0.26.1-beta'
 MIN_SDK, TARGET_SDK = 24, 34
 # img/ não entra: as imagens vão embutidas em js/imgdata.js (tools/gerar_imgdata.py)
 WEB_FILES = ['index.html', 'manifest.json', 'css', 'js', 'icons']
@@ -492,7 +492,7 @@ def add(z, name, data, store=False):
         hdr_len = 30 + len(name.encode())
         pad = (-(z.fp.tell() + hdr_len)) % 4
         info.extra = b'\x00' * pad
-    z.writestr(info, data)
+    z.writestr(info, data, compresslevel=None if store else 9)
 
 
 def main():
@@ -506,8 +506,11 @@ def main():
         add(z, 'classes.dex', build_dex())
         add(z, 'resources.arsc', build_arsc('res/drawable/icon.png'), store=True)
         add(z, 'res/drawable/icon.png', open(icon, 'rb').read(), store=True)
+        # o código vai enxugado (sem comentários e espaços: o jogo é o mesmo) e a fonte vai comprimida
+        sys.path.insert(0, os.path.join(ROOT, 'tools'))
+        from enxugar import enxugar
         for full, rel in web_files():
-            add(z, 'assets/' + rel, open(full, 'rb').read(), store=rel.endswith(('.png', '.ttf')))
+            add(z, 'assets/' + rel, enxugar(rel, open(full, 'rb').read()), store=rel.endswith('.png'))
     apk = sign_v2(buf.getvalue())
     open(OUT, 'wb').write(apk)
     print(f'APK gerado: {OUT} ({len(apk) // 1024} KB)')
