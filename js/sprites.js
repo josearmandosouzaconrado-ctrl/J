@@ -114,8 +114,8 @@ const Sprites = {};
   S.TP = TP; S.slabs = (p, r, b, l, n) => slabs(p, r, b, l, n);
   TP[T.GRASS] = (p, r, v) => {
     // grama viva: verde forte, tufinhos em V com a ponta clara e, de vez em quando, uma florzinha
-    fill(p, '#4ea630'); speck(p, r, ['#3f9426', '#45992a'], 40); speck(p, r, ['#62b83a', '#68bc40'], 22);
-    for (let i = 0; i < 6; i++) { const x = r.int(1, 14), y = r.int(2, 14); p(x, y, '#358420'); p(x - 1, y - 1, '#76c84a'); p(x + 1, y - 1, '#6cc044'); p(x, y - 2, '#86d456'); }
+    fill(p, '#3e9226'); speck(p, r, ['#327e1e', '#378622'], 46); speck(p, r, ['#4fa42e', '#56aa34'], 22);
+    for (let i = 0; i < 6; i++) { const x = r.int(1, 14), y = r.int(2, 14); p(x, y, '#2c721a'); p(x - 1, y - 1, '#66b83e'); p(x + 1, y - 1, '#5eb03a'); p(x, y - 2, '#76c44a'); }
     if (v === 3 && r.chance(0.7)) { const x = r.int(2, 13), y = r.int(2, 13), c = r.pick(['#f8f8f0', '#f8d838', '#c890e8', '#f8a0c0']); p(x, y, c); p(x + 1, y + 1, c); p(x - 1, y + 1, c); p(x, y + 1, '#f8e070'); }
   };
   TP[T.DGRASS] = (p, r) => { fill(p, '#3c8a2c'); speck(p, r, ['#2f7624', '#347c27'], 38); speck(p, r, ['#4e9e36', '#54a43a'], 18); speck(p, r, ['#6a5a2a', '#7a6a32'], 3); for (let i = 0; i < 4; i++) { const x = r.int(1, 14), y = r.int(2, 14); p(x, y, '#2a6a1e'); p(x - 1, y - 1, '#5eae3e'); p(x + 1, y - 1, '#5eae3e'); } };
@@ -335,11 +335,11 @@ const Sprites = {};
         break;
       }
       case O.BUSH: {
-        const base = ['#3a8030', '#46883a', '#3a7a40'][v % 3];
-        c = mk(14, 11, p => { blob(p, r, 7, 6, 5, base); blob(p, r, 4, 7, 3.5, base); blob(p, r, 10, 7, 3.5, base); if (v === 1) for (let i = 0; i < 4; i++) p(r.int(3, 11), r.int(3, 8), '#e03040'); });
+        const base = ['#2f8a26', '#3a962c', '#2c8030'][v % 3];
+        c = mk(18, 13, p => { blob(p, r, 9, 8, 5.5, shade(base, -0.25)); blob(p, r, 5, 8, 4, base); blob(p, r, 13, 8, 4, base); blob(p, r, 9, 6, 4.5, shade(base, 0.12)); for (let i = 0; i < 6; i++) p(r.int(4, 13), r.int(3, 7), shade(base, 0.45)); if (v === 1) for (let i = 0; i < 4; i++) p(r.int(4, 13), r.int(4, 9), '#e03040'); });
         break;
       }
-      case O.ROCK: { c = mk(12, 8, p => { ellipse(p, 6, 5, 5, 3, '#8a8580'); ellipse(p, 5, 4, 3, 2, '#a09a94'); p(7, 6, '#6a6560', 3, 1); }); break; }
+      case O.ROCK: { c = mk(14, 10, p => { ellipse(p, 7, 6, 6, 3.5, '#7a7a80'); ellipse(p, 6, 5, 4, 2.5, '#9a9aa2'); p(4, 4, '#b8b8c0', 3, 1); p(8, 8, '#5a5a62', 4, 1); if (v % 2) { p(5, 3, '#5a9a3a', 4, 1); p(4, 4, '#4a8a30', 2, 1); } }); break; }
       case O.BOULDER: case O.ICEROCK: case O.SANDROCK: {
         const base = id === O.ICEROCK ? '#a0c8e0' : id === O.SANDROCK ? '#c8a070' : '#8a8580';
         c = mk(16, 14, p => { blob(p, r, 8, 8, 6.5, base); p(4, 5, shade(base, 0.3), 3, 1); });
@@ -352,7 +352,8 @@ const Sprites = {};
       }
       case O.FLOWERS: {
         const cols = [['#f0e040', '#ffffff'], ['#e04070', '#f090c0'], ['#8070f0', '#f0f0ff'], ['#f08030', '#f0e040']][v % 4];
-        c = mk(16, 16, p => { for (let i = 0; i < 6; i++) { const x = r.int(1, 13), y = r.int(3, 13); p(x, y + 1, '#3a7a2a', 1, 2); p(x, y, r.pick(cols)); p(x + 1, y, r.pick(cols)); } }, false);
+        // margaridas de 5 pétalas com o miolo amarelo, em moitinha
+        c = mk(16, 16, p => { for (let i = 0; i < 5; i++) { const x = r.int(2, 13), y = r.int(3, 12), pc = r.pick(cols); p(x, y + 2, '#2f7a22', 1, 3); p(x + 1, y + 3, '#3a8a2a'); p(x, y - 1, pc); p(x - 1, y, pc); p(x + 1, y, pc); p(x, y + 1, pc); p(x, y, '#f8c820'); } }, false);
         oy = 0; break;
       }
       case O.TALLGRASS: {

@@ -7,7 +7,7 @@
 //  fica em cima do trilho leva uma pancada!
 // =====================================================================
 const TREM_REINOS = ['aurelion', 'ferrania'];
-const TREM_V = 140, TREM_PARADA = 18, TREM_CARRO = 38, TREM_CARROS = 4, TREM_PRECO = 40;
+const TREM_V = 140, TREM_PARADA = 18, TREM_CARRO = 44, TREM_CARROS = 4, TREM_PRECO = 40;
 
 const Trem = {
   st() { const S = War.st(); return S.trens || (S.trens = { linhas: [] }); },
@@ -164,7 +164,7 @@ const Trem = {
     P.gold -= TREM_PRECO; Sfx.play('coin');
     const H = this.horario(l), alvoU = de === 'a' ? TREM_PARADA - 2.5 : 2 * TREM_PARADA + H.T - 2.5;
     l.ofs = alvoU - Game.t;   // o trem já está na plataforma esperando você
-    P.mounted = false; P.trem = { id: l.id, para: de === 'a' ? 'b' : 'a', saiu: false };
+    P.mounted = false; P.trem = { id: l.id, para: de === 'a' ? 'b' : 'a', saiu: false, chegada: Game.t + 2.5 + H.T + 0.5 };
     UI.close(); G.toast(`🚂 Todos a bordo! Destino: ${de === 'a' ? l.bn : l.an}`, '#ffe0a0');
   },
   viajando(dt) {
@@ -174,7 +174,8 @@ const Trem = {
     P.x = c.x; P.y = c.y; P.invuln = 0.5; P.moving = false;
     this.fumaca(C[0], H, dt);
     if (!H.parado) P.trem.saiu = true;
-    if (P.trem.saiu && H.parado && H.onde === P.trem.para) this.descer(l, P.trem.para);
+    // chega na hora marcada (mesmo que o jogo tenha ficado pausado no caminho)
+    if ((P.trem.saiu && H.parado && H.onde === P.trem.para) || (P.trem.chegada && Game.t >= P.trem.chegada)) this.descer(l, P.trem.para);
   },
   descer(l, onde) {
     const G = Game, P = G.player, c = onde === 'a' ? l.sa : l.sb;
@@ -324,7 +325,7 @@ const Trem = {
             ctx.drawImage(im, x - Math.round(im.width / 2), y - im.height + 8);
           } else {
             // vagão inclinado na direção do trilho: o lado aparece, a frente aponta para onde vai e o teto aparece por cima
-            const nx = co > 0 ? -si : si, ny = Math.abs(co), prof = 10, topo = im.height - 6, meio = im.width / 2;
+            const nx = co > 0 ? -si : si, ny = Math.abs(co), prof = 6, topo = im.height - 6, meio = im.width / 2;
             const pt = (u, v) => [x + co * u - nx * prof * v, y + si * u - topo - ny * prof * v];
             const A = pt(-meio + 1, 0), B = pt(meio - 1, 0), Cc = pt(meio - 1, 1), Dd = pt(-meio + 1, 1);
             ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.moveTo(x - co * meio, y - si * meio + 4); ctx.lineTo(x + co * meio, y + si * meio + 4); ctx.lineTo(x + co * meio - nx * prof, y + si * meio + 4 - ny * prof); ctx.lineTo(x - co * meio - nx * prof, y - si * meio + 4 - ny * prof); ctx.fill();

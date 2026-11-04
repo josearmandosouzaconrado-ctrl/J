@@ -163,13 +163,14 @@ class World {
       case T.GRASS: {
         if (reg.biome === 'desert') { if (h < 0.06) return O.PALM; if (h < 0.1) return O.BUSH; return 0; }
         const tp = reg.biome === 'hills' ? treeP(0.006, 0.07) : reg.biome === 'mountain' ? treeP(0.01, 0.05) : treeP(0.004, 0.09);
-        if (h < tp) return reg.biome === 'hills' ? (h < tp * 0.4 ? O.AUTUMN : O.OAK) : reg.biome === 'mountain' ? O.PINE : (hash2(x, y, 7) < 0.15 ? O.AUTUMN : O.OAK);
-        if (h < tp + 0.012) return O.BUSH;
-        if (h < tp + 0.05 + (reg.biome === 'hills' ? 0.05 : 0)) return O.FLOWERS;
-        if (h < tp + 0.11) return O.TALLGRASS;
-        if (h < tp + 0.116) return O.ROCK;
-        if (h < tp + 0.1185) return O.HERB_RED;
-        if (h < tp + 0.1195) return O.BOULDER;
+        if (h < tp) return reg.biome === 'hills' ? (h < tp * 0.4 ? O.AUTUMN : O.OAK) : reg.biome === 'mountain' ? O.PINE : (hash2(x, y, 7) < 0.22 ? O.AUTUMN : O.OAK);
+        // campos floridos: mais flores, arbustos e pedrinhas (como num quadro)
+        if (h < tp + 0.02) return O.BUSH;
+        if (h < tp + 0.095 + (reg.biome === 'hills' ? 0.05 : 0)) return O.FLOWERS;
+        if (h < tp + 0.155) return O.TALLGRASS;
+        if (h < tp + 0.163) return O.ROCK;
+        if (h < tp + 0.1655) return O.HERB_RED;
+        if (h < tp + 0.1665) return O.BOULDER;
         return 0;
       }
       case T.DGRASS: {

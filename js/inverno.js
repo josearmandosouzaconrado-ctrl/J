@@ -132,7 +132,7 @@ const Inverno = {
       // cores de cada estação (bem de leve)
       const cor = { inverno: 'rgba(170,195,255,0.07)', outono: 'rgba(255,170,90,0.05)', verao: 'rgba(255,230,140,0.035)', primavera: 'rgba(170,255,190,0.03)' }[e];
       // as cores ficam vivas como num quadro: um pouco mais de saturação no verde de dia
-      if (e !== 'inverno' && Game.time > 6 * 60 && Game.time < 18 * 60) { ctx.globalCompositeOperation = 'saturation'; ctx.fillStyle = 'rgba(0,200,0,0.12)'; ctx.fillRect(0, 0, vw, vh); ctx.globalCompositeOperation = 'source-over'; }
+      if (e !== 'inverno' && Game.time > 6 * 60 && Game.time < 18 * 60) { ctx.globalCompositeOperation = 'saturation'; ctx.fillStyle = 'rgba(0,200,0,0.05)'; ctx.fillRect(0, 0, vw, vh); ctx.globalCompositeOperation = 'source-over'; }
       if (cor) { ctx.fillStyle = cor; ctx.fillRect(0, 0, vw, vh); }
     }
     for (const f of this.folhas) { const x = Math.round(f.x), y = Math.round(f.y), v = Math.sin(f.f * 3) > 0; ctx.fillStyle = f.c; if (v) { ctx.fillRect(x, y, 4, 2); ctx.fillRect(x + 1, y - 1, 2, 4); } else ctx.fillRect(x, y, 2, 3); ctx.fillStyle = shade(f.c, -0.35); ctx.fillRect(x + (v ? 3 : 1), y + (v ? 1 : 2), 1, 1); }

@@ -84,10 +84,10 @@ const Trees = (() => {
       for (let y = Math.floor(c.y - R); y <= c.y + R; y++) for (let x = Math.floor(c.x - R); x <= c.x + R; x++) {
         if (x < 0 || y < 0 || x >= buf.w || y >= buf.h) continue;
         const dx = x + 0.5 - c.x, dy = y + 0.5 - c.y, d = Math.sqrt(dx * dx + dy * dy);
-        if (d > R - nz(x, y, sd) * 1.1) continue;                         // borda recortada (folhas)
+        if (d > R - nz(x, y, sd) * (o.liso ? 0.6 : 1.1)) continue;                         // borda recortada (folhas)
         const l = -(dx * 0.75 + dy) / R;                                     // luz local do tufo
         const gy = (y - (cy - ry)) / (2 * ry), gx = (x - (cx - rx)) / (2 * rx);
-        let t = 3.3 + l * 1.0 - gy * 2.5 - gx * 0.8 + (nz(x, y, sd + 3) - 0.5) * 1.0;
+        let t = o.liso ? 3.4 + l * 1.7 - gy * 2.3 - gx * 0.7 + (nz(x, y, sd + 3) - 0.5) * 0.45 : 3.3 + l * 1.0 - gy * 2.5 - gx * 0.8 + (nz(x, y, sd + 3) - 0.5) * 1.0;
         if (d > R - 1.3 && dy > 0.5) t -= 1.1;                               // sombra sob o tufo
         buf[y * buf.w + x] = c.p * 8 + clampI(Math.round(t), 0, 5);
       }
@@ -121,11 +121,14 @@ const Trees = (() => {
     const pl = autumn ? [0, 0, 1, 2] : [0, 0, 1];
     const lumps = [[0, -0.62, 0.5], [-0.52, -0.32, 0.45], [0.52, -0.32, 0.45], [-0.68, 0.18, 0.42], [0.68, 0.18, 0.42], [0, 0.02, 0.5], [-0.3, 0.52, 0.46], [0.34, 0.52, 0.46]];
     lumps.sort((a, b) => a[1] - b[1]);
-    for (const [lx, ly, lr] of lumps) { const r2 = lr * rx * rng.range(0.9, 1.08); canopy(buf, rng, cx + lx * rx * rng.range(0.9, 1.05), cy + ly * ry * rng.range(0.9, 1.05), r2, r2 * 0.88, { pals: pl, n: Math.round(r2 * r2 / 3), rmin: 2, rmax: 3.4 }); }
+    for (const [lx, ly, lr] of lumps) { const r2 = lr * rx * rng.range(0.9, 1.08); canopy(buf, rng, cx + lx * rx * rng.range(0.9, 1.05), cy + ly * ry * rng.range(0.9, 1.05), r2, r2 * 0.9, { pals: pl, n: Math.round(r2 * r2 / 5.5), rmin: 3.4, rmax: 5, liso: true }); }
     for (let k = 0; k < 2; k++) { const hx = cx + rng.range(-rx * 0.45, rx * 0.45), hy = cy + rng.range(-ry * 0.1, ry * 0.5), hr = rng.range(1.2, 2); for (let y = Math.floor(hy - hr); y <= hy + hr; y++) for (let x = Math.floor(hx - hr); x <= hx + hr; x++) if ((x - hx) ** 2 + (y - hy) ** 2 < hr * hr && x >= 0 && y >= 0 && x < W && y < H) buf[y * W + x] = -1; }
+    // brilhos de sol no alto de cada bolota
+    for (let i = 0; i < buf.length; i++) if ((buf[i] & 7) === 5 && nz(i % W, (i / W) | 0, 31) < 0.35) buf[i] = (buf[i] & ~7) | 6;
+    pals.forEach(R => { R[6] = shade(R[5], 0.16); });
     paintBuf(ctx, buf, pals);
     if (autumn) for (let i = 0; i < 7; i++) { ctx.fillStyle = rng.pick(['#d06a1e', '#e0a828', '#b83a22']); ctx.fillRect(Math.round(bx + rng.range(-9, 9)), by + rng.int(-1, 2), 1, 1); }
-    outline(c, shade(pals[0][0], -0.45));
+    outline(c, shade(pals[0][0], -0.62));
     groundShadow(c, bx + 2, by + 1, rx * 0.9, 4);
     return { c, oy: 4 };
   };
