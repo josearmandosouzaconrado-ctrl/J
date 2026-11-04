@@ -145,8 +145,10 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   padding-left: max(20px, env(safe-area-inset-left, 0px));
   padding-right: max(20px, env(safe-area-inset-right, 0px));
-  box-sizing: border-box; display: flex; align-items: center;
+  box-sizing: border-box; display: flex; align-items: flex-start;
 }
+/* centraliza sem cortar o topo quando o conteúdo é mais alto que a tela */
+.screen > .brief { margin-top: auto; margin-bottom: auto; }
 .brief { max-width: 560px; display: flex; flex-direction: column; gap: 12px; }
 .eyebrow { font-weight: 700; font-size: 13px; letter-spacing: 0.18em; color: var(--accent); }
 .brief h1 { font-family: var(--display); font-weight: 400; font-size: clamp(56px, 13vw, 112px); line-height: 0.86; margin: 0; letter-spacing: 0.02em; text-wrap: balance; }
@@ -177,6 +179,22 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .free button::before { content: "○ "; color: var(--dim); }
 .free button[aria-pressed="true"] { border-color: var(--accent); background: rgba(227, 163, 60, 0.18); box-shadow: inset 3px 0 0 var(--accent); }
 .free button[aria-pressed="true"]::before { content: "✓ "; color: var(--accent); }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tabs button { text-align: left; padding: 10px 12px; border-radius: 4px; border: 1px solid var(--line); background: rgba(45, 51, 33, 0.7); font-family: var(--display); font-size: 17px; letter-spacing: 0.04em; min-height: 56px; display: flex; flex-direction: column; gap: 2px; }
+.tabs button small { font-family: inherit; font-family: system-ui, sans-serif; font-size: 12px; color: var(--dim); letter-spacing: 0; font-weight: 600; }
+.tabs button[aria-selected="true"] { border-color: var(--accent); background: rgba(227, 163, 60, 0.22); box-shadow: inset 0 -3px 0 var(--accent); }
+.scen.sm { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 6px; }
+.scen.sm button { min-height: 40px; padding: 6px 8px; }
+.scen.sm button span { display: none; }
+.qbu { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; }
+.qbu fieldset { border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px 10px; margin: 0; background: rgba(30, 34, 22, 0.6); min-width: 0; }
+.qbu legend { font-family: var(--display); font-size: 13px; letter-spacing: 0.1em; color: var(--accent); padding: 0 4px; }
+.qbu .ur { display: flex; align-items: center; gap: 6px; min-height: 40px; }
+.qbu .ur > span { flex: 1; font-size: 14px; font-weight: 700; min-width: 0; }
+.qbu .ur select { display: block; margin-top: 2px; max-width: 100%; background: #20251a; color: var(--fg); border: 1px solid var(--line); border-radius: 3px; font-size: 13px; padding: 3px 4px; }
+.qbu .ur button { width: 36px; height: 36px; border-radius: 4px; border: 1px solid var(--line); background: rgba(45, 51, 33, 0.9); font-size: 18px; font-weight: 700; padding: 0; }
+.qbu .ur output { width: 28px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 16px; }
+.qbu .tot { font-size: 12px; color: var(--dim); margin-top: 4px; }
 .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
 .stats div { border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; }
 .stats b { display: block; font-family: var(--display); font-weight: 400; font-size: 26px; font-variant-numeric: tabular-nums; }
@@ -288,6 +306,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     <button class="sb" id="bBox">CAIXA<small>seleção</small></button>
     <button class="sb" id="bNaval">APOIO<small>pronto</small></button>
     <button class="sb" id="bBuild" hidden>OBRAS<small>construir</small></button>
+    <button class="sb" id="bReinf" hidden>REFORÇO<small>chamar</small></button>
     <button class="sb" id="bRetreat" hidden>RETIRAR<small>batalha</small></button>
     <button class="sb" id="bSound">SOM<small>ligado</small></button>
   </div>
@@ -337,23 +356,43 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 <div class="screen" id="intro">
   <div class="brief">
-    <div class="eyebrow">1 DE SETEMBRO DE 1939 · CAMPANHA MUNDIAL</div>
+    <div class="eyebrow" id="introEyebrow">1 DE SETEMBRO DE 1939 · CAMPANHA MUNDIAL</div>
     <h1>GUERRA MUNDIAL</h1>
+    <div class="tabs" id="modeTabs" role="tablist" aria-label="Modo de jogo">
+      <button type="button" role="tab" aria-selected="true" data-mode="world">CAMPANHA MUNDIAL<small>mapa global, bases e divisões</small></button>
+      <button type="button" role="tab" aria-selected="false" data-mode="battle">BATALHA RÁPIDA<small>só o campo de batalha, sem base</small></button>
+    </div>
+    <div id="modeWorld" class="brief">
     <h2>Escolha sua nação</h2>
     <div class="scen" id="nations" role="radiogroup" aria-label="Nação"></div>
     <p id="natDesc"></p>
+    </div>
+    <div id="modeBattle" class="brief" hidden>
+      <h2>Seu exército</h2>
+      <div class="scen sm" id="qbP" role="radiogroup" aria-label="Seu país"></div>
+      <h2>Inimigo</h2>
+      <div class="scen sm" id="qbE" role="radiogroup" aria-label="País inimigo"></div>
+      <div class="free" id="qbYear" role="group" aria-label="Ano"><b>ANO (DEFINE OS TANQUES DE CADA LADO)</b></div>
+      <div class="free" id="qbTerr" role="group" aria-label="Terreno"><b>TERRENO</b></div>
+      <div class="free" id="qbAtk" role="group" aria-label="Quem ataca"><b>QUEM ATACA</b></div>
+      <div class="qbu" id="qbUnits"></div>
+      <div class="free" id="qbRate" role="group" aria-label="Reforços"><b>REFORÇOS DURANTE A BATALHA (SEM BASE: VOCÊ SÓ PEDE REFORÇO)</b></div>
+    </div>
     <div class="free" id="free" role="group" aria-label="Modo livre">
       <b>MODO LIVRE</b>
       <button type="button" aria-pressed="false" data-free="res">Recursos ilimitados</button>
       <button type="button" aria-pressed="false" data-free="fog">Sem névoa: visão limpa e inimigos à mostra nas batalhas</button>
     </div>
-    <ul>
+    <ul id="worldTips">
       <li>Mapa: toque nas suas divisões e depois numa província para mover ou atacar. ▶ faz o tempo andar.</li>
       <li>Toda batalha com suas divisões pode ser lutada em 3D: toque em LUTAR EM 3D.</li>
       <li>Os tanques evoluem com a pesquisa e com os anos: Panzer II até Tiger II, T-26 até T-34, Stuart até Pershing.</li>
       <li>Controle Xbox, PlayStation ou outro via Bluetooth: conecte e aperte qualquer botão.</li>
     </ul>
-    <div class="row">
+    <div class="row" id="qbRow" hidden>
+      <button class="big" id="qbStart">COMEÇAR BATALHA</button>
+    </div>
+    <div class="row" id="worldRow">
       <button class="big" id="start" disabled>NOVA CAMPANHA</button>
       <button class="ghost" id="cont" hidden>CONTINUAR</button>
       <button class="ghost" id="gfx">Gráficos: Alto</button>
@@ -392,5 +431,6 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 <script src="js/zoom3d.js"></script>
 <script src="js/controle.js"></script>
 <script src="js/game.js"></script>
+<script src="js/batalha.js"></script>
 </body>
 </html>

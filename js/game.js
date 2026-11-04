@@ -2067,6 +2067,12 @@ let panelSig = '';
 function refreshPanel(force) {
   const panel = $('panel');
   let title = '', info = '', btns = '';
+  if (S.reinfOpen && !S.strike && typeof quickPanel === 'function') {
+    [title, info, btns] = quickPanel();
+    const sig = title + '|' + info + '|' + btns;
+    if (force || sig !== panelSig) { panelSig = sig; $('pTitle').textContent = title; $('pInfo').textContent = info; $('pBtns').innerHTML = btns; }
+    panel.hidden = false; return;
+  }
   if (!S.placing && (S.supportOpen || S.strike)) {
     if (S.strike) {
       title = strikeName(S.strike); info = 'Toque no mapa para escolher o alvo.';
@@ -2139,6 +2145,8 @@ $('pBtns').addEventListener('click', (e) => {
   if (act === 'strike') { if (supportReady(arg)) { S.strike = arg; S.supportOpen = false; toast(STRIKES[arg].tip); } updSide(); }
   else if (act === 'strikecancel') { S.strike = null; updSide(); }
   else if (act === 'supclose') { S.supportOpen = false; updSide(); }
+  else if (act === 'reinf') quickCall(arg, 'us');
+  else if (act === 'reinfclose') { S.reinfOpen = false; }
   else if (act === 'desel') setSel([]);
   else if (act === 'stop') { for (const u of selected) if (u.unit) { u.order = 'idle'; u.dest = null; u.forced = null; u.home = { x: u.x, z: u.z }; } }
   else if (act === 'deploy') deployHQ();
@@ -2164,7 +2172,7 @@ $('bBox').addEventListener('click', () => { S.boxMode = !S.boxMode; updSide(); i
 $('bNaval').addEventListener('click', () => {
   initAudio();
   if (S.strike) S.strike = null; else S.supportOpen = !S.supportOpen;
-  if (S.supportOpen) cancelPlacing();
+  if (S.supportOpen) { cancelPlacing(); S.reinfOpen = false; }
   refreshPanel(true); updSide();
 });
 $('bBuild').addEventListener('click', () => {
@@ -2204,9 +2212,15 @@ function drawMini() {
 }
 function updHUD() {
   if (SC.battle) {
-    document.querySelector('#res .lbl').textContent = 'FORÇAS';
-    $('sup').textContent = Math.round(sideStrength('us') / Math.max(1, BAT.p0) * 100) + '%';
-    $('inc').textContent = 'inimigo ' + Math.round(sideStrength('de') / Math.max(1, BAT.e0) * 100) + '%';
+    if (BAT.cfg && BAT.cfg.quick) {
+      document.querySelector('#res .lbl').textContent = 'REFORÇOS';
+      $('sup').textContent = S.free.res ? '∞' : Math.floor(QB.rp);
+      $('inc').textContent = '+' + QB.rate + '/s · forças ' + Math.round(sideStrength('us') / Math.max(1, BAT.p0) * 100) + '%';
+    } else {
+      document.querySelector('#res .lbl').textContent = 'FORÇAS';
+      $('sup').textContent = Math.round(sideStrength('us') / Math.max(1, BAT.p0) * 100) + '%';
+      $('inc').textContent = 'inimigo ' + Math.round(sideStrength('de') / Math.max(1, BAT.e0) * 100) + '%';
+    }
   } else {
     $('sup').textContent = S.free.res ? '∞' : Math.floor(S.supplies);
     $('inc').textContent = S.phase === 'base' ? '+' + income() + '/s' : 'sem base';
@@ -2215,7 +2229,7 @@ function updHUD() {
   for (const e of ents) if (e.alive && e.team === 'us' && e.unit) { if (e.inf) inf++; else if (e.tank) tk++; }
   $('count').textContent = inf + ' soldados · ' + tk + ' tanques';
   updSide();
-  if (selected.length || S.supportOpen || S.strike) refreshPanel(false);
+  if (selected.length || S.supportOpen || S.strike || S.reinfOpen) refreshPanel(false);
 }
 
 /* ---------- fim de jogo ---------- */
@@ -2397,7 +2411,7 @@ function clearTactical() {
   for (const pr of FX.proj) { pr.mesh.visible = false; scene.remove(pr.mesh); } FX.proj.length = 0;
   S.bunkers = []; S.deHQ = null; S.usHQ = null; S.places = []; S.hqPlace = null; S.timers = []; FX.emitters.length = 0;
   for (const m of FX.craters) m.visible = false; for (const m of bloods) m.visible = false;
-  setSel([]); cancelPlacing(); S.strike = null; S.supportOpen = false;
+  setSel([]); cancelPlacing(); S.strike = null; S.supportOpen = false; S.reinfOpen = false;
 }
 function sideStrength(team) { let s = 0; for (const e of ents) if (e.alive && e.unit && e.team === team && !e.downed) s += e.hp / e.maxHp * (e.inf ? 1 : 4); return s; }
 function startBattle(cfg) {
@@ -2416,10 +2430,12 @@ function startBattle(cfg) {
     if (i % 3 === 0) { const t = MAP.towns[(i / 3 | 0) % 3]; return { x: t.x + rr(-22, 22), z: t.z + rr(-22, 22) }; }
     const x = rr(-380, 380), z = rr(176, 205), c = findCover(x, z, x, z - 1, x, z + 60, 14, -20); return c || { x, z };
   };
-  const spawnSide = (side, divs, attacker) => {
+  const spawnSide = (side, sd, attacker) => {
     const team = side === 'player' ? 'us' : 'de', pal = side === 'player' ? 'A' : 'B';
-    let kinds = []; for (const d of divs) kinds = kinds.concat(battleKinds(d, side));
-    if (kinds.length > 40) { const k = kinds.length / 40; kinds = kinds.filter((_, i) => Math.floor(i / k) !== Math.floor((i - 1) / k) || i === 0); }
+    // batalha rápida: unidades escolhidas no menu; campanha: tiradas das divisões
+    let kinds = []; if (sd.kinds) kinds = sd.kinds.filter(x => UT[x]); else for (const d of sd.divs) kinds = kinds.concat(battleKinds(d, side));
+    const cap = sd.kinds ? 60 : 40;
+    if (kinds.length > cap) { const k = kinds.length / cap; kinds = kinds.filter((_, i) => Math.floor(i / k) !== Math.floor((i - 1) / k) || i === 0); }
     kinds.forEach((k, i) => {
       const p = attacker ? { x: attX(), z: attZ() } : defSpot(i);
       const u = spawnUnit(k, p.x, p.z, { team, pal, order: attacker ? 'idle' : 'guard', heading: attacker ? Math.PI : 0 });
@@ -2431,13 +2447,14 @@ function startBattle(cfg) {
       if (SC.trenches.length && team === 'de') for (const [x, z] of MAP.bunkerSpots.slice(0, 2)) spawnBuilding('bunker', x, z, { complete: true });
     }
   };
-  spawnSide('player', cfg.player.divs, pAtt);
-  spawnSide('enemy', cfg.enemy.divs, !pAtt);
+  spawnSide('player', cfg.player, pAtt);
+  spawnSide('enemy', cfg.enemy, !pAtt);
   for (let i = 0; i < 3; i++) { const c = makeCP(MAP.towns[i]); c.owner = pAtt ? 'de' : 'us'; c.prog = pAtt ? -1 : 1; S.cps.push(c); }
   BAT.p0 = sideStrength('us'); BAT.e0 = sideStrength('de');
   S.phase = 'battle'; S.t = 0; S.startedAt = S.time; S.kills = 0; S.lost = 0; S.airT = 60 + rand() * 40;
   for (const k in S.cd) S.cd[k] = 10;
-  $('hud').hidden = false; $('bBuild').hidden = true; $('bRetreat').hidden = false;
+  $('hud').hidden = false; $('bBuild').hidden = true; $('bRetreat').hidden = false; $('bReinf').hidden = !cfg.quick;
+  if (cfg.quick && typeof quickStart === 'function') quickStart(cfg);
   cam.follow = null; cam.x = 0; cam.z = pAtt ? 300 : 200; cam.dist = 120; cam.pitch = 0.62; cam.yaw = 0; cam.tDist = null; cam.tPitch = null;
   setPhaseText('BATALHA · ' + cfg.prov.name.toUpperCase(), '');
   toast((pAtt ? 'Ataque! Tome as três posições ' : 'Defenda as três posições contra os ') + (pAtt ? 'dos ' : '') + foe().pl + '.', 'good');
@@ -2446,6 +2463,7 @@ function startBattle(cfg) {
 }
 function updateBattle(dt) {
   BAT.t += dt;
+  if (BAT.cfg.quick && typeof quickTick === 'function') quickTick(dt);
   const pAtt = BAT.cfg.attacker === 'player';
   // IA inimiga: atacantes avançam para as posições; defensores contra-atacam posições perdidas
   BAT.aiT -= dt;
@@ -2479,15 +2497,15 @@ function finishBattle(win, text) {
   const res = { win, playerLoss: clamp(1 - sideStrength('us') / Math.max(1, BAT.p0), 0, 1), enemyLoss: clamp(1 - sideStrength('de') / Math.max(1, BAT.e0), 0, 1) };
   toast(win ? 'VITÓRIA!' : 'DERROTA', win ? 'good' : 'bad');
   setTimeout(() => {
-    $('endEyebrow').textContent = 'BATALHA DE ' + BAT.cfg.prov.name.toUpperCase() + ' · ' + dateStr(W.day).toUpperCase();
+    $('endEyebrow').textContent = 'BATALHA DE ' + BAT.cfg.prov.name.toUpperCase() + ' · ' + (BAT.cfg.quick ? 'BATALHA RÁPIDA · ' + BAT.cfg.year : dateStr(W.day).toUpperCase());
     $('endTitle').textContent = win ? 'VITÓRIA' : 'DERROTA';
     $('endText').textContent = text + ' Perdas: suas ' + Math.round(res.playerLoss * 100) + '%, do inimigo ' + Math.round(res.enemyLoss * 100) + '%.';
     const secs = Math.floor(BAT.t);
     $('stTime').textContent = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
     $('stKills').textContent = S.kills; $('stLost').textContent = S.lost;
     $('stTowns').textContent = S.cps.filter(c => c.owner === 'us').length + '/3';
-    $('again').textContent = 'VOLTAR AO MAPA';
-    $('again').onclick = () => { $('end').hidden = true; $('hud').hidden = true; $('bRetreat').hidden = true; clearTactical(); S.phase = 'menu'; const cb = BAT.cfg.onEnd; BAT.cfg = null; cb(res); };
+    $('again').textContent = BAT.cfg.quick ? 'VOLTAR AO MENU' : 'VOLTAR AO MAPA';
+    $('again').onclick = () => { $('end').hidden = true; $('hud').hidden = true; $('bRetreat').hidden = true; $('bReinf').hidden = true; clearTactical(); S.phase = 'menu'; const cb = BAT.cfg.onEnd; BAT.cfg = null; cb(res); };
     $('end').hidden = false; $('hud').hidden = true;
     setTimeout(() => $('again').focus(), 60);
   }, 1800);

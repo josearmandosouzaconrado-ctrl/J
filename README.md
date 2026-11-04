@@ -90,6 +90,7 @@ Na tela inicial:
 - `js/avioes3d.js`: 12 aviões (P-47, Fw 190, Ju 87, C.202, Il-2, Typhoon, Zero, D.520, PZL P.11, I-16, C-47 e B-26), com pintura de cada força aérea e as faixas da invasão.
 - `js/navios3d.js`: contratorpedeiros Fletcher e Kagerō, cruzador Cleveland, lanchas PT e S-Boot, barcaça Higgins, LST e encouraçado.
 - `js/zoom3d.js`: zoom 3D do mapa mundial. Ao aproximar (pinça ou roda do mouse), a câmera desce e inclina até ~20 km de altitude: o mapa vira relevo (montanhas, litoral, neve), com fronteiras coladas no terreno, cidades com casas e nomes, florestas e as divisões em miniatura (tanques, caminhões, soldados, navios de transporte) marchando de verdade entre as províncias, com tiros e explosões nas batalhas. O botão "lutar 3D" continua abrindo a batalha tática completa.
+- `js/batalha.js`: modo **Batalha rápida** do menu inicial. Escolha seu país e o inimigo, o ano (define os tanques), o terreno, quem ataca e quantas unidades de cada tipo cada lado começa (com o modelo de tanque e de veículo leve). Não há base: durante a luta o botão REFORÇO chama pelotões, anticarro, médicos, tanques e veículos com pontos que acumulam; o inimigo também recebe reforços.
 - `teste_blindados.html`, `teste_avioes.html` e `teste_navios.html`: visualizadores para ver os modelos de perto.
 - `js/models.js` e `js/veiculos.js`: civis, construções e os modelos antigos (reserva).
 - `js/world.js`: terreno tático 3D, vilas, vegetação, coberturas e água.
