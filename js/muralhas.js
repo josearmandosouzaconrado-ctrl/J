@@ -4,7 +4,7 @@
 // torres e portões com grade levadiça. Guardas patrulham em cima. Quando uma cidade murada está
 // sitiada os portões fecham. Para tomá-la é preciso montar o cerco, construir armas de cerco e
 // esperar o amanhecer do dia seguinte; até lá os defensores passam fome e ficam mais fracos.
-const MURO_H = 14;   // altura da face da muralha (px)
+const MURO_H = 20;   // altura da face da muralha (px)
 const MURO_COR = { [T.CWALL]: '#9a9488', [T.WALL]: '#8a8478', [T.DWALL]: '#6e6458', [T.TWALL]: '#c8a878', [T.IWALL]: '#a8c0d0', [T.MWALL]: '#7a7a6a', [T.RWALL]: '#a86a52', [T.GOLDWALL]: '#d8b850', [T.VWALL]: '#4a3e48' };
 const ARMAS_CERCO = {
   ariete: { nome: 'Aríete coberto', ouro: 400, mats: { tabua: 20 }, desc: 'Arromba o portão da cidade.', abre: true },

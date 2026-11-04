@@ -32,8 +32,8 @@ PACKAGE = 'com.eldoria.cronicas.adm' if ADM else 'com.eldoria.cronicas'
 ACTIVITY = PACKAGE + '.MainActivity'
 APP_NAME = 'Eldoria ADM' if ADM else 'Crônicas de Eldoria'
 UA_TAG = ' EldoriaAPK EldoriaADM' if ADM else ' EldoriaAPK'
-VERSION_CODE = 54
-VERSION_NAME = '0.30.0-beta'
+VERSION_CODE = 55
+VERSION_NAME = '0.30.1-beta'
 MIN_SDK, TARGET_SDK = 24, 34
 # img/ não entra: as imagens vão embutidas em js/imgdata.js (tools/gerar_imgdata.py)
 WEB_FILES = ['index.html', 'manifest.json', 'css', 'js', 'icons']

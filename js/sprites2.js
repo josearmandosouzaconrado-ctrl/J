@@ -649,7 +649,8 @@
   function makeBuilding(sp) {
     if (S.extraBuilding[sp.style]) return S.extraBuilding[sp.style](sp);
     const W = sp.w * 16, FH = sp.h * 16;
-    const extra = sp.type === 'castle' || sp.type === 'palace' ? 30 : sp.type === 'tower' ? 34 : sp.type === 'temple' ? 18 : sp.type === 'factory' ? 40 : sp.style === 'brick' ? 20 : 14;
+    // prédios mais altos (dois andares e telhado alto), sem mudar a planta no chão
+    const extra = sp.type === 'castle' || sp.type === 'palace' ? 54 : sp.type === 'tower' ? 46 : sp.type === 'temple' ? 34 : sp.type === 'factory' ? 50 : sp.style === 'brick' ? 32 : 28;
     const H = FH + extra;
     const c = cv(W + 2, H + 1), ctx = c.getContext('2d'), p = P(ctx);
     const r = new RNG(sp.seed || 1);
@@ -657,7 +658,7 @@
     const roofC = sp.roof || '#a03a2a', wallC = sp.wall || '#e8dcc0';
     const rhi = shade(roofC, 0.2), rsh = shade(roofC, -0.3), rdk = shade(roofC, -0.5);
     const whi = shade(wallC, 0.12), wsh = shade(wallC, -0.2), wdk = shade(wallC, -0.4);
-    const wallH = sp.style === 'brick' || sp.type === 'factory' ? Math.max(20, Math.min(36, Math.round(FH * 0.78))) : Math.max(14, Math.min(26, Math.round(FH * 0.55)));
+    const wallH = sp.style === 'brick' || sp.type === 'factory' ? Math.max(20, Math.min(36, Math.round(FH * 0.78))) : Math.max(18, Math.min(36, Math.round(FH * 0.78)));
     const wallTop = H - wallH;
     const ox = 1;
     const doorW = sp.type === 'castle' ? 12 : sp.type === 'palace' || sp.type === 'temple' || sp.type === 'guildhall' || sp.type === 'heroes' ? 10 : 8;
@@ -773,10 +774,12 @@
       roofRect(ox + tw - 4, 12, W - (tw - 4) * 2, bodyTop - 12);
       // torres
       for (const tx of [ox, ox + W - tw]) {
-        wallRect(tx, 8, tw, H - 8);
-        p(tx, 8, shade(wallC, 0.15), tw, 2);
-        for (let xx = 0; xx < tw; xx += 4) p(tx + xx, 4, wallC, 2, 4);
+        wallRect(tx, 12, tw, H - 12);
+        p(tx, 12, shade(wallC, 0.15), tw, 2);
+        for (let xx = 0; xx < tw; xx += 4) p(tx + xx, 8, wallC, 2, 4);
         if (sp.type === 'palace') { for (let yy = 0; yy < 12; yy++) { const inset = Math.round((12 - yy) * 0.55); p(tx + inset, -4 + yy + 4, roofC, tw - inset * 2, 1); } }
+        else { for (let yy = 0; yy < 11; yy++) { const inset = Math.round((11 - yy) * 0.6); p(tx + inset, yy + 1, yy % 3 ? roofC : rsh, tw - inset * 2, 1); } p(tx + tw / 2, 0, sp.banner || '#c03030', 3, 2); }
+        for (let yy = 26; yy < H - 20; yy += 18) window(tx + 5, yy, 4, 6);
         window(tx + 5, 16, 4, 6); window(tx + 5, wallTop + 4, 4, 6);
       }
       // portão
@@ -830,6 +833,13 @@
       }
       const roofH = wallTop + 2;
       roofRect(ox - 1, 0, W + 2, roofH);
+      // trapeiras (janelinhas no telhado) nos telhados altos
+      if (homey && roofH > 26 && style !== 'round' && W >= 48) for (const dx of W >= 72 ? [0.3, 0.7] : [0.5]) {
+        const x = Math.round(ox + W * dx - 5), y = Math.round(roofH * 0.45);
+        p(x, y + 2, shade(wallC, -0.1), 10, 9); p(x + 2, y + 4, '#2a2020', 6, 6); p(x + 3, y + 5, '#7aa0bc', 4, 4); p(x + 3, y + 5, '#c8e0f0', 2, 1); p(x + 5, y + 5, '#2a2020', 1, 4);
+        for (let k = 0; k < 4; k++) p(x - 1 + k, y + 2 - k, rdk, 12 - k * 2, 1);
+        p(x - 1, y + 2, rsh, 12, 1); if (sp.snow) p(x - 1, y - 2, '#f4f8fc', 12, 2);
+      }
       // janelas
       const lit = style === 'elven' ? '#a0f0e0' : undefined;
       const nwin = Math.floor((W - doorW) / 2 / 14);
@@ -841,7 +851,13 @@
         for (let x = ox + 8; x < ox + W - 10; x += 16) { p(x, wallTop - 9, '#3a3a44', 8, 7); p(x + 1, wallTop - 11, '#3a3a44', 6, 2); p(x + 2, wallTop - 7, '#8ab0cc', 4, 4); p(x + 4, wallTop - 7, '#2a2020', 1, 4); }
         p(ox, wallTop, '#e0d8c8', W, 2);
       } else
-      for (let i = 0; i < nwin; i++) { window(ox + 5 + i * 14, wallTop + 5, 5, 5, lit); window(ox + W - 10 - i * 14, wallTop + 5, 5, 5, lit); }
+      {
+        // dois andares: fileira de janelas em cima, e embaixo dos lados da porta
+        const dois = wallH >= 28;
+        const yB = dois ? wallTop + Math.floor(wallH / 2) + 4 : wallTop + 5;
+        for (let i = 0; i < nwin; i++) { window(ox + 5 + i * 14, yB, 5, 5, lit); window(ox + W - 10 - i * 14, yB, 5, 5, lit); }
+        if (dois) { const n = Math.max(2, Math.floor((W - 8) / 13)), passo = (W - 14) / (n - 1); for (let i = 0; i < n; i++) window(Math.round(ox + 5 + i * passo), wallTop + 5, 5, 5, lit); }
+      }
       door(doorX, H - doorH, doorW, doorH, style === 'round' || style === 'elven');
       if (style === 'round') { S.ellipse(p, doorX + doorW / 2, H - doorH / 2, doorW / 2 + 1, doorH / 2, '#2a6a2a'); p(doorX + doorW / 2, H - doorH / 2, '#e0c060'); }
       if (sp.type === 'guildhall' || sp.type === 'heroes') {
@@ -849,7 +865,7 @@
         p(doorX - 8, wallTop + 2, bc, 5, 10); p(doorX + doorW + 3, wallTop + 2, bc, 5, 10);
         S.ellipse(p, ox + W / 2, wallTop - 4, 6, 5, '#c0c0c8'); S.ellipse(p, ox + W / 2, wallTop - 4, 4, 3, bc);
       }
-      if (sp.chimney) { const cx = ox + W - 12; for (let yy = 0; yy < 7; yy += 2) { p(cx, yy, yy % 4 ? '#8a5a48' : '#9a6a54', 6, 2); p(cx + (yy % 4 ? 3 : 0), yy, '#6a4034', 1, 2); } p(cx - 1, 0, '#4a4a4a', 8, 2); }
+      if (sp.chimney) { const cx = ox + W - 12; for (let yy = 0; yy < 13; yy += 2) { p(cx, yy, yy % 4 ? '#8a5a48' : '#9a6a54', 6, 2); p(cx + (yy % 4 ? 3 : 0), yy, '#6a4034', 1, 2); } p(cx - 1, 0, '#4a4a4a', 8, 2); }
     }
     // qualidade (casas construídas pelo jogador)
     if (sp.quality !== undefined) {
