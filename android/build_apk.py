@@ -32,8 +32,8 @@ PACKAGE = 'com.eldoria.cronicas.adm' if ADM else 'com.eldoria.cronicas'
 ACTIVITY = PACKAGE + '.MainActivity'
 APP_NAME = 'Eldoria ADM' if ADM else 'Crônicas de Eldoria'
 UA_TAG = ' EldoriaAPK EldoriaADM' if ADM else ' EldoriaAPK'
-VERSION_CODE = 58
-VERSION_NAME = '0.33.0-beta'
+VERSION_CODE = 59
+VERSION_NAME = '0.33.1-beta'
 MIN_SDK, TARGET_SDK = 24, 34
 # img/ não entra: as imagens vão embutidas em js/imgdata.js (tools/gerar_imgdata.py)
 WEB_FILES = ['index.html', 'manifest.json', 'css', 'js', 'icons']
@@ -507,10 +507,19 @@ def main():
         add(z, 'resources.arsc', build_arsc('res/drawable/icon.png'), store=True)
         add(z, 'res/drawable/icon.png', open(icon, 'rb').read(), store=True)
         # o código vai enxugado (sem comentários e espaços: o jogo é o mesmo) e a fonte vai comprimida
+        # os scripts do index.html vão juntos num pacote LZMA (js/pacote.js), bem menor que o deflate
         sys.path.insert(0, os.path.join(ROOT, 'tools'))
-        from enxugar import enxugar
+        from enxugar import enxugar, enxugar_js
+        from pacote import scripts_do_index, index_com_pacote, pacote_js
+        html = open(os.path.join(ROOT, 'index.html'), encoding='utf-8').read()
+        scripts = scripts_do_index(html)
+        no_pacote = {}
         for full, rel in web_files():
-            add(z, 'assets/' + rel, enxugar(rel, open(full, 'rb').read()), store=rel.endswith('.png'))
+            dados = enxugar(rel, open(full, 'rb').read())
+            if rel in scripts: no_pacote[rel] = dados; continue
+            if rel == 'index.html': dados = index_com_pacote(html).encode('utf-8')
+            add(z, 'assets/' + rel, dados, store=rel.endswith('.png'))
+        add(z, 'assets/js/pacote.js', pacote_js([(n, no_pacote[n]) for n in scripts], enxugar_js))
     apk = sign_v2(buf.getvalue())
     open(OUT, 'wb').write(apk)
     print(f'APK gerado: {OUT} ({len(apk) // 1024} KB)')
