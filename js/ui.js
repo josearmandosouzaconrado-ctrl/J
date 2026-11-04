@@ -881,7 +881,7 @@ const UI = {
     let html = `<b>${esc(best.name)}</b>`;
     if (best.kind === 's') {
       html += `<br><small class="dim">${esc(best.s.region.name)} • ${{ capital: 'Capital', town: 'Cidade', village: 'Vila' }[best.s.type]}</small>`;
-      if (best.known && Game.level.isWorld) html += `<br><button class="sbtn gold" ${f(() => { this.close(); Game.fastTravel(best.s); })}>Viajar rápido</button>`;
+      if (best.known && Game.level.isWorld) html += typeof Estrategia !== 'undefined' && Estrategia.bloqueado(best.s) ? '<br><small class="bad">🚫 Em guerra: a viagem rápida só leva para as suas cidades</small>' : `<br><button class="sbtn gold" ${f(() => { this.close(); Game.fastTravel(best.s); })}>Viajar rápido</button>`;
     } else if (best.kind === 'd') html += `<br><small class="dim">${DUNGEON_TYPES[best.d.type].name} • ${Game.mods.cleared[best.d.id] !== undefined ? 'Conquistada' : 'Não conquistada'}</small>`;
     info.innerHTML = html;
     this.bind(info, f);
