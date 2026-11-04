@@ -145,3 +145,153 @@
     return (cache[kind] = { right, left: right.map(Sprites.flip) });
   };
 })();
+
+// ===================== ARTE NOVA: dragões e montarias recortados da imagem de referência =====================
+// Os quadros de perfil vêm de js/bestas_px.js (tools/extrair_bestas.py). As vistas de frente e de costas
+// das montarias (para o cavalo virar para baixo e para cima) são desenhadas aqui com as mesmas cores.
+(function () {
+  if (typeof BESTAS_PX === 'undefined') return;
+  const cv = Sprites.cv, P = Sprites.P, ellipse = Sprites.ellipse, flip = Sprites.flip;
+  // decodifica um quadro (paleta + índices em base64) num canvas
+  const decod = (D, f) => {
+    const c = cv(D.w, D.h), x = c.getContext('2d'), img = x.createImageData(D.w, D.h), d = img.data;
+    const bin = atob(D.f[f]), pal = D.pal.map(hexToRgb);
+    for (let i = 0; i < bin.length; i++) { const k = bin.charCodeAt(i); if (!k) continue; const q = pal[k - 1]; d[i * 4] = q[0]; d[i * 4 + 1] = q[1]; d[i * 4 + 2] = q[2]; d[i * 4 + 3] = 255; }
+    x.putImageData(img, 0, 0); return c;
+  };
+  const rgb2hsl = (r, g, b) => { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2; if (mx === mn) return [0, 0, l]; const d = mx - mn, s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn); let h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return [h * 60, s, l]; };
+  const hsl2rgb = (h, s, l) => { h /= 360; const f = (p, q, t) => { t = (t + 1) % 1; return t < 1 / 6 ? p + (q - p) * 6 * t : t < 0.5 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p; }; if (!s) return [l * 255, l * 255, l * 255]; const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q; return [f(p, q, h + 1 / 3) * 255, f(p, q, h) * 255, f(p, q, h - 1 / 3) * 255]; };
+  // troca a cor das escamas e das asas (para dragões de outras cores)
+  const recolor = (c, de, para) => {
+    const x = c.getContext('2d'), img = x.getImageData(0, 0, c.width, c.height), d = img.data;
+    const [th, ts, tl] = rgb2hsl(...hexToRgb(para)), [, , bl] = rgb2hsl(...hexToRgb(de));
+    for (let i = 0; i < d.length; i += 4) {
+      if (!d[i + 3]) continue;
+      const [h, s, l] = rgb2hsl(d[i], d[i + 1], d[i + 2]);
+      const escama = de === 'r' ? (h < 22 || h > 335) && s > 0.35 : h > 195 && h < 250 && s > 0.3;
+      if (!escama) continue;
+      const q = hsl2rgb(th, Math.min(1, ts * 1.1), clamp(l * (tl / 0.36), 0.03, 0.92));
+      d[i] = q[0]; d[i + 1] = q[1]; d[i + 2] = q[2];
+    }
+    x.putImageData(img, 0, 0); return c;
+  };
+
+  // ---------- DRAGÕES ----------
+  const drag0 = Sprites.dragao;
+  const dcache = {};
+  Sprites.dragao = function (L, frame) {
+    if (L.heads) return drag0(L, frame);   // hidras continuam com o desenho de várias cabeças
+    const [h, s, l] = rgb2hsl(...hexToRgb(L.c || '#7a2a2a'));
+    const azul = h > 180 && h < 260 && s > 0.2, base = azul ? 'dragao_azul' : 'dragao_vermelho';
+    const exato = azul ? L.c === '#5a80b0' : (h < 20 || h > 340) && s > 0.4 && l > 0.25;   // a cor da imagem: sem recolorir
+    const key = base + (exato ? '' : L.c) + frame + (L.size || 1);
+    if (dcache[key]) return dcache[key];
+    let c = decod(BESTAS_PX[base], frame);
+    if (!exato) c = recolor(c, azul ? 'b' : 'r', L.c);
+    if (L.glow) { const x = c.getContext('2d'), D = BESTAS_PX[base]; x.fillStyle = L.glow; x.fillRect(D.w - 9, 9, 2, 1); }
+    if (L.size) c = Sprites.scale(c, L.size);
+    return (dcache[key] = c);
+  };
+
+  // ---------- MONTARIAS ----------
+  const CORES = {
+    burro: { c: '#9d9080', s: '#867a6d', d: '#5e5349', m: '#4d3a30', sela: '#8a5a2e', orelha: 4 },
+    cavalo: { c: '#8b4c22', s: '#743e1c', d: '#5c2d13', m: '#31170b', sela: '#6a3a1a' },
+    cavalo_guerra: { c: '#22242c', s: '#16171c', d: '#0e0f12', m: '#121318', sela: '#921d1b', arm: '#96999e' },
+    corcel: { c: '#e9ecef', s: '#c5c8cc', d: '#a7aeb8', m: '#dfe6f0', sela: '#214d94', azul: '#3a6ac0' },
+    alce: { c: '#6b391a', s: '#562b13', d: '#452717', m: '#2a160c', sela: '#6a3a1a', galhada: true },
+    camelo: { c: '#daa14f', s: '#c5853f', d: '#945327', m: '#b17d3d', sela: '#6f401b', corcova: true },
+    lobo_gigante: { c: '#4b5267', s: '#3a3f4e', d: '#2a303c', m: '#343643', sela: '#782421', lobo: true }
+  };
+  // vista de frente (indo para baixo): corpo + "frente" (pescoço e cabeça, desenhados por cima do cavaleiro)
+  const frente = (C, f, so) => {
+    const c = cv(24, 34), p = P(c.getContext('2d')), b = f === 0 ? 0 : 1 - (f % 2);   // balanço do passo
+    const pe = [f === 1 ? 2 : 0, f === 2 ? 2 : 0];                                   // pata levantada
+    const casco = '#1e1612', meia = C.arm ? '#c8c0b0' : C.azul ? '#f4f4ff' : null;
+    if (so !== 'cabeca') {
+      // patas de trás (mais atrás, mais curtas) e patas da frente bem abertas dos dois lados
+      for (const [x, k] of [[5, 1], [17, 0]]) { p(x, 15 + b, C.d, 2, 12 - pe[k]); p(x - 1, 26 + b - pe[k], casco, 3, 1); }
+      for (const [x, k] of [[3, 0], [19, 1]]) { p(x, 18, C.s, 2, 13 - pe[k]); p(x + (x < 12 ? 0 : 1), 18, C.c, 1, 7); p(x - 1, 30 - pe[k], casco, 4, 2); if (meia) p(x - 1, 28 - pe[k], meia, 4, 2); }
+      // costas vistas do alto e o peito largo
+      ellipse(p, 12, 10 + b, 8, 6, C.c); p(5, 7 + b, shade(C.c, 0.18), 3, 4); p(17, 8 + b, C.s, 3, 6);
+      if (C.corcova) { ellipse(p, 12, 4 + b, 5, 3, C.c); p(10, 2 + b, shade(C.c, 0.2), 4, 1); }
+      ellipse(p, 12, 17 + b, 9, 4.5, C.c); p(4, 15 + b, shade(C.c, 0.12), 2, 4); p(19, 15 + b, C.s, 2, 5); p(6, 20 + b, C.s, 12, 1);
+      if (C.arm) { p(4, 14 + b, C.arm, 16, 4); p(4, 14 + b, shade(C.arm, 0.25), 16, 1); }
+      // sela e estribos
+      p(8, 5 + b, C.sela, 8, 6); p(8, 5 + b, shade(C.sela, 0.3), 8, 1); p(6, 10 + b, shade(C.sela, -0.25), 12, 2);
+      p(4, 11 + b, '#b08a40', 1, 3); p(19, 11 + b, '#b08a40', 1, 3); p(3, 14 + b, '#b08a40', 3, 1); p(18, 14 + b, '#b08a40', 3, 1);
+    }
+    if (so !== 'corpo') {
+      const hy = 12 + b;
+      if (C.lobo) {
+        p(8, hy, C.c, 8, 8); p(9, hy + 8, C.c, 6, 4); p(10, hy + 10, C.s, 4, 3); p(11, hy + 12, '#101010', 2, 2);   // cabeça, focinho e nariz
+        p(7, hy - 4, C.c, 3, 4); p(14, hy - 4, C.c, 3, 4); p(8, hy - 3, C.d, 1, 2); p(15, hy - 3, C.d, 1, 2);        // orelhas pontudas
+        p(9, hy + 3, '#f0c030', 2, 1); p(13, hy + 3, '#f0c030', 2, 1); p(10, hy + 14, '#f0f0e0'); p(13, hy + 14, '#f0f0e0');
+        p(8, hy, shade(C.c, 0.2), 8, 1);
+      } else {
+        const lg = C.corcova ? 6 : 3;                                    // pescoço (o do camelo é comprido)
+        p(9, hy, C.c, 6, lg + 1); p(9, hy, shade(C.c, 0.15), 1, lg + 1);
+        const cy = hy + lg;                                              // topo da cabeça
+        p(8, cy, C.c, 8, 6); p(9, cy + 6, C.c, 6, 5); p(10, cy + 11, C.c, 4, 2);   // testa larga, cara comprida
+        p(8, cy, shade(C.c, 0.18), 8, 1); p(15, cy + 1, C.s, 1, 5); p(14, cy + 6, C.s, 1, 5);
+        p(9, cy + 10, C.d, 6, 3); p(10, cy + 13, C.d, 4, 1); p(10, cy + 11, '#1a0e0a'); p(13, cy + 11, '#1a0e0a');   // focinho e narinas
+        p(8, cy + 3, '#100808', 1, 2); p(15, cy + 3, '#100808', 1, 2); p(8, cy + 3, '#ffffff'); p(15, cy + 3, '#ffffff');   // olhos dos lados
+        if (C.c === '#e9ecef') p(11, cy + 1, '#ffffff', 2, 4); else p(11, cy + 1, C.c === '#22242c' ? '#e8e8f0' : shade(C.c, 0.32), 2, 5);   // estrela/listra na testa
+        const o = (C.orelha || 2) + 1;
+        p(7, cy - o, C.c, 2, o + 1); p(15, cy - o, C.c, 2, o + 1); p(8, cy - o + 1, C.d, 1, o - 1); p(15, cy - o + 1, C.d, 1, o - 1);   // orelhas em pé
+        if (!C.corcova) { p(9, cy - 1, C.m, 6, 2); p(10, cy + 1, C.m, 3, 2); }                                                        // topete da crina
+        const r = C.azul || (C.arm ? '#7a1a1a' : '#3a2010');
+        p(8, cy + 8, r, 1, 3); p(15, cy + 8, r, 1, 3); p(8, cy + 10, r, 8, 1);                                                        // cabeçada e rédeas
+        if (C.arm) { p(9, cy, C.arm, 6, 6); p(10, cy, shade(C.arm, 0.3), 4, 1); p(11, cy - 2, C.arm, 2, 2); }                          // testeira de metal com ponta
+        if (C.galhada) { const g = '#d8c8a0'; for (const sd of [-1, 1]) { const x0 = sd < 0 ? 7 : 16; p(x0 + sd, cy - 5, g, 1, 3); p(x0 + sd * 2, cy - 7, g, 1, 3); p(x0 + sd * 3, cy - 8, g, 1, 2); p(x0 + sd * 4, cy - 6, g, 1, 2); p(x0, cy - 8, g, 1, 2); } }
+      }
+    }
+    Sprites.outline(c, '#120c0c'); return c;
+  };
+  // vista de costas (indo para cima): garupa, cauda e a cabeça lá na frente
+  const costas = (C, f) => {
+    const c = cv(24, 34), p0 = P(c.getContext('2d')), p = (x, y, col, w, h) => p0(x + 1, y + 4, col, w, h), b = f === 0 ? 0 : 1 - (f % 2), pe = [f === 1 ? 2 : 0, f === 2 ? 2 : 0];
+    // pescoço, crina e cabeça (no alto)
+    if (C.lobo) { p(7, 1, C.c, 8, 6); p(7, -1, C.c, 2, 3); p(13, -1, C.c, 2, 3); p(9, 3, C.s, 4, 4); }
+    else {
+      const lg = C.corcova ? 3 : 0;
+      p(8, 1 - lg, C.c, 6, 4); p(9, 4 - lg, C.c, 4, 6 + lg);                                    // nuca e pescoço
+      const o = C.orelha || 2; p(8, 1 - lg - o, C.c, 2, o); p(12, 1 - lg - o, C.c, 2, o);       // orelhas
+      if (!C.corcova) p(10, 0, C.m, 2, 10);                                                       // crina descendo pelo pescoço
+      if (C.arm) p(9, 3, C.arm, 4, 2);
+      if (C.galhada) { const g = '#d8c8a0'; p(6, -1, g, 2, 1); p(5, -3, g, 1, 2); p(7, -3, g, 1, 2); p(14, -1, g, 2, 1); p(14, -3, g, 1, 2); p(16, -3, g, 1, 2); }
+    }
+    // patas da frente quase escondidas e patas de trás
+    for (const [x, k] of [[6, 1], [14, 0]]) { p(x, 14, C.d, 2, 8 - pe[k]); }
+    for (const [x, k] of [[5, 0], [15, 1]]) { p(x, 19 + b, C.s, 2, 8 - pe[k]); p(x - 1, 26 + b - pe[k], '#1e1612', 3, 2); if (C.arm || C.azul) p(x - 1, 25 + b - pe[k], C.arm ? '#c8c0b0' : '#f4f4ff', 3, 1); }
+    // costas e garupa
+    ellipse(p, 11, 10 + b, 6, 5, C.c); ellipse(p, 11, 17 + b, 7, 6, C.c);
+    p(5, 14 + b, shade(C.c, 0.15), 2, 5); p(16, 14 + b, C.s, 2, 6); p(7, 22 + b, C.s, 8, 1);
+    if (C.corcova) { ellipse(p, 11, 8 + b, 4, 3, C.c); ellipse(p, 11, 15 + b, 4, 3, shade(C.c, 0.06)); }
+    if (C.arm) { p(5, 15 + b, C.arm, 12, 4); p(5, 15 + b, shade(C.arm, 0.25), 12, 1); }
+    // cauda balançando
+    const sw = f === 1 ? -1 : f === 2 ? 1 : 0;
+    if (C.lobo) { ellipse(p, 11 + sw, 24 + b, 2.5, 4, C.m); p(10 + sw, 27 + b, shade(C.m, 0.3), 2, 1); }
+    else if (C.corcova) { p(10 + sw, 20 + b, C.m, 2, 6); }
+    else { p(10, 18 + b, C.m, 3, 3); p(10 + sw, 21 + b, C.m, 3, 5); p(11 + sw * 2, 26 + b, C.m, 2, 2); p(11, 19 + b, shade(C.m, 0.25), 1, 5); }
+    // sela
+    p(7, 8 + b, C.sela, 8, 6); p(7, 8 + b, shade(C.sela, 0.3), 8, 1); p(6, 13 + b, shade(C.sela, -0.25), 10, 2);
+    p(4, 12 + b, '#b08a40', 1, 3); p(17, 12 + b, '#b08a40', 1, 3);
+    Sprites.outline(c, '#120c0c'); return c;
+  };
+  const h0 = Sprites.horse, cache = {};
+  Sprites.horse = function (kind = 'cavalo') {
+    if (cache[kind]) return cache[kind];
+    const D = BESTAS_PX[kind] || BESTAS_PX.cavalo, C = CORES[kind] || CORES.cavalo;
+    let right = [0, 1, 2].map(f => decod(D, f));
+    if (C.galhada) right = right.map(c => {   // o alce ganha a galhada por cima da cabeça
+      const x = c.getContext('2d'), d = x.getImageData(0, 0, c.width, c.height).data; let top = c.height, tx = 0;
+      for (let y = 0; y < c.height && top === c.height; y++) for (let i = c.width - 1; i > c.width * 0.6; i--) if (d[(y * c.width + i) * 4 + 3]) { top = y; tx = i; break; }
+      const p = P(x), g = '#d8c8a0', o = '#3a2a1a', y0 = top + 1;
+      for (const [a, b2] of [[0, 0], [-1, -1], [-2, -2], [-3, -2], [-2, -3], [1, -1], [2, -2], [2, -3], [-4, -1]]) p(tx - 2 + a, y0 - 1 + b2, g);
+      p(tx - 6, y0 - 3, o); return c;
+    });
+    const H = { right, left: right.map(flip), down: [0, 1, 2].map(f => frente(C, f, 'corpo')), frente: [0, 1, 2].map(f => frente(C, f, 'cabeca')), up: [0, 1, 2].map(f => costas(C, f)) };
+    return (cache[kind] = H);
+  };
+})();

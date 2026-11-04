@@ -697,17 +697,21 @@ class Player extends Actor {
     const blink = this.invuln > 0 && this.rolling <= 0 && Math.floor(Game.t * 20) % 2;
     if (this.mounted) {
       const H = Sprites.horse(this.mount || 'cavalo');
-      const hk = this.dir === 'left' || this.dir === 'right' ? this.dir : this.lastH;
+      const vert = (this.dir === 'up' || this.dir === 'down') && H.up;
+      const hk = vert ? this.dir : this.dir === 'left' || this.dir === 'right' ? this.dir : this.lastH;
       const f = this.moving ? 1 + (Math.floor(this.anim * 6) % 2) : 0;
-      this.drawShadow(ctx, camX, camY, 20);
+      this.drawShadow(ctx, camX, camY, vert ? 14 : 20);
       const img = H[hk][f];
       ctx.drawImage(img, Math.round(this.x - img.width / 2 - camX), Math.round(this.y - img.height + 3 - camY));
       this.z = 9;
       const sd = this.dir; this.dir = hk;
       if (blink) ctx.globalAlpha = 0.5;
+      if (hk === 'up') this.drawWeapon(ctx, camX, camY, this.wimg, this.wclass, this.swingAngle());
       this.drawBody(ctx, camX, camY, this.S);
       ctx.globalAlpha = this.invisible > 0 ? 0.4 : 1;
-      this.drawWeapon(ctx, camX, camY, this.wimg, this.wclass, this.swingAngle());
+      // indo para baixo: o pescoço e a cabeça do cavalo ficam na frente das pernas do cavaleiro
+      if (hk === 'down') { const fr = H.frente[f]; ctx.drawImage(fr, Math.round(this.x - fr.width / 2 - camX), Math.round(this.y - fr.height + 3 - camY)); }
+      if (hk !== 'up') this.drawWeapon(ctx, camX, camY, this.wimg, this.wclass, this.swingAngle());
       this.dir = sd; this.z = 0;
       return;
     }

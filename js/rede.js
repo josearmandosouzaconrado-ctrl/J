@@ -40,11 +40,12 @@ class Remoto extends Actor {
   swingAngle() { if (!this.swing) return null; const k = this.swing.t / this.swing.dur; return this.swing.ang - this.swing.arc / 2 + this.swing.arc * smooth(Math.min(1, k)); }
   draw(ctx, camX, camY) {
     if (this.mounted) {
-      const H = Sprites.horse('cavalo'), hk = this.dir === 'left' || this.dir === 'right' ? this.dir : this.lastH;
-      const img = H[hk][this.moving ? 1 + (Math.floor(this.anim * 6) % 2) : 0];
-      this.drawShadow(ctx, camX, camY, 20);
+      const H = Sprites.horse('cavalo'), vert = (this.dir === 'up' || this.dir === 'down') && H.up, hk = vert ? this.dir : this.dir === 'left' || this.dir === 'right' ? this.dir : this.lastH;
+      const f = this.moving ? 1 + (Math.floor(this.anim * 6) % 2) : 0, img = H[hk][f];
+      this.drawShadow(ctx, camX, camY, vert ? 14 : 20);
       ctx.drawImage(img, Math.round(this.x - img.width / 2 - camX), Math.round(this.y - img.height + 3 - camY));
       this.z = 9; const sd = this.dir; this.dir = hk; this.drawBody(ctx, camX, camY, this.S); this.dir = sd; this.z = 0;
+      if (hk === 'down') { const fr = H.frente[f]; ctx.drawImage(fr, Math.round(this.x - fr.width / 2 - camX), Math.round(this.y - fr.height + 3 - camY)); }
     } else {
       this.drawShadow(ctx, camX, camY);
       const sa = this.swingAngle();
