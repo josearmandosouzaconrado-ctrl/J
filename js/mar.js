@@ -424,31 +424,61 @@ const Mar = {
     }
   },
   alvoAbordagem(L) { return this.frota.find(f => !f.sink && !f.saqueado && (f.rendido || f.hp <= f.max * 0.35) && dist(f.x, f.y, L.x, L.y) < 330) || null; },
+  // abordagem: você e seus marujos saltam para o convés do navio inimigo e a luta é lá dentro
   abordar() {
     const G = Game, L = G.level, P = G.player; if (!L || !L.proprio || L.abordagem) return;
     const f = this.alvoAbordagem(L); if (!f) return;
     L.leme = false; L.spd = 0; L.vela = 0; f.spd = 0; f.atacado = true; this.crime(f);
     if (f.rendido) return this.saquear(f);
-    L.abordagem = f;
+    const M = this.st(), negra = M.negra; M.negra = false;
+    const nav = { nome: f.nome, x: f.x, y: f.y, ang: f.ang, cor: f.cor, tipo: f.tipo === 'marinha' ? 'galeao' : 'bergantim', hp: f.hp, trip: 8 };
+    const E = new NavioLevel(nav, L.from); M.negra = negra;
+    E.proprio = false; E.inimigo = f; E.meu = L; E.name = f.nome;
+    // o seu navio fica encostado: quem está no convés dele espera lá
+    L._guardado = G.actors.slice();
+    UI.fade(); G.level = E;
+    const spots = E.deckSpots.slice().sort(() => Math.random() - 0.5);
+    const p0 = E.T(4, SHIP_C); P.x = p0.x * 16 + 8; P.y = p0.y * 16 + 12; P.mounted = false;
+    G.actors = []; G.projectiles = []; G.pickups = [];
     const n = 3 + (f.tipo === 'marinha' ? 3 : f.tipo === 'pirata' ? 2 : 0), K = f.k ? War.K[f.k] : null;
-    const spots = L.deckSpots.slice().sort(() => Math.random() - 0.5);
     for (let i = 0; i < n; i++) {
-      const [u, v] = spots[i % spots.length], p = L.T(u, v);
+      const [u, v] = spots[i % spots.length], p = E.T(u, v), chefe = i === 0 && f.tipo !== 'mercante';
       const look = f.tipo === 'marinha' ? { k: 'hum', skin: '#e0ac69', hair: '#3a2a1a', body: K ? K.color : '#2a3a6a', legs: '#e8e4dc', boots: '#1a1a1a', helm: '#1a1a22', helmStyle: 'tricorne', crossbelt: true, weapon: 'sword', wc: '#d0d0d8' }
-        : f.tipo === 'pirata' ? undefined : { k: 'hum', skin: '#d8a070', hair: '#4a3a2a', body: '#e8e4dc', legs: '#3a3a4a', boots: '#3a2618', bandana: true, weapon: 'dagger', wc: '#c0c0c0' };
+        : f.tipo === 'pirata' ? (chefe ? { k: 'hum', skin: '#c68642', hair: '#1a1010', body: '#3a1a1a', legs: '#2a2a30', boots: '#1a1a1a', hat: 'wide', hatC: '#1a1a1a', cape: '#5a1a1a', beard: true, weapon: 'sword', wc: '#e0e0e0' } : undefined)
+          : { k: 'hum', skin: '#d8a070', hair: '#4a3a2a', body: '#e8e4dc', legs: '#3a3a4a', boots: '#3a2618', bandana: true, weapon: 'dagger', wc: '#c0c0c0' };
       const id = f.tipo === 'pirata' && i % 3 === 2 ? 'pirata_arqueiro' : 'pirata';
-      const m = new Monster(id, p.x * 16 + 8, p.y * 16 + 12, P.level, { look, name: f.tipo === 'marinha' ? 'Fuzileiro da Marinha' : f.tipo === 'pirata' ? undefined : 'Marinheiro Mercante', hpMul: f.tipo === 'marinha' ? 1.15 : f.tipo === 'pirata' ? 1 : 0.65, dmgMul: f.tipo === 'mercante' ? 0.7 : 1 });
-      m.abordagem = f; G.findFree(m); G.actors.push(m);
+      const nome = chefe ? (f.tipo === 'marinha' ? 'Capitão da Marinha' : 'Capitão ' + f.nome) : f.tipo === 'marinha' ? 'Fuzileiro da Marinha' : f.tipo === 'pirata' ? undefined : 'Marinheiro Mercante';
+      const m = new Monster(id, p.x * 16 + 8, p.y * 16 + 12, P.level + (chefe ? 2 : 0), { look, name: nome, hpMul: (f.tipo === 'marinha' ? 1.15 : f.tipo === 'pirata' ? 1 : 0.65) * (chefe ? 2 : 1), dmgMul: (f.tipo === 'mercante' ? 0.7 : 1) * (chefe ? 1.3 : 1) });
+      m.abordagem = f; m.provoked = P; G.findFree(m); G.actors.push(m);
     }
-    // a sua tripulação luta junto
+    // a sua tripulação salta junto
     for (let i = 0; i < Math.min(4, Math.floor(L.nav.trip / 2)); i++) {
-      const [u, v] = spots[(n + i) % spots.length], p = L.T(u, v);
+      const p = E.T(5 + i % 2, SHIP_C - 1 + (i >> 1) * 2);
       const m = new Monster('pirata', p.x * 16 + 8, p.y * 16 + 12, Math.max(1, P.level - 2), { look: { k: 'hum', skin: '#c68642', hair: '#2a1a10', body: '#7a2a2a', legs: '#2a2a40', boots: '#3a2618', weapon: 'sword', wc: '#d0d0d0' }, name: 'Seu marujo', hpMul: 0.9 });
       m.team = 'ally'; m.marujo = true; G.findFree(m); G.actors.push(m);
     }
-    G.centerMsg('⚔ ABORDAGEM!', `Os ganchos voam! A tripulação do ${f.nome} invade o convés!`);
+    G.camX = P.x - G.vw / 2; G.camY = P.y - G.vh / 2; G.flow = null;
+    G.centerMsg('⚔ ABORDAGEM!', `Ganchos lançados! Você salta para o convés do ${f.nome}!`);
     Sfx.play('shout'); G.shake = 6;
     this.painelKey = '';
+  },
+  // no timão a câmera se afasta: o navio inteiro, com o convés, visto de cima
+  zoomTick(dt) {
+    const G = Game, L = G.level, alvo = L && L.proprio && L.leme ? 1.9 : 1, z = G.zoomExtra || 1;
+    if (z === alvo) return;
+    G.zoomExtra = Math.abs(alvo - z) < 0.02 ? alvo : z + clamp(alvo - z, -dt * 2.4, dt * 2.4);
+    G.resize();
+  },
+  // fim da luta no navio inimigo: saque e volta para o seu convés
+  fimAbordagem() {
+    const G = Game, E = G.level; if (!E || !E.inimigo) return;
+    if (G.actors.some(a => a.abordagem === E.inimigo && !a.dead)) return;
+    const f = E.inimigo, L = E.meu, P = G.player;
+    G.level = L; UI.fade();
+    G.actors = (L._guardado || []).filter(a => !a.dead && !a.abordagem); L._guardado = null;
+    const h = L.T(4, SHIP_C); P.x = h.x * 16 + 8; P.y = h.y * 16 + 12;
+    G.projectiles = []; G.camX = P.x - G.vw / 2; G.camY = P.y - G.vh / 2; G.flow = null;
+    this.saquear(f);
   },
   saquear(f) {
     const G = Game, P = G.player, M = this.st();
@@ -480,7 +510,11 @@ const Mar = {
   },
   // desenha os outros navios, as balas e os efeitos no mar (coordenadas do mundo)
   desenhar(ctx, cx, cy) {
+    const E = Game.level && Game.level.inimigo ? Game.level : null;
+    // na abordagem: o seu navio aparece encostado, do lado de fora
+    if (E && E.meu) { const M = E.meu, img = Naval.sprite('galeao', M.col || '#6a4a2a', 0); ctx.save(); ctx.translate(Math.round(M.x - cx), Math.round(M.y - cy)); ctx.scale(2.6, 2.6); Naval.drawShip(ctx, img, 0, 0, { flip: Math.cos(M.ang) < 0, seed: 1 }); ctx.restore(); }
     for (const f of this.frota) {
+      if (E && f === E.inimigo) continue;   // é o navio onde você está lutando
       const img = Naval.sprite('galeao', f.cor, 0);
       const x = f.x - cx, y = f.y - cy; if (x < -260 || y < -260 || x > Game.vw + 260 || y > Game.vh + 260) continue;
       ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.scale(2.6, 2.6);
@@ -508,7 +542,7 @@ const Mar = {
     const vw = Game.vw, vh = Game.vh, L = Game.level;
     ctx.font = '12px VT323, monospace';
     for (const f of this.frota) {
-      if (f.sink) continue;
+      if (f.sink || (L && f === L.inimigo)) continue;
       const sx = f.x - cx, sy = f.y - 60 - cy;
       if (sx > 20 && sy > 20 && sx < vw - 20 && sy < vh - 20) continue;
       const a = Math.atan2(sy - vh / 2, sx - vw / 2), k = Math.min((vw / 2 - 18) / Math.max(1e-3, Math.abs(Math.cos(a))), (vh / 2 - 18) / Math.max(1e-3, Math.abs(Math.sin(a))));
@@ -607,6 +641,8 @@ const Mar = {
   tick(dt) {
     const G = Game, P = G.player, W = G.world; if (!P || !W) return;
     this.painel();
+    if (G.level && G.level.inimigo) this.fimAbordagem();
+    this.zoomTick(dt);
     if (!G.level.isWorld) return;
     this.discT = (this.discT || 0) - dt;
     if (this.discT > 0) return;

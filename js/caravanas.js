@@ -106,7 +106,7 @@ const Caravanas = {
     if (!C.fugiu) { const q = this.atras(C, 14); C.mercador.home = { x: q.x, y: q.y - 9 }; }
   },
   emboscada(C) {
-    const G = Game, P = G.player, n = 3 + Math.floor(Math.random() * 3), base = C.ang + (Math.random() - 0.5) * 1.2;
+    const G = Game, P = G.player, n = 2 + Math.floor(Math.random() * 3), base = C.ang + (Math.random() - 0.5) * 1.2;
     for (let i = 0; i < n; i++) {
       const r = 130 + Math.random() * 40, a = base + (Math.random() - 0.5) * 0.8;
       const m = new Monster(i % 3 === 2 ? 'bandido_arqueiro' : 'bandido', C.x + Math.cos(a) * r, C.y + Math.sin(a) * r, Math.max(4, P.level), { name: 'Salteador' });
