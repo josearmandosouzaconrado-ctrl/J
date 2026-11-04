@@ -331,7 +331,7 @@ const Z3 = (() => {
     _x.crossVectors(_up, _f);
     surf(lon, lat, (S.raw ? rawH(lon, lat) : hAt(lon, lat)) + (lift || 0), _p);
     _m.makeBasis(_x.multiplyScalar(sx), _up.multiplyScalar(sy), _f.multiplyScalar(sz)); _m.setPosition(_p);
-    m.setMatrixAt(i, _m);
+    if (m) m.setMatrixAt(i, _m);
   }
   function offLL(lon, lat, hd, ox, oz) {   // deslocamento local (km) → lon/lat
     const e = Math.cos(hd) * -ox + Math.sin(hd) * oz, nn = Math.cos(hd) * oz + Math.sin(hd) * ox;
@@ -339,13 +339,16 @@ const Z3 = (() => {
   }
 
   function buildCities(cities) {
-    let n = 0; const ku = KU(), lim = houses.instanceMatrix.count;
+    // de perto as casas encolhem (de longe são exageradas para aparecer); cs = fator de tamanho
+    const cs = Math.max(0.1, Math.min(1, S.alt / 40)), rs = Math.max(0.4, Math.min(1, 0.3 + cs)), more = Math.min(2.5, 1 / Math.sqrt(cs));
+    let n = 0; const ku = KU() / cs, lim = houses.instanceMatrix.count;
+    if (S.g) S.g.cityAlt = S.alt;
     cities.sort((a, b) => b.cap - a.cap);
     for (const ct of cities) {
-      const rnd = rng(ct.p.id + 7), N = (ct.cap ? 110 : 45) * (S.alt > 400 ? 0.5 : 1) | 0, north = Math.abs(ct.lat) > 47;
+      const rnd = rng(ct.p.id + 7), N = (ct.cap ? 110 : 45) * (S.alt > 400 ? 0.5 : more) | 0, north = Math.abs(ct.lat) > 47;
       for (let q = 0; q < N && n < lim; q++) {
-        const a = rnd() * Math.PI * 2, rr = ct.r * Math.pow(rnd(), 0.75), [lo, la] = offLL(ct.lon, ct.lat, 0, Math.cos(a) * rr, Math.sin(a) * rr);
-        const core = 1 - rr / ct.r, tower = ct.cap && q < 5;
+        const a = rnd() * Math.PI * 2, rr = ct.r * rs * Math.pow(rnd(), 0.75), [lo, la] = offLL(ct.lon, ct.lat, 0, Math.cos(a) * rr, Math.sin(a) * rr);
+        const core = 1 - rr / (ct.r * rs), tower = ct.cap && q < 5;
         const w = (0.35 + rnd() * 0.45) / ku, d = (0.35 + rnd() * 0.5) / ku, hh = (tower ? 1.6 + rnd() * 1.2 : 0.22 + rnd() * 0.3 + core * 0.55 * rnd()) / ku;
         const hd = rnd() * 0.5 + (q % 2) * Math.PI / 2;
         place(houses, n, lo, la, hd, tower ? w * 0.6 : w, hh, tower ? w * 0.6 : d, -0.02 / ku);
@@ -359,7 +362,7 @@ const Z3 = (() => {
     for (const m of [houses, roofs]) { m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; }
   }
   function buildTrees() {
-    const G = S.g, ku = KU(), lim = low() ? 1500 : 4000, rad = Math.min(G.Rkm * 0.85, Math.max(60, S.alt * 4)), sc = Math.max(0.6, Math.min(3, S.alt / 50));
+    const G = S.g, ku = KU(), lim = low() ? 1500 : 4000, rad = Math.min(G.Rkm * 0.85, Math.max(60, S.alt * 4)), sc = Math.max(0.15, Math.min(3, S.alt / 50));
     const rnd = rng(Math.round(G.lon0 * 7 + G.lat0 * 13)); let n = 0, tries = 0;
     while (n < lim && tries++ < lim * 3) {
       const a = rnd() * Math.PI * 2, rr = rad * Math.sqrt(rnd()), [cx, cy] = offLL(G.lon0, G.lat0, 0, Math.cos(a) * rr, Math.sin(a) * rr);
@@ -408,8 +411,8 @@ const Z3 = (() => {
   const _F = new V3();
   function camera(c) {
     c.aspect = window.innerWidth / window.innerHeight;
-    if (isG()) { WV.dist = Math.max(GR + 0.32, Math.min(GR * 4.2, WV.dist)); WV.lat = Math.max(-70, Math.min(80, WV.lat)); }
-    else { WV.fh = Math.max(0.22, Math.min(260, WV.fh)); WV.fx = Math.max(-180, Math.min(180, WV.fx)); WV.fz = Math.max(LATB, Math.min(LATT, WV.fz)); }
+    if (isG()) { WV.dist = Math.max(GR + 0.019, Math.min(GR * 4.2, WV.dist)); WV.lat = Math.max(-70, Math.min(80, WV.lat)); }
+    else { WV.fh = Math.max(0.012, Math.min(260, WV.fh)); WV.fx = Math.max(-180, Math.min(180, WV.fx)); WV.fz = Math.max(LATB, Math.min(LATT, WV.fz)); }
     const alt = S.alt = altKm(), [lon, lat] = focusLL();
     S.tk = sst(0, 1, (Math.log(1500) - Math.log(alt)) / (Math.log(1500) - Math.log(25)));
     S.blend = 1 - sst(ALT_ON * 0.5, ALT_ON, alt);
@@ -427,7 +430,7 @@ const Z3 = (() => {
     }
     // nunca entra na montanha
     if (S.g && S.uH > 0) {
-      const [cl, ca] = toLL(c.position), gh = hAt(cl, ca) + 0.09;
+      const [cl, ca] = toLL(c.position), gh = hAt(cl, ca) + Math.min(0.09, D * 0.4);
       if (isG()) { const r = c.position.length(); if (r < GR + gh) c.position.multiplyScalar((GR + gh) / r); }
       else if (c.position.y < gh) c.position.y = gh;
     }
@@ -446,13 +449,98 @@ const Z3 = (() => {
     const dl = ((B.lon - A.lon + 540) % 360) - 180;
     return [A.lon + dl * t, A.lat + (B.lat - A.lat) * t, Math.atan2(dl * Math.cos(A.lat * D2R), B.lat - A.lat)];
   }
+  /* ---------- modelos detalhados (os mesmos da batalha 3D) assados para instanciar no mapa ----------
+     cada modelo vira poucas malhas instanciadas (uma por material), usando a versão leve do LOD;
+     perto da câmera as divisões usam esses modelos, longe continuam as miniaturas simples */
+  const BK = new Map(); let BKS = [], bkFrame = 0;
+  function flipTris(g) {
+    for (const a of Object.values(g.attributes)) { const n = a.itemSize, arr = a.array; for (let t = 0; t < a.count; t += 3) for (let c = 0; c < n; c++) { const i1 = (t + 1) * n + c, i2 = (t + 2) * n + c, v = arr[i1]; arr[i1] = arr[i2]; arr[i2] = v; } }
+  }
+  function bake(root) {
+    root.updateMatrixWorld(true);
+    const inv = root.matrixWorld.clone().invert(), groups = new Map(), m4 = new THREE.Matrix4();
+    const visit = (o) => {
+      if (!o.visible) return;
+      if (o.isLOD) { visit(o.levels[o.levels.length - 1].object); return; }
+      if (o.isMesh && !Array.isArray(o.material) && o.geometry.attributes.position.count) {
+        const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+        m4.multiplyMatrices(inv, o.matrixWorld); g.applyMatrix4(m4); if (m4.determinant() < 0) flipTris(g);
+        let a = groups.get(o.material); if (!a) groups.set(o.material, a = []); a.push(g);
+      }
+      for (const c of o.children) visit(c);
+    };
+    visit(root);
+    const out = [], DEF = { normal: [0, 1, 0], color: [1, 1, 1], uv: [0, 0] };
+    for (const [mat, list] of groups) {
+      const names = ['position', 'normal', 'color', 'uv'].filter(nm => list.some(g => g.attributes[nm]));
+      const tot = list.reduce((t, g) => t + g.attributes.position.count, 0), geo = new THREE.BufferGeometry();
+      for (const nm of names) {
+        const sz = nm === 'uv' ? 2 : 3, arr = new Float32Array(tot * sz); let o = 0;
+        for (const g of list) {
+          const a = g.attributes[nm], c = g.attributes.position.count;
+          for (let i = 0; i < c; i++, o += sz) for (let q = 0; q < sz; q++) arr[o + q] = !a ? DEF[nm][q] : q === 0 ? a.getX(i) : q === 1 ? a.getY(i) : a.getZ(i);
+        }
+        geo.setAttribute(nm, new THREE.BufferAttribute(arr, sz));
+      }
+      geo.computeBoundingBox(); out.push({ geo, mat });
+    }
+    return out;
+  }
+  // devolve o modelo pronto (ou null); constrói no máximo um modelo novo por quadro para não travar
+  function bk(key, build, cap) {
+    if (BK.has(key)) return BK.get(key);
+    if (bkFrame > 0) return null;
+    bkFrame++;
+    let e = null;
+    try {
+      const parts = bake(build()), box = new THREE.Box3();
+      for (const p of parts) box.union(p.geo.boundingBox);
+      e = { n: 0, cap, len: Math.max(0.1, box.max.z - box.min.z), meshes: parts.map(p => { const m = new THREE.InstancedMesh(p.geo, p.mat, cap); m.count = 0; m.frustumCulled = false; WV.scene.add(m); return m; }) };
+    } catch (err) { console.warn('zoom3d: modelo ' + key, err); }
+    BK.set(key, e); BKS = [...BK.values()].filter(Boolean); return e;
+  }
+  function withSC(year, biome, fn) {
+    const has = typeof SC !== 'undefined' && SC, y0 = has && SC.year, b0 = has && SC.biome;
+    if (has) { SC.year = year; SC.biome = biome; }
+    try { return fn(); } finally { if (has) { SC.year = y0; SC.biome = b0; } }
+  }
+  const AXIS = ['GER', 'ITA', 'HUN', 'ROM', 'BUL', 'FIN', 'JAP', 'MAN', 'SLO', 'CRO'];
+  function vehModel(kind, biome) {
+    if (typeof Blindado3 === 'undefined' || !Blindado3.has(kind)) return null;
+    const y = curYear(), key = 'V|' + kind + '|' + (y < 1943.15 ? 'a' : y < 1944.75 ? 'b' : 'c') + '|' + biome;
+    return bk(key, () => withSC(y, biome, () => Blindado3.make(kind)), 90);
+  }
+  function soldierNat(tag) {
+    const n = NATK[tag] || tag; if (Soldado3.LOOK[n]) return n;
+    const N = W.nat[tag]; return N && N.look === 'de' ? 'GER' : N && N.fac === 'comintern' ? 'SOV' : N && N.fac === 'eixo' ? 'GER' : 'ENG';
+  }
+  function manModel(tag, fr) {
+    if (typeof Soldado3 === 'undefined') return null;
+    const nat = soldierNat(tag);
+    return bk('M|' + nat + '|' + fr, () => {
+      const g = Soldado3.make({ nat, kind: 'rifle', scale: 1, variant: 1, skin: 1 }), st = fr === 'a' ? { aim: true, crouch: true } : fr === 's' ? {} : { moving: true, speed: 5 };
+      for (let i = 0; i < 5; i++) Soldado3.pose(g, st, 1);
+      if (fr[0] === 'w') { g.userData.ph = (+fr.slice(1)) * Math.PI / 2; Soldado3.pose(g, st, 1e-6); }
+      return g;
+    }, 160);
+  }
+  const shipModel = () => (typeof Navio3 === 'undefined' ? null : bk('S|lst', () => Navio3.lst(), 24));
+  function putD(e, lon, lat, hd, s) {
+    if (!e || e.n >= e.cap) return false;
+    place(null, 0, lon, lat, hd, s, s, s, 0);
+    for (const m of e.meshes) m.setMatrixAt(e.n, _m);
+    e.n++; return true;
+  }
+
   function units(dt) {
     for (const k in UM) UM[k].count = 0;
+    bkFrame = 0;
+    for (const e of BKS) e.n = 0;
     const on = W && S.alt < ALT_UNITS && S.g && S.uH > 0.5;
     S.units = on; WV.figRoot.visible = !on;
-    if (!on) return;
+    if (!on) { for (const e of BKS) for (const m of e.meshes) m.count = 0; return; }
     const G = S.g, ku = KU(), [flon, flat] = focusLL();
-    const US = Math.max(0.2, Math.min(9, S.alt * 0.03)) / 6 / ku;   // unidades por metro de miniatura
+    const US = Math.max(0.15, Math.min(9, S.alt * 0.03)) / 6 / ku;   // unidades por metro de miniatura
     const kk = 1 - Math.exp(-dt * 5), seen = new Set(), cnt = {};
     const put = (k, lon, lat, hd, s, col) => { const m = UM[k], i = m.count; if (i >= m.instanceMatrix.count) return; place(m, i, lon, lat, hd, s, s, s, 0); m.setColorAt(i, col); m.count++; };
     const byProv = new Map();
@@ -461,10 +549,13 @@ const Z3 = (() => {
       const k = d.prov + ':' + d.tag; let a = byProv.get(k); if (!a) byProv.set(k, a = []); a.push(d);
     }
     const tagIdx = new Map();
-    for (const [k, list] of byProv) {
+    // as mais próximas da câmera primeiro (recebem os modelos detalhados)
+    const near = (pr) => Math.hypot((((pr.lon - flon + 540) % 360) - 180) * Math.cos(flat * D2R), pr.lat - flat);
+    const stacks = [...byProv.values()].sort((a, b) => near(WG.provs[a[0].prov]) - near(WG.provs[b[0].prov]));
+    for (const list of stacks) {
       const pr = WG.provs[list[0].prov];
       let dl = Math.abs(((pr.lon - flon + 540) % 360) - 180) * Math.cos(flat * D2R), dd = Math.abs(pr.lat - flat);
-      if (Math.hypot(dl, dd) * 111 > Math.min(G.Rkm * 1.1, S.alt * 7)) continue;
+      if (Math.hypot(dl, dd) * 111 > Math.min(G.Rkm * 1.1, S.alt * 7) + 250) continue;   // folga: a divisão pode estar marchando longe do centro da província
       const ti = (tagIdx.get(pr.id) || 0); tagIdx.set(pr.id, ti + 1);
       list.slice(0, 5).forEach((d, i) => {
         seen.add(d.id);
@@ -478,24 +569,36 @@ const Z3 = (() => {
         const [cx, cy] = offLL(o.lon, o.lat, o.hd, side, -back), pc = paint(d.tag), hd = o.hd, km = US * ku;
         o.x = cx; o.y = cy;
         const at = (ox, oz) => offLL(cx, cy, hd, ox * km, oz * km);
-        if (d.naval) { const [a, b] = at(0, 0); put('ship', a, b, hd, US * 0.55, _c.setRGB(1, 1, 1)); }
+        // perto da câmera: os modelos detalhados da batalha 3D; longe: miniaturas simples
+        const det = Math.hypot((((cx - flon + 540) % 360) - 180) * Math.cos(flat * D2R), cy - flat) * 111 < Math.max(45, S.alt * 2.4);
+        const pv = WG.provs[d.prov], biome = pv.terr === 'D' ? 'desert' : winterOn(pv) ? 'winter' : '';
+        const moving = !!(d.path.length || d.naval);
+        const veh = (kind, cls, ox, oz) => { const [a, b] = at(ox, oz); if (det && putD(vehModel(kind, biome), a, b, hd, US / 1.3)) return; put(cls, a, b, hd, US, pc.veh); };
+        const man = (ox, oz, q) => {
+          const [a, b] = at(ox, oz), fr = d.battle ? 'a' : moving ? 'w' + (((S.t * 6 + q * 1.7 + d.id) | 0) % 4) : 's';
+          if (det && putD(manModel(d.tag, fr), a, b, hd, US * 2.2)) return; put('man', a, b, hd, US * 2.4, pc.man);
+        };
+        let tank = 'sherman', light = 'halftrack'; try { tank = eraKind('tank', d.tag); light = eraKind('light', d.tag); } catch (e) { /* sem tabela */ }
+        const truck = AXIS.includes(NATK[d.tag] || d.tag) || (W.nat[d.tag] && W.nat[d.tag].fac === 'eixo') ? 'blitz' : 'gmc';
+        if (d.naval) { const [a, b] = at(0, 0), e = det && shipModel(); if (!(e && putD(e, a, b, hd, US * 71 / e.len))) put('ship', a, b, hd, US * 0.55, _c.setRGB(1, 1, 1)); }
         else if (d.type === 'tank') {
           const tk = tankCls(d.tag);
-          for (const [ox, oz] of [[0, 9], [-11, -2], [11, -2]]) { const [a, b] = at(ox, oz); put(tk, a, b, hd, US, pc.veh); }
-          const [a, b] = at(0, -15); put('truck', a, b, hd, US, pc.veh);
+          for (const [ox, oz] of [[0, 9], [-11, -2], [11, -2]]) veh(tank, tk, ox, oz);
+          veh(truck, 'truck', 0, -15);
         } else if (d.type === 'mot') {
-          for (const [ox, oz, k] of [[0, 10, 'half'], [-6, -2, 'truck'], [6, -2, 'truck']]) { const [a, b] = at(ox, oz); put(k, a, b, hd, US, pc.veh); }
-          for (let q = 0; q < 3; q++) { const [a, b] = at((q - 1) * 4, -12); put('man', a, b, hd, US * 2.4, pc.man); }
+          veh(light, 'half', 0, 10); veh(truck, 'truck', -6, -2); veh(truck, 'truck', 6, -2);
+          for (let q = 0; q < 3; q++) man((q - 1) * 4, -12, q);
         } else {
-          const rows = S.alt > 120 ? 2 : 3; for (let r = 0; r < rows; r++) for (let q = 0; q < 3; q++) { const [a, b] = at((q - 1) * 4.6 + (r % 2) * 0.8, 9 - r * 5); put('man', a, b, hd, US * 2.4, pc.man); }
-          const [a, b] = at(0, -10); put('truck', a, b, hd, US, pc.veh);
+          const rows = S.alt > 120 ? 2 : 3; for (let r = 0; r < rows; r++) for (let q = 0; q < 3; q++) man((q - 1) * 4.6 + (r % 2) * 0.8, 9 - r * 5, r * 3 + q);
+          veh(truck, 'truck', 0, -10);
         }
-        { const [a, b] = at(0, -1); const m = UM.ring, j = m.count; if (j < m.instanceMatrix.count) { const r = 21 * US; place(m, j, a, b, 0, r, r, r, 0.4 * US); m.setColorAt(j, pc.nat); m.count++; } }
+        if (S.alt > 9) { const [a, b] = at(0, -1); const m = UM.ring, j = m.count; if (j < m.instanceMatrix.count) { const r = 21 * US; place(m, j, a, b, 0, r, r, r, 0.4 * US); m.setColorAt(j, pc.nat); m.count++; } }
         cnt[d.tag] = 1;
       });
     }
     for (const id of disp.keys()) if (!seen.has(id)) disp.delete(id);
     for (const k in UM) { const m = UM[k]; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; }
+    for (const e of BKS) for (const m of e.meshes) { m.count = e.n; m.instanceMatrix.needsUpdate = true; }
     battles(dt, US);
   }
   const _v = new V3(), _w = new V3();
@@ -567,6 +670,9 @@ const Z3 = (() => {
     if (need && S.t - S.lastBuild > (busy ? 0.6 : 0.25)) { S.lastBuild = S.t; build(lon, lat, Rk); S.linesT = 0; }
     if (!S.g) return;
     S.linesT += dt; if (S.linesT > 2.5) { S.linesT = 0; buildLines(); }
+    // casas e árvores acompanham a descida da câmera
+    const ca = S.g.cityAlt || alt;
+    if (alt < 80 && (alt / ca > 1.7 || alt / ca < 0.6) && S.t - S.lastBuild > 0.3) { S.lastBuild = S.t; S.raw = true; buildCities(S.g.cities); buildTrees(); S.raw = false; }
     tileMesh.visible = lines.visible = true;
     tileMat.userData.u.uMix.value = (1 - 0.84 * sst(ALT_ON, ALT_ON * 0.5, alt)) * (1 - 0.75 * sst(300, 60, alt));   // de perto a cor política some e ficam as linhas de fronteira
     tileMat.userData.u.uH.value = S.uH;
@@ -584,10 +690,10 @@ const Z3 = (() => {
   function anchor(st) {
     if (!S.units) return null;
     const o = st.divs.map(d => disp.get(d.id)).find(Boolean); if (!o) return null;
-    const US = Math.max(0.2, Math.min(9, S.alt * 0.03)) / 6 / KU();
+    const US = Math.max(0.15, Math.min(9, S.alt * 0.03)) / 6 / KU();
     return surf(o.x, o.y, hAt(o.x, o.y) + 16 * US);
   }
-  function anchorProv(id) { if (!S.units) return null; const p = WG.provs[id]; return surf(p.lon, p.lat, hAt(p.lon, p.lat) + Math.max(0.2, S.alt * 0.03) / 6 / KU() * 30); }
+  function anchorProv(id) { if (!S.units) return null; const p = WG.provs[id]; return surf(p.lon, p.lat, hAt(p.lon, p.lat) + Math.max(0.15, S.alt * 0.03) / 6 / KU() * 30); }
   function ground(lon, lat, lift) { return surf(lon, lat, hAt(lon, lat) + Math.max(0.003, S.alt / KU() * 0.006) + lift * 0.004 * (S.alt / KU())); }
   function pick(ray) {
     if (!tileMesh || !tileMesh.visible || S.uH < 0.5) return null;
@@ -595,5 +701,5 @@ const Z3 = (() => {
     const [lon, lat] = toLL(h.point); return { lon: ((lon + 540) % 360) - 180, lat };
   }
   const on = () => S.blend > 0.5 && !!S.g;
-  return { update, camera, anchor, anchorProv, ground, pick, on, hAt, altKm, state: S, surf, fx: () => [fire, smoke, lines, tileMat] };
+  return { update, camera, anchor, anchorProv, ground, pick, on, hAt, altKm, state: S, surf };
 })();
