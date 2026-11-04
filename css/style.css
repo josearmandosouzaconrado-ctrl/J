@@ -412,3 +412,9 @@ a.mbtn.apk small { display: block; font-size: 13px; opacity: .8; }
 .arm-l .ic { width: 16px; height: 16px; image-rendering: pixelated; }
 .barra { height: 8px; background: #2a1c24; border: 1px solid #5a4030; margin: 3px 0; }
 .barra > div { height: 100%; background: linear-gradient(#e0b040, #a07020); }
+/* ícones nas barras (coração, mana e raio) */
+.bar.hp, .bar.mp, .bar.st { margin-left: 14px; }
+.bar.hp::before, .bar.mp::before, .bar.st::before { position: absolute; left: -17px; top: 50%; transform: translateY(-50%); font-size: 14px; line-height: 1; filter: drop-shadow(1px 1px 0 #000); }
+.bar.hp::before { content: '❤'; color: #ff4040; font-size: 16px; }
+.bar.mp::before { content: '🔷'; font-size: 11px; }
+.bar.st::before { content: '⚡'; font-size: 12px; }

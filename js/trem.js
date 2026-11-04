@@ -7,17 +7,23 @@
 //  fica em cima do trilho leva uma pancada!
 // =====================================================================
 const TREM_REINOS = ['aurelion', 'ferrania'];
-const TREM_V = 140, TREM_PARADA = 18, TREM_CARRO = 30, TREM_CARROS = 5, TREM_PRECO = 40;
+const TREM_V = 140, TREM_PARADA = 18, TREM_CARRO = 38, TREM_CARROS = 4, TREM_PRECO = 40;
 
 const Trem = {
   st() { const S = War.st(); return S.trens || (S.trens = { linhas: [] }); },
   linhas() { return this.st().linhas.filter(l => l.path); },
+  ptsCru(l) {
+    const c = this._pc || (this._pc = new Map()); let L = c.get(l.id);
+    if (!L) { L = [[l.x0 * 16 + 8, l.y0 * 16 + 8]]; let x = l.x0, y = l.y0; for (const ch of l.path) { const d = EST_DIRS[ch.charCodeAt(0) - 97]; x += d[0]; y += d[1]; L.push([x * 16 + 8, y * 16 + 8]); } c.set(l.id, L); }
+    return L;
+  },
+  // a ferrovia desenhada e percorrida é uma curva suave (média dos tiles vizinhos), como trilho de verdade
   pts(l) {
     const c = this._pts || (this._pts = new Map()); let L = c.get(l.id);
     if (!L) {
-      L = [[l.x0 * 16 + 8, l.y0 * 16 + 8]]; let x = l.x0, y = l.y0;
-      for (const ch of l.path) { const d = EST_DIRS[ch.charCodeAt(0) - 97]; x += d[0]; y += d[1]; L.push([x * 16 + 8, y * 16 + 8]); }
-      const cum = [0]; for (let i = 1; i < L.length; i++) cum.push(cum[i - 1] + Math.hypot(L[i][0] - L[i - 1][0], L[i][1] - L[i - 1][1]));
+      let A = this.ptsCru(l);
+      for (let pass = 0; pass < 3; pass++) { const B = A.map((q, i) => { if (i < 2 || i > A.length - 3) return q; let sx = 0, sy = 0, n = 0; for (let k = -3; k <= 3; k++) { const r = A[clamp(i + k, 0, A.length - 1)]; sx += r[0]; sy += r[1]; n++; } return [sx / n, sy / n]; }); A = B; }
+      L = A; const cum = [0]; for (let i = 1; i < L.length; i++) cum.push(cum[i - 1] + Math.hypot(L[i][0] - L[i - 1][0], L[i][1] - L[i - 1][1]));
       L.cum = cum; c.set(l.id, L);
     }
     return L;
@@ -76,7 +82,7 @@ const Trem = {
   },
   // ---------- os trilhos no mundo ----------
   aplicar(W, l, aoVivo) {
-    const L = this.pts(l), TR = W.trilho || (W.trilho = new Map()), AO = W.trilhoAo || (W.trilhoAo = new Map()), sujos = new Set();
+    const L = this.ptsCru(l), TR = W.trilho || (W.trilho = new Map()), AO = W.trilhoAo || (W.trilhoAo = new Map()), sujos = new Set();
     const bit = (i, j) => { const dx = Math.sign(L[j][0] - L[i][0]), dy = Math.sign(L[j][1] - L[i][1]); return 1 << EST_DIRS.findIndex(d => d[0] === dx && d[1] === dy); };
     for (let i = 0; i < L.length; i++) {
       const x = (L[i][0] - 8) / 16, y = (L[i][1] - 8) / 16, k = W.ckey(x >> 5, y >> 5), idx = ((y & 31) << 5) | (x & 31);
@@ -88,7 +94,7 @@ const Trem = {
   },
   sync() {
     const W = Game.world; if (!W || this._w === W) return;
-    this._w = W; W.trilho = new Map(); W.trilhoAo = new Map(); this._pts = new Map(); this.job = null;
+    this._w = W; W.trilho = new Map(); W.trilhoAo = new Map(); this._pts = new Map(); this._pc = new Map(); this.job = null;
     for (const l of this.linhas()) this.aplicar(W, l, true);
   },
   // ---------- o horário: onde está cada trem agora ----------
@@ -123,6 +129,7 @@ const Trem = {
   tick(dt) {
     const G = Game; if (!G.started || !G.player || !G.world || !War.K) return;
     this.sync(); this.planejar(); this.trabalhar();
+    const F = this.puffs; if (F) for (let i = F.length - 1; i >= 0; i--) { const f = F[i]; f.t += dt; f.x += f.vx * dt; f.y += f.vy * dt; f.vy *= 0.98; if (f.t > f.vida) F.splice(i, 1); }
     const P = G.player;
     if (P.trem) return this.viajando(dt);
     if (!G.level || !G.level.isWorld) return;
@@ -143,10 +150,12 @@ const Trem = {
     }
   },
   fumaca(loco, H, dt) {
-    const G = Game; this._fT = (this._fT || 0) - dt; if (this._fT > 0) return;
-    this._fT = H.parado ? 0.5 : 0.09;
-    const fx = Math.cos(loco.ang) * 9;
-    G.particle(loco.x + fx + (Math.random() - 0.5) * 3, loco.y - 26, -Math.cos(loco.ang) * (H.parado ? 4 : 30) + (Math.random() - 0.5) * 10, -18 - Math.random() * 12, H.parado ? 'rgba(235,235,240,0.7)' : 'rgba(80,80,88,0.65)', 1.4);
+    this._fT = (this._fT || 0) - dt; if (this._fT > 0) return;
+    this._fT = H.parado ? 0.5 : 0.16;
+    const c = Math.cos(loco.ang), sn = Math.sin(loco.ang), vert = Math.abs(c) < 0.4, k = vert ? 0 : 10;   // a chaminé fica na frente da locomotiva
+    const F = this.puffs || (this.puffs = []);
+    F.push({ x: loco.x + c * k + (Math.random() - 0.5) * 2, y: loco.y + sn * k - (vert ? 30 : 28), vx: (H.parado ? 0 : c * TREM_V * 0.82) + (Math.random() - 0.5) * 8, vy: (H.parado ? 0 : sn * TREM_V * 0.82) - 24 - Math.random() * 10, r: 4, t: 0, vida: H.parado ? 2 : 1.1 });
+    if (F.length > 60) F.shift();
   },
   // ---------- viagem do herói ----------
   embarcar(l, de) {
@@ -217,23 +226,36 @@ const Trem = {
   },
   carroImg(j, lado) {
     const k = j + ':' + lado, c = this._ci || (this._ci = new Map()); let im = c.get(k); if (im) return im;
-    const cores = ['#2a2a30', '#2a2a30', '#3a6a4a', '#8a3030', '#3a4a7a'];
+    const cores = [null, '#2f5a3a', '#7a2228', '#2a3256'], ouro = '#d8a838', ouroE = '#8a6420';
+    const roda = (p, cx, cy, r, aro, cubo) => { for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) { const d = x * x + y * y; if (d <= r * r) p(cx + x, cy + y, d >= (r - 1) * (r - 1) ? '#141418' : aro); } p(cx, cy, cubo); if (r >= 4) { p(cx - r + 2, cy, '#141418'); p(cx + r - 2, cy, '#141418'); p(cx, cy - r + 2, '#141418'); p(cx, cy + r - 2, '#141418'); } };
     if (lado === 'h') {
-      // vista de lado (indo para a direita)
-      if (j === 0) im = this.desenha(34, 26, (p) => {
-        p(2, 10, '#1e1e24', 22, 9); p(2, 10, '#3a3a44', 22, 2); for (const x of [6, 12, 18]) p(x, 10, '#c8a040', 1, 9);
-        p(22, 3, '#1e1e24', 10, 16); p(23, 5, '#e8d080', 4, 4); p(22, 2, '#5a1a1a', 11, 2);
-        p(5, 4, '#1e1e24', 4, 6); p(4, 3, '#3a3a44', 6, 2);
-        p(0, 17, '#8a8a90', 3, 3); p(0, 19, '#c03030', 2, 2);
-        for (const x of [5, 13, 21, 27]) { p(x, 19, '#a02020', 5, 5); p(x + 1, 20, '#e04040', 3, 3); p(x + 2, 21, '#1e1e24', 1, 1); }
-        p(3, 20, '#6a6a70', 28, 1); p(2, 14, '#f0e070', 1, 2);
+      if (j === 0) im = this.desenha(46, 34, (p) => {
+        // cabine vermelha atrás, caldeira preta com cintas douradas, chaminé alta, farol e limpa-trilhos vermelho
+        p(2, 6, '#8a2228', 12, 20); p(2, 6, '#a83038', 12, 2); p(3, 10, '#ffd870', 7, 6); p(4, 11, '#fff2b0', 3, 3); p(2, 25, ouro, 12, 1); p(2, 8, ouroE, 12, 1);
+        p(0, 2, '#22222a', 16, 4); p(1, 1, '#3a3a46', 14, 2);
+        p(14, 12, '#1a1a22', 26, 12); p(14, 12, '#3e3e4c', 26, 2); p(14, 21, '#101016', 26, 3);
+        for (const x of [19, 27, 35]) { p(x, 12, ouro, 2, 12); p(x, 12, '#f0d070', 1, 12); }
+        p(25, 8, ouro, 6, 4); p(26, 7, '#f0d070', 4, 2);
+        p(34, 2, '#1a1a22', 5, 10); p(33, 0, '#2a2a34', 7, 3); p(33, 0, '#4a4a58', 7, 1);
+        p(40, 13, '#2a2a34', 3, 5); p(41, 14, '#ffe070', 3, 3); p(43, 15, '#fffac0', 1, 1);
+        for (let i = 0; i < 6; i++) p(39 + i, 24 + i, '#c02828', 7 - i, 1); p(39, 24, '#e04040', 6, 1);
+        p(10, 24, '#2a2a30', 30, 2);
+        roda(p, 8, 28, 4, '#a82020', '#f0d070'); roda(p, 19, 27, 5, '#a82020', '#f0d070'); roda(p, 30, 27, 5, '#a82020', '#f0d070'); roda(p, 39, 29, 3, '#a82020', '#f0d070');
+        p(17, 27, '#b8b8c4', 15, 1); p(17, 26, '#6a6a74', 15, 1);
       });
-      else if (j === 1) im = this.desenha(28, 22, (p) => { p(1, 8, '#2a2a30', 26, 9); p(1, 8, '#4a4a54', 26, 1); p(3, 4, '#141418', 22, 5); p(5, 3, '#2a2a2e', 6, 2); p(14, 2, '#24242a', 7, 3); for (const x of [3, 19]) { p(x, 16, '#a02020', 5, 5); p(x + 1, 17, '#e04040', 3, 3); } });
-      else im = this.desenha(28, 22, (p) => { const b = cores[j]; p(1, 4, b, 26, 13); p(0, 2, '#3a2a20', 28, 3); p(1, 4, shade(b, 0.2), 26, 1); for (const x of [4, 11, 18]) { p(x, 7, '#f0e0a0', 5, 4); p(x, 7, '#c8b070', 5, 1); } p(1, 15, shade(b, -0.3), 26, 2); p(24, 7, '#2a1a14', 2, 8); for (const x of [3, 19]) { p(x, 16, '#3a3a40', 5, 5); p(x + 1, 17, '#6a6a74', 3, 3); } });
+      else im = this.desenha(40, 30, (p) => {
+        const b = cores[j];
+        p(1, 3, '#22222a', 38, 5); p(3, 1, '#2e2e38', 34, 3); p(3, 1, '#4a4a58', 34, 1); for (const x of [10, 20, 30]) p(x, 0, '#3a3a46', 3, 2);
+        p(1, 7, b, 38, 15); p(1, 7, shade(b, 0.25), 38, 1); p(1, 9, ouro, 38, 1); p(1, 20, ouro, 38, 1); p(1, 21, shade(b, -0.35), 38, 1);
+        for (const x of [4, 12, 20, 28]) { p(x, 11, '#3a2a14', 7, 7); p(x + 1, 12, '#ffd870', 5, 5); p(x + 2, 13, '#fff2b0', 2, 2); }
+        p(36, 11, '#1a1410', 2, 9);
+        p(3, 22, '#1a1a20', 34, 2);
+        roda(p, 7, 25, 3, '#3a3a44', '#c03030'); roda(p, 14, 25, 3, '#3a3a44', '#c03030'); roda(p, 26, 25, 3, '#3a3a44', '#c03030'); roda(p, 33, 25, 3, '#3a3a44', '#c03030');
+      });
     } else {
-      // vista de frente / de trás (indo para cima ou para baixo)
-      if (j === 0) im = this.desenha(20, 28, (p) => { p(3, 6, '#1e1e24', 14, 18); p(4, 8, '#3a3a44', 12, 12); p(7, 9, '#f0e070', 6, 5); p(8, 10, '#fffab0', 4, 3); p(8, 0, '#1e1e24', 4, 7); p(7, 0, '#3a3a44', 6, 1); p(2, 22, '#8a8a90', 16, 3); p(3, 25, '#a02020', 4, 3); p(13, 25, '#a02020', 4, 3); p(5, 17, '#c8a040', 10, 1); });
-      else im = this.desenha(18, 24, (p) => { const b = cores[j]; p(1, 4, b, 16, 17); p(0, 2, '#3a2a20', 18, 3); p(6, 8, '#2a1a14', 6, 11); p(2, 7, '#f0e0a0', 3, 4); p(13, 7, '#f0e0a0', 3, 4); p(2, 21, '#3a3a40', 4, 3); p(12, 21, '#3a3a40', 4, 3); });
+      // vista de frente / de trás (subindo ou descendo a tela)
+      if (j === 0) im = this.desenha(24, 36, (p) => { p(3, 8, '#1a1a22', 18, 20); p(4, 9, '#3e3e4c', 16, 14); for (let y = 10; y < 22; y += 5) p(4, y, ouro, 16, 1); p(8, 12, '#2a2a34', 8, 7); p(9, 13, '#ffe070', 6, 5); p(10, 14, '#fffac0', 3, 3); p(9, 0, '#1a1a22', 6, 9); p(8, 0, '#4a4a58', 8, 2); p(2, 26, '#c02828', 20, 4); p(4, 30, '#e04040', 16, 2); roda(p, 5, 32, 3, '#a82020', '#f0d070'); roda(p, 18, 32, 3, '#a82020', '#f0d070'); });
+      else im = this.desenha(22, 32, (p) => { const b = cores[j]; p(1, 3, '#22222a', 20, 4); p(2, 1, '#3a3a46', 18, 3); p(1, 6, b, 20, 20); p(1, 8, ouro, 20, 1); p(1, 24, ouro, 20, 1); p(8, 10, '#1a1410', 6, 14); p(9, 11, '#3a2a1a', 4, 12); p(3, 10, '#ffd870', 4, 6); p(15, 10, '#ffd870', 4, 6); roda(p, 5, 28, 3, '#3a3a44', '#c03030'); roda(p, 16, 28, 3, '#3a3a44', '#c03030'); });
     }
     c.set(k, im); return im;
   },
@@ -250,38 +272,84 @@ const Trem = {
       p(37, 14, '#2a2a30', 1, 16); p(35, 12, '#f0d060', 4, 3);
     }));
   },
+  // os trechos visíveis da curva da ferrovia
+  visiveis(L, camX, camY, vw, vh) {
+    const out = []; let ini = -1;
+    for (let i = 0; i < L.length; i += 2) {
+      const v = L[i][0] > camX - 40 && L[i][0] < camX + vw + 40 && L[i][1] > camY - 40 && L[i][1] < camY + vh + 40;
+      if (v && ini < 0) ini = Math.max(0, i - 2); if (!v && ini >= 0) { out.push([ini, Math.min(L.length - 1, i + 2)]); ini = -1; }
+    }
+    if (ini >= 0) out.push([ini, L.length - 1]);
+    return out;
+  },
+  trilhoCurva(ctx, L, a, b, camX, camY) {
+    const linha = (off, cor, w) => {
+      ctx.strokeStyle = cor; ctx.lineWidth = w; ctx.beginPath();
+      for (let i = a; i <= b; i++) { const q = L[i], r = L[Math.min(L.length - 1, i + 1)], o = L[Math.max(0, i - 1)], ang = Math.atan2(r[1] - o[1], r[0] - o[0]), nx = -Math.sin(ang), ny = Math.cos(ang), x = q[0] + nx * off - camX, y = q[1] + ny * off - camY; if (i === a) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+      ctx.stroke();
+    };
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    // cascalho
+    linha(0, '#5e5446', 17); linha(0, '#8a7e6a', 14); linha(0, '#a09480', 9);
+    // dormentes de madeira, um a cada 7 px
+    const C = L.cum;
+    for (let s = Math.ceil(C[a] / 7) * 7; s < C[b]; s += 7) {
+      const q = this.noPonto(L, s), nx = -Math.sin(q.ang), ny = Math.cos(q.ang), x = q.x - camX, y = q.y - camY;
+      ctx.strokeStyle = '#3e2614'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x - nx * 7, y - ny * 7); ctx.lineTo(x + nx * 7, y + ny * 7); ctx.stroke();
+      ctx.strokeStyle = '#7a5030'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - nx * 6, y - ny * 6 - 0.5); ctx.lineTo(x + nx * 6, y + ny * 6 - 0.5); ctx.stroke();
+    }
+    // os dois trilhos de aço
+    for (const off of [-4, 4]) { linha(off, '#3a3a42', 2.4); linha(off - 0.6, '#d0d0da', 1); }
+    ctx.lineCap = 'butt';
+  },
   drawables(D, camX, camY, vw, vh) {
-    const W = Game.world; if (!W.trilho || !W.trilho.size) return;
-    const cx0 = Math.floor((camX - 16) / 512), cy0 = Math.floor((camY - 16) / 512), cx1 = Math.floor((camX + vw + 16) / 512), cy1 = Math.floor((camY + vh + 16) / 512);
-    const vis = [];
-    for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) { const M = W.trilho.get(W.ckey(cx, cy)); if (M) vis.push([cx, cy, M]); }
-    if (vis.length) D.push({ y: -2e9, fn: (ctx) => {
-      for (const [cx, cy, M] of vis) for (const [i, m] of M) {
-        const x = (cx * 32 + (i & 31)) * 16 - camX, y = (cy * 32 + (i >> 5)) * 16 - camY;
-        if (x < -16 || y < -16 || x > vw || y > vh) continue;
-        ctx.drawImage(this.trilhoImg(m), Math.round(x), Math.round(y));
-      }
-    } });
-    const P = Game.player;
-    for (const l of this.linhas()) {
+    const P = Game.player, ls = this.linhas(); if (!ls.length) return;
+    for (const l of ls) {
       if (!this.perto(l, 500)) continue;
+      const L = this.pts(l), vis = this.visiveis(L, camX, camY, vw, vh);
+      if (vis.length) D.push({ y: -2e9, fn: (ctx) => { for (const [a, b] of vis) this.trilhoCurva(ctx, L, a, b, camX, camY); } });
       for (const de of ['a', 'b']) {
         const e = this.predio(l, de), im = this.estacaoImg();
         if (e.x < camX - 60 || e.x > camX + vw + 60 || e.y < camY - 60 || e.y > camY + vh + 60) continue;
         D.push({ y: e.y, img: im, x: Math.round(e.x - im.width / 2), yy: Math.round(e.y - im.height + 4) });
       }
       for (const c of this.carros(l)) {
-        if (c.x < camX - 40 || c.x > camX + vw + 40 || c.y < camY - 40 || c.y > camY + vh + 40) continue;
-        const hz = Math.abs(Math.cos(c.ang)) >= 0.55, im = this.carroImg(c.j, hz ? 'h' : 'v'), flip = hz && Math.cos(c.ang) < 0;
-        D.push({ y: c.y + 6, fn: (ctx) => {
+        if (c.x < camX - 50 || c.x > camX + vw + 50 || c.y < camY - 50 || c.y > camY + vh + 50) continue;
+        const co = Math.cos(c.ang), si = Math.sin(c.ang), vert = Math.abs(co) < 0.4, im = this.carroImg(c.j, vert ? 'v' : 'h');
+        D.push({ y: c.y + 8, fn: (ctx) => {
           const x = Math.round(c.x - camX), y = Math.round(c.y - camY);
-          ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(x - im.width / 2 + 2, y + 3, im.width - 4, 4);
-          if (flip) { ctx.save(); ctx.translate(x, 0); ctx.scale(-1, 1); ctx.drawImage(im, -Math.round(im.width / 2), y - im.height + 6); ctx.restore(); }
-          else ctx.drawImage(im, x - Math.round(im.width / 2), y - im.height + 6);
-          if (P.trem && P.trem.id === l.id && c.j === 2) { ctx.fillStyle = '#f0c8a0'; ctx.fillRect(x - 2, y - 16, 4, 4); }
+          ctx.save();
+          if (vert) {
+            ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.fillRect(x - im.width / 2 + 2, y - 2, im.width - 4, 9);
+            ctx.drawImage(im, x - Math.round(im.width / 2), y - im.height + 8);
+          } else {
+            // vagão inclinado na direção do trilho: o lado aparece, a frente aponta para onde vai e o teto aparece por cima
+            const nx = co > 0 ? -si : si, ny = Math.abs(co), prof = 10, topo = im.height - 6, meio = im.width / 2;
+            const pt = (u, v) => [x + co * u - nx * prof * v, y + si * u - topo - ny * prof * v];
+            const A = pt(-meio + 1, 0), B = pt(meio - 1, 0), Cc = pt(meio - 1, 1), Dd = pt(-meio + 1, 1);
+            ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.moveTo(x - co * meio, y - si * meio + 4); ctx.lineTo(x + co * meio, y + si * meio + 4); ctx.lineTo(x + co * meio - nx * prof, y + si * meio + 4 - ny * prof); ctx.lineTo(x - co * meio - nx * prof, y - si * meio + 4 - ny * prof); ctx.fill();
+            ctx.fillStyle = c.j === 0 ? '#16161c' : '#262630'; ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.lineTo(Cc[0], Cc[1]); ctx.lineTo(Dd[0], Dd[1]); ctx.fill();
+            ctx.strokeStyle = c.j === 0 ? '#3e3e4c' : '#4a4a5a'; ctx.lineWidth = 1; ctx.beginPath(); const m1 = pt(-meio + 2, 0.5), m2 = pt(meio - 2, 0.5); ctx.moveTo(m1[0], m1[1]); ctx.lineTo(m2[0], m2[1]); ctx.stroke();
+            if (c.j === 0) { const ch = pt(13, 0.5); ctx.fillStyle = '#1a1a22'; ctx.fillRect(Math.round(ch[0]) - 3, Math.round(ch[1]) - 6, 6, 7); ctx.fillStyle = '#4a4a58'; ctx.fillRect(Math.round(ch[0]) - 4, Math.round(ch[1]) - 7, 8, 2); const dm = pt(4, 0.5); ctx.fillStyle = '#d8a838'; ctx.fillRect(Math.round(dm[0]) - 2, Math.round(dm[1]) - 3, 5, 4); }
+            else for (const u of [-10, 0, 10]) { const q = pt(u, 0.5); ctx.fillStyle = '#3a3a46'; ctx.fillRect(Math.round(q[0]) - 2, Math.round(q[1]) - 1, 4, 2); }
+            ctx.transform(co, si, 0, 1, x, y);
+                        ctx.drawImage(im, -Math.round(im.width / 2), -im.height + 6);
+          }
+          ctx.restore();
+          if (P.trem && P.trem.id === l.id && c.j === 2) { ctx.fillStyle = '#f0c8a0'; ctx.fillRect(x - 2, y - 20, 4, 4); }
         } });
       }
     }
+    const F = this.puffs; if (!F || !F.length) return;
+    D.push({ y: 1e9, fn: (ctx) => {
+      for (const f of F) {
+        const k = f.t / f.vida, r = f.r + Math.sqrt(k) * 11, x = f.x - camX, y = f.y - camY; if (x < -30 || y < -30 || x > vw + 30 || y > vh + 30) continue;
+        ctx.globalAlpha = Math.max(0, 0.85 * (1 - k));
+        ctx.fillStyle = '#a8a8b4'; ctx.beginPath(); ctx.arc(x + r * 0.25, y + r * 0.25, r, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#f4f4f8'; ctx.beginPath(); ctx.arc(x, y, r * 0.9, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    } });
   },
   drawMap(ctx, toS) {
     for (const l of this.linhas()) {
@@ -299,7 +367,7 @@ const Trem = {
   World.prototype.genChunk = function (cx, cy) {
     const r = gc0.call(this, cx, cy), k = this.ckey(cx, cy);
     const M = this.trilho && this.trilho.get(k);
-    if (M) for (const i of M.keys()) { const t = r.tiles[i]; r.tiles[i] = TWATER[t] ? T.BRIDGE : (t === T.ROAD || t === T.PAVED || t === T.BRIDGE) ? t : T.DIRT; r.objs[i] = 0; }
+    if (M) for (const i of M.keys()) { const t = r.tiles[i]; if (TWATER[t]) r.tiles[i] = T.BRIDGE; r.objs[i] = 0; }
     const A = this.trilhoAo && this.trilhoAo.get(k);
     if (A) for (const i of A) if (OSOLID[r.objs[i]] && r.objs[i] !== O.BLOCK) r.objs[i] = 0;
     return r;
