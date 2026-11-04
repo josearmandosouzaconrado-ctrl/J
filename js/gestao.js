@@ -124,11 +124,12 @@ const Gestao = {
     this.aba = aba || this.aba || 'trab'; this.volta = volta || this.volta || null;
     this.ajusta();
     const f = UI.reg(), P = Game.player, re = (a) => f(() => this.tela(a || this.aba));
-    const abas = [['trab', '👷 Trabalhadores'], ['arm', '📦 Armazém'], ['est', '🛣 Estradas'], ['exp', '🏗 Expandir']];
+    const abas = [['trab', '👷 Trabalhadores'], ['arm', '📦 Armazém'], ['est', '🛣 Estradas'], ['pat', '🛡 Patrulhas'], ['exp', '🏗 Expandir']];
     let corpo = '';
     if (this.aba === 'trab') corpo = this.htmlTrab(f);
     else if (this.aba === 'arm') corpo = this.htmlArm(f);
     else if (this.aba === 'est') corpo = this.htmlEst(f);
+    else if (this.aba === 'pat') corpo = Patrulhas.html(f);
     else corpo = this.htmlExp(f);
     const fechar = () => { const v = this.volta; this.volta = null; if (v) v(); else UI.close(); };
     const el = UI.show('gestao', `<div class="panel wide gestao-panel"><div class="ptitle">🏛 Gestão de ${esc(V.nome)}</div>
@@ -245,7 +246,7 @@ const Gestao = {
       for (const [dx, dy] of EST_DIRS) {
         const nx = cx + dx, ny = cy + dy, k = K(nx, ny); if (pai.has(k)) continue;
         if (Math.abs(nx - s.mid.x) > 150 || Math.abs(ny - s.mid.y) > 150) continue;
-        const t = W.tileAt(nx, ny); if (TSOLID[t] || TWATER[t] || t === T.LAVA || W.objAt(nx, ny) === O.BLOCK) continue;
+        const t = W.baseTile(nx, ny); if (TSOLID[t] || TWATER[t] || t === T.LAVA || t === T.DEEP) continue;
         if (nx >= s.x0 && ny >= s.y0 && nx < s.x0 + s.w && ny < s.y0 + s.h) continue;
         pai.set(k, K(cx, cy)); fila.push(nx, ny);
       }

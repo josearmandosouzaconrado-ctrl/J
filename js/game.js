@@ -338,7 +338,7 @@ const Game = {
     Work.update(dt);
     Adm.update();
     Sombra.tick(dt); Ceu.tick(dt);
-    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt); Rede.tick(dt); Construcao.tick(dt); Mar.tick(dt); Estacoes.tick(dt); Abertura.tick(dt); Muralhas.tick(dt); Postos.tick(dt); Mobilia.tick(dt); Povo.tick(dt); Povo.atentadoTick(); Submundo.tick(dt); Caravanas.tick(dt); Mercantes.tick(dt); Cavaleiros.tick(dt); Gestao.tick(dt); Trem.tick(dt); Inverno.tick(dt);
+    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt); Rede.tick(dt); Construcao.tick(dt); Mar.tick(dt); Estacoes.tick(dt); Abertura.tick(dt); Muralhas.tick(dt); Postos.tick(dt); Mobilia.tick(dt); Povo.tick(dt); Povo.atentadoTick(); Submundo.tick(dt); Caravanas.tick(dt); Mercantes.tick(dt); Cavaleiros.tick(dt); Gestao.tick(dt); Trem.tick(dt); Inverno.tick(dt); Patrulhas.tick(dt);
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();
@@ -556,7 +556,7 @@ const Game = {
     let count = 0;
     for (const a of this.actors) if (a.team === 'enemy' && !a.camp && !a.boss && dist(a.x, a.y, P.x, P.y) < 480) count++;
     const passiveCount = this.actors.filter(a => a.passive).length;
-    const cap = (night ? 6 : 4) + Dificuldade.extra();   // menos bichos soltos, porém mais perigosos
+    const cap = (night ? 6 : 4) + Dificuldade.extra() + (this.distEstrada(ptx, pty) > 18 ? 2 : 0);   // menos bichos soltos, porém mais perigosos
     if (count < cap && Math.random() < 0.6) {
       for (let tries = 0; tries < 5; tries++) {
         const ang = Math.random() * Math.PI * 2, r = 230 + Math.random() * 110;
@@ -570,9 +570,10 @@ const Game = {
         let table = Mar.spawns(tx, ty, night);
         if (!table && de <= 4) { if (Math.random() < 0.55) continue; table = this.tabelaEstrada(base); }   // bandidos: menos frequentes
         else if (!table && de <= 12 && Math.random() < 0.6) continue;   // perto da estrada quase não há monstros
-        table = table || base;
+        table = table || Patrulhas.tabelaSelvagem(R, tx, ty, de) || base;   // longe da civilização: matilhas de lobos e bichos
         const pick = new RNG(Math.floor(Math.random() * 1e9)).weighted(table.map(e => ({ id: e[0], w: e[1] })), 'w').id;
         const d = ENEMIES[pick];
+        if (Patrulhas.suprime(pick, tx, ty)) continue;   // a patrulha do reino espantou os bandidos (ou os lobos)
         if (d.passive && passiveCount > 6) continue;
         if (d.passive && Math.random() > Estacoes.fauna()) continue;   // inverno: quase não há caça
         const n = (pick === 'bandido' || pick === 'orc_renegado' || pick === 'pistoleiro') ? 1 + (Math.random() < 0.35 ? 1 : 0) : (pick === 'lobo' || pick === 'lobo_gelo' || pick === 'goblin' || pick === 'esqueleto') ? 1 + Math.floor(Math.random() * 3) : (d.passive ? 1 + Math.floor(Math.random() * 2) : 1 + (Math.random() < 0.25 ? 1 : 0));

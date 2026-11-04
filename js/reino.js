@@ -491,6 +491,7 @@ const Reino = {
       Sfx.play('forge'); Game.toast('A Armadura Gótica está na sua mochila!', '#ffd860'); this.quartel(a, back);
     } });
     opts.push({ label: '🔬 Árvore de tecnologia', fn: () => Tecnologia.tela(() => this.quartel(a, back)) });
+    if (Vila.st()) opts.push({ label: `🛡 Patrulhas contra bandidos e lobos (${Patrulhas.ativas().length} na rua)`, fn: () => Gestao.tela('pat', () => this.quartel(a, back)) });
     if (A && A.state !== 'battle') opts.push({ label: 'Mandar o exército de campo de volta para a guarnição', fn: () => { this.devolver(A); this.quartel(a, back); } });
     opts.push({ label: 'Voltar', fn: back });
     UI.dialog(a.name, a.look, txt + (falta.length ? `<div class="dim small">${esc(falta.join(' • '))}</div>` : ''), opts);

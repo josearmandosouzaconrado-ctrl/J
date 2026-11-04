@@ -268,8 +268,10 @@ class World {
     return ch;
   }
   evictChunks() {
-    const arr = [...this.chunks.entries()].sort((a, b) => a[1].t - b[1].t);
-    for (let i = 0; i < 120; i++) { this.chunks.delete(arr[i][0]); this.dropCanvas(arr[i][0]); }
+    // tira da memória os trechos usados há mais tempo, mas nunca os que estão perto do herói (senão a tela some)
+    const P = Game.player, pcx = P ? Math.floor(P.x / 512) : -99, pcy = P ? Math.floor(P.y / 512) : -99;
+    const arr = [...this.chunks.entries()].filter(([k]) => { const cx = k % 1024, cy = Math.floor(k / 1024); return Math.abs(cx - pcx) > 2 || Math.abs(cy - pcy) > 2; }).sort((a, b) => a[1].t - b[1].t);
+    for (let i = 0; i < Math.min(120, arr.length); i++) { this.chunks.delete(arr[i][0]); this.dropCanvas(arr[i][0]); }
   }
   // as imagens do chão (512x512) são reaproveitadas em vez de criar uma nova a cada trecho
   dropCanvas(k) {
