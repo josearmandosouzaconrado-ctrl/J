@@ -31,18 +31,20 @@ const P2P = {
   limpaCodigo(c) { return String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6); },
   meuCodigo() { let c = null; try { c = localStorage.getItem('eldoria_p2p_sala'); } catch (e) { } if (!c) { c = this.novoCodigo(); try { localStorage.setItem('eldoria_p2p_sala', c); } catch (e) { } } return c; },
   // ---------- criar a sala (anfitrião) ----------
-  criar(cb, novo) {
+  // assumir: { codigo, dados, falhou } quando o anfitrião saiu e você assume a sala dele
+  criar(cb, novo, assumir) {
     Rede.sair(true);
     if (novo) { try { localStorage.removeItem('eldoria_p2p_sala'); } catch (e) { } }
-    const codigo = this.meuCodigo();
+    const codigo = assumir ? assumir.codigo : this.meuCodigo();
     Rede.status = 'Abrindo a sala...'; cb && cb();
     this.carregar(() => {
       const peer = new Peer(P2P_PREFIXO + codigo.toLowerCase(), { debug: 0 });
       this.peer = peer; this.modo = 'anfitriao'; this.codigo = codigo;
-      const t0 = setTimeout(() => { if (!Rede.ws) { Rede.status = 'O serviço do PeerJS não respondeu. Confira a internet e tente de novo.'; this.fechar(); cb && cb(); } }, 15000);
+      const t0 = setTimeout(() => { if (!Rede.ws) { Rede.status = 'O serviço do PeerJS não respondeu. Confira a internet e tente de novo.'; this.fechar(); cb && cb(); if (assumir && assumir.falhou) assumir.falhou(); } }, 15000);
       peer.on('open', () => {
         clearTimeout(t0);
-        Sala.abrir(codigo);
+        Sala.abrir(codigo, assumir && assumir.dados);
+        if (assumir) { Game.toast(`O anfitrião saiu: agora a sala ${codigo} está no seu aparelho. Os outros jogadores voltam sozinhos.`, '#a0ffa0'); Rede.addLog(`Você assumiu a sala ${codigo}. O código continua o mesmo.`, '#a0ffa0'); }
         // o anfitrião também é um jogador: fala com a sala dentro do próprio aparelho
         const eu = { enviar: m => setTimeout(() => Rede.receber(m, cb), 0) };
         Sala.entrar(eu);
@@ -62,13 +64,20 @@ const P2P = {
       peer.on('disconnected', () => { if (this.peer === peer && !peer.destroyed) try { peer.reconnect(); } catch (e) { } });
       peer.on('error', e => {
         clearTimeout(t0);
-        if (e && e.type === 'unavailable-id') { if (Rede.ws) return; Rede.status = 'Esse código já está em uso. Gerando um código novo...'; cb && cb(); this.fechar(); return setTimeout(() => this.criar(cb, true), 600); }
-        if (!Rede.ws) { Rede.status = 'Erro ao abrir a sala: ' + ((e && e.type) || 'rede') + '. Tente de novo.'; this.fechar(); cb && cb(); }
+        if (e && e.type === 'unavailable-id') {
+          if (Rede.ws) return;
+          this.fechar();
+          if (assumir) return assumir.falhou && assumir.falhou();
+          // a sala continua aberta no aparelho de outro jogador (ele assumiu quando você saiu): entra nela
+          Rede.status = `A sala ${codigo} continua aberta com outro anfitrião. Entrando nela...`; cb && cb();
+          return setTimeout(() => this.entrar(codigo, cb, 0, () => { Rede.status = 'Esse código já está em uso. Gerando um código novo...'; cb && cb(); this.criar(cb, true); }), 600);
+        }
+        if (!Rede.ws) { if (assumir) { this.fechar(); return assumir.falhou && assumir.falhou(); } Rede.status = 'Erro ao abrir a sala: ' + ((e && e.type) || 'rede') + '. Tente de novo.'; this.fechar(); cb && cb(); }
       });
-    }, msg => { Rede.status = msg; cb && cb(); });
+    }, msg => { Rede.status = msg; cb && cb(); if (assumir && assumir.falhou) assumir.falhou(); });
   },
   // ---------- entrar numa sala com o código ----------
-  entrar(codigoTxt, cb, tentativa = 0) {
+  entrar(codigoTxt, cb, tentativa = 0, naoAchou) {
     const codigo = this.limpaCodigo(codigoTxt);
     if (codigo.length !== 6) { Rede.status = 'O código de convite tem 6 letras ou números.'; cb && cb(); return; }
     Rede.sair(true);
@@ -76,7 +85,7 @@ const P2P = {
     this.carregar(() => {
       const peer = new Peer({ debug: 0 });
       this.peer = peer; this.modo = 'cliente'; this.codigo = codigo;
-      const falhou = (txt) => { if (Rede.ws) return; Rede.status = txt; this.fechar(); cb && cb(); };
+      const falhou = (txt) => { if (Rede.ws) return; Rede.status = txt; this.fechar(); if (naoAchou) return naoAchou(); cb && cb(); };
       const t0 = setTimeout(() => falhou('A sala não respondeu. Confira o código e se o anfitrião está com o jogo aberto.'), 20000);
       peer.on('open', () => {
         const conn = peer.connect(P2P_PREFIXO + codigo.toLowerCase(), { reliable: true, serialization: 'json' });
@@ -87,7 +96,10 @@ const P2P = {
           Rede.ws = ws; Rede.salaNome = 'Sala ' + codigo;
           ws.send(JSON.stringify({ t: 'hello', pid: Rede.pid(), v: GAME_VERSION }));
         });
-        conn.on('data', m => { if (m && typeof m === 'object') Rede.receber(m, cb); });
+        conn.on('data', m => { this.ultimo = Date.now(); if (m && typeof m === 'object') Rede.receber(m, cb); });
+        // sem notícia do anfitrião por 12 segundos (o app dele fechou de repente): a ligação caiu
+        this.ultimo = Date.now(); clearInterval(this.vigiaT);
+        this.vigiaT = setInterval(() => { if (this.conn !== conn) return clearInterval(this.vigiaT); if (Rede.ws && Date.now() - this.ultimo > 12000) { clearInterval(this.vigiaT); try { conn.close(); } catch (e) { } this.caiu(cb); } }, 2000);
         conn.on('close', () => this.caiu(cb));
         conn.on('error', () => this.caiu(cb));
       });
@@ -99,21 +111,31 @@ const P2P = {
       });
     }, msg => { Rede.status = msg; cb && cb(); });
   },
-  // o cliente perdeu a ligação com o anfitrião
+  // o cliente perdeu a ligação com o anfitrião: se ele saiu, um dos jogadores que ficaram assume a sala
+  // (com o mesmo código, as mesmas guerras e o mesmo placar) e os outros entram de novo sozinhos
   caiu(cb) {
     const ws = Rede.ws; if (!ws || this.modo !== 'cliente') return;
-    const estava = Rede.on, codigo = this.codigo;
+    const estava = Rede.on, codigo = this.codigo, eu = Rede.id;
+    // quem pode assumir: todos que estavam na sala, menos o anfitrião que saiu (a mesma ordem em todos os aparelhos)
+    const fila = [...new Set([eu, ...Rede.outros.keys()])].filter(id => id && id !== this.hostId).sort();
     Rede.ws = null; Rede.on = false;
     for (const o of Rede.outros.values()) Rede.tirar(o);
     Rede.outros.clear();
     this.fechar();
-    if (estava && Game.mp) {
-      Game.toast('A ligação com a sala caiu. Tentando voltar...', '#ff9080');
-      let n = 0; const volta = () => { if (Rede.ws || !Game.mp) return; if (++n > 4) { Game.toast('Não foi possível voltar à sala. O anfitrião pode ter fechado o jogo.', '#ff8080'); Rede.atualizaBotao(); return; } this.entrar(codigo, () => { if (!Rede.ws) setTimeout(volta, 5000); }); };
-      setTimeout(volta, 3000);
-    } else { if (!/^Sala cheia/.test(Rede.status)) Rede.status = 'A sala foi fechada pelo anfitrião.'; cb && cb(); }
+    if (!(estava && Game.mp)) { if (!/^Sala cheia/.test(Rede.status)) Rede.status = 'A sala foi fechada pelo anfitrião.'; cb && cb(); return; }
+    Game.toast('O anfitrião saiu da sala. Continuando o coop com quem ficou...', '#ffd080');
+    this.assumindo = { codigo, fila, rodada: 0 };
+    setTimeout(() => this.rodada(cb), 1500 + (fila.indexOf(eu) > 0 ? 1500 : 0));
   },
-  fechar() {
+  // cada rodada: na sua vez você abre a sala; fora da sua vez você tenta entrar na sala de quem assumiu
+  rodada(cb) {
+    const A = this.assumindo; if (!A || Rede.ws || !Game.mp) { this.assumindo = null; return; }
+    if (++A.rodada > 30) { this.assumindo = null; Game.toast('Não deu para continuar a sala. Você segue jogando sozinho (abra o multiplayer para criar outra).', '#ff8080'); Rede.atualizaBotao(); return; }
+    const vez = A.fila[(A.rodada - 1) % A.fila.length], proxima = () => { if (this.assumindo === A && !Rede.ws) setTimeout(() => this.rodada(cb), 3000); };
+    const ok = () => { if (Rede.ws) { this.assumindo = null; Rede.atualizaBotao(); } };
+    if (vez === Rede.id) this.criar(() => { ok(); }, false, { codigo: A.codigo, dados: this.dadosSala, falhou: () => { if (Rede.ws) return; this.entrar(A.codigo, ok, 0, proxima); } });
+    else this.entrar(A.codigo, ok, 0, proxima);
+  },  fechar() {
     if (this.modo === 'anfitriao') Sala.fechar();
     const p = this.peer; this.peer = null; this.conn = null;
     if (p) try { p.destroy(); } catch (e) { }
@@ -126,20 +148,30 @@ const Sala = {
   aberta: false, conexoes: new Set(), codigo: null, dados: null,
   chave: (a, b) => a < b ? a + '|' + b : b + '|' + a,
   idDe(pid) { return (hashStr(pid).toString(36) + hashStr(pid + '#').toString(36)).slice(0, 10); },
-  abrir(codigo) {
+  abrir(codigo, herdados) {
     this.fechar(); this.aberta = true; this.codigo = codigo;
     let d = null; try { d = JSON.parse(localStorage.getItem('eldoria_p2p_dados_' + codigo)); } catch (e) { }
+    // quem assume a sala recebe as guerras e o placar que o anfitrião anterior mandava para todos
+    if (herdados && typeof herdados === 'object' && Array.isArray(herdados.guerras)) d = herdados;
     this.dados = Object.assign({ guerras: [], abates: {} }, d || {});
+    this.salvar();
     this.posT = setInterval(() => this.posicoes(), 100);
+    // sinal de vida: se o aparelho do anfitrião sumir de repente, os outros percebem em poucos segundos
+    this.vivoT = setInterval(() => this.todos({ t: 'vivo' }), 3000);
   },
   fechar() {
     if (!this.aberta) return;
-    this.todos({ t: 'aviso', txt: 'O anfitrião fechou a sala.' });
-    this.aberta = false; clearInterval(this.posT);
+    this.todos({ t: 'aviso', txt: 'O anfitrião saiu. Um dos jogadores que ficaram vai assumir a sala.' });
+    this.aberta = false; clearInterval(this.posT); clearInterval(this.vivoT);
     for (const c of this.conexoes) if (c.conn) try { c.conn.close(); } catch (e) { }
     this.conexoes.clear();
   },
-  salvar() { try { localStorage.setItem('eldoria_p2p_dados_' + this.codigo, JSON.stringify(this.dados)); } catch (e) { } },
+  salvar() {
+    const j = JSON.stringify(this.dados);
+    try { localStorage.setItem('eldoria_p2p_dados_' + this.codigo, j); } catch (e) { }
+    // todos guardam uma cópia: se o anfitrião sair, quem assumir continua com as mesmas guerras e placar
+    if (j.length < 20000) this.todos({ t: 'salaDados', d: this.dados });
+  },
   emGuerra(a, b) { return this.dados.guerras.some(g => g.k === this.chave(a, b)); },
   entrar(c) { c.cota = 0; c.cotaT = Date.now(); c.hits = []; c.chatT = 0; c.p = null; this.conexoes.add(c); },
   online() { return [...this.conexoes].filter(c => c.p); },
@@ -168,7 +200,8 @@ const Sala = {
       if (this.online().length >= P2P_MAX) { this.enviar(c, { t: 'full', max: P2P_MAX }); return setTimeout(() => { if (c.conn) try { c.conn.close(); } catch (e) { } this.sair(c); }, 300); }
       const id = this.idDe(pid);
       c.p = { pid, id, nome: '', st: null, look: null, w: null, reino: '', cor: '#ffffff', vila: null };
-      return this.enviar(c, { t: 'welcome', id, seed: P2P_SEED, max: P2P_MAX, sala: 'Sala ' + this.codigo, players: this.online().filter(o => o !== c && o.p.nome).map(o => this.publico(o.p)), wars: this.guerrasPub() });
+      this.enviar(c, { t: 'welcome', id, host: this.idDe(Rede.pid()), seed: P2P_SEED, max: P2P_MAX, sala: 'Sala ' + this.codigo, players: this.online().filter(o => o !== c && o.p.nome).map(o => this.publico(o.p)), wars: this.guerrasPub() });
+      return this.enviar(c, { t: 'salaDados', d: this.dados });
     }
     const p = c.p; if (!p) return;
     switch (m.t) {

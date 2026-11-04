@@ -97,6 +97,14 @@ Criar um reino é difícil e leva tempo:
 
 **O mundo também cresce**: com o passar dos dias, aldeias em paz viram cidades e cidades viram metrópoles. As notícias aparecem em Reinos.
 
+## Multiplayer — salas com código (coop)
+
+Até **9 jogadores** no mesmo mundo, sem servidor: em **Multiplayer → Criar sala**, o jogo mostra um **código de convite** de 6 letras, e os amigos entram com **Entrar na sala**. A conexão é direta entre os aparelhos (precisa de internet).
+
+- **A sala não fecha quando o criador sai**: um dos jogadores que ficaram assume a sala no próprio aparelho, com o **mesmo código**, as mesmas guerras e o mesmo placar. Os outros voltam sozinhos em poucos segundos. Isso vale também se o app de quem cuida da sala fechar de repente (o jogo percebe em até uns 12 segundos).
+- Quem criou a sala e volta depois com o mesmo código entra na sala que continuou aberta.
+- A sala só acaba quando todo mundo sair.
+
 ## Multiplayer — Sala Oficial
 
 Uma única sala oficial para **até 20 jogadores** no mesmo mundo (todos usam a mesma semente).

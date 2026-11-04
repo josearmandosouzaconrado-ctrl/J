@@ -128,7 +128,7 @@ const Rede = {
     const G = Game;
     switch (m.t) {
       case 'welcome': {
-        this.id = m.id; this.seed = m.seed; this.max = m.max;
+        this.id = m.id; this.seed = m.seed; this.max = m.max; P2P.hostId = m.host || null;
         this.guerras = new Set(m.wars.map(([a, b]) => this.k(a, b)));
         for (const p of m.players) this.outros.set(p.id, new Remoto(p));
         this.salaNome = m.sala; this.status = `Conectado à ${m.sala}: ${m.players.length + 1}/${m.max} jogadores.`;
@@ -186,6 +186,7 @@ const Rede = {
         break;
       }
       case 'aviso': this.addLog(m.txt, '#c0c0d0'); G.toast(m.txt, '#d0d0e0'); break;
+      case 'salaDados': if (m.d && typeof m.d === 'object' && Array.isArray(m.d.guerras)) P2P.dadosSala = m.d; break;
     }
   },
   // ---------- dentro do jogo ----------
@@ -259,7 +260,7 @@ const Rede = {
     const P = Game.player, l = [...this.outros.values()].sort((a, b) => dist(a.x, a.y, P.x, P.y) - dist(b.x, b.y, P.x, P.y));
     const lista = l.map(o => `${this.emGuerra(o.id) ? '⚔ ' : ''}<b style="color:${this.emGuerra(o.id) ? '#ff8070' : '#a0e8ff'}">${esc(o.nome)}</b> Nv${o.lv}${o.reino ? ` • <span style="color:${o.cor}">${esc(o.reino)}</span>` : ''} <span class="dim small">${o.area === 'w' ? Math.round(dist(o.x, o.y, P.x, P.y) / 16 * 2) + ' m' : 'em um interior'}</span>`).join('<br>') || '<span class="dim">Ninguém mais está na sala agora.</span>';
     const msgs = this.log.slice(-8).map(m => `<div style="color:${m.cor}" class="small">${esc(m.txt)}</div>`).join('');
-    const conv = P2P.codigo && P2P.modo ? `<br>Código de convite: <b class="gold" style="font-size:1.4em;letter-spacing:3px;user-select:text">${P2P.codigo}</b>${P2P.modo === 'anfitriao' ? ' <span class="dim small">(você é o anfitrião: se você sair, a sala fecha)</span>' : ''}` : '';
+    const conv = P2P.codigo && P2P.modo ? `<br>Código de convite: <b class="gold" style="font-size:1.4em;letter-spacing:3px;user-select:text">${P2P.codigo}</b>${P2P.modo === 'anfitriao' ? ' <span class="dim small">(você é o anfitrião: se você sair, outro jogador assume a sala com o mesmo código)</span>' : ''}` : '';
     UI.dialog(this.salaNome || 'Sala', null, `${this.on ? `<span class="good">${this.outros.size + 1}/${this.max} jogadores online</span>` : '<span class="bad">Desconectado</span>'}${conv}<br>${lista}<div class="chatbox">${msgs}</div><input id="chat-in" maxlength="140" placeholder="Escreva uma mensagem..." style="width:100%">`,
       [{ label: '💬 Enviar', cls: 'gold', fn: () => { const i = document.getElementById('chat-in'); const v = i && i.value.trim(); if (v) this.send({ t: 'chat', txt: v }); this.painel(); } }]
         .concat(l.slice(0, 6).map(o => ({ label: `${this.emGuerra(o.id) ? '⚔ ' : ''}${o.nome}`, fn: () => this.menu(o) })))
