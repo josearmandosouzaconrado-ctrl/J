@@ -1,5 +1,7 @@
 # Compila o APK Android do jogo (WebView com o jogo inteiro dentro, funciona sem internet)
-# e publica na Release "apk-latest" para baixar direto no celular.
+# e publica na Release "guerra-mundial-apk" para baixar direto no celular.
+# A Release é marcada como pré-lançamento e NUNCA como "latest": o link
+# releases/latest do repositório continua sendo do Crônicas de Eldoria (outra branch).
 name: APK Android
 
 on:
@@ -73,12 +75,12 @@ jobs:
           name: GuerraMundial-apk
           path: GuerraMundial.apk
 
-      - name: Publica na Release apk-latest
+      - name: Publica na Release guerra-mundial-apk
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release delete apk-latest --yes --cleanup-tag || true
-          gh release create apk-latest GuerraMundial.apk \
-            --target "$GITHUB_SHA" \
+          gh release delete guerra-mundial-apk --yes --cleanup-tag || true
+          gh release create guerra-mundial-apk GuerraMundial.apk \
+            --target "$GITHUB_SHA" --prerelease --latest=false \
             --title "Guerra Mundial — APK (compilação ${GITHUB_RUN_NUMBER})" \
             --notes "Baixe o GuerraMundial.apk no celular e abra para instalar (permita instalar de fontes desconhecidas). Cada versão nova instala por cima da anterior e mantém o jogo salvo. Commit ${GITHUB_SHA::7}."
