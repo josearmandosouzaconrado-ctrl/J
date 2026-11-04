@@ -337,7 +337,7 @@ const Game = {
     Work.update(dt);
     Adm.update();
     Sombra.tick(dt); Ceu.tick(dt);
-    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt); Rede.tick(dt); Construcao.tick(dt); Mar.tick(dt); Estacoes.tick(dt); Abertura.tick(dt); Muralhas.tick(dt); Postos.tick(dt); Mobilia.tick(dt);
+    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt); Rede.tick(dt); Construcao.tick(dt); Mar.tick(dt); Estacoes.tick(dt); Abertura.tick(dt); Muralhas.tick(dt); Postos.tick(dt); Mobilia.tick(dt); Povo.tick(dt); Povo.atentadoTick(); Submundo.tick(dt); Caravanas.tick(dt); Mercantes.tick(dt);
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();
@@ -388,7 +388,7 @@ const Game = {
     this.camY = lerp(this.camY, lookY - this.vh / 2, Math.min(1, dt * 6));
     if (!this.level.isWorld) {
       const LW = this.level.w * 16, LH = this.level.h * 16;
-      const mg = this.level.isShip ? 150 : this.level.isInterior ? 40 : 16;
+      const mg = this.level.isShip ? (this.level.leme ? 330 : 150) : this.level.isInterior ? 40 : 16;
       this.camX = LW + mg * 2 < this.vw ? (LW - this.vw) / 2 : clamp(this.camX, -mg, LW - this.vw + mg);
       this.camY = LH + mg * 2 < this.vh ? (LH - this.vh) / 2 : clamp(this.camY, -mg, LH - this.vh + mg);
     }
@@ -555,8 +555,8 @@ const Game = {
     let count = 0;
     for (const a of this.actors) if (a.team === 'enemy' && !a.camp && !a.boss && dist(a.x, a.y, P.x, P.y) < 480) count++;
     const passiveCount = this.actors.filter(a => a.passive).length;
-    const cap = (night ? 8 : 6) + Dificuldade.extra();
-    if (count < cap) {
+    const cap = (night ? 6 : 4) + Dificuldade.extra();   // menos bichos soltos, porém mais perigosos
+    if (count < cap && Math.random() < 0.6) {
       for (let tries = 0; tries < 5; tries++) {
         const ang = Math.random() * Math.PI * 2, r = 230 + Math.random() * 110;
         const x = P.x + Math.cos(ang) * r, y = P.y + Math.sin(ang) * r;
@@ -564,7 +564,12 @@ const Game = {
         if (W.solidAt(tx, ty) || TWATER[W.tileAt(tx, ty)] || W.tileAt(tx, ty) === T.LAVA) continue;
         if (W.settlementAt(tx, ty)) continue;
         const R = W.regions[W.regAt(tx, ty)];
-        const table = Mar.spawns(tx, ty, night) || SPAWNS[R.id][night ? 'night' : 'day'];
+        // perto das estradas: bandidos; monstros vivem longe delas
+        const de = this.distEstrada(tx, ty), base = SPAWNS[R.id][night ? 'night' : 'day'];
+        let table = Mar.spawns(tx, ty, night);
+        if (!table && de <= 4) table = this.tabelaEstrada(base);
+        else if (!table && de <= 12 && Math.random() < 0.6) continue;   // perto da estrada quase não há monstros
+        table = table || base;
         const pick = new RNG(Math.floor(Math.random() * 1e9)).weighted(table.map(e => ({ id: e[0], w: e[1] })), 'w').id;
         const d = ENEMIES[pick];
         if (d.passive && passiveCount > 6) continue;
@@ -574,6 +579,7 @@ const Game = {
         for (let k = 0; k < n; k++) {
           const m = new Monster(pick, x + (Math.random() - 0.5) * 30, y + (Math.random() - 0.5) * 30, lvl);
           if (collides(W, m.x, m.y, m.r)) continue;
+          if (!d.passive && de > 12) m.aggro = Math.round(m.aggro * 1.45);   // monstros das terras selvagens atacam de longe
           this.actors.push(m);
         }
         break;
@@ -610,6 +616,27 @@ const Game = {
         Sfx.play('dragon');
       }
     }
+  },
+  // distância (em tiles) até a estrada mais próxima, até 14
+  distEstrada(tx, ty) {
+    const W = this.world;
+    for (let r = 0; r <= 14; r += 2) {
+      const passo = Math.max(1, r);
+      for (let dy = -r; dy <= r; dy += passo) for (let dx = -r; dx <= r; dx += passo) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        if (W.tileAt(tx + dx, ty + dy) === T.ROAD) return r;
+      }
+    }
+    return 99;
+  },
+  // nas estradas: salteadores (os humanoides da região ou bandidos) e pouca caça
+  tabelaEstrada(base) {
+    const HUM = ['bandido', 'bandido_arqueiro', 'bandido_mago', 'pistoleiro', 'orc_renegado', 'legionario_renegado', 'ronin', 'ninja', 'pirata', 'pirata_arqueiro', 'cultista'];
+    const t = base.filter(e => HUM.includes(e[0])).map(e => [e[0], e[1] * 2]);
+    if (!t.length) t.push(['bandido', 4], ['bandido_arqueiro', 1.5]);
+    if (!t.some(e => e[0] === 'bandido')) t.push(['bandido', 2]);
+    for (const e of base) if (ENEMIES[e[0]] && ENEMIES[e[0]].passive) t.push([e[0], e[1] * 0.15]);
+    return t;
   },
   spawnCamp(p) {
     p.spawned = true;
@@ -1284,7 +1311,7 @@ const Game = {
     if (!P.dead || true) D.push({ y: P.y, a: P });
     for (const k of this.pickups) D.push({ y: k.y, pk: k });
     this.drawMountsCart(D); this.drawCarcasses(D);
-    if (L.isWorld) { Vila.drawables(D, camX, camY, vw, vh); War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); Nyxar.drawables(D, camX, camY, vw, vh); Mar.drawables(D, camX, camY, vw, vh); Abertura.drawables(D, camX, camY); Muralhas.drawables(D, camX, camY, vw, vh); Cerco.drawables(D, camX, camY); }
+    if (L.isWorld) { Vila.drawables(D, camX, camY, vw, vh); War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); Nyxar.drawables(D, camX, camY, vw, vh); Mar.drawables(D, camX, camY, vw, vh); Abertura.drawables(D, camX, camY); Muralhas.drawables(D, camX, camY, vw, vh); Cerco.drawables(D, camX, camY); Caravanas.drawables(D, camX, camY, vw, vh); Mercantes.drawables(D, camX, camY, vw, vh); }
     Ceu.drawables(D, camX, camY, vw, vh);
     D.sort((a, b) => a.y - b.y);
     Visual.sombras(ctx, D, camX, camY, vw, vh);

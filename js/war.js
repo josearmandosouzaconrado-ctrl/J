@@ -822,7 +822,7 @@ const War = {
     const rows = ks.filter(k => !k.extinto).map(k => { const cities = Game.world.settlements.filter(s => this.ownerOf(s) === k.id).length; const nb = [...k.nb].map(o => `${esc(this.K[o].short)}: ${status(k.id, o)}`).join(' • '); return `<div class="quest"><b style="color:${k.color}">■</b> <b>${esc(k.name)}</b> <small class="dim">${esc(k.ruler.title)} ${esc(k.ruler.name)} • ${cities} cidades</small><br><small>${nb}</small></div>`; }).join('');
     const mortos = ks.filter(k => k.extinto).map(k => `<small class="dim">✝ ${esc(k.name)} deixou de existir no dia ${S.extintos[k.id]}.</small>`).join('<br>');
     const news = S.news.slice(0, 14).map(n => `<div class="chron"><small class="dim">Dia ${n.day}</small> ${esc(n.text)}</div>`).join('') || '<small class="dim">Sem notícias.</small>';
-    return `<div class="qcol">${mine}${Reino.tabHTML()}${Postos.botoesTab(f)}${Nobreza.botoesTab(f)}<div class="sub">Guerras</div>${wars}<div class="sub">Reinos e diplomacia</div>${rows}${mortos ? `<div class="quest">${mortos}</div>` : ''}<div class="sub">Notícias</div>${news}</div>`;
+    return `<div class="qcol">${mine}${Reino.tabHTML()}${Postos.botoesTab(f)}${Nobreza.botoesTab(f)}${Povo.botoesTab(f)}<div class="sub">Guerras</div>${wars}<div class="sub">Reinos e diplomacia</div>${rows}${mortos ? `<div class="quest">${mortos}</div>` : ''}<div class="sub">Notícias</div>${news}</div>`;
   },
   // ---------- Mapa ----------
   drawMap(ctx, toS, z) {

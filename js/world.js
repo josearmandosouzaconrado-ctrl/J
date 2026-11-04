@@ -310,7 +310,7 @@ class World {
         }
       }
       // baús perdidos
-      if (!o && !TSOLID[t] && !TWATER[t] && t !== T.LAVA && hash2(x0 + lx, y0 + ly, this.seed + 999) < 0.00035) o = O.CHEST;
+      if (!o && !TSOLID[t] && !TWATER[t] && t !== T.LAVA && hash2(x0 + lx, y0 + ly, this.seed + 999) < 0.00007) o = O.CHEST;   // baús perdidos são raros
       objs[i] = o;
     }
     // carimbos (cidades, masmorras, acampamentos)

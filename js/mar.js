@@ -567,19 +567,42 @@ const Mar = {
     }
     const show = !!(L && L.proprio) && !Game.paused;
     const alvo = show && this.alvoAbordagem(L), M = show ? this.st() : null;
-    const key = show ? [L.leme, L.vela, M.negra, !!alvo, !!L.abordagem, Math.round(L.nav.hp), Math.round(L.spd / 10)].join() : 'x';
+    const key = show ? [L.leme, L.vela, M.negra, !!alvo, !!L.abordagem, Math.round(L.nav.hp), Math.round(L.spd / 10), this.rumo(L.ang)].join() : 'x';
     if (key === this.painelKey) return;
     this.painelKey = key;
     el.classList.toggle('hidden', !show);
     if (!show) return;
     const T_ = NAVIOS[L.nav.tipo], nos = Math.round(L.spd / 18);
-    const topo = `<div class="tat-t">⛵ ${esc(L.nav.nome)} • ${Math.round(L.nav.hp)}/${T_.hp} • ${nos} nós</div>`;
+    const topo = `<div class="tat-t">⛵ ${esc(L.nav.nome)} • ${Math.round(L.nav.hp)}/${T_.hp} • ${nos} nós • rumo ${this.rumo(L.ang)}</div>`;
     if (L.abordagem) { el.innerHTML = topo + '<div class="tat-t">⚔ Abordagem! Derrote a tripulação inimiga</div>'; return; }
     if (!L.leme) { el.innerHTML = topo + '<button data-o="ancora" class="wide">🚣 Desembarcar (bote)</button>'; return; }
     const vl = L.vela >= 1 ? 'Cheias' : L.vela >= 0.5 ? 'A meio' : 'Recolhidas';
     el.innerHTML = topo + `<button data-o="vela" class="wide">⛵ Velas: ${vl}</button><button data-o="bom">💥 Bombordo</button><button data-o="est">💥 Estibordo</button>` +
       (alvo ? `<button data-o="abordar" class="on wide">⚔ Abordar ${esc(alvo.nome)}</button>` : '') +
       `<button data-o="flag" class="${M.negra ? 'on' : ''}">🏴‍☠️ ${M.negra ? 'Negra' : 'Bandeira'}</button><button data-o="ancora">⚓ Desembarcar</button><button data-o="leme" class="wide">✋ Largar o timão</button>`;
+  },
+  rumo(a) { const d = ['L', 'SE', 'S', 'SO', 'O', 'NO', 'N', 'NE']; return d[((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8]; },
+  // carta náutica: a costa, as ilhas e os navios em volta (o norte fica em cima)
+  carta(L, x) {
+    const W = Game.world, PASSO = 64, N = 48;
+    this._amostra = this._amostra || new Map();
+    if (this._amostra.size > 20000) this._amostra.clear();
+    const cx0 = Math.floor(L.x / PASSO), cy0 = Math.floor(L.y / PASSO);
+    const img = x.createImageData(96, 96), d = img.data;
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const gx = cx0 + i - N / 2, gy = cy0 + j - N / 2, k = gx * 100000 + gy;
+      let t2 = this._amostra.get(k);
+      if (t2 === undefined) { t2 = W.baseTile(Math.floor(gx * PASSO / 16), Math.floor(gy * PASSO / 16)); this._amostra.set(k, t2); }
+      const col = t2 === T.DEEP ? [24, 52, 96] : TWATER[t2] ? [46, 96, 150] : t2 === T.SAND || t2 === T.DESERT ? [200, 178, 120] : TSOLID[t2] ? [110, 104, 96] : [70, 120, 60];
+      for (let yy = 0; yy < 2; yy++) for (let xx = 0; xx < 2; xx++) { const o = ((j * 2 + yy) * 96 + i * 2 + xx) * 4; d[o] = col[0]; d[o + 1] = col[1]; d[o + 2] = col[2]; d[o + 3] = 255; }
+    }
+    x.putImageData(img, 0, 0);
+    const toC = (px, py) => [48 + (px - L.x) / PASSO * 2, 48 + (py - L.y) / PASSO * 2];
+    for (const f of this.frota) { if (f.sink) continue; const [a, b] = toC(f.x, f.y); if (a < 0 || b < 0 || a > 96 || b > 96) continue; x.fillStyle = f.hostil ? '#ff4040' : f.tipo === 'mercante' ? '#ffd040' : '#c0e0ff'; x.fillRect(Math.round(a) - 1, Math.round(b) - 1, 3, 3); }
+    // o seu navio (seta no rumo) e o rumo desejado no joystick
+    x.save(); x.translate(48, 48); x.rotate(L.ang); x.fillStyle = '#ffffff'; x.beginPath(); x.moveTo(6, 0); x.lineTo(-4, -4); x.lineTo(-2, 0); x.lineTo(-4, 4); x.closePath(); x.fill(); x.restore();
+    const m = Input.move; if (m.mag > 0.25) { x.strokeStyle = 'rgba(255,230,120,0.9)'; x.beginPath(); x.moveTo(48, 48); x.lineTo(48 + m.x / m.mag * 20, 48 + m.y / m.mag * 20); x.stroke(); }
+    x.fillStyle = '#fff'; x.font = '9px monospace'; x.fillText('N', 45, 9);
   },
   tick(dt) {
     const G = Game, P = G.player, W = G.world; if (!P || !W) return;
@@ -633,18 +656,18 @@ class NavioLevel extends ShipLevel {
       if (m.mag > 0.25) {
         const want = Math.atan2(m.y, m.x);
         let da = want - this.ang; while (da > Math.PI) da -= Math.PI * 2; while (da < -Math.PI) da += Math.PI * 2;
-        const giro = (0.3 + 0.6 * Math.min(1, this.spd / 140)) * dt;
+        const giro = (0.6 + 0.6 * Math.min(1, this.spd / 140)) * dt;   // vira mesmo parado (remos), mais rápido com vento
         this.ang += clamp(da, -giro, giro);
         alvo = Math.max(alvo, this.maxS() * Math.min(1, m.mag * 1.15));
       }
     }
-    this.spd += clamp(alvo - this.spd, -55 * dt, 32 * dt);
+    this.spd += clamp(alvo - this.spd, -70 * dt, 48 * dt);
     // terra à frente: o navio para (e se bater rápido, o casco sofre)
     const frente = SHIP_L * 8 + 20;
     if (this.spd > 1 && (!Mar.navegavel(this.x + Math.cos(this.ang) * frente, this.y + Math.sin(this.ang) * frente) || !Mar.navegavel(this.x + Math.cos(this.ang) * 160, this.y + Math.sin(this.ang) * 160))) {
       if (this.spd > 150) { nav.hp -= 6; G.shake = 6; Sfx.play('hit'); }
-      this.spd = 0; this.vela = 0;
-      if ((this.avisoT || 0) <= 0) { this.avisoT = 4; G.toast('⚠ Terra à frente! Vire o leme ou desça o bote para a praia.', '#ffd080'); }
+      this.spd = 0; this.x -= Math.cos(this.ang) * 6; this.y -= Math.sin(this.ang) * 6;   // recua um pouco: dá para virar e sair
+      if ((this.avisoT || 0) <= 0) { this.avisoT = 4; G.toast('⚠ Terra à frente! Empurre o joystick para o mar aberto (o navio vira parado).', '#ffd080'); }
     }
     if (this.avisoT > 0) this.avisoT -= dt;
     const nx = this.x + Math.cos(this.ang) * this.spd * dt, ny = this.y + Math.sin(this.ang) * this.spd * dt;
@@ -653,7 +676,7 @@ class NavioLevel extends ShipLevel {
     // o casco gira (em quartos) quando o rumo muda bastante
     const want4 = ShipLevel.oriOf(this.ang);
     let da = Math.abs(this.ang - ShipLevel.oriAng(this.ori)); if (da > Math.PI) da = Math.PI * 2 - da;
-    if (want4 !== this.ori && da > Math.PI / 3) { this.turnT += dt; if (this.turnT > 0.7) { this.turnT = 0; this.turn(want4); } } else this.turnT = 0;
+    if (want4 !== this.ori && da > Math.PI / 3.2) { this.turnT += dt; if (this.turnT > 0.45) { this.turnT = 0; this.turn(want4); } } else this.turnT = 0;
     // mundo ao redor, névoa do mapa, espuma, gaivotas e criaturas (como nas viagens)
     W.pregen(this.x + Math.cos(this.ang) * 900, this.y + Math.sin(this.ang) * 900);
     G.worldPos = { x: this.x, y: this.y };
@@ -683,7 +706,8 @@ class NavioLevel extends ShipLevel {
     if (this.creakT <= 0) { this.creakT = 4 + Math.random() * 6; Sfx.play(Math.random() < 0.5 ? 'creak' : 'wave'); }
     for (const k of ['bom', 'est']) if (this.reload[k] > 0) this.reload[k] -= dt;
     // no timão a câmera olha para o meio do navio (dá para ver o mar à frente e dos lados)
-    if (this.leme) { const c = this.T(Math.floor(SHIP_L * 0.55), SHIP_C), q = this.T(3, SHIP_C); this.camOff = { x: (c.x - q.x) * 16, y: (c.y - q.y) * 16 }; } else this.camOff = null;
+    // no timão a câmera olha para a frente do navio, para onde ele está indo
+    if (this.leme) { const c = this.T(Math.floor(SHIP_L * 0.55), SHIP_C), q = this.T(3, SHIP_C); this.camOff = { x: (c.x - q.x) * 16 + Math.cos(this.ang) * 190, y: (c.y - q.y) * 16 + Math.sin(this.ang) * 130 }; } else this.camOff = null;
     G.updateWeather(dt);
     Mar.tickNavio(dt, this);
   }
@@ -712,4 +736,10 @@ class NavioLevel extends ShipLevel {
     if (this.ilhaGrade && Mar.ilhaEm(this, x, y)) { const o = Mar.objIlha(this, x, y, t); if (o >= 0) return o; }
     return nat0.call(this, x, y, t, ri);
   };
+})();
+
+// no seu navio, o minimapa vira a carta náutica: costa, ilhas e navios num raio grande
+(function () {
+  const d0 = UI.drawShipMinimap;
+  UI.drawShipMinimap = function (L) { if (L && L.proprio) return Mar.carta(L, this.mmx); return d0.call(this, L); };
 })();

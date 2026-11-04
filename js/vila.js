@@ -201,6 +201,7 @@ const Vila = {
     const txt = `<b>${esc(V.nome)}</b> — ${this.titulo()}<br>Colonos: <b>${V.pop}/${cap}</b> • Renda: <b>${renda + Reino.rendaTratados()}</b> ouro/dia${V.trib ? ` <span class="dim">(−${V.trib} de tributo)</span>` : ''} • Defesa: <b>${['nenhuma', 'baixa', 'boa', 'ótima'][def]}</b><br>Cofre: <b class="gold">${fmt(V.cofre)}</b> ouro${V.trigo ? ` • Celeiro: ${V.trigo} trigo` : ''}<br><span class="dim small">${V.pop >= cap ? 'Não há mais casas vazias: construa mais casas para receber colonos.' : 'Novos colonos chegam a cada dia.'}</span>`;
     const opts = [];
     if (V.cofre > 0) opts.push({ label: `Recolher o cofre (${fmt(V.cofre)} ouro)`, cls: 'gold', fn: () => { P.gold += V.cofre; Sfx.play('coin'); Game.toast(`+${fmt(V.cofre)} de ouro`, '#ffd060'); V.cofre = 0; this.talkNPC(a); } });
+    if (Reino.ativo()) opts.push({ label: `😊 O povo (${Math.round(Povo.st().felic)}%)${Povo.st().civil ? ' ⚔' : ''}`, fn: () => Povo.menu(() => this.talkNPC(a)) });
     if (Missionarios.pode()) opts.push({ label: '✝ Missionários', fn: () => Missionarios.menu(() => this.talkNPC(a)) });
     if (Recursos.minas() || Recursos.total()) opts.push(Recursos.opcao(() => this.talkNPC(a)));
     if (V.trigo >= 5) opts.push({ label: `Pegar comida do celeiro`, fn: () => { const n = Math.floor(V.trigo / 5); V.trigo -= n * 5; P.addItem(Items.make('pao', n)); Game.toast(`+${n} pães feitos com o trigo da vila`, '#ffe0a0'); this.talkNPC(a); } });
@@ -209,7 +210,7 @@ const Vila = {
     opts.push({ label: '🔨 Construir', fn: () => this.construirMenu(a) });
     opts.push({ label: `⚔ Quartel e tropas (${Reino.total()})`, fn: () => Reino.quartel(a, () => this.talkNPC(a)) });
     opts.push({ label: Reino.ativo() ? '👑 Coroa e diplomacia' : '👑 Suserano, independência e diplomacia', fn: () => Reino.coroa(a, () => this.talkNPC(a)) });
-    opts.push({ label: 'Dar uma festa para os colonos (100 ouro)', fn: () => { if (P.gold < 100) return Game.toast('Ouro insuficiente.', '#ff8080'); P.gold -= 100; Vida.honra(2, 'dei uma festa na minha vila'); V.pop = Math.min(cap, V.pop + 1); P.addBuff('regen', 2, 600, 'Festa na vila'); Sfx.play('quest'); UI.dialog(a.name, a.look, 'Música, cerveja e dança até tarde! Os colonos adoraram. 🎉', [{ label: 'Voltar', fn: () => this.talkNPC(a) }]); } });
+    opts.push({ label: 'Dar uma festa para os colonos (100 ouro)', fn: () => { if (P.gold < 100) return Game.toast('Ouro insuficiente.', '#ff8080'); P.gold -= 100; Vida.honra(2, 'dei uma festa na minha vila'); if (P.reino) P.reino.felic = Math.min(100, (P.reino.felic === undefined ? 60 : P.reino.felic) + 4); V.pop = Math.min(cap, V.pop + 1); P.addBuff('regen', 2, 600, 'Festa na vila'); Sfx.play('quest'); UI.dialog(a.name, a.look, 'Música, cerveja e dança até tarde! Os colonos adoraram. 🎉', [{ label: 'Voltar', fn: () => this.talkNPC(a) }]); } });
     opts.push({ label: 'Tchau' });
     UI.dialog(a.name, a.look, txt, opts);
   },
