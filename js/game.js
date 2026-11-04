@@ -1020,7 +1020,7 @@ const Game = {
     const mi = Mar.findInteract(fx, fy);
     if (mi && (!best || mi.d < bd)) best = mi;
     const gi = Muralhas.findInteract(fx, fy);
-    if (gi && !best) best = gi;
+    if (gi && (!best || gi.prio)) best = gi;
     const pi = Postos.findInteract(fx, fy);
     if (pi && (!best || pi.d < bd)) best = pi;
     if (best && best.kind === 'npc' && best.a.workCust) best.label = best.a.workCust.state === 'wait' ? 'Servir' : 'Falar';
