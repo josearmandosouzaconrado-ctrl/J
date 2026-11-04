@@ -10,7 +10,8 @@ const T = {
   CARPET: 40, PALISADE: 41, DCOBBLE: 42, HWALL: 43, LOGWALL: 44, HFLOOR: 45,
   // Elyndra (terrenos que não existem em nenhum outro lugar) e a ilha dos anjos
   CORAL: 46, LUMWATER: 47, WINDGRASS: 48, CRYSTALF: 49, LIVEMOSS: 50, OBSIDIAN: 51, DUSKSAND: 52, SAVANNA: 53, STARDUST: 54,
-  MISTHEATH: 55, LIVESTONE: 56, CRYSTALROCK: 57, CANYON: 58, CLOUD: 59, SKYMARBLE: 60, SKYVOID: 61, GOLDWALL: 62
+  MISTHEATH: 55, LIVESTONE: 56, CRYSTALROCK: 57, CANYON: 58, CLOUD: 59, SKYMARBLE: 60, SKYVOID: 61, GOLDWALL: 62,
+  PAVED: 63   // estrada de pedra (as obras de estrada dos reinos)
 };
 // solid: bloqueia; slow: multiplicador de velocidade; hurt: dano/s; c: cor do mapa; wall: renderizado como parede 3D
 const TILE_DEFS = [];
@@ -31,6 +32,9 @@ tdef(T.LAVA, { name: 'Lava', hurt: 25, slow: 0.6, c: '#ff5a1a' });
 tdef(T.ASH, { name: 'Cinzas', c: '#4a4246' });
 tdef(T.ROAD, { name: 'Estrada', slow: 1.15, c: '#b09163' });
 tdef(T.COBBLE, { name: 'Calçada', slow: 1.15, c: '#8d8a86' });
+tdef(T.PAVED, { name: 'Estrada de pedra', slow: 1.25, c: '#a09888' });
+// estrada de terra ou de pedra
+const ESTRADA_T = t => t === T.ROAD || t === T.PAVED;
 tdef(T.WOOD, { name: 'Madeira', slow: 1.1, c: '#9c6b3c' });
 tdef(T.WALL, { name: 'Muralha', solid: true, c: '#5d5a62', wall: true });
 tdef(T.BRIDGE, { name: 'Ponte', slow: 1.1, c: '#a67845' });

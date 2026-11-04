@@ -403,3 +403,12 @@ a.mbtn.apk small { display: block; font-size: 13px; opacity: .8; }
 #tatica { max-height: calc(100% - 120px - var(--sa-t)); overflow-y: auto; }
 #tatica.muitos { display: grid; grid-template-columns: auto auto; }
 #tatica.muitos .tat-t { grid-column: 1 / -1; }
+/* gestão do reino */
+.gestao-panel > * { flex-shrink: 0; }
+.trab-l { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+.trab-l .trab-n { flex: 1; min-width: 150px; }
+.trab-l > div { flex-basis: 100%; }
+.arm-l { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 2px 0; }
+.arm-l .ic { width: 16px; height: 16px; image-rendering: pixelated; }
+.barra { height: 8px; background: #2a1c24; border: 1px solid #5a4030; margin: 3px 0; }
+.barra > div { height: 100%; background: linear-gradient(#e0b040, #a07020); }

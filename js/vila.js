@@ -83,12 +83,12 @@ const Vila = {
   },
   limpaChunks(s) {
     const W = Game.world;
-    for (let cy = (s.y0 >> 5) - 1; cy <= ((s.y0 + VILA_SIZE) >> 5) + 1; cy++) for (let cx = (s.x0 >> 5) - 1; cx <= ((s.x0 + VILA_SIZE) >> 5) + 1; cx++) { W.chunks.delete(W.ckey(cx, cy)); W.canvases.delete(W.ckey(cx, cy)); }
+    for (let cy = (s.y0 >> 5) - 1; cy <= ((s.y0 + (s.w || VILA_SIZE)) >> 5) + 1; cy++) for (let cx = (s.x0 >> 5) - 1; cx <= ((s.x0 + (s.w || VILA_SIZE)) >> 5) + 1; cx++) { W.chunks.delete(W.ckey(cx, cy)); W.canvases.delete(W.ckey(cx, cy)); }
   },
   titulo() { const s = this.s; return !s ? '' : s.type === 'capital' ? 'Cidade' : s.type === 'town' ? 'Vila' : 'Aldeia'; },
   layout(s) {
     const W = Game.world, V = this.st(), reg = s.region, cul = CULTURES[reg.culture];
-    const size = VILA_SIZE, N = size * size, mid = size >> 1;
+    const nv = V.nivel || 0, size = VILA_SIZE + nv * 10, o = nv * 5, N = size * size, mid = size >> 1;   // a vila expandida cresce 5 tiles por lado
     s.w = s.h = size; s.x0 = s.cx - mid; s.y0 = s.cy - mid;
     const tiles = new Uint8Array(N).fill(255), objs = new Uint8Array(N).fill(0), occ = new Uint8Array(N);
     const rng = new RNG(hashStr(V.id));
@@ -102,9 +102,9 @@ const Vila = {
     // (objetos 0 no carimbo apagam as árvores e pedras que o bioma colocou)
     const street = V.built.muralha || V.pop >= 8 ? (cul.street || T.COBBLE) : T.DIRT, plaza = V.pop >= 8 ? (cul.plaza || T.COBBLE) : T.DIRT;
     for (let i = 1; i < size - 1; i++) for (const k of [0, 1]) { setT(i, mid - 1 + k, street); setT(mid - 1 + k, i, street); }
-    for (let x = 1; x < size - 1; x++) { setT(x, 13, T.DIRT); setT(x, 7, T.DIRT); setT(x, 27, T.DIRT); }
-    for (let y = 12; y <= 17; y++) for (let x = 12; x <= 17; x++) setT(x, y, plaza);
-    setO(12, 17, O.WELL);
+    for (let x = 1; x < size - 1; x++) { setT(x, 13 + o, T.DIRT); setT(x, 7 + o, T.DIRT); setT(x, 27 + o, T.DIRT); for (let L = 1; L <= nv; L++) { const q = o - 5 * L; setT(x, q + 5, T.DIRT); setT(x, q + 28 + 10 * L, T.DIRT); } }
+    for (let y = 12 + o; y <= 17 + o; y++) for (let x = 12 + o; x <= 17 + o; x++) setT(x, y, plaza);
+    setO(12 + o, 17 + o, O.WELL);
     // muralha com quatro portões
     if (V.built.muralha) {
       const wallT = cul.wall || T.WALL;
@@ -113,12 +113,15 @@ const Vila = {
     }
     for (const [dir, gx, gy] of [['w', s.x0 - 1, s.y0 + mid], ['e', s.x0 + size, s.y0 + mid], ['s', s.x0 + mid, s.y0 + size], ['n', s.x0 + mid, s.y0 - 1]]) s.gates.push({ x: gx, y: gy, dir });
     // fazenda: trigo para colher
-    if (V.built.fazenda) for (let y = 19; y <= 22; y++) for (const [x0, x1] of [[2, 11], [17, 23]]) for (let x = x0; x <= x1; x++) { setT(x, y, T.FARM); if (y !== 21) setO(x, y, O.CROP); else setO(x, y, x % 4 ? 0 : O.HAY); }
+    if (V.built.fazenda) for (let y = 19 + o; y <= 22 + o; y++) for (const [x0, x1] of [[2 + o, 11 + o], [17 + o, 23 + o]]) for (let x = x0; x <= x1; x++) { setT(x, y, T.FARM); if (y !== 21) setO(x, y, O.CROP); else setO(x, y, (x - o) % 4 ? 0 : O.HAY); }
     // prédios na ordem fixa (cada um tem o seu terreno)
     for (const [k, d] of Object.entries(VILA_PREDIOS)) {
       if (!V.built[k] || !d.bt) continue;
       if (k === 'casa1' && V.palacio) continue;   // a família real mora no palácio: a casa antiga foi demolida
-      const b = W.placeBuilding(s, d.bt, d.x, d.y, rng, objs, occ, size, cul, !!d.deco || d.bt === 'tower');
+      if (d.nivel && d.nivel > nv) continue;
+      const q = d.nivel ? o - 5 * d.nivel : o;   // os prédios da expansão ficam no anel novo
+      if (d.nivel && Gestao.sobrepoe(s.x0 + d.x + q, s.y0 + d.y + q, BUILDINGS[d.bt].w, BUILDINGS[d.bt].h)) continue;
+      const b = W.placeBuilding(s, d.bt, d.x + q, d.y + q, rng, objs, occ, size, cul, !!d.deco || d.bt === 'tower');
       if (d.deco) { b.name = d.nome; b.spec.banner = (Game.player.reino && Game.player.reino.cor) || reg.color; b.spec.sign = 'guild'; }
       b.vilaKey = k;
       if (k === 'casa1') { b.name = 'Casa do Fundador'; b.owner = Object.assign({}, b.owner, { name: 'Você' }); }
@@ -126,10 +129,10 @@ const Vila = {
       if (b.door) { const dx = b.door.x - s.x0, dy = b.door.y - s.y0 + 1; setT(dx, dy, T.DIRT); }
     }
     // lampiões e decoração
-    setO(16, 13, O.CONSELHO);   // o monumento onde se administra a cidade
-    for (const [x, y] of [[11, 12], [18, 12], [11, 18], [18, 18]]) { setO(x, y, O.LAMP); s.lamps.push({ x: s.x0 + x, y: s.y0 + y }); }
-    if (V.built.templo) { setO(13, 12, O.STATUE); setO(16, 12, O.STATUE); }
-    if (V.pop >= 8) for (const [x, y] of [[12, 13], [17, 13]]) setO(x, y, O.BANNER);
+    setO(16 + o, 13 + o, O.CONSELHO);   // o monumento onde se administra a cidade
+    for (const [x, y] of [[11, 12], [18, 12], [11, 18], [18, 18]]) { setO(x + o, y + o, O.LAMP); s.lamps.push({ x: s.x0 + x + o, y: s.y0 + y + o }); }
+    if (V.built.templo) { setO(13 + o, 12 + o, O.STATUE); setO(16 + o, 12 + o, O.STATUE); }
+    if (V.pop >= 8) for (const [x, y] of [[12, 13], [17, 13]]) setO(x + o, y + o, O.BANNER);
     for (let y = 1; y < size - 1; y++) for (let x = 1; x < size - 1; x++) {
       if (occ[y * size + x] || tiles[y * size + x] !== 255 || objs[y * size + x]) continue;
       const h = rng.next();
@@ -140,7 +143,7 @@ const Vila = {
     for (let i = 0; i < nCit; i++) s.npcSpots.push({ role: 'citizen', x: s.x0 + mid + rng.int(-4, 4), y: s.y0 + mid + rng.int(-3, 4) });
     const nG = Math.min(10, (V.built.torre ? 2 : 0) + (V.built.muralha ? 4 : 0) + Math.min(4, Math.floor(Reino.total() / 8)));
     for (let i = 0; i < nG; i++) { const g = s.gates[i % 4]; s.npcSpots.push({ role: 'guard', x: g.x + (g.dir === 'w' ? 2 : g.dir === 'e' ? -2 : 0), y: g.y + (g.dir === 'n' ? 2 : g.dir === 's' ? -2 : 0) }); }
-    s.npcSpots.push({ role: 'guardpost', x: s.x0 + 15, y: s.y0 + 16, vilaNPC: 'intendente', race: cul.race && !RACES[cul.race].npcOnly ? cul.race : 'humano' });
+    s.npcSpots.push({ role: 'guardpost', x: s.x0 + 15 + o, y: s.y0 + 16 + o, vilaNPC: 'intendente', race: cul.race && !RACES[cul.race].npcOnly ? cul.race : 'humano' });
     s.mid = { x: s.x0 + mid, y: s.y0 + mid };
     W.addStamp({ x0: s.x0, y0: s.y0, w: size, h: size, tiles, objs, vilaId: s.id });
   },
@@ -217,12 +220,13 @@ const Vila = {
   construirMenu(a) {
     const P = Game.player, V = this.st();
     const linha = (k, d) => {
-      const mats = Object.entries(d.mats).map(([id, n]) => `<span class="${P.count(id) >= n ? '' : 'bad'}">${n}× ${esc(ITEMS[id] ? ITEMS[id].name : id)}</span>`).join(', ');
+      const mats = Object.entries(d.mats).map(([id, n]) => `<span class="${P.count(id) + ((Recursos.armazem() || {})[id] || 0) >= n ? '' : 'bad'}">${n}× ${esc(ITEMS[id] ? ITEMS[id].name : id)}</span>`).join(', ');
       return `${d.ouro} ouro${mats ? ' + ' + mats : ''}`;
     };
     const opts = [];
     for (const [k, d] of Object.entries(VILA_PREDIOS)) {
       if (V.built[k]) continue;
+      if (d.nivel && d.nivel > (V.nivel || 0)) continue;
       if (d.pop && V.pop < d.pop) continue;
       opts.push({ label: `${d.nome} — ${linha(k, d)}`, fn: () => this.construir(a, k) });
     }

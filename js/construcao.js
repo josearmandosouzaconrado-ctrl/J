@@ -51,7 +51,7 @@ const Construcao = {
   // onde dá para construir: perto da sua vila ou de uma cidade do seu reino
   zona(tx, ty) {
     const V = Vila.st(); if (!V) return null;
-    if (dist(tx, ty, V.cx, V.cy) <= 48) return Vila.s;
+    if (dist(tx, ty, V.cx, V.cy) <= 48 + (V.nivel || 0) * 6) return Vila.s;
     for (const s of Game.world.settlements) if (War.ownerOf(s) === 'jogador' && !s.playerVila && dist(tx, ty, s.mid.x, s.mid.y) <= 40) return s;
     return null;
   },
@@ -93,7 +93,7 @@ const Construcao = {
     if (!d.chao && px >= x0 && px < x0 + w && py >= y0 && py < y0 + h) return 'Você está em cima do lugar.';
     return null;
   },
-  custoTxt(k) { const d = OBRAS[k], P = Game.player; return `${d.ouro} ouro` + Object.entries(d.mats || {}).map(([id, n]) => ` • <span class="${P.count(id) >= n ? '' : 'bad'}">${n} ${esc(ITEMS[id] ? ITEMS[id].name : id)}</span>`).join(''); },
+  custoTxt(k) { const d = OBRAS[k], P = Game.player; return `${d.ouro} ouro` + Object.entries(d.mats || {}).map(([id, n]) => ` • <span class="${P.count(id) + ((Recursos.armazem() || {})[id] || 0) >= n ? '' : 'bad'}">${n} ${esc(ITEMS[id] ? ITEMS[id].name : id)}</span>`).join(''); },
   // ---------- montar as obras no mundo ----------
   aplicar() {
     const W = Game.world; if (!W) return;

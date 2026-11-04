@@ -133,6 +133,12 @@ const Sprites = {};
   };
   TP[T.COBBLE] = cobble('#9a968f', '#6a6764');
   TP[T.DCOBBLE] = cobble('#68646e', '#46424c');
+  // estrada de pedra: pedras grandes e irregulares, com terra nas juntas
+  TP[T.PAVED] = (p, r) => {
+    fill(p, '#7a6a52');
+    for (let y = 0; y < 16; y += 5) { let x = -r.int(0, 3); while (x < 16) { const w = r.int(3, 6), c = shade('#a8a090', r.range(-0.12, 0.1)); p(x + 1, y + 1, c, w - 1, 4); p(x + 1, y + 1, shade(c, 0.15), w - 1, 1); p(x + 1, y + 4, shade(c, -0.18), w - 1, 1); x += w; } }
+    speck(p, r, ['#8a7a5e'], 5);
+  };
   TP[T.SANDSTONE] = (p, r) => slabs(p, r, '#c9a46a', '#b08a50');
   TP[T.WOOD] = (p, r) => { fill(p, '#9c6b3c'); for (let y = 0; y < 16; y += 4) { p(0, y, '#7a5028', 16, 1); const c = shade('#9c6b3c', r.range(-0.08, 0.08)); p(0, y + 1, c, 16, 3); p(r.int(0, 15), y + 2, '#8a5a30', 3, 1); p(r.int(0, 3) * 4 + 2, y + 1, '#5a3a20'); } };
   TP[T.BRIDGE] = (p, r) => { fill(p, '#a67845'); for (let x = 0; x < 16; x += 4) { p(x, 0, '#7a5028', 1, 16); p(x + 1, 0, shade('#a67845', r.range(-0.08, 0.08)), 3, 16); } p(0, 0, '#5a3a20', 16, 1); p(0, 15, '#5a3a20', 16, 1); };

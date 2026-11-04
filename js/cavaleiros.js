@@ -38,7 +38,7 @@ const Cavaleiros = {
     if (G.distEstrada(ptx, pty) > 8) return;
     for (let t = 0; t < 20; t++) {
       const ang = Math.random() * Math.PI * 2, r = 15 + Math.random() * 8, x = Math.round(ptx + Math.cos(ang) * r), y = Math.round(pty + Math.sin(ang) * r);
-      if (W.tileAt(x, y) !== T.ROAD || W.solidAt(x, y) || W.settlementAt(x, y)) continue;
+      if (!ESTRADA_T(W.tileAt(x, y)) || W.solidAt(x, y) || W.settlementAt(x, y)) continue;
       const dest = Caravanas.destino(x, y, 25); if (dest) this.criar(x, y, dest);
       return;
     }

@@ -620,6 +620,7 @@
       case 'great': p(0, 7, wood, 5, 2); p(5, 4, gold, 2, 8); p(7, 6, col, 12, 4); p(7, 6, hi, 12, 1); p(7, 9, sh, 12, 1); p(19, 7, col, 1, 2); break;
       case 'axe': p(0, 7, wood, 13, 2); p(10, 2, col, 4, 11); p(14, 3, col, 1, 9); p(14, 3, hi, 1, 9); p(10, 2, hi, 4, 1); break;
       case 'mace': p(0, 7, wood, 11, 2); S.ellipse(p, 13, 8, 3.5, 3.5, col); p(12, 6, hi, 2, 2); p(13, 3, col); p(17, 8, col); p(13, 12, col); break;
+      case 'pick': p(0, 7, wood, 13, 2); p(12, 2, col, 2, 12); p(11, 1, col, 1, 2); p(11, 13, col, 1, 2); p(12, 2, hi, 1, 12); break;
       case 'hammer': p(0, 7, wood, 12, 2); p(11, 2, col, 6, 12); p(11, 2, hi, 6, 1); p(16, 2, sh, 1, 12); break;
       case 'bow': for (let y = 0; y < 16; y++) { const x = 2 + Math.round(Math.sin(y / 15 * Math.PI) * 5); p(x, y, col, 2, 1); } p(2, 0, '#e8e8e0', 1, 16); break;
       case 'musket': p(0, 7, wood, 7, 3); p(0, 9, shade(wood, -0.3), 4, 1); p(6, 7, '#3a3a40', 13, 2); p(6, 7, '#6a6a74', 13, 1); p(9, 9, '#c0a040', 2, 1); p(13, 6, glow || '#80c0ff', 2, 1); p(18, 6, '#a0a0a8', 2, 1); break;

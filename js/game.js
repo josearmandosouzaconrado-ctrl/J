@@ -337,7 +337,7 @@ const Game = {
     Work.update(dt);
     Adm.update();
     Sombra.tick(dt); Ceu.tick(dt);
-    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt); Rede.tick(dt); Construcao.tick(dt); Mar.tick(dt); Estacoes.tick(dt); Abertura.tick(dt); Muralhas.tick(dt); Postos.tick(dt); Mobilia.tick(dt); Povo.tick(dt); Povo.atentadoTick(); Submundo.tick(dt); Caravanas.tick(dt); Mercantes.tick(dt); Cavaleiros.tick(dt);
+    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt); Rede.tick(dt); Construcao.tick(dt); Mar.tick(dt); Estacoes.tick(dt); Abertura.tick(dt); Muralhas.tick(dt); Postos.tick(dt); Mobilia.tick(dt); Povo.tick(dt); Povo.atentadoTick(); Submundo.tick(dt); Caravanas.tick(dt); Mercantes.tick(dt); Cavaleiros.tick(dt); Gestao.tick(dt);
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();
@@ -588,12 +588,12 @@ const Game = {
     // mercador viajante na estrada
     const trav = this.actors.find(a => a.traveler);
     if (trav && dist(trav.x, trav.y, P.x, P.y) > 700) this.actors.splice(this.actors.indexOf(trav), 1);
-    else if (!trav && !night && W.tileAt(ptx, pty) === T.ROAD && Math.random() < 0.04) {
+    else if (!trav && !night && ESTRADA_T(W.tileAt(ptx, pty)) && Math.random() < 0.04) {
       const s = W.nearestSettlement(ptx, pty);
       for (let k = 0; k < 20; k++) {
         const ang = Math.random() * Math.PI * 2, r = 12 + Math.random() * 6;
         const tx = Math.round(ptx + Math.cos(ang) * r), ty = Math.round(pty + Math.sin(ang) * r);
-        if (W.tileAt(tx, ty) !== T.ROAD || W.solidAt(tx, ty)) continue;
+        if (!ESTRADA_T(W.tileAt(tx, ty)) || W.solidAt(tx, ty)) continue;
         const npc = new NPC({ role: 'merchant', x: tx, y: ty }, s, new RNG(Math.floor(Math.random() * 1e9)));
         npc.traveler = true; npc.name = 'Mercador Viajante ' + npc.name.split(' ')[0];
         this.actors.push(npc);
@@ -624,7 +624,7 @@ const Game = {
       const passo = Math.max(1, r);
       for (let dy = -r; dy <= r; dy += passo) for (let dx = -r; dx <= r; dx += passo) {
         if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
-        if (W.tileAt(tx + dx, ty + dy) === T.ROAD) return r;
+        if (ESTRADA_T(W.tileAt(tx + dx, ty + dy))) return r;
       }
     }
     return 99;
@@ -988,7 +988,7 @@ const Game = {
       const o = L.objAt(tx, ty);
       const od = OBJ_DEFS[o];
       if (!o || !od.interact) continue;
-      const labels = { cama: 'Dormir', mina: 'Mina', skypillar: L.isCeu ? 'Descer' : 'Subir', sleep: 'Dormir', destiny: 'Tocar', wardrobe: 'Baú', crib: 'Ver bebê', chest: 'Abrir', harvest: o >= O.ORE_FERRO && o <= O.ORE_EBANO ? 'Minerar' : 'Coletar', cook: 'Cozinhar', forge: 'Forjar', alchemy: 'Alquimia', runestone: 'Ler', shrine: 'Orar', dungeon: 'Entrar', exit: 'Sair', sign: 'Ler', minecart: 'Despejar', hatch: L.isShip && L.floor ? 'Subir' : 'Descer', helm: L.proprio ? (L.leme ? 'Largar' : 'Pilotar') : 'Timão', shipbed: 'Dormir', maptable: 'Ver rota', conselho: 'Administrar' };
+      const labels = { cama: 'Dormir', mina: 'Mina', lenhador: 'Lenhadores', skypillar: L.isCeu ? 'Descer' : 'Subir', sleep: 'Dormir', destiny: 'Tocar', wardrobe: 'Baú', crib: 'Ver bebê', chest: 'Abrir', harvest: o >= O.ORE_FERRO && o <= O.ORE_EBANO ? 'Minerar' : 'Coletar', cook: 'Cozinhar', forge: 'Forjar', alchemy: 'Alquimia', runestone: 'Ler', shrine: 'Orar', dungeon: 'Entrar', exit: 'Sair', sign: 'Ler', minecart: 'Despejar', hatch: L.isShip && L.floor ? 'Subir' : 'Descer', helm: L.proprio ? (L.leme ? 'Largar' : 'Pilotar') : 'Timão', shipbed: 'Dormir', maptable: 'Ver rota', conselho: 'Administrar' };
       let name = od.name;
       if (od.interact === 'dungeon' && L.isWorld) { const dd = this.world.entrances.get(tkey(tx, ty)); if (dd) name = `${dd.name} (Nv ${dd.lvl})`; }
       bd = d; best = { kind: od.interact, tx, ty, o, label: labels[od.interact] || 'Usar', name };
@@ -1069,6 +1069,7 @@ const Game = {
       case 'sleep': if (Academy.state().enrolled) UI.rest(null, 0); else Camas.usar(); break;
       case 'cama': Camas.usar(); break;
       case 'mina': Recursos.menu(); break;
+      case 'lenhador': Gestao.menuTrab(); break;
       case 'sign': UI.sign(it.s); break;
       case 'chest': this.openChest(it.tx, it.ty, it.o); break;
       case 'harvest': {
@@ -1311,7 +1312,7 @@ const Game = {
     if (!P.dead || true) D.push({ y: P.y, a: P });
     for (const k of this.pickups) D.push({ y: k.y, pk: k });
     this.drawMountsCart(D); this.drawCarcasses(D);
-    if (L.isWorld) { Vila.drawables(D, camX, camY, vw, vh); War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); Nyxar.drawables(D, camX, camY, vw, vh); Mar.drawables(D, camX, camY, vw, vh); Abertura.drawables(D, camX, camY); Muralhas.drawables(D, camX, camY, vw, vh); Cerco.drawables(D, camX, camY); Caravanas.drawables(D, camX, camY, vw, vh); Mercantes.drawables(D, camX, camY, vw, vh); Cavaleiros.drawables(D, camX, camY, vw, vh); }
+    if (L.isWorld) { Vila.drawables(D, camX, camY, vw, vh); War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); Nyxar.drawables(D, camX, camY, vw, vh); Mar.drawables(D, camX, camY, vw, vh); Abertura.drawables(D, camX, camY); Muralhas.drawables(D, camX, camY, vw, vh); Cerco.drawables(D, camX, camY); Caravanas.drawables(D, camX, camY, vw, vh); Mercantes.drawables(D, camX, camY, vw, vh); Cavaleiros.drawables(D, camX, camY, vw, vh); Gestao.drawables(D, camX, camY, vw, vh); }
     Ceu.drawables(D, camX, camY, vw, vh);
     D.sort((a, b) => a.y - b.y);
     Visual.sombras(ctx, D, camX, camY, vw, vh);

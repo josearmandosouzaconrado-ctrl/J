@@ -22,7 +22,7 @@ const Caravanas = {
     if (Math.random() > (this.alvo ? 0.45 : 0.12)) return;
     for (let k = 0; k < 24; k++) {
       const a = Math.random() * Math.PI * 2, r = 16 + Math.random() * 10, tx = Math.round(ptx + Math.cos(a) * r), ty = Math.round(pty + Math.sin(a) * r);
-      if (W.tileAt(tx, ty) !== T.ROAD || W.solidAt(tx, ty) || W.settlementAt(tx, ty)) continue;
+      if (!ESTRADA_T(W.tileAt(tx, ty)) || W.solidAt(tx, ty) || W.settlementAt(tx, ty)) continue;
       const dest = this.destino(tx, ty, 40); if (!dest) return;
       this.criar(tx, ty, dest, {});
       return;
@@ -68,7 +68,7 @@ const Caravanas = {
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
       if (!dx && !dy) continue;
       const x = tx + dx, y = ty + dy; if (W.solidAt(x, y) || TWATER[W.tileAt(x, y)]) continue;
-      const estrada = W.tileAt(x, y) === T.ROAD || W.settlementAt(x, y);
+      const estrada = ESTRADA_T(W.tileAt(x, y)) || W.settlementAt(x, y);
       const v = C.visit.get(x * 100000 + y) || 0;
       const s = dist(x, y, dx0, dy0) + (estrada ? 0 : 6) + v * 9 + (dx && dy ? 0.4 : 0);
       if (s < bs) { bs = s; best = { x: x * 16 + 8, y: y * 16 + 8 }; }
