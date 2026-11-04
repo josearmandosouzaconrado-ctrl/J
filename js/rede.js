@@ -1,6 +1,6 @@
 'use strict';
 // ===================== MULTIPLAYER =====================
-// Salas P2P de até 4 jogadores com código de convite (js/p2p.js). O servidor próprio (rede/servidor.js)
+// Salas P2P de até 9 jogadores com código de convite (js/p2p.js). O servidor próprio (rede/servidor.js)
 // continua funcionando como opção avançada.
 // Até 20 jogadores no mesmo mundo. Cada um vê os outros andando, conversa pelo chat e pode declarar
 // guerra a outro jogador: em guerra, os golpes, flechas e magias acertam de verdade (o servidor confere).

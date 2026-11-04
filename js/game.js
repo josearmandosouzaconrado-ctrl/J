@@ -218,6 +218,7 @@ const Game = {
     if (h >= 6.5 && h < 18) d = 0; else if (h >= 18 && h < 20.5) d = (h - 18) / 2.5 * 0.74; else if (h >= 4 && h < 6.5) d = (1 - (h - 4) / 2.5) * 0.74; else d = 0.74;
     if (this.player && RACES[this.player.race].nightvision) d *= 0.55;
     if (this.weather.kind === 'rain' || this.weather.kind === 'storm') d = Math.max(d, 0.18);
+    if (this.weather.kind === 'nevasca') d = Math.max(d, 0.14);
     if (this.level.isShip && this.level.floor) d = Math.min(0.8, 0.3 + d * 0.6);
     return d;
   },
@@ -337,7 +338,7 @@ const Game = {
     Work.update(dt);
     Adm.update();
     Sombra.tick(dt); Ceu.tick(dt);
-    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt); Rede.tick(dt); Construcao.tick(dt); Mar.tick(dt); Estacoes.tick(dt); Abertura.tick(dt); Muralhas.tick(dt); Postos.tick(dt); Mobilia.tick(dt); Povo.tick(dt); Povo.atentadoTick(); Submundo.tick(dt); Caravanas.tick(dt); Mercantes.tick(dt); Cavaleiros.tick(dt); Gestao.tick(dt);
+    Vida.tick(dt); Vida.npcTick(dt); Vida.guardas(dt); Eventos.tick(dt); Vila.tick(dt); Reino.tick(dt); Rede.tick(dt); Construcao.tick(dt); Mar.tick(dt); Estacoes.tick(dt); Abertura.tick(dt); Muralhas.tick(dt); Postos.tick(dt); Mobilia.tick(dt); Povo.tick(dt); Povo.atentadoTick(); Submundo.tick(dt); Caravanas.tick(dt); Mercantes.tick(dt); Cavaleiros.tick(dt); Gestao.tick(dt); Trem.tick(dt); Inverno.tick(dt);
     this.updateMounts(dt);
     // ações do jogador
     if (Input.consume('attack') || (Input.held.attack && P.atkT <= 0)) P.attack();
@@ -1312,7 +1313,7 @@ const Game = {
     if (!P.dead || true) D.push({ y: P.y, a: P });
     for (const k of this.pickups) D.push({ y: k.y, pk: k });
     this.drawMountsCart(D); this.drawCarcasses(D);
-    if (L.isWorld) { Vila.drawables(D, camX, camY, vw, vh); War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); Nyxar.drawables(D, camX, camY, vw, vh); Mar.drawables(D, camX, camY, vw, vh); Abertura.drawables(D, camX, camY); Muralhas.drawables(D, camX, camY, vw, vh); Cerco.drawables(D, camX, camY); Caravanas.drawables(D, camX, camY, vw, vh); Mercantes.drawables(D, camX, camY, vw, vh); Cavaleiros.drawables(D, camX, camY, vw, vh); Gestao.drawables(D, camX, camY, vw, vh); }
+    if (L.isWorld) { Vila.drawables(D, camX, camY, vw, vh); War.drawables(D, camX, camY, vw, vh); this.drawShips(D, camX, camY); Naval.drawables(D, camX, camY, vw, vh); Work.drawables(D, camX, camY, vw, vh); Nyxar.drawables(D, camX, camY, vw, vh); Mar.drawables(D, camX, camY, vw, vh); Abertura.drawables(D, camX, camY); Muralhas.drawables(D, camX, camY, vw, vh); Cerco.drawables(D, camX, camY); Caravanas.drawables(D, camX, camY, vw, vh); Mercantes.drawables(D, camX, camY, vw, vh); Cavaleiros.drawables(D, camX, camY, vw, vh); Gestao.drawables(D, camX, camY, vw, vh); Trem.drawables(D, camX, camY, vw, vh); Inverno.drawables(D, camX, camY, vw, vh); }
     Ceu.drawables(D, camX, camY, vw, vh);
     D.sort((a, b) => a.y - b.y);
     Visual.sombras(ctx, D, camX, camY, vw, vh);

@@ -85,10 +85,11 @@ const Gestao = {
   cabanas() { return Construcao.obras().filter(o => o.k === 'lenhador'); },
   max(k) {
     const V = Vila.st(); if (!V) return 0; const b = V.built;
-    if (k === 'lenhador') return 3 * this.cabanas().length;
-    if (k === 'mineiro') return 3 * Recursos.minas();
-    if (k === 'fazendeiro') return b.fazenda ? 4 + (b.celeiro ? 4 : 0) : 0;
-    if (k === 'pedreiro') return 4 + (b.pedreira ? 4 : 0);
+    // até 9 por serviço (por cabana e por mina); celeiro e oficina dos pedreiros dão mais 4
+    if (k === 'lenhador') return 9 * this.cabanas().length;
+    if (k === 'mineiro') return 9 * Recursos.minas();
+    if (k === 'fazendeiro') return b.fazenda ? 9 + (b.celeiro ? 4 : 0) : 0;
+    if (k === 'pedreiro') return 9 + (b.pedreira ? 4 : 0);
     return 0;
   },
   ocupados() { const t = this.trab() || {}; let n = 0; for (const k in TRABALHOS) n += t[k] || 0; return n; },
@@ -426,7 +427,7 @@ const Gestao = {
     if (V && vs) {
       const t = this.trab(); let resto = t.lenhador;
       for (const ob of this.cabanas()) {
-        const n = Math.min(3, resto); resto -= n;
+        const q = Math.min(9, resto); resto -= q; const n = Math.min(6, q);
         sobra(a => a.trab.casa === ob, n);
         const cx = ob.x * 16 + 8, cy = ob.y * 16 + 14; if (dist(cx, cy, P.x, P.y) > 480) continue;
         for (let i = conta(a => a.trab.casa === ob); i < n; i++) this.criar('lenhador', vs, cx + 12 + i * 6, cy + 10, { casa: ob, ox: cx, oy: cy });
@@ -434,7 +435,7 @@ const Gestao = {
       // mineiros: até 3 por mina
       let rm = t.mineiro;
       for (const ob of Construcao.obras().filter(o => o.k === 'mina')) {
-        const n = Math.min(3, rm); rm -= n;
+        const q = Math.min(9, rm); rm -= q; const n = Math.min(4, q);
         sobra(a => a.trab.casa === ob, n);
         const cx = ob.x * 16 + 8, cy = ob.y * 16 + 16; if (dist(cx, cy, P.x, P.y) > 480) continue;
         for (let i = conta(a => a.trab.casa === ob); i < n; i++) this.criar('mineiro', vs, cx - 14 + i * 14, cy + 14, { casa: ob, ox: cx, oy: cy, n: i });
@@ -446,7 +447,7 @@ const Gestao = {
       const L = this.pts(p), f = L[Math.min(L.length - 1, p.feito)], fx = f[0] * 16 + 8, fy = f[1] * 16 + 8;
       if (dist(fx, fy, P.x, P.y) > 520) continue;
       const s = p.k === 'jogador' ? vs : War.K[p.k] && War.K[p.k].cap; if (!s) continue;
-      const n = p.k === 'jogador' ? Math.min(6, this.trab() ? this.trab().pedreiro : 0) : 4;
+      const n = p.k === 'jogador' ? Math.min(9, this.trab() ? this.trab().pedreiro : 0) : 4;
       sobra(a => a.trab.obra === p.id, n);
       for (let i = conta(a => a.trab.obra === p.id); i < n; i++) this.criar('pedreiro', s, fx + (Math.random() - 0.5) * 30, fy + (Math.random() - 0.5) * 30, { obra: p.id, n: i, proj: p, ox: fx, oy: fy });
     }
@@ -627,7 +628,7 @@ const Gestao = {
   const vd0 = Vila.dia; Vila.dia = function () { const r = vd0.apply(this, arguments); Gestao.dia(); return r; };
   const wd0 = War.daily; War.daily = function () { const r = wd0.apply(this, arguments); Gestao.diaIA(); return r; };
   // a mina rende conforme os mineiros
-  Gestao.fatorMina = function () { const n = Recursos.minas(); if (!n) return 0; const t = Gestao.trab(); let f = 0, m = t ? t.mineiro : 0; for (let i = 0; i < n; i++) { const q = Math.min(3, m); m -= q; f += q ? 0.5 + q * 0.25 : 0.2; } return f / n; };
+  Gestao.fatorMina = function () { const n = Recursos.minas(); if (!n) return 0; const t = Gestao.trab(); let f = 0, m = t ? t.mineiro : 0; for (let i = 0; i < n; i++) { const q = Math.min(9, m); m -= q; f += q ? 0.4 + q * 0.2 : 0.2; } return f / n; };
   Recursos.dia = function () {
     const n = this.minas(), A = this.armazem(); if (!n || !A) return;
     const F = Gestao.fatorMina(), add = (id, q) => { q = Math.round(q * F); if (q > 0) A[id] = Math.min(9999, (A[id] || 0) + q); };

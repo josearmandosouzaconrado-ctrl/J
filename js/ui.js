@@ -106,7 +106,7 @@ const UI = {
           ${saves.length ? `<button class="mbtn gold" ${f(() => Game.loadGame(saves[0].i))}>Continuar<br><small>${esc(saves[0].s ? saves[0].s.name + ' • Nv ' + saves[0].s.level : '')}</small></button>` : ''}
           <button class="mbtn" ${f(() => this.showCreate())}>Novo Jogo</button>
           ${saves.length ? `<button class="mbtn" ${f(() => this.slots('load'))}>Carregar</button>` : ''}
-          <button class="mbtn" ${f(() => this.multiplayer())}>Multiplayer <small>com amigos • até 4 • código de convite</small></button>
+          <button class="mbtn" ${f(() => this.multiplayer())}>Multiplayer <small>com amigos • até ${P2P_MAX} • código de convite</small></button>
           <button class="mbtn" ${f(() => this.options())}>Opções</button>
           <button class="mbtn" ${f(() => this.help())}>Como Jogar</button>
           ${IS_APK ? '' : `<a class="mbtn apk hidden" id="apk-dl" href="CronicasDeEldoria.apk" download="CronicasDeEldoria.apk">📱 Baixar para Android (APK)<small>joga com a tela deitada</small></a>`}
@@ -129,7 +129,7 @@ const UI = {
     const copiar = () => { const c = P2P.codigo; try { navigator.clipboard.writeText(c).then(() => Game.toast('Código copiado: ' + c, '#a0ffa0'), () => Game.toast('Código: ' + c, '#ffe0a0')); } catch (e) { Game.toast('Código: ' + c, '#ffe0a0'); } };
     const el = this.show('multi', `<div class="panel small"><div class="ptitle">Multiplayer com amigos</div>
       ${host ? `<div style="text-align:center;margin:4px 0">Código da sua sala — passe para até ${P2P_MAX - 1} amigos<div class="gold" style="font-size:40px;letter-spacing:6px;user-select:text">${P2P.codigo}</div><button class="sbtn" ${f(copiar)}>📋 Copiar o código</button></div>` : ''}
-      ${pronto ? '' : `<div class="ctext">Até <b>4 jogadores</b> no mesmo mundo. Um jogador cria a sala e passa o <b>código de convite</b>; os outros entram com o código. A conexão é direta entre os aparelhos, sem servidor (precisa de internet).<br><span class="dim small">O herói do multiplayer fica separado dos jogos salvos do modo solo e entra em qualquer sala.</span></div>`}
+      ${pronto ? '' : `<div class="ctext">Até <b>${P2P_MAX} jogadores</b> no mesmo mundo. Um jogador cria a sala e passa o <b>código de convite</b>; os outros entram com o código. A conexão é direta entre os aparelhos, sem servidor (precisa de internet).<br><span class="dim small">O herói do multiplayer fica separado dos jogos salvos do modo solo e entra em qualquer sala.</span></div>`}
       <div class="small ${pronto ? 'good' : 'dim'}" style="margin:6px 0">${esc(Rede.status || '')}</div>
       <div class="menu-col">
         ${pronto ? `${heroi ? `<button class="mbtn gold" ${f(() => { Game.mp = true; Game.loadGame('mp'); })}>Continuar com ${esc(sv.summary.name)}<br><small>Nível ${sv.summary.level}</small></button>` : ''}

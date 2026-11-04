@@ -1,12 +1,12 @@
 'use strict';
 // =====================================================================
-//  MULTIPLAYER P2P (PeerJS): até 4 jogadores na mesma sala com um código de convite.
+//  MULTIPLAYER P2P (PeerJS): até 9 jogadores na mesma sala com um código de convite.
 //  Quem cria a sala é o anfitrião: o aparelho dele faz o papel do antigo servidor
 //  (confere os golpes, guarda as guerras, repassa as posições). Os amigos se ligam
 //  direto ao anfitrião pelo código, sem servidor próprio. O PeerJS só é baixado
 //  quando alguém abre o multiplayer.
 // =====================================================================
-const P2P_MAX = 4;
+const P2P_MAX = 9;
 const P2P_SEED = 777777;                     // todas as salas usam o mesmo mundo: o seu herói do multiplayer entra em qualquer sala
 const P2P_PREFIXO = 'cronicas-eldoria-';
 const P2P_CDN = ['https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js', 'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js', 'https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js'];

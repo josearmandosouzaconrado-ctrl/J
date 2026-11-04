@@ -15,7 +15,7 @@ const Visual = {
     const kx = -Math.cos(t * Math.PI) * len, ky = 0.06 + 0.42 * len;   // meio-dia: sombra curta logo abaixo
     let a = 0.46 * Math.min(1, (h - 5.6) / 0.8, (19.6 - h) / 0.8);
     const w = Game.weather.kind;
-    if (w === 'rain' || w === 'storm' || w === 'snow') a *= 0.25; else if (w === 'sand' || w === 'ash') a *= 0.6;
+    if (w === 'rain' || w === 'storm' || w === 'snow') a *= 0.25; else if (w === 'nevasca') a *= 0.08; else if (w === 'sand' || w === 'ash') a *= 0.6;
     a *= 0.62 + 0.38 * Math.min(1, len);   // sombra curta do meio-dia é mais clara
     return a > 0.02 ? { kx, ky, a } : null;
   },
