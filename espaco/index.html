@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#04050c">
+<title>Crônicas Estelares</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
+<link rel="stylesheet" href="estelar.css">
+</head>
+<body>
+<div id="jogo">
+  <canvas id="cv"></canvas>
+  <div id="hud" class="hidden">
+    <div id="hud-tl">
+      <div class="barra vida" id="b1"><i></i><span></span></div>
+      <div class="barra esc" id="b2"><i></i><span></span></div>
+      <div class="barra comb" id="b3"><i></i><span></span></div>
+      <div id="creditos"></div>
+      <div id="missao"></div>
+    </div>
+    <div id="hud-tr"><canvas id="minimapa" width="90" height="90"></canvas><div id="local"></div></div>
+    <div id="toasts"></div>
+    <div id="centro"></div>
+    <div id="prompt" class="hidden"></div>
+  </div>
+  <div id="controles" class="hidden">
+    <div id="stick-zone"></div>
+    <div id="stick-base"><div id="stick-knob"></div></div>
+    <button class="bt grande" id="b-fogo">⚡</button>
+    <button class="bt" id="b-acao">E</button>
+    <button class="bt peq" id="b-med">✚<b>0</b></button>
+    <div id="topo"><button class="bt topo" id="b-mapa">🌌</button><button class="bt topo" id="b-menu">☰</button></div>
+  </div>
+  <div id="fade"></div>
+  <div id="dlg" class="hidden"></div>
+  <div id="tela" class="hidden"></div>
+</div>
+<script src="js/base.js"></script>
+<script src="js/galaxia.js"></script>
+<script src="js/arte.js"></script>
+<script src="js/jogo.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
