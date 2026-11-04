@@ -1,0 +1,51 @@
+plugins {
+    id 'com.android.application'
+}
+
+// número da versão = número da compilação no GitHub Actions (cada APK novo instala por cima do anterior)
+def buildNumber = (System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger()
+
+android {
+    namespace 'com.guerramundial.jogo'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.guerramundial.jogo'
+        minSdk 24
+        targetSdk 34
+        versionCode buildNumber
+        versionName '1.' + buildNumber
+    }
+
+    // a chave de assinatura NÃO fica no repositório: o GitHub Actions gera uma (senha aleatória)
+    // e guarda no cache, para cada APK novo instalar por cima do anterior
+    def ks = file('guerramundial.keystore'), ksPass = file('keystore.pass')
+    signingConfigs {
+        jogo {
+            if (ks.exists() && ksPass.exists()) {
+                storeFile ks
+                storePassword ksPass.text.trim()
+                keyAlias 'guerramundial'
+                keyPassword ksPass.text.trim()
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            // sem a chave (compilação local), assina com a chave de depuração
+            signingConfig ks.exists() ? signingConfigs.jogo : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // o jogo (HTML + JS) fica em assets/www, montado pelo GitHub Actions a partir da raiz do repositório
+    androidResources {
+        noCompress 'js', 'html'
+    }
+}

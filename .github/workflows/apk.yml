@@ -1,0 +1,84 @@
+# Compila o APK Android do jogo (WebView com o jogo inteiro dentro, funciona sem internet)
+# e publica na Release "apk-latest" para baixar direto no celular.
+name: APK Android
+
+on:
+  push:
+    branches: [ 'claude/wwii-base-building-strategy-tiotjk', 'main', 'master' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Copia o jogo para dentro do app
+        run: |
+          W=android/app/src/main/assets/www
+          rm -rf "$W" && mkdir -p "$W/lib"
+          cp index.html "$W/"
+          cp -r js "$W/"
+          # three.js r128 vai junto no APK (o jogo roda offline)
+          curl -fsSL -o "$W/lib/three.min.js" https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js
+          test "$(stat -c %s "$W/lib/three.min.js")" -gt 500000
+          sed -i 's#https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js#lib/three.min.js#' "$W/index.html"
+          grep -q 'src="lib/three.min.js"' "$W/index.html"
+          du -sh "$W"
+
+      # chave de assinatura guardada no cache do Actions (fora do repositório)
+      - uses: actions/cache@v4
+        with:
+          path: |
+            android/app/guerramundial.keystore
+            android/app/keystore.pass
+          key: apk-assinatura-v1
+
+      - name: Gera a chave de assinatura (só na primeira vez)
+        working-directory: android/app
+        run: |
+          if [ ! -f guerramundial.keystore ] || [ ! -f keystore.pass ]; then
+            openssl rand -hex 24 > keystore.pass
+            keytool -genkeypair -keystore guerramundial.keystore -storepass "$(cat keystore.pass)" -keypass "$(cat keystore.pass)" \
+              -alias guerramundial -keyalg RSA -keysize 2048 -validity 20000 -dname "CN=Guerra Mundial, C=BR"
+          fi
+
+      - name: Compila
+        working-directory: android
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: Prepara o arquivo
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk GuerraMundial.apk
+          ls -la GuerraMundial.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GuerraMundial-apk
+          path: GuerraMundial.apk
+
+      - name: Publica na Release apk-latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete apk-latest --yes --cleanup-tag || true
+          gh release create apk-latest GuerraMundial.apk \
+            --target "$GITHUB_SHA" \
+            --title "Guerra Mundial — APK (compilação ${GITHUB_RUN_NUMBER})" \
+            --notes "Baixe o GuerraMundial.apk no celular e abra para instalar (permita instalar de fontes desconhecidas). Cada versão nova instala por cima da anterior e mantém o jogo salvo. Commit ${GITHUB_SHA::7}."

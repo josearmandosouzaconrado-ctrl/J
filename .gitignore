@@ -1,2 +1,10 @@
 node_modules/
 .DS_Store
+# Android: o jogo é copiado para assets/www na compilação; pastas geradas pelo Gradle
+android/app/src/main/assets/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/guerramundial.keystore
+android/app/keystore.pass
