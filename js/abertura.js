@@ -137,13 +137,6 @@ const Abertura = {
     const vw = Game.vw, vh = Game.vh;
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, vw, 16); ctx.fillRect(0, vh - 16, vw, 16);   // faixas de cinema
     if (S.flash > 0) { ctx.fillStyle = `rgba(160,10,10,${S.flash})`; ctx.fillRect(0, 0, vw, vh); }
-    ctx.font = '10px VT323, monospace'; ctx.textAlign = 'center';
-    for (const f of S.falas) {
-      const a = f.a, x = Math.round(a.x - camX), y = Math.round(a.y - (a.h || 24) - 8 - camY), w = Math.min(170, ctx.measureText(f.txt).width + 8);
-      ctx.fillStyle = 'rgba(250,246,232,0.96)'; ctx.fillRect(x - w / 2, y - 10, w, 12); ctx.fillRect(x - 2, y + 2, 4, 2);
-      ctx.strokeStyle = a === S.guardas[0] ? '#8a1010' : '#3a2a1a'; ctx.lineWidth = 1; ctx.strokeRect(x - w / 2 + 0.5, y - 9.5, w - 1, 11);
-      ctx.fillStyle = '#2a1a10'; ctx.fillText(f.txt, x, y - 1, 164);
-    }
-    ctx.textAlign = 'left';
+    for (const f of S.falas) { const a = f.a; Nitido.balao(Math.round(a.x - camX), Math.round(a.y - (a.h || 24) - 6 - camY), f.txt, { max: 170, borda: a === S.guardas[0] ? '#8a1010' : '#3a2a1a' }); }
   }
 };

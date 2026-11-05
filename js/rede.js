@@ -26,6 +26,7 @@ class Remoto extends Actor {
     if (Math.hypot(s.x - this.x, s.y - this.y) > 260) { this.x = s.x; this.y = s.y; }
     this.tx = s.x; this.ty = s.y; this.dir = s.d || this.dir; this.netMoving = !!s.m; this.mounted = !!s.mo;
     this.hp = s.hp; this.maxHp = s.mh; this.lv = s.lv; this.area = s.a; this.morto = !!s.dead;
+    this.carroca = Array.isArray(s.c) && s.c.length === 4 ? { x: s.c[0], y: s.c[1], dir: s.c[2] ? 'left' : 'right', moving: !!s.c[3] } : null; this.pas = s.pas || null;
     if (this.dir === 'left' || this.dir === 'right') this.lastH = this.dir;
   }
   update(dt) {
@@ -57,17 +58,11 @@ class Remoto extends Actor {
     }
     // nome, nível, reino e vida
     const guerra = Rede.emGuerra(this.id), x = Math.round(this.x - camX), y = Math.round(this.y - (this.h || 28) - 6 - camY - (this.mounted ? 9 : 0));
-    ctx.font = '10px VT323, monospace'; ctx.textAlign = 'center';
+    // o nome e o balão vão na camada nítida (nitido.js), sem borrar
     const t = `${this.nome} Nv${this.lv}`;
-    ctx.fillStyle = 'rgba(0,0,0,0.6)'; const w = ctx.measureText(t).width + 4; ctx.fillRect(x - w / 2, y - 9, w, 10);
-    ctx.fillStyle = guerra ? '#ff6050' : '#a0e8ff'; ctx.fillText(t, x, y - 1);
-    if (this.reino) { ctx.fillStyle = this.cor; ctx.fillRect(x - w / 2 - 4, y - 8, 3, 8); }
+    Nitido.nome(x, y, t, { cor: guerra ? '#ff6050' : '#a0e8ff', faixa: this.reino ? this.cor : null });
     if (guerra || this.hp < this.maxHp) { const f = clamp(this.hp / this.maxHp, 0, 1); ctx.fillStyle = '#200'; ctx.fillRect(x - 12, y + 1, 24, 3); ctx.fillStyle = guerra ? '#e03030' : '#40c040'; ctx.fillRect(x - 12, y + 1, Math.round(24 * f), 3); }
-    if (this.chatT > 0 && this.chat) {
-      const cw = Math.min(150, ctx.measureText(this.chat).width + 8), cy = y - 14;
-      ctx.fillStyle = 'rgba(255,255,240,0.95)'; ctx.fillRect(x - cw / 2, cy - 10, cw, 12); ctx.fillRect(x - 2, cy + 2, 4, 2);
-      ctx.fillStyle = '#1a1020'; ctx.fillText(this.chat, x, cy - 1, 144);
-    }
+    if (this.chatT > 0 && this.chat) Nitido.balao(x, y - 11, this.chat, { fundo: 'rgba(255,255,240,0.96)', borda: '#403050', cor: '#1a1020' });
     ctx.textAlign = 'left';
   }
 }
@@ -141,7 +136,7 @@ const Rede = {
       case 'join': this.outros.set(m.p.id, new Remoto(m.p)); break;
       case 'perfil': { const o = this.outros.get(m.p.id); if (o) o.aplicar(m.p); else this.outros.set(m.p.id, new Remoto(m.p)); break; }
       case 'leave': { const o = this.outros.get(m.id); if (o) { this.tirar(o); this.outros.delete(m.id); } break; }
-      case 'sts': for (const [id, x, y, d, mv, mo, hp, mh, lv, a, dead] of m.l) { const o = this.outros.get(id); if (o) o.estado({ x, y, d, m: mv, mo, hp, mh, lv, a, dead }); } break;
+      case 'sts': for (const [id, x, y, d, mv, mo, hp, mh, lv, a, dead, c, pas] of m.l) { const o = this.outros.get(id); if (o) o.estado({ x, y, d, m: mv, mo, hp, mh, lv, a, dead, c, pas }); } break;
       case 'atk': { const o = this.outros.get(m.id); if (o) { o.swing = { t: 0, dur: m.dur, ang: m.ang, arc: m.arc }; o.dir = Math.abs(Math.cos(m.ang)) > Math.abs(Math.sin(m.ang)) ? (Math.cos(m.ang) > 0 ? 'right' : 'left') : (Math.sin(m.ang) > 0 ? 'down' : 'up'); } break; }
       case 'proj': { const o = this.outros.get(m.id); if (o && G.level && G.level.isWorld && o.area === 'w') Combat.projectile(o, m.x, m.y, m.ang, m.kind, 0, { spd: m.spd, life: m.life, color: m.color || undefined, r: m.r, rede: true }); break; }
       case 'hurt': {
@@ -212,8 +207,10 @@ const Rede = {
     // o estado do jogador 10 vezes por segundo
     this.stT = (this.stT || 0) - dt;
     const area = G.level && G.level.isWorld ? 'w' : '';
-    const s = [Math.round(P.x), Math.round(P.y), P.dir, P.moving ? 1 : 0, P.mounted ? 1 : 0, Math.round(P.hp), P.stat.maxHp, P.level, area, P.dead ? 1 : 0].join();
-    if (this.stT <= 0 && (s !== this._st || this.stT < -1)) { this.stT = 0.1; this._st = s; this.send({ t: 'st', x: P.x, y: P.y, d: P.dir, m: P.moving, mo: P.mounted, hp: P.hp, mh: P.stat.maxHp, lv: P.level, a: area, dead: P.dead }); }
+    // a carroça puxada (outros jogadores podem subir nela) e em que carroça você está sentado
+    const cr = typeof Carroca !== 'undefined' ? Carroca.estado() : 0, pas = (P.passageiro && P.passageiro.id) || '';
+    const s = [Math.round(P.x), Math.round(P.y), P.dir, P.moving ? 1 : 0, P.mounted ? 1 : 0, Math.round(P.hp), P.stat.maxHp, P.level, area, P.dead ? 1 : 0, cr ? cr.join(':') : 0, pas].join();
+    if (this.stT <= 0 && (s !== this._st || this.stT < -1)) { this.stT = 0.1; this._st = s; this.send({ t: 'st', x: P.x, y: P.y, d: P.dir, m: P.moving, mo: P.mounted, hp: P.hp, mh: P.stat.maxHp, lv: P.level, a: area, dead: P.dead, c: cr, pas }); }
     this.pingT = (this.pingT || 20) - dt; if (this.pingT <= 0) { this.pingT = 20; this.send({ t: 'ping' }); }
     // aparência e reino mudaram?
     this.lkT = (this.lkT || 0) - dt;

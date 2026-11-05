@@ -132,7 +132,7 @@ function receber(c, m) {
       return;
     }
     case 'st': {
-      p.st = { x: num(m.x, 0, 400000), y: num(m.y, 0, 400000), d: limpa(m.d, 6), m: m.m ? 1 : 0, mo: m.mo ? 1 : 0, hp: num(m.hp, 0, 1e6), mh: num(m.mh, 1, 1e6), lv: num(m.lv, 1, 999), a: m.a === 'w' ? 'w' : '', dead: m.dead ? 1 : 0 };
+      p.st = { x: num(m.x, 0, 400000), y: num(m.y, 0, 400000), d: limpa(m.d, 6), m: m.m ? 1 : 0, mo: m.mo ? 1 : 0, hp: num(m.hp, 0, 1e6), mh: num(m.mh, 1, 1e6), lv: num(m.lv, 1, 999), a: m.a === 'w' ? 'w' : '', dead: m.dead ? 1 : 0, c: Array.isArray(m.c) && m.c.length === 4 ? [num(m.c[0], 0, 400000), num(m.c[1], 0, 400000), m.c[2] ? 1 : 0, m.c[3] ? 1 : 0] : 0, pas: limpa(m.pas, 12) };
       p.mudou = true;
       return;
     }
@@ -181,7 +181,7 @@ function guerrasPub() {
 // ---------- 10 vezes por segundo: posições de todos ----------
 setInterval(() => {
   const l = [];
-  for (const c of online()) if (c.p.mudou && c.p.st && c.p.nome) { c.p.mudou = false; const s = c.p.st; l.push([c.p.id, Math.round(s.x), Math.round(s.y), s.d, s.m, s.mo, Math.round(s.hp), Math.round(s.mh), s.lv, s.a, s.dead]); }
+  for (const c of online()) if (c.p.mudou && c.p.st && c.p.nome) { c.p.mudou = false; const s = c.p.st; l.push([c.p.id, Math.round(s.x), Math.round(s.y), s.d, s.m, s.mo, Math.round(s.hp), Math.round(s.mh), s.lv, s.a, s.dead, s.c ? s.c.map(Math.round) : 0, s.pas || '']); }
   if (l.length) todos({ t: 'sts', l });
 }, 100);
 // conexões mortas

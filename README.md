@@ -97,6 +97,16 @@ Criar um reino é difícil e leva tempo:
 
 **O mundo também cresce**: com o passar dos dias, aldeias em paz viram cidades e cidades viram metrópoles. As notícias aparecem em Reinos.
 
+## Atalhos, comida, bebida e acampamento
+
+- **4 atalhos** ao lado do livro vermelho: na Mochila, toque num item (bebida, comida, poção ou arma) e em **📌 Atalho**. Um toque no atalho usa o item ou troca de arma. No teclado: 1, 2, 3 e 4.
+- **Arma nas costas**: fora de combate a arma fica guardada nas costas (a adaga na cintura) e aparece no personagem; ao bater, ele saca.
+- **Comer e beber** têm animação (a comida vai à boca, a caneca é virada). Os fregueses da taverna também bebem.
+- **Cerveja, hidromel e vinho** embebedam aos poucos: alegre (mais coragem), tonto (a visão balança e o passo sai torto), bêbado (visão dupla, soluço, tropeços, apanha mais) e, se beber demais, você apaga e acorda horas depois, às vezes sem ouro e com ressaca. Água ajuda a ressaca a passar. No frio, quem bebeu perde calor mais rápido.
+- **🏕 Acampar / Fogueira** (na Mochila): no mundo aberto, faça uma fogueira (2 lenha) ou monte um acampamento com tenda e fogueira (3 lenha e 2 couro). Sem lenha, junte gravetos. Na tenda dá para dormir; a fogueira esquenta, cozinha e se apaga depois de dois dias.
+- **Carroça com passageiros** (multiplayer): atrele a carroça no cavalo, monte e conduza; os amigos chegam perto e tocam em **Subir** para ir sentados. Para sair: **Descer**.
+- Os **balões de fala** e os **nomes dos jogadores** agora são nítidos, e a sua mensagem no chat aparece num balão em cima de você.
+
 ## Multiplayer — salas com código (coop)
 
 Até **9 jogadores** no mesmo mundo, sem servidor: em **Multiplayer → Criar sala**, o jogo mostra um **código de convite** de 6 letras, e os amigos entram com **Entrar na sala**. A conexão é direta entre os aparelhos (precisa de internet).

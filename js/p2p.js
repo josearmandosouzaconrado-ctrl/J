@@ -215,7 +215,7 @@ const Sala = {
         if (novo) this.todos({ t: 'aviso', txt: `${p.nome} entrou na sala.` }, c);
         return;
       }
-      case 'st': p.st = { x: N(m.x, 0, 400000), y: N(m.y, 0, 400000), d: L(m.d, 6), m: m.m ? 1 : 0, mo: m.mo ? 1 : 0, hp: N(m.hp, 0, 1e6), mh: N(m.mh, 1, 1e6), lv: N(m.lv, 1, 999), a: m.a === 'w' ? 'w' : '', dead: m.dead ? 1 : 0 }; p.mudou = true; return;
+      case 'st': p.st = { x: N(m.x, 0, 400000), y: N(m.y, 0, 400000), d: L(m.d, 6), m: m.m ? 1 : 0, mo: m.mo ? 1 : 0, hp: N(m.hp, 0, 1e6), mh: N(m.mh, 1, 1e6), lv: N(m.lv, 1, 999), a: m.a === 'w' ? 'w' : '', dead: m.dead ? 1 : 0, c: Array.isArray(m.c) && m.c.length === 4 ? [N(m.c[0], 0, 400000), N(m.c[1], 0, 400000), m.c[2] ? 1 : 0, m.c[3] ? 1 : 0] : 0, pas: L(m.pas, 12) }; p.mudou = true; return;
       case 'atk': if (p.st) this.todos({ t: 'atk', id: p.id, ang: N(m.ang, -10, 10), arc: N(m.arc, 0, 7), dur: N(m.dur, 0.05, 1) }, c); return;
       case 'proj': if (p.st) this.todos({ t: 'proj', id: p.id, x: N(m.x, 0, 400000), y: N(m.y, 0, 400000), ang: N(m.ang, -10, 10), kind: L(m.kind, 16), spd: N(m.spd, 10, 900), life: N(m.life, 0.05, 3), color: L(m.color, 9), r: N(m.r, 1, 12) }, c); return;
       case 'hit': {
@@ -252,7 +252,7 @@ const Sala = {
   // 10 vezes por segundo: as posições de todos
   posicoes() {
     const l = [];
-    for (const c of this.online()) if (c.p.mudou && c.p.st && c.p.nome) { c.p.mudou = false; const s = c.p.st; l.push([c.p.id, Math.round(s.x), Math.round(s.y), s.d, s.m, s.mo, Math.round(s.hp), Math.round(s.mh), s.lv, s.a, s.dead]); }
+    for (const c of this.online()) if (c.p.mudou && c.p.st && c.p.nome) { c.p.mudou = false; const s = c.p.st; l.push([c.p.id, Math.round(s.x), Math.round(s.y), s.d, s.m, s.mo, Math.round(s.hp), Math.round(s.mh), s.lv, s.a, s.dead, s.c ? s.c.map(Math.round) : 0, s.pas || '']); }
     if (l.length) this.todos({ t: 'sts', l });
   }
 };
