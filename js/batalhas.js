@@ -11,38 +11,74 @@
 //  O APK normal nem leva este arquivo.
 // =====================================================================
 if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
-  const BW = 96, BH = 56;
+  // o tamanho do mapa: pequeno, médio, grande (o mapa global tem o seu)
+  let BW = 96, BH = 56;
+  const TAM = { p: [96, 56, 'Pequeno'], m: [144, 84, 'Médio'], g: [200, 116, 'Grande'] };
+  const ar = () => BW * BH / 5376;          // para espalhar mais coisas nos mapas maiores
+  const MEIO = () => (BH >> 1) - 1;
   // ---------- os cenários ----------
   const pinta = (L, x0, y0, w, h, t) => { for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) if (L.inb(x, y)) L.tiles[y * L.w + x] = t; };
   const obj = (L, x, y, o) => { if (L.inb(x, y)) L.objs[y * L.w + x] = o; };
-  const espalha = (L, r, n, lista, ok) => { for (let i = 0; i < n; i++) { const x = r.int(1, L.w - 2), y = r.int(1, L.h - 2); if (ok && !ok(x, y)) continue; if (!TSOLID[L.tiles[y * L.w + x]] && !TWATER[L.tiles[y * L.w + x]] && !L.objs[y * L.w + x]) obj(L, x, y, r.pick(lista)); } };
+  const espalha = (L, r, n, lista, ok) => { n = Math.round(n * ar()); for (let i = 0; i < n; i++) { const x = r.int(1, L.w - 2), y = r.int(1, L.h - 2); if (ok && !ok(x, y)) continue; if (!TSOLID[L.tiles[y * L.w + x]] && !TWATER[L.tiles[y * L.w + x]] && !L.objs[y * L.w + x]) obj(L, x, y, r.pick(lista)); } };
   const meio = x => x > 22 && x < BW - 22;     // deixa as pontas livres para as tropas
   const CENARIOS = {
-    planicie: { nome: 'Planície verde', gen(L, r) { L.tiles.fill(T.GRASS); for (let i = 0; i < 18; i++) pinta(L, r.int(0, BW), r.int(0, BH), r.int(3, 9), r.int(2, 6), T.DGRASS); pinta(L, 0, 27, BW, 2, T.ROAD); espalha(L, r, 120, [O.FLOWERS, O.TALLGRASS, O.BUSH, O.ROCK]); espalha(L, r, 14, [O.OAK], (x, y) => y < 8 || y > BH - 8); } },
-    floresta: { nome: 'Floresta densa', gen(L, r) { L.tiles.fill(T.GRASS); for (let i = 0; i < 30; i++) pinta(L, r.int(0, BW), r.int(0, BH), r.int(3, 8), r.int(2, 5), T.DGRASS); espalha(L, r, 700, [O.OAK, O.PINE, O.OAK, O.AUTUMN, O.BUSH], (x, y) => meio(x) || r.chance(0.25)); for (let x = 0; x < BW; x++) for (let y = 24; y < 32; y++) L.objs[y * BW + x] = 0; pinta(L, 0, 27, BW, 2, T.DIRT); } },
+    planicie: { nome: 'Planície verde', gen(L, r) { L.tiles.fill(T.GRASS); for (let i = 0; i < 18 * ar(); i++) pinta(L, r.int(0, BW), r.int(0, BH), r.int(3, 9), r.int(2, 6), T.DGRASS); pinta(L, 0, MEIO(), BW, 2, T.ROAD); espalha(L, r, 120, [O.FLOWERS, O.TALLGRASS, O.BUSH, O.ROCK]); espalha(L, r, 14, [O.OAK], (x, y) => y < 8 || y > BH - 8); } },
+    floresta: { nome: 'Floresta densa', gen(L, r) { L.tiles.fill(T.GRASS); for (let i = 0; i < 30; i++) pinta(L, r.int(0, BW), r.int(0, BH), r.int(3, 8), r.int(2, 5), T.DGRASS); espalha(L, r, 700, [O.OAK, O.PINE, O.OAK, O.AUTUMN, O.BUSH], (x, y) => meio(x) || r.chance(0.25)); for (let x = 0; x < BW; x++) for (let y = MEIO() - 3; y < MEIO() + 5; y++) L.objs[y * BW + x] = 0; pinta(L, 0, MEIO(), BW, 2, T.DIRT); } },
     deserto: { nome: 'Deserto', gen(L, r) { L.tiles.fill(T.DESERT); for (let i = 0; i < 25; i++) pinta(L, r.int(0, BW), r.int(0, BH), r.int(4, 12), r.int(2, 5), T.SAND); espalha(L, r, 60, [O.CACTUS, O.BOULDER, O.ROCK, O.BONES], meio); } },
     neve: { nome: 'Campo de neve', gen(L, r) { L.tiles.fill(T.SNOW); for (let i = 0; i < 12; i++) pinta(L, r.int(0, BW), r.int(0, BH), r.int(4, 10), r.int(2, 5), T.ICE); espalha(L, r, 110, [O.SNOWPINE, O.SNOWPINE, O.ROCK], (x, y) => meio(x) || y < 6 || y > BH - 6); } },
-    rio: { nome: 'Travessia do rio', gen(L, r) { L.tiles.fill(T.GRASS); for (let y = 0; y < BH; y++) { const c = 45 + Math.round(Math.sin(y * 0.18) * 3); pinta(L, c - 3, y, 7, 1, T.WATER); pinta(L, c - 4, y, 1, 1, T.SAND); pinta(L, c + 4, y, 1, 1, T.SAND); } for (const by of [12, 40]) pinta(L, 38, by, 20, 3, T.BRIDGE); espalha(L, r, 60, [O.REEDS, O.BUSH, O.OAK, O.FLOWERS]); } },
+    rio: { nome: 'Travessia do rio', gen(L, r) { L.tiles.fill(T.GRASS); for (let y = 0; y < BH; y++) { const c = Math.round(BW * 0.47) + Math.round(Math.sin(y * 0.18) * 3); pinta(L, c - 3, y, 7, 1, T.WATER); pinta(L, c - 4, y, 1, 1, T.SAND); pinta(L, c + 4, y, 1, 1, T.SAND); } for (const by of [Math.round(BH * 0.21), Math.round(BH * 0.71)]) pinta(L, Math.round(BW * 0.47) - 10, by, 20, 3, T.BRIDGE); espalha(L, r, 60, [O.REEDS, O.BUSH, O.OAK, O.FLOWERS]); } },
     castelo: { nome: 'Cerco ao castelo', gen(L, r) {
-      L.tiles.fill(T.GRASS); pinta(L, 0, 27, 60, 3, T.ROAD);
-      const x0 = 60, y0 = 12, w = 28, h = 32;
+      const x0 = BW - 36, y0 = MEIO() - 15, w = 28, h = 32;
+      L.tiles.fill(T.GRASS); pinta(L, 0, MEIO(), x0, 3, T.ROAD);
       pinta(L, x0, y0, w, h, T.COBBLE);
       pinta(L, x0, y0, w, 2, T.WALL); pinta(L, x0, y0 + h - 2, w, 2, T.WALL); pinta(L, x0 + w - 2, y0, 2, h, T.WALL); pinta(L, x0, y0, 2, h, T.WALL);
       pinta(L, x0, y0 + 13, 2, 6, T.COBBLE);                                    // o portão
       for (const [tx, ty] of [[x0 - 1, y0 - 1], [x0 + w - 2, y0 - 1], [x0 - 1, y0 + h - 2], [x0 + w - 2, y0 + h - 2]]) pinta(L, tx, ty, 3, 3, T.WALL);
-      espalha(L, r, 50, [O.BUSH, O.ROCK, O.FLOWERS], x => x < 56); for (let i = 0; i < 8; i++) obj(L, x0 + 4 + i * 3, y0 + 4, O.BARREL);
+      espalha(L, r, 50, [O.BUSH, O.ROCK, O.FLOWERS], x => x < x0 - 4); for (let i = 0; i < 8; i++) obj(L, x0 + 4 + i * 3, y0 + 4, O.BARREL);
     } },
     praia: { nome: 'Desembarque na praia', gen(L, r) { L.tiles.fill(T.GRASS); for (let y = 0; y < BH; y++) { const c = 16 + Math.round(Math.sin(y * 0.2) * 2); pinta(L, 0, y, c - 5, 1, T.DEEP); pinta(L, c - 5, y, 5, 1, T.WATER); pinta(L, c, y, 14, 1, T.SAND); } espalha(L, r, 40, [O.PALM, O.BUSH, O.ROCK], x => x > 36); espalha(L, r, 20, [O.CRATE, O.BOULDER], x => x > 18 && x < 30); } },
-    trincheiras: { nome: 'Trincheiras (1ª Guerra)', gen(L, r) { L.tiles.fill(T.DEADGRASS); for (let i = 0; i < 40; i++) pinta(L, r.int(0, BW), r.int(0, BH), r.int(2, 5), r.int(1, 3), T.MUD); for (const tx of [18, 77]) { for (let y = 2; y < BH - 2; y++) pinta(L, tx + Math.round(Math.sin(y * 0.4)), y, 2, 1, T.MUD); for (let y = 3; y < BH - 3; y += 3) obj(L, tx + (tx < 40 ? 4 : -3), y, O.FENCE); for (let y = 4; y < BH - 4; y += 5) obj(L, tx + (tx < 40 ? -1 : 2), y, O.CRATE); } espalha(L, r, 40, [O.DEADTREE, O.BONES, O.ROCK], meio); } },
+    trincheiras: { nome: 'Trincheiras (1ª Guerra)', gen(L, r) { L.tiles.fill(T.DEADGRASS); for (let i = 0; i < 40; i++) pinta(L, r.int(0, BW), r.int(0, BH), r.int(2, 5), r.int(1, 3), T.MUD); for (const tx of [18, BW - 19]) { for (let y = 2; y < BH - 2; y++) pinta(L, tx + Math.round(Math.sin(y * 0.4)), y, 2, 1, T.MUD); for (let y = 3; y < BH - 3; y += 3) obj(L, tx + (tx < 40 ? 4 : -3), y, O.FENCE); for (let y = 4; y < BH - 4; y += 5) obj(L, tx + (tx < 40 ? -1 : 2), y, O.CRATE); } espalha(L, r, 40, [O.DEADTREE, O.BONES, O.ROCK], meio); } },
+    global: { nome: 'Mapa global (continentes e mares)', tam: [224, 136], gen(L, r) {
+      // dois continentes grandes, ilhas, mares fundos, polos de gelo, desertos no meio, florestas e montanhas
+      const ns = new Simplex(r.int(1, 1e9)), nm = new Simplex(r.int(1, 1e9)), W = BW, H = BH;
+      const blob = (x, y, cx, cy, rx, ry) => Math.exp(-(((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2));
+      const c1 = [W * r.range(0.22, 0.3), H * r.range(0.42, 0.58)], c2 = [W * r.range(0.7, 0.78), H * r.range(0.42, 0.58)];
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        let e = fbm(ns, x * 0.035, y * 0.035, 4) * 0.55 + 0.75 * Math.max(blob(x, y, c1[0], c1[1], W * 0.17, H * 0.33), blob(x, y, c2[0], c2[1], W * 0.16, H * 0.34)) - 0.32;
+        e -= Math.max(0, 1 - Math.min(x, y, W - 1 - x, H - 1 - y) / 8) * 0.5;               // o mar em volta
+        const m = fbm(nm, x * 0.05, y * 0.05, 3), lat = Math.abs(y - H / 2) / (H / 2);
+        let t;
+        if (e < -0.08) t = T.DEEP; else if (e < 0.02) t = T.WATER; else if (e < 0.06) t = lat > 0.8 ? T.SNOW : T.SAND;
+        else if (lat > 0.84) t = e > 0.4 ? T.SNOWROCK : T.SNOW;
+        else if (lat > 0.7) t = m > 0.1 ? T.TUNDRA : T.SNOW;
+        else if (e > 0.5) t = T.ROCK;
+        else if (lat < 0.3 && m < -0.12) t = r.chance(0.2) ? T.SAND : T.DESERT;
+        else if (m > 0.25 && e < 0.14) t = T.SWAMP;
+        else t = m > 0.05 ? T.DGRASS : T.GRASS;
+        L.tiles[y * W + x] = t;
+        const o = y * W + x;
+        if (t === T.DGRASS && r.chance(0.16)) L.objs[o] = r.pick([O.OAK, O.OAK, O.PINE, O.AUTUMN]);
+        else if (t === T.GRASS && r.chance(0.035)) L.objs[o] = r.pick([O.OAK, O.BUSH, O.FLOWERS, O.TALLGRASS]);
+        else if ((t === T.SNOW || t === T.TUNDRA) && r.chance(0.05)) L.objs[o] = O.SNOWPINE;
+        else if (t === T.DESERT && r.chance(0.025)) L.objs[o] = r.pick([O.CACTUS, O.BOULDER, O.BONES]);
+        else if (t === T.SAND && lat < 0.5 && r.chance(0.05)) L.objs[o] = O.PALM;
+        else if (t === T.SWAMP && r.chance(0.08)) L.objs[o] = r.pick([O.REEDS, O.WILLOW !== undefined ? O.WILLOW : O.OAK]);
+        else if (t === T.ROCK && r.chance(0.04)) L.objs[o] = O.BOULDER;
+      }
+      // estradas cortando cada continente
+      for (const [cx, cy] of [c1, c2]) { for (let x = Math.round(cx - W * 0.12); x < cx + W * 0.12; x++) { const y = Math.round(cy + Math.sin(x * 0.08) * 3); if (L.inb(x, y) && !TWATER[L.tiles[y * W + x]] && L.tiles[y * W + x] !== T.ROCK) { L.tiles[y * W + x] = T.ROAD; L.objs[y * W + x] = 0; } } }
+    } },
     ruinas: { nome: 'Cidade em ruínas (2ª Guerra)', gen(L, r) { L.tiles.fill(T.COBBLE); for (let x = 0; x < BW; x += 16) pinta(L, x, 0, 3, BH, T.ROAD); for (let y = 0; y < BH; y += 14) pinta(L, 0, y, BW, 3, T.ROAD); for (let i = 0; i < 26; i++) { const x = r.int(24, BW - 26), y = r.int(2, BH - 6), w = r.int(3, 7), h = r.int(2, 4); pinta(L, x, y, w, 1, T.WALL); if (r.chance(0.6)) pinta(L, x, y, 1, h, T.WALL); } espalha(L, r, 90, [O.BOULDER, O.CRATE, O.BARREL, O.ROCK, O.DEADTREE]); } }
   };
 
   class BatalhaLevel {
     constructor(cen, seed) {
       this.isWorld = false; this.isInterior = false; this.isBatalha = true; this.dark = false;
+      const tz = CENARIOS[cen].tam || TAM[Bat.tam] || TAM.p; BW = tz[0]; BH = tz[1];
       this.cen = cen; this.name = '⚔ ' + CENARIOS[cen].nome;
       this.w = BW; this.h = BH; this.tiles = new Uint8Array(BW * BH); this.objs = new Uint8Array(BW * BH);
       CENARIOS[cen].gen(this, new RNG(seed));
+      this.base = this.tiles.slice(); this.baseO = this.objs.slice();   // para trocar de estação
       const W = Game.world, P = Game.player;
       this.regIndex = W && P ? W.regAt(Math.floor((Game.worldPos ? Game.worldPos.x : P.x) / 16), Math.floor((Game.worldPos ? Game.worldPos.y : P.y) / 16)) : 0;
       this.entry = { x: BW >> 1, y: BH >> 1 }; this.canvas = null;
@@ -57,13 +93,15 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
     // as decorações sólidas viram cobertura (bloqueiam passagem e tiros)
     refazMascara() {
       this.mask.fill(0);
-      for (const d of this.decos) { const D = BatDeco.porId[d.id]; if (!D || !D.sol) continue; const [sw, sh] = D.sol; for (let ty = Math.floor((d.y - sh) / 16); ty <= Math.floor((d.y - 1) / 16); ty++) for (let tx = Math.floor((d.x - sw / 2) / 16); tx <= Math.floor((d.x + sw / 2 - 1) / 16); tx++) if (this.inb(tx, ty)) this.mask[ty * this.w + tx] = 1; }
+      for (const d of this.decos) { const D = BatDeco.porId[d.id]; if (!D || !D.sol) continue; const [sw, sh] = d.r & 1 ? [D.sol[1], D.sol[0]] : D.sol; for (let ty = Math.floor((d.y - sh) / 16); ty <= Math.floor((d.y - 1) / 16); ty++) for (let tx = Math.floor((d.x - sw / 2) / 16); tx <= Math.floor((d.x + sw / 2 - 1) / 16); tx++) if (this.inb(tx, ty)) this.mask[ty * this.w + tx] = 1; }
     }
     render() { const c = Sprites.cv(this.w * 16, this.h * 16); Sprites.paintTiles(c.getContext('2d'), this.w, this.h, (x, y) => this.tileAt(x, y), 777); this.canvas = c; }
     drawGround(ctx, camX, camY, vw, vh) {
       if (!this.canvas) this.render(); ctx.fillStyle = '#2a3a20'; ctx.fillRect(0, 0, vw, vh); ctx.drawImage(this.canvas, -camX, -camY);
-      for (const d of this.decos) { const D = BatDeco.porId[d.id]; if (!D || !D.plano) continue; const img = BatDeco.img(D); ctx.drawImage(img, Math.round(d.x - img.width / 2 - camX), Math.round(d.y - img.height / 2 - camY)); }
+      for (const d of this.decos) { const D = BatDeco.porId[d.id]; if (!D || !D.plano) continue; const img = BatDeco.imgR(D, d.r, d.f); ctx.drawImage(img, Math.round(d.x - img.width / 2 - camX), Math.round(d.y - img.height / 2 - camY)); }
     }
+    // o clima, a neblina e a cor da estação por cima de tudo
+    drawOverlay(ctx) { if (window.BatX) BatX.overlay(ctx); }
     miniatura() {
       const c = document.createElement('canvas'); c.width = this.w; c.height = this.h; const x = c.getContext('2d');
       for (let y = 0; y < this.h; y++) for (let xx = 0; xx < this.w; xx++) { const t = this.tiles[y * this.w + xx], o = this.objs[y * this.w + xx]; x.fillStyle = o && OSOLID[o] ? '#2a4a1a' : (TILE_DEFS[t] && TILE_DEFS[t].c) || '#555'; x.fillRect(xx, y, 1, 1); }
@@ -78,7 +116,7 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
   const MEDIEVAIS = [['milicia', 'Miliciano'], ['soldado', 'Soldado'], ['arqueiro', 'Arqueiro'], ['cavaleiro', 'Cavaleiro'], ['mosqueteiro', 'Mosqueteiro'], ['elite', 'Elite Real']];
   const MONSTROS = ['goblin', 'goblin_arqueiro', 'bandido', 'esqueleto', 'esqueleto_arqueiro', 'zumbi', 'lobo', 'urso', 'aranha', 'troll', 'ogro', 'yeti', 'necromante', 'lich', 'cavaleiro_morto', 'campeao_orc', 'troll_rei', 'dragao'];
   const Bat = {
-    on: false, fase: 'editar', lado: 'A', qtd: 5, sel: null, cat: 'medieval', vel: 1, apagar: false, dcat: 'guerra',
+    on: false, fase: 'editar', lado: 'A', qtd: 5, sel: null, cat: 'medieval', vel: 1, apagar: false, dcat: 'guerra', tam: 'p', rot: 0, esp: false,
     ka: 'valdoria', kb: 'gorthak', hora: 12, clima: null, cen: 'planicie', colocadas: [], mortos: { A: 0, B: 0 },
     reino(l) { return l === 'A' ? this.ka : this.kb; },
     cor(l) { const K = War.K[this.reino(l)]; return (K && K.color) || (l === 'A' ? '#e04040' : '#4060e0'); },
@@ -92,6 +130,10 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
         for (const t of ['mark4', 'ft17', 'sherman', 'tiger', 'panzer4']) out.push({ id: 'v:' + t, nome: A.TANQUES[t].nome, img: foto('v' + t + cor, () => A.tanque(t, mix(A.TANQUES[t].cor, cor, 0.2), cor).lado[0].toDataURL()), larga: true });
         out.push({ id: 'v:biplano', nome: 'Biplano', img: foto('vb' + cor, () => A.biplano('#a08850', cor).c.toDataURL()), larga: true });
         out.push({ id: 'v:caca', nome: 'Caça', img: foto('vc' + cor, () => A.caca('#6a7a6a', cor).c.toDataURL()), larga: true });
+      }
+      if (this.cat === 'naval' && E && E.TIPOS && window.EraArte) {
+        const A = window.EraArte, cor = this.cor(this.lado);
+        for (const t of ['lancha', 'submarino', 'destroier', 'navio', 'portaavioes']) { const T = E.TIPOS[t], fn = A[T.nav || 'navio']; out.push({ id: 'v:' + t, nome: T.nome, img: foto('n' + t + cor, () => fn.call(A, mix(T.cor, cor, 0.15), cor, true).c.toDataURL()), larga: true }); }
       }
       if (this.cat === 'deco' && window.BatDeco) for (const d of BatDeco.DECOS) if (d.cat === this.dcat) out.push({ id: 'd:' + d.id, nome: d.nome, img: BatDeco.url(d), larga: d.w > 30 });
       return out;
@@ -113,6 +155,7 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
       if (m.setDir) m.setDir(lado === 'A' ? 0 : Math.PI);
       if (tipo !== 'v') { Game.findFree(m); Game.actors.push(m); }
       if (this.fase !== 'lutar') this.congelar(m);
+      if (window.BatX) BatX.envolver(m);
       return m;
     },
     congelar(m) { if (this.fase === 'lutar' || m._upd !== undefined) return; m._upd = Object.prototype.hasOwnProperty.call(m, 'update') ? m.update : null; m.update = function () { }; },
@@ -120,11 +163,14 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
     colocar(wx, wy) {
       if (!this.sel) return this.aviso('Escolha uma unidade na barra de baixo.');
       if (this.sel.startsWith('d:')) return this.decorar(this.sel.slice(2), wx, wy);
-      const v = this.sel.startsWith('v:'), n = v ? Math.min(this.qtd, 5) : this.qtd, cols = Math.min(n, 5), esp = v ? 56 : 15;
+      const v = this.sel.startsWith('v:'), Tv = v && window.Era && Era.TIPOS && Era.TIPOS[this.sel.slice(2)];
+      if (Tv && Tv.agua && !TWATER[Game.level.tileAt(Math.floor(wx / 16), Math.floor(wy / 16))]) return this.aviso('Navios só na água: toque no mar ou no rio.');
+      const n = v ? Math.min(this.qtd, Tv && Tv.agua ? 3 : 5) : this.qtd, cols = Math.min(n, 5), esp = v ? (Tv && Tv.agua ? 130 : 56) : 15;
       const rows = Math.ceil(n / cols), dir = this.lado === 'A' ? 1 : -1;
       for (let i = 0; i < n; i++) {
         const c = i % cols, r = Math.floor(i / cols);
-        const x = wx - r * esp * dir * 0.9, y = wy + (c - (cols - 1) / 2) * (v ? 40 : esp);
+        const x = wx - r * esp * dir * 0.9, y = wy + (c - (cols - 1) / 2) * (v ? (Tv && Tv.agua ? 70 : 40) : esp);
+        if (Tv && Tv.agua && !TWATER[Game.level.tileAt(Math.floor(x / 16), Math.floor(y / 16))]) continue;
         if (this.criar(this.sel, this.lado, x, y)) this.colocadas.push({ u: this.sel, lado: this.lado, x, y });
       }
       void rows;
@@ -133,18 +179,21 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
     decorar(id, wx, wy) {
       const D = BatDeco.porId[id], L = Game.level; if (!D || !L.isBatalha) return;
       if (D.obj !== undefined) { const tx = Math.floor(wx / 16), ty = Math.floor(wy / 16); if (L.inb(tx, ty)) { L.objs[ty * L.w + tx] = D.obj; } }
-      else { L.decos.push({ id, x: Math.round(wx), y: Math.round(D.plano ? wy : wy + D.h / 2 - 2) }); L.refazMascara(); }
+      else {
+        const img = BatDeco.imgR(D, this.rot, this.esp), d = { id, x: Math.round(wx), y: Math.round(D.plano ? wy : wy + img.height / 2 - 2), r: this.rot, f: this.esp };
+        L.decos.push(d); if (D.arma && window.BatX) BatX.novaArma(d, D, this.lado); L.refazMascara();
+      }
       Sfx.play('equip');
     },
     apagarPerto(wx, wy) {
       const L = Game.level;
       // primeiro as decorações (a mais perto do toque)
       // distância do toque até o retângulo do desenho (0 se tocou em cima dele)
-      let di = -1, dd = 14; L.decos.forEach((d, i) => { const D = BatDeco.porId[d.id]; if (!D) return; const y0 = D.plano ? d.y - D.h / 2 : d.y - D.h, x0 = d.x - D.w / 2; const k = Math.hypot(Math.max(x0 - wx, 0, wx - x0 - D.w), Math.max(y0 - wy, 0, wy - y0 - D.h)); if (k < dd || (k === 0 && dd === 0 && d.y > L.decos[di].y)) { dd = k; di = i; } });
+      let di = -1, dd = 14; L.decos.forEach((d, i) => { const D = BatDeco.porId[d.id]; if (!D) return; const im = BatDeco.imgR(D, d.r, d.f), iw = im.width, ih = im.height; const y0 = D.plano ? d.y - ih / 2 : d.y - ih, x0 = d.x - iw / 2; const k = Math.hypot(Math.max(x0 - wx, 0, wx - x0 - iw), Math.max(y0 - wy, 0, wy - y0 - ih)); if (k < dd || (k === 0 && dd === 0 && d.y > L.decos[di].y)) { dd = k; di = i; } });
       const tx = Math.floor(wx / 16), ty = Math.floor(wy / 16), temObj = L.inb(tx, ty) && L.objs[ty * L.w + tx];
       let best = null, bd = 26;
       for (const a of Game.actors) if (a.batalha && !a.dead) { const d = dist(a.x, a.y - 8, wx, wy); if (d < bd) { bd = d; best = a; } }
-      if (!best) { if (di >= 0) { L.decos.splice(di, 1); L.refazMascara(); } else if (temObj) L.objs[ty * L.w + tx] = 0; this.atualizar(); return; }
+      if (!best) { if (di >= 0) { const dd_ = L.decos.splice(di, 1)[0]; if (dd_.op) dd_.op.posto = null; L.refazMascara(); } else if (temObj) L.objs[ty * L.w + tx] = 0; this.atualizar(); return; }
       Game.actors = Game.actors.filter(a => a !== best);
       let ci = -1, cd = Infinity; this.colocadas.forEach((c, i) => { const d = dist(c.x, c.y, best.x, best.y); if (c.lado === best.lado && d < cd) { cd = d; ci = i; } });
       if (ci >= 0 && cd < 40) this.colocadas.splice(ci, 1);
@@ -160,7 +209,9 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
         <div class="adm-body"><h3>1. Cenário</h3><div class="bat-cens">${cards}</div>
         <h3>2. Os lados</h3><div class="adm-row">🔴 Lado A: <select id="bat-ka" class="adm-sel">${op(this.ka)}</select> 🔵 Lado B: <select id="bat-kb" class="adm-sel">${op(this.kb)}</select></div>
         <div class="adm-row">Hora: ${[[7, 'Manhã'], [12, 'Meio-dia'], [18, 'Pôr do sol'], [23, 'Noite']].map(([h, n]) => `<button class="sbtn ${this.hora === h ? 'on' : ''}" ${f(() => { this.hora = h; this.tela(); })}>${n}</button>`).join('')}</div>
-        <div class="adm-row">Clima: ${[[null, 'Limpo'], ['rain', 'Chuva'], ['snow', 'Neve'], ['storm', 'Tempestade']].map(([c, n]) => `<button class="sbtn ${this.clima === c ? 'on' : ''}" ${f(() => { this.clima = c; this.tela(); })}>${n}</button>`).join('')}</div>
+        <div class="adm-row">Clima: ${[[null, 'Limpo'], ['rain', 'Chuva'], ['storm', 'Tempestade'], ['snow', 'Neve'], ['nevasca', 'Nevasca'], ['neblina', 'Neblina']].map(([c, n]) => `<button class="sbtn ${this.clima === c ? 'on' : ''}" ${f(() => { this.clima = c; this.tela(); })}>${n}</button>`).join('')}</div>
+        <div class="adm-row">Estação: ${[['primavera', '🌸 Primavera'], ['verao', '☀ Verão'], ['outono', '🍂 Outono'], ['inverno', '❄ Inverno']].map(([c, n]) => `<button class="sbtn ${(this.estacao || 'verao') === c ? 'on' : ''}" ${f(() => { this.estacao = c; this.tela(); })}>${n}</button>`).join('')}</div>
+        <div class="adm-row">Tamanho do mapa: ${Object.entries(TAM).map(([k, t]) => `<button class="sbtn ${this.tam === k ? 'on' : ''}" ${f(() => { this.tam = k; this.tela(); })}>${t[2]} (${t[0]}×${t[1]})</button>`).join('')} <small>(o mapa global é sempre 224×136)</small></div>
         <button class="mbtn gold" ${f(() => this.abrir())}>⚔ Criar a batalha</button></div>
         <button class="mbtn" ${f(() => UI.close())}>Fechar</button></div>`, { onBack: () => UI.close() });
       UI.bind(el, f);
@@ -176,8 +227,9 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
       G.level = L; P.mounted = false;
       G.actors = []; G.projectiles = []; G.clouds = []; G.pickups = []; G.timers = []; G.fx = [];
       P.x = L.w * 8; P.y = L.h * 8; G.camX = P.x - G.vw / 2; G.camY = P.y - G.vh / 2;
-      G.time = this.hora * 60; if (G.weather) { G.weather.kind = this.clima; G.weather.t = 999; }
+      G.time = this.hora * 60; if (G.weather) { G.weather.kind = this.clima === 'neblina' ? null : this.clima; G.weather.t = 999; }
       this.on = true; this.fase = 'editar'; this.colocadas = []; this.mortos = { A: 0, B: 0 }; this.vel = 1; this.fim = false;
+      if (window.BatX) BatX.abrir(L);
       this.esconder(true); this.montarUI(); UI.fade(); Sfx.play('shout');
     },
     sair() {
@@ -188,10 +240,11 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
     },
     recomecar() {
       Game.actors = []; Game.projectiles = []; Game.fx = []; this.fase = 'editar'; this.fim = false; this.mortos = { A: 0, B: 0 };
-      for (const c of this.colocadas) this.criar(c.u, c.lado, c.x, c.y);
+      if (window.BatX) BatX.reset();
+      for (const c of this.colocadas) { const m = this.criar(c.u, c.lado, c.x, c.y); if (m && c.posto && Game.level.decos.includes(c.posto)) { m.posto = c.posto; c.posto.op = m; } if (m && c.pose) m.pose = c.pose; }
       this.atualizar();
     },
-    limpar() { Game.actors = []; Game.projectiles = []; this.colocadas = []; this.fase = 'editar'; this.fim = false; this.mortos = { A: 0, B: 0 }; this.atualizar(); },
+    limpar() { if (window.BatX) BatX.reset(); Game.actors = []; Game.projectiles = []; this.colocadas = []; this.fase = 'editar'; this.fim = false; this.mortos = { A: 0, B: 0 }; this.atualizar(); },
     comecar() {
       if (this.fase === 'lutar') { this.fase = 'pausa'; for (const a of Game.actors) if (a.batalha) this.congelar(a); this.atualizar(); return; }
       if (this.fase === 'pausa') { this.fase = 'lutar'; for (const a of Game.actors) if (a.batalha) this.soltar(a); this.atualizar(); return; }
@@ -210,15 +263,18 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
       if (!this.on) return;
       const n = this.contar();
       for (const a of Game.actors) if (a.batalha && !a.dead) {
-        a.home = { x: a.x, y: a.y };       // nunca "voltam para casa": seguem lutando
-        if (this.fase !== 'lutar' || !a.veic || TIPOS_VOA(a)) continue;
+        if (!a.ordem) a.home = { x: a.x, y: a.y };       // nunca "voltam para casa": seguem lutando
+        if (this.fase !== 'lutar' || !a.veic || TIPOS_VOA(a) || a.ordem) continue;
+        const Tv = window.Era && Era.TIPOS && Era.TIPOS[a.veic.tipo], agua = Tv && Tv.agua;
+        if (Tv && (Tv.nav === 'lancha' || Tv.nav === 'submarino' || Tv.lanca)) continue;   // estes têm a própria cabeça (batalhas2.js)
         // tanque sem inimigo à vista: avança para o inimigo mais perto
         if (!Combat.nearestHostile(a, a.x, a.y, 440)) {
           let alvo = null, bd = Infinity; for (const o of Game.actors) if (o.batalha && !o.dead && o.lado !== a.lado) { const d = dist(a.x, a.y, o.x, o.y); if (d < bd) { bd = d; alvo = o; } }
-          if (alvo) { const ang = angleTo(a.x, a.y, alvo.x, alvo.y), sp = 34 * dt, nx = a.x + Math.cos(ang) * sp, ny = a.y + Math.sin(ang) * sp; a.veic.ang = ang; if (!Game.level.solidAt(Math.floor(nx / 16), Math.floor(ny / 16))) { a.x = nx; a.y = ny; a.moving = true; a.veic.anim += sp * 0.4; } }
+          if (alvo) { const ang = angleTo(a.x, a.y, alvo.x, alvo.y), sp = (agua ? 50 : 34) * dt, nx = a.x + Math.cos(ang) * sp, ny = a.y + Math.sin(ang) * sp, L_ = Game.level, tx_ = Math.floor(nx / 16), ty_ = Math.floor(ny / 16); a.veic.ang = ang; if (agua ? TWATER[L_.tileAt(tx_, ty_)] : !L_.solidAt(tx_, ty_) && !TWATER[L_.tileAt(tx_, ty_)]) { a.x = nx; a.y = ny; a.moving = true; a.veic.anim += sp * 0.4; } }
         }
       }
       if (this.fase === 'lutar' && Game.level.decos) this.armadilhas(dt);
+      if (window.BatX) BatX.tick(dt);
       if (this.fase === 'lutar' && !this.fim && (!n.A || !n.B)) {
         this.fim = true; const l = n.A ? 'A' : 'B', K = War.K[this.reino(l)];
         Game.centerMsg(`🏆 VITÓRIA DO LADO ${l === 'A' ? '🔴' : '🔵'}`, `${K ? K.name : 'Lado ' + l} venceu • sobreviveram ${n[l]}`); Sfx.play('levelup');
@@ -233,11 +289,12 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
           const pisou = Game.actors.find(a => a.batalha && !a.dead && !(a.veic && a.z > 4) && dist(a.x, a.y, d.x, d.y) < 10);
           if (!pisou) continue;
           L.decos.splice(i, 1);
-          for (const a of Game.actors) { const r = a.batalha && !a.dead ? dist(a.x, a.y, d.x, d.y) : 99; if (r < 44) Combat.damage(a, (a.veic ? 260 : Math.max(240, a.maxHp * 1.5)) * (r < 18 ? 1 : 0.45), { kb: { x: (a.x - d.x) * 4, y: (a.y - d.y) * 4 } }); }
+          for (const a of Game.actors) { const r = a.batalha && !a.dead ? dist(a.x, a.y, d.x, d.y) : 99; if (r < 44) Combat.damage(a, (a.veic ? 260 : Math.max(240, a.maxHp * 1.5)) * (r < 18 ? 1 : 0.45), { mina: true, kb: { x: (a.x - d.x) * 4, y: (a.y - d.y) * 4 } }); }
           Juice.explode(d.x, d.y, 40, '#ff8030'); Game.fx.push({ kind: 'ring', x: d.x, y: d.y, r0: 4, r1: 44, t: 0, dur: 0.35, color: '#ff9030' }); Game.burst(d.x, d.y, '#ff9030', 16, 90); Sfx.play('boom'); Game.shake = Math.max(Game.shake, 5);
           L.decos.push({ id: 'cratera16', x: d.x, y: d.y });
         } else if (D.arame) {
-          for (const a of Game.actors) if (a.batalha && !a.dead && !a.veic && Math.abs(a.x - d.x) < D.w / 2 && a.y < d.y + 2 && a.y > d.y - 14) { a._arame = (a._arame || 0) + dt; if (a._arame > 0.5) { a._arame = 0; Combat.damage(a, 6, {}); } }
+          const im = BatDeco.imgR(D, d.r, d.f);
+          for (const a of Game.actors) if (a.batalha && !a.dead && !a.veic && Math.abs(a.x - d.x) < im.width / 2 && a.y < d.y + 2 && a.y > d.y - im.height) { a._arame = (a._arame || 0) + dt; if (a._arame > 0.5) { a._arame = 0; Combat.damage(a, 6, {}); } }
         }
       }
     },
@@ -261,8 +318,8 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
       let ini = null, arrastou = false;
       const mundo = (cx, cy) => ({ x: Math.round(Game.camX) + cx / window.innerWidth * Game.vw, y: Math.round(Game.camY) + cy / window.innerHeight * Game.vh });
       toque.addEventListener('pointerdown', e => { ini = { x: e.clientX, y: e.clientY, px: Game.player.x, py: Game.player.y }; arrastou = false; toque.setPointerCapture(e.pointerId); });
-      toque.addEventListener('pointermove', e => { if (!ini) return; const dx = e.clientX - ini.x, dy = e.clientY - ini.y; if (Math.hypot(dx, dy) > 10) arrastou = true; if (arrastou) { const k = Game.vw / window.innerWidth; Game.player.x = clamp(ini.px - dx * k, 0, BW * 16); Game.player.y = clamp(ini.py - dy * k, 0, BH * 16); } });
-      toque.addEventListener('pointerup', e => { if (ini && !arrastou) { const w = mundo(e.clientX, e.clientY); if (this.apagar) this.apagarPerto(w.x, w.y); else this.colocar(w.x, w.y); } ini = null; });
+      toque.addEventListener('pointermove', e => { if (!ini) return; const dx = e.clientX - ini.x, dy = e.clientY - ini.y; if (Math.hypot(dx, dy) > 10) arrastou = true; if (arrastou) { const k = Game.vw / window.innerWidth; Game.player.x = clamp(ini.px - dx * k, 0, Game.level.w * 16); Game.player.y = clamp(ini.py - dy * k, 0, Game.level.h * 16); } });
+      toque.addEventListener('pointerup', e => { if (ini && !arrastou) { const w = mundo(e.clientX, e.clientY); if (this.apagar) this.apagarPerto(w.x, w.y); else if (!(window.BatX && BatX.toque(w.x, w.y, e))) this.colocar(w.x, w.y); } ini = null; });
       this.atualizar();
     },
     atualizar() {
@@ -279,7 +336,7 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
       // a barra das unidades
       baixo.innerHTML = '';
       const cats = document.createElement('div'); cats.style.cssText = 'display:flex;gap:4px;margin-bottom:3px';
-      for (const [c, n] of [['medieval', '⚔ Medievais'], ['monstros', '👹 Monstros'], ['moderno', '🛡 Era moderna'], ['deco', '🏗 Decorações']]) if ((c !== 'moderno' || window.Era) && (c !== 'deco' || window.BatDeco)) cats.append(bt(n, this.cat === c, () => { this.cat = c; this.atualizar(); }));
+      for (const [c, n] of [['medieval', '⚔ Medievais'], ['monstros', '👹 Monstros'], ['moderno', '🛡 Era moderna'], ['naval', '⚓ Navios'], ['deco', '🏗 Decorações']]) if ((c !== 'moderno' && c !== 'naval' || window.Era) && (c !== 'deco' || window.BatDeco)) cats.append(bt(n, this.cat === c, () => { this.cat = c; this.atualizar(); }));
       if (this.cat === 'deco') {
         const sub = document.createElement('div'); sub.style.cssText = 'display:flex;gap:3px;margin-bottom:3px;overflow-x:auto;scrollbar-width:none';
         const mini = b => { b.style.cssText += ';flex:0 0 auto;white-space:nowrap;font-size:13px;padding:1px 6px'; return b; };
@@ -297,10 +354,12 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
         lista.append(b);
       }
       baixo.append(cats); if (this._sub) baixo.append(this._sub); baixo.append(lista);
+      if (window.BatX) BatX.ui(topo, baixo, bt, lista);
       this.placar(this.contar());
     }
   };
   const TIPOS_VOA = a => a.veic && (a.veic.tipo === 'biplano' || a.veic.tipo === 'caca');
+  Bat.CENARIOS = CENARIOS; Bat.TAM = TAM;
   window.Batalhas = Bat;
   // um pouco de estilo para os cartões dos cenários
   const css = document.createElement('style');
@@ -315,7 +374,7 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
   const up0 = Player.prototype.update;
   Player.prototype.update = function (dt) {
     if (!Bat.on) return up0.apply(this, arguments);
-    const m = Input.move; this.x = clamp(this.x + m.x * 320 * dt, 0, BW * 16); this.y = clamp(this.y + m.y * 320 * dt, 0, BH * 16); this.moving = false; this.hp = this.stat.maxHp;
+    const m = Input.move; const L = Game.level; this.x = clamp(this.x + m.x * 320 * dt, 0, L.w * 16); this.y = clamp(this.y + m.y * 320 * dt, 0, L.h * 16); this.moving = false; this.hp = this.stat.maxHp;
   };
   const pd0 = Player.prototype.draw; Player.prototype.draw = function () { if (Bat.on) return; return pd0.apply(this, arguments); };
   const cd0 = Combat.damage; Combat.damage = function (t) { if (Bat.on && t === Game.player) return 0; return cd0.apply(this, arguments); };
@@ -331,10 +390,11 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
     const r = cdw0.apply(this, arguments), L = Game.level;
     if (L && L.isBatalha && window.BatDeco) for (const d of L.decos) {
       const De = BatDeco.porId[d.id]; if (!De || De.plano) continue;
-      const img = BatDeco.img(De), x = d.x - img.width / 2, yy = d.y - img.height + 2;
+      const img = BatDeco.imgR(De, d.r, d.f, d.morto), x = d.x - img.width / 2, yy = d.y - img.height + 2;
       if (x > camX + vw + 20 || x + img.width < camX - 20 || yy > camY + vh + 20 || yy + img.height < camY - 20) continue;
       D.push({ y: d.y, img, x: Math.round(x), yy: Math.round(yy) });
     }
+    if (L && L.isBatalha && window.BatX) BatX.drawables(D, camX, camY, vw, vh);
     return r;
   };
   // a aba ⚔ Batalhas no painel ADM

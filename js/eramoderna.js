@@ -32,6 +32,12 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
     caca: { nome: 'Caça (1940)', hp: 360, armor: 40, vel: 220, giro: 1.9, voa: true, r: 15, mg: { dmg: 22, cd: 0.08 }, bomba: { dmg: 210, r: 56, cd: 1.4 }, cor: '#6a7a6a' },
     navio: { nome: 'Encouraçado', hp: 3200, armor: 400, vel: 70, giro: 0.7, agua: true, r: 36, canhao: { dmg: 240, r: 62, cd: 2.6, alc: 520 }, mg: { dmg: 14, cd: 0.16 }, cor: '#7a8088' }
   };
+  Object.assign(TIPOS, {
+    destroier: { nome: 'Destróier (1940)', nav: 'destroier', hp: 1900, armor: 260, vel: 105, giro: 1.3, agua: true, r: 28, canhao: { dmg: 140, r: 40, cd: 1.7, alc: 460 }, mg: { dmg: 12, cd: 0.14 }, cor: '#6a7078' },
+    submarino: { nome: 'Submarino (1940)', nav: 'submarino', hp: 950, armor: 150, vel: 70, giro: 1.1, agua: true, r: 22, torpedo: { dmg: 520, cd: 5, alc: 480 }, cor: '#4a5058' },
+    portaavioes: { nome: 'Porta-aviões (1942)', nav: 'portaavioes', hp: 4600, armor: 380, vel: 48, giro: 0.5, agua: true, r: 46, mg: { dmg: 12, cd: 0.1 }, lanca: true, cor: '#6e747a' },
+    lancha: { nome: 'Lancha de desembarque', nav: 'lancha', hp: 420, armor: 60, vel: 92, giro: 2.2, agua: true, r: 14, mg: { dmg: 9, cd: 0.2 }, carga: 8, cor: '#5a6648' }
+  });
   TIPOS.tanque1 = TIPOS.mark4; TIPOS.tanque2 = TIPOS.sherman;      // nomes antigos (jogos salvos)
   for (const [k, T] of Object.entries(TIPOS)) ENEMIES['veic_' + k] = { name: T.nome, look: { k: 'hum', body: T.cor }, hp: T.hp, dmg: 0, spd: T.vel, ai: 'melee', xp: Math.round(T.hp / 6), armor: T.armor, gold: [10, 40], r: T.r || 13 };
   // armas e munição
@@ -275,6 +281,17 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
         v.boca = { x: m.x + ld * 50, y: hy + 32 + cy };
         if (Math.random() < 0.35) { Game.particle(m.x + ld * -12, hy + 14 + cy, (Math.random() - 0.5) * 8, -16, '#5a5a5a', 1.8); Game.particle(m.x + ld * -24, hy + 17 + cy, (Math.random() - 0.5) * 8, -14, '#6a6a6a', 1.6); }
         if (m.moving && Math.random() < 0.7) Game.particle(m.x + ld * 74, m.y + 6, ld * 20 + (Math.random() - 0.5) * 20, -6, '#f0f8ff', 0.6);
+      } else if (T.nav && A_[T.nav]) {
+        // destróier, submarino, porta-aviões e lancha
+        const A = A_[T.nav](cor, em, v.carga > 0), img = ld > 0 ? A.c : A.cE, hx = x - Math.round(A.W / 2), afunda = T.nav === 'submarino' ? 9 : T.nav === 'lancha' ? 6 : 10;
+        const hy = y - A.H + afunda + Math.round(Math.sin(Game.t * 1.6 + m.x * 0.01) * 1);
+        if (T.nav === 'submarino' && v.mergulho) ctx.globalAlpha = 0.38;
+        ctx.drawImage(img, hx, hy); topo = hy; ctx.globalAlpha = m.flash > 0 ? 0.65 : 1;
+        ctx.fillStyle = 'rgba(180,220,255,0.4)'; ctx.fillRect(hx + 4, y + afunda - 4, A.W - 10, 2);
+        v.boca = { x: m.x + ld * A.W * 0.34, y: hy + A.H * 0.5 + cy };
+        if (T.nav !== 'submarino' && T.nav !== 'lancha' && Math.random() < 0.3) Game.particle(m.x - ld * A.W * 0.12, hy + 10 + cy, (Math.random() - 0.5) * 8, -15, '#5a5a5a', 1.6);
+        if (m.moving && Math.random() < 0.6) Game.particle(m.x + ld * A.W * 0.46, m.y + 4, ld * 18 + (Math.random() - 0.5) * 20, -6, '#f0f8ff', 0.6);
+        if (m.moving && Math.random() < 0.5) Game.particle(m.x - ld * A.W * 0.48, m.y + 4, -ld * 12, -4, '#e0f0ff', 0.7);
       }
       ctx.globalAlpha = 1;
       // fumaça e fogo quando está avariado, poeira e escapamento andando
@@ -412,6 +429,7 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
       UI.bind(el, f); Game.paused = true; Adm.tab = 'era';
     }
   };
+  Era.TIPOS = TIPOS;
   window.Era = Era;
 
   // ---------------- ganchos ----------------

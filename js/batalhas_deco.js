@@ -115,9 +115,37 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
   def('cidade', 'vaga', 'Vagas de estacionamento', 64, 24, t => { for (let x = 0; x <= 64; x += 16) t.r(Math.min(x, 63), 2, 1, 20, '#e8e8e0'); t.r(0, 21, 64, 1, '#e8e8e0'); }, { plano: true, sol: null });
   def('cidade', 'arvcal', 'Árvore de calçada', 26, 40, t => { t.r(11, 22, 4, 16, '#5a3a20'); t.circ(13, 14, 10, '#3a7a2a'); t.circ(10, 11, 6, '#4a9a3a'); t.circ(16, 16, 5, '#2a6a1a'); t.r(5, 37, 16, 3, '#5a5a5a'); for (let x = 6; x < 21; x += 3) t.d(x, 38, '#8a8a8a'); }, { sol: [8, 6] });
 
+  // troncos: cobertura de madeira onde as tropas se escondem
+  for (const v of [0, 1, 2]) def('natureza', 'tronco' + v, v === 2 ? 'Troncos empilhados' : 'Tronco caído', v === 2 ? 40 : 36, v === 2 ? 20 : 12, t => {
+    const p = P(v === 1 ? '#5a4028' : '#7a5434'), log = (x, y, w) => { t.r(x, y, w, 6, p.b); t.r(x, y, w, 1, p.l); t.r(x, y + 5, w, 1, p.dd); for (let i = x + 4; i < x + w - 3; i += 7) t.d(i, y + 3, p.d); t.elip(x + w - 1, y + 3, 2, 3, '#c8a070'); t.d(x + w - 1, y + 3, '#8a6a40'); };
+    if (v === 2) { log(1, 13, 37); log(3, 7, 34); log(6, 1, 29); } else { log(1, 5, 33); t.linha(10, 5, 7, 1, p.d); t.linha(22, 5, 25, 2, p.d); }
+  }, { sol: v === 2 ? [36, 12] : [32, 6] });
+  def('natureza', 'troncosmg', 'Ninho de troncos (metralhadora)', 44, 22, t => { const p = P('#6a4a2c'); for (const [x, y, w] of [[1, 15, 14], [29, 15, 14], [3, 9, 12], [29, 9, 12]]) { t.r(x, y, w, 6, p.b); t.r(x, y, w, 1, p.l); t.r(x, y + 5, w, 1, p.dd); } t.r(15, 12, 14, 3, p.d); t.r(18, 7, 9, 3, '#3a3a34'); t.r(27, 8, 9, 1, '#1a1a18'); t.r(20, 10, 2, 3, '#3a3a34'); }, { sol: null });
+  def('guerra', 'toca', 'Toca de atirador', 22, 12, t => { t.elip(11, 7, 10, 4.5, '#3a2a1a'); t.elip(11, 7, 7.5, 3, '#22180e'); for (let i = 0; i < 6; i++) { const a = Math.PI + i / 5 * Math.PI; t.elip(11 + Math.cos(a) * 10, 6 + Math.sin(a) * 4, 2.6, 1.6, '#c8b48a'); } }, { plano: true, sol: null });
+
   // ================== MEDIEVAL (as peças que o jogo já tem) ==================
   const OBJS = [['OAK', 'Carvalho'], ['PINE', 'Pinheiro'], ['SNOWPINE', 'Pinheiro nevado'], ['PALM', 'Palmeira'], ['DEADTREE', 'Árvore morta'], ['WILLOW', 'Salgueiro'], ['AUTUMN', 'Árvore outonal'], ['ELFTREE', 'Árvore ancestral'], ['CACTUS', 'Cacto'], ['BIGSHROOM', 'Cogumelo gigante'], ['BUSH', 'Arbusto'], ['ROCK', 'Pedra'], ['BOULDER', 'Rocha'], ['ICEROCK', 'Rocha de gelo'], ['SANDROCK', 'Rocha de arenito'], ['FLOWERS', 'Flores'], ['TALLGRASS', 'Capim alto'], ['REEDS', 'Juncos'], ['STUMP', 'Toco de árvore'], ['CAMPFIRE', 'Fogueira'], ['TENT', 'Tenda'], ['BARREL', 'Barril'], ['CRATE', 'Caixote'], ['KEG', 'Barris de cerveja'], ['SACKS', 'Sacos'], ['HAY', 'Feno'], ['FENCE', 'Cerca'], ['SIGN', 'Placa'], ['WELL', 'Poço'], ['LAMP', 'Lampião'], ['GASLAMP', 'Lampião a gás'], ['TORCH', 'Tocha'], ['STALL', 'Barraca de feira'], ['STATUE', 'Estátua'], ['ANGELSTATUE', 'Estátua de anjo'], ['FOUNTAIN', 'Fonte'], ['BANNER', 'Estandarte'], ['PILLAR', 'Pilar'], ['BROKEN_PILLAR', 'Pilar quebrado'], ['GRAVE', 'Túmulo'], ['BONES', 'Ossos'], ['SKULLS', 'Crânios'], ['RUNESTONE', 'Pedra rúnica'], ['SHRINE', 'Santuário'], ['ANVIL', 'Bigorna'], ['WEAPONRACK', 'Suporte de armas'], ['ARMORSTAND', 'Armadura'], ['DUMMY', 'Boneco de treino'], ['CANNON', 'Canhão antigo'], ['MINECART', 'Carrinho de mina'], ['BENCH', 'Banco'], ['TABLE', 'Mesa'], ['CAULDRON', 'Caldeirão'], ['BOILER', 'Caldeira'], ['MACHINE', 'Máquina a vapor'], ['PIPES', 'Canos'], ['CRYSTAL', 'Cristal'], ['TROPHY', 'Troféu'], ['LANTERN', 'Lanterna']];
   for (const [k, nome] of OBJS) if (O[k] !== undefined) def('medieval', 'obj_' + k, nome, 16, 16, null, { obj: O[k] });
+
+  // ---------- o que cada peça faz na batalha ----------
+  //  trinch: cobertura de quem está dentro (trincheira, toca)
+  //  arma: atira sozinha pelo lado de quem colocou (auto) ou com um soldado no posto
+  for (const d of DECOS) {
+    if (/^trincheira/.test(d.id)) { d.trinch = 0.65; d.sol = null; d.plano = true; }
+    if (d.id === 'toca') d.trinch = 0.6;
+    if (/^ninho/.test(d.id)) { d.sol = null; d.arma = { tipo: 'mg', dmg: 13, cd: 0.13, alc: 320, hp: 360, cob: 0.75, dentro: true }; }
+    if (d.id === 'troncosmg') d.arma = { tipo: 'mg', dmg: 13, cd: 0.13, alc: 320, hp: 300, cob: 0.7, dentro: true };
+    if (/^tronco[012]$/.test(d.id)) d.cob = 0.55;
+  }
+  const arma = (id, a) => { if (porId[id]) porId[id].arma = a; };
+  arma('canhao1914', { tipo: 'canhao', dmg: 150, aoe: 34, cd: 3.2, alc: 460, hp: 420, era: 'ww1' });
+  arma('obuseiro', { tipo: 'obus', dmg: 230, aoe: 52, cd: 5.5, alc: 900, min: 120, hp: 520 });
+  arma('antitanque', { tipo: 'at', dmg: 300, cd: 2.6, alc: 480, hp: 360, blind: true });
+  arma('morteiro', { tipo: 'morteiro', dmg: 95, aoe: 38, cd: 3.4, alc: 420, min: 70, hp: 200 });
+  arma('mg_pesada', { tipo: 'mg', dmg: 15, cd: 0.11, alc: 330, hp: 260 });
+  arma('flak', { tipo: 'flak', dmg: 70, aoe: 22, cd: 0.7, alc: 520, hp: 380, ar: true });
+  for (const d of DECOS) if (/^bunker/.test(d.id)) d.arma = { tipo: 'mg', dmg: 16, cd: 0.12, alc: 340, hp: /grande/.test(d.id) ? 1600 : 1000, auto: true, duro: 0.35 };
+  arma('casamata', { tipo: 'mg', dmg: 13, cd: 0.14, alc: 300, hp: 700, auto: true, duro: 0.5 });
 
   // ---------- as imagens (prontas na primeira vez que aparecem) ----------
   const imgs = new Map();
@@ -133,6 +161,16 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
         else { const t = Tela(d.w, d.h); d.desenho(t); t.contorno(); c = t.c; }
       } catch (e) { c = Tela(8, 8).c; }
       imgs.set(d.id, c); return c;
+    },
+    // girada (0, 90, 180 ou 270 graus), espelhada e/ou destruída (escura)
+    imgR(d, r, f, morto) {
+      r = (r || 0) & 3; if (!r && !f && !morto) return this.img(d);
+      const k = d.id + '|' + r + (f ? 'f' : '') + (morto ? 'x' : ''); if (imgs.has(k)) return imgs.get(k);
+      const src = this.img(d), w = src.width, h = src.height, c = document.createElement('canvas');
+      c.width = r & 1 ? h : w; c.height = r & 1 ? w : h; const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
+      x.translate(c.width / 2, c.height / 2); x.rotate(r * Math.PI / 2); if (f) x.scale(-1, 1); x.drawImage(src, -w / 2, -h / 2);
+      if (morto) { x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(20,14,10,0.6)'; x.fillRect(0, 0, c.width, c.height); }
+      imgs.set(k, c); return c;
     },
     url(d) { const k = 'u' + d.id; if (!imgs.has(k)) imgs.set(k, this.img(d).toDataURL()); return imgs.get(k); }
   };

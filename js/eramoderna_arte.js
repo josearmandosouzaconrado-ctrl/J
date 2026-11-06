@@ -360,6 +360,61 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
       cache.set(k, r); return r;
     }
   };
+  // ---------- destróier, submarino, porta-aviões e lancha de desembarque ----------
+  Object.assign(Arte, {
+    destroier(cor, em) {
+      const k = 'destr' + cor + em; if (cache.has(k)) return cache.get(k);
+      const p = P(cor), t = Tela(114, 40);
+      t.poly([[3, 26], [100, 26], [112, 19], [108, 32], [101, 36], [8, 36], [2, 31]], p.d);
+      t.r(5, 33, 99, 3, '#6a2a26'); t.r(5, 32, 99, 1, '#8a3a30'); t.r(3, 25, 98, 2, p.l); t.linha(100, 26, 112, 19, p.ll);
+      for (let x = 12; x < 96; x += 8) t.d(x, 29, p.dd);
+      t.r(62, 15, 15, 10, p.b); t.r(62, 15, 15, 1, p.l); t.r(64, 18, 11, 2, '#1a1a1a'); t.r(66, 10, 8, 5, p.b); t.r(67, 11, 6, 1, '#1a1a1a');
+      t.r(69, 1, 1, 9, '#2a2a2a'); t.r(64, 4, 11, 1, '#2a2a2a'); t.r(70, 6, 5, 1, '#3a3a3a');
+      t.r(46, 14, 7, 11, p.d); t.r(46, 12, 7, 2, '#2a2a28'); t.r(47, 14, 1, 11, p.b); t.r(36, 17, 6, 8, p.d); t.r(36, 15, 6, 2, '#2a2a28');
+      const torre = (x, dir) => { t.r(x, 20, 10, 5, p.b); t.r(x, 20, 10, 1, p.l); t.elip(x + 5, 20, 5, 2, p.b); t.r(dir > 0 ? x + 10 : x - 10, 21, 10, 1, '#2a2e34'); };
+      torre(84, 1); torre(76, 1); torre(14, -1);
+      t.r(24, 22, 9, 3, '#3a3e44'); t.r(24, 22, 9, 1, '#5a5e64'); for (const x of [5, 9]) t.circ(x, 23, 1.5, '#3a3e44');
+      t.circ(104, 28, 2, '#e8e4d8'); t.circ(104, 28, 1.1, em); t.contorno();
+      const r = { c: t.c, cE: t.espelho(), W: 114, H: 40 }; cache.set(k, r); return r;
+    },
+    submarino(cor, em) {
+      const k = 'sub' + cor + em; if (cache.has(k)) return cache.get(k);
+      const p = P(cor), t = Tela(98, 28);
+      t.elip(49, 20, 46, 5.5, p.d); t.elip(49, 18.5, 44, 3, p.b); t.r(8, 17, 82, 1, p.l);
+      t.poly([[93, 20], [97, 17], [97, 23]], p.dd); t.poly([[3, 20], [0, 16], [0, 24]], p.dd);
+      t.poly([[40, 8], [58, 8], [62, 16], [36, 16]], p.b); t.r(40, 8, 18, 1, p.l); t.r(44, 11, 9, 1, '#1a1a1a');
+      t.r(48, 0, 1, 8, '#2a2a2a'); t.r(48, 0, 3, 1, '#2a2a2a'); t.r(52, 3, 1, 5, '#2a2a2a');
+      t.r(68, 13, 4, 3, p.dd); t.r(72, 13, 7, 1, '#2a2e34'); t.r(30, 14, 3, 2, p.dd);
+      t.circ(44, 13, 1.6, '#e8e4d8'); t.circ(44, 13, 0.9, em); t.contorno();
+      const r = { c: t.c, cE: t.espelho(), W: 98, H: 28 }; cache.set(k, r); return r;
+    },
+    portaavioes(cor, em) {
+      const k = 'pa' + cor + em; if (cache.has(k)) return cache.get(k);
+      const p = P(cor), t = Tela(194, 60);
+      t.poly([[6, 40], [176, 40], [191, 31], [186, 50], [177, 55], [12, 55], [4, 48]], p.d);
+      t.r(8, 51, 170, 4, '#6a2a26'); t.r(8, 50, 170, 1, '#8a3a30'); for (let x = 16; x < 170; x += 9) t.d(x, 45, p.dd);
+      t.poly([[0, 32], [184, 32], [193, 28], [189, 39], [3, 39]], '#55595e'); t.r(1, 32, 186, 1, '#7a7e84'); t.r(3, 38, 184, 1, '#3a3e42');
+      for (let x = 8; x < 178; x += 12) t.r(x, 35, 6, 1, '#e8e8e0');
+      t.r(2, 33, 1, 5, '#e8e8e0'); t.r(184, 33, 1, 5, '#e8e8e0'); t.linha(150, 38, 178, 32, '#d8c040');
+      t.r(120, 14, 24, 18, p.b); t.r(120, 14, 24, 1, p.l); t.r(122, 18, 20, 2, '#1a1a1a'); t.r(122, 24, 20, 1, '#1a1a1a');
+      t.r(126, 5, 11, 9, p.d); t.r(126, 4, 11, 1, '#2a2a28'); t.r(131, 0, 1, 5, '#2a2a2a'); t.r(127, 1, 9, 1, '#2a2a2a'); t.r(139, 9, 5, 2, '#3a3a3a');
+      const aviao = x => { t.r(x, 29, 15, 3, '#6a7a6a'); t.r(x + 1, 29, 13, 1, '#8a9a8a'); t.r(x + 5, 27, 5, 2, '#5a6a5a'); t.r(x, 26, 2, 3, '#5a6a5a'); t.d(x + 14, 30, '#2a2a2a'); t.circ(x + 7, 30, 0.9, em); };
+      for (const x of [14, 36, 58, 80]) aviao(x);
+      t.r(150, 28, 9, 3, '#3a3e44'); t.r(158, 29, 6, 1, '#2a2e34'); t.r(98, 28, 9, 3, '#3a3e44'); t.r(106, 29, 6, 1, '#2a2e34');
+      t.circ(170, 45, 2.4, '#e8e4d8'); t.circ(170, 45, 1.4, em); t.contorno();
+      const r = { c: t.c, cE: t.espelho(), W: 194, H: 60 }; cache.set(k, r); return r;
+    },
+    lancha(cor, em, cheia) {
+      const k = 'lan' + cor + em + (cheia ? 1 : 0); if (cache.has(k)) return cache.get(k);
+      const p = P(cor), t = Tela(46, 22);
+      t.poly([[2, 11], [38, 11], [44, 6], [44, 17], [37, 20], [5, 20], [1, 16]], p.d); t.r(3, 18, 36, 2, '#4a3a2a');
+      t.r(39, 5, 5, 12, p.b); t.r(39, 5, 1, 12, p.l); t.r(3, 10, 35, 2, p.b); t.r(4, 10, 34, 1, p.l);
+      t.r(4, 5, 7, 6, p.b); t.r(5, 6, 5, 2, '#1a1a1a'); t.r(6, 2, 1, 3, '#2a2a2a');
+      if (cheia) for (let x = 14; x < 37; x += 4) { t.elip(x, 9, 2, 1.6, '#4a4e42'); t.d(x, 8, '#6a6e60'); }
+      t.circ(30, 15, 1.4, em); t.contorno();
+      const r = { c: t.c, cE: t.espelho(), W: 46, H: 22 }; cache.set(k, r); return r;
+    }
+  });
   Arte.Tela = Tela; Arte.P = P; Arte.roda = roda; Arte.emblema = emblema;
   window.EraArte = Arte;
 })();

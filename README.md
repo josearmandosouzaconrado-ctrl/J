@@ -133,6 +133,20 @@ Só no **APK ADM**. No painel ADM, aba **⚔ Batalhas**: escolha o **cenário** 
 - 🏙 Cidade e corporativo: prédios de escritório, arranha-céus de vidro, lojas, casas, fábricas, posto de gasolina, postes, semáforo, placas, outdoors, bancos, lixeiras, hidrante, cabine telefônica, ponto de ônibus, banca, carros, ônibus, cercas e faixa de pedestres.
 - ⚔ Medieval: os objetos do jogo.
 
+**Novidades do Criador de Batalhas (0.38):**
+
+- **🌍 Mapa global**: dois continentes, ilhas, mares, polos de gelo, desertos, florestas e montanhas, num mapa de 224×136. Os outros cenários agora têm três tamanhos (pequeno, médio e grande), e o **🗺 minimapa** mostra as tropas; toque nele para levar a câmera.
+- **⚓ Navios**: lancha de desembarque (leva 8 soldados e desembarca na praia), submarino (torpedos e mergulho), destróier, encouraçado e porta-aviões (lança caças).
+- **Armas que funcionam**: canhão de campanha, obuseiro, morteiro, antitanque, antiaérea, metralhadora pesada, ninhos de metralhadora (de sacos ou de troncos), bunkers e casamata atiram pelo lado de quem colocou. As armas de mão vêm com um soldado no posto. Se ele morre, outro soldado perto assume, e se for do outro lado a arma é capturada. As explosões destroem as armas.
+- **Cobertura de verdade**: trincheira, toca de atirador, ninhos, troncos, sacos de areia, muros e **árvores**. Os soldados procuram sozinhos onde se esconder e levam menos dano escondidos; na trincheira só aparecem da cintura para cima e seguram a posição.
+- **↻ Girar e ⇋ Espelhar** as decorações antes de colocar.
+- **🎖 Comandar**: escolha o lado 🔴 ou 🔵 e mande nas suas tropas; o outro lado fica com a IA.
+  - Toque nas tropas para escolher o grupo, ou use Todos, Infantaria, Blindados, Navios ou Aviões.
+  - Toque no chão para elas irem em formação, ou num inimigo para atacar.
+  - Ordens: 🛡 Esconder, ⛺ Segurar, ⚔ Avançar, ↩ Recuar e 🤖 Livre.
+- **🎭 Animar**: toque num soldado (ou no grupo perto dele) e escolha o que ele faz: beber, comer, conversar (com balões de conversa entre eles), rir, sentar, dormir, fumar, saudar, dançar, vigiar com binóculo, tocar gaita, rezar, ferido, na fogueira, cozinhar, limpar a arma, jogar cartas ou flexões. Quando o inimigo chega perto, eles largam tudo e vão lutar.
+- **☁ Clima**: a estação (primavera, verão, outono e inverno, com o chão e as árvores mudando), o clima (chuva, tempestade, neve, nevasca ou neblina) e a hora mudam a qualquer momento.
+
 As decorações sólidas viram cobertura e bloqueiam a passagem. As **minas explodem** quando alguém pisa e deixam uma cratera, e o **arame farpado** fere quem atravessa. O 🧽 Apagar também tira decorações, e **🧹 Tirar todas** limpa o cenário.
 
 ## Multiplayer — salas com código (coop)
