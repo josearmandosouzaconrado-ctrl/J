@@ -394,7 +394,7 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
       const el = document.createElement('div'); el.id = 'bat-pose';
       el.style.cssText = 'position:absolute;z-index:40;left:4px;right:4px;bottom:4px;background:rgba(24,14,10,.95);border:2px solid #c8a050;padding:3px;display:flex;flex-wrap:wrap;gap:2px;pointer-events:auto;font-family:VT323,monospace;max-height:60%;overflow-y:auto';
       const grupoBox = document.createElement('label'); grupoBox.style.cssText = 'width:100%;color:#f0e0c0;font-size:14px;display:flex;gap:4px;align-items:center;white-space:nowrap;overflow:hidden';
-      grupoBox.innerHTML = `<input type="checkbox" id="bat-pose-g" checked> 👥 O grupo todo perto dele <span style="margin-left:auto;color:#c8b890;overflow:hidden;text-overflow:ellipsis">${esc(m.name || '')}</span>`;
+      grupoBox.innerHTML = `<input type="checkbox" id="bat-pose-g" checked style="width:auto;flex:0 0 auto;margin:0"> 👥 O grupo todo perto dele <span style="margin-left:auto;color:#c8b890;overflow:hidden;text-overflow:ellipsis">${esc(m.name || '')}</span>`;
       el.append(grupoBox);
       const aplicar = id => {
         const g = document.getElementById('bat-pose-g').checked, alvos = g ? Game.actors.filter(a => a.batalha && !a.dead && !a.veic && a.lado === m.lado && dist(a.x, a.y, m.x, m.y) < 56) : [m];
