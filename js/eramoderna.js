@@ -16,20 +16,24 @@
 // =====================================================================
 if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
   const ERAS = {
-    ww1: { nome: '1ª Guerra (1914)', farda: '#6a6448', capacete: '#5a5a46', tanque: 'tanque1', carro: 'caminhao', aviao: 'biplano', arma: 'fuzil_ferrolho' },
-    ww2: { nome: '2ª Guerra (1940)', farda: '#4e5a3c', capacete: '#4a4e42', tanque: 'tanque2', carro: 'jipe', aviao: 'caca', arma: 'submetralhadora' }
+    ww1: { nome: '1ª Guerra (1914)', farda: '#6a6448', capacete: '#5a5a46', tanques: ['mark4', 'ft17'], carro: 'caminhao', aviao: 'biplano', arma: 'fuzil_ferrolho' },
+    ww2: { nome: '2ª Guerra (1940)', farda: '#4e5a3c', capacete: '#4a4e42', tanques: ['sherman', 'tiger', 'panzer4'], carro: 'jipe', aviao: 'caca', arma: 'submetralhadora' }
   };
-  // os veículos
+  // os veículos (a arte de cada um está em eramoderna_arte.js)
   const TIPOS = {
-    tanque1: { nome: 'Tanque Mark (1916)', hp: 900, armor: 260, vel: 34, giro: 1.2, canhao: { dmg: 120, r: 40, cd: 2.2, alc: 360 }, mg: { dmg: 10, cd: 0.22 }, cor: '#6a6a48' },
-    tanque2: { nome: 'Tanque de torre (1940)', hp: 1200, armor: 320, vel: 58, giro: 1.7, canhao: { dmg: 170, r: 46, cd: 1.6, alc: 420 }, mg: { dmg: 14, cd: 0.14 }, cor: '#5a6244' },
-    caminhao: { nome: 'Caminhão (1914)', hp: 320, armor: 40, vel: 110, giro: 2.2, cor: '#5a5a40' },
-    jipe: { nome: 'Jipe (1942)', hp: 300, armor: 40, vel: 165, giro: 3, cor: '#56603e' },
-    biplano: { nome: 'Biplano (1917)', hp: 260, armor: 20, vel: 140, giro: 1.6, voa: true, mg: { dmg: 14, cd: 0.13 }, bomba: { dmg: 130, r: 42, cd: 1.6 }, cor: '#a08850' },
-    caca: { nome: 'Caça (1940)', hp: 360, armor: 40, vel: 220, giro: 1.9, voa: true, mg: { dmg: 22, cd: 0.08 }, bomba: { dmg: 210, r: 56, cd: 1.4 }, cor: '#5a6a5a' },
-    navio: { nome: 'Encouraçado', hp: 3200, armor: 400, vel: 70, giro: 0.7, agua: true, canhao: { dmg: 240, r: 62, cd: 2.6, alc: 520 }, mg: { dmg: 14, cd: 0.16 }, cor: '#7a8088' }
+    mark4: { nome: 'Mark IV (1916)', arte: 'mark4', hp: 950, armor: 240, vel: 30, giro: 1.1, r: 22, canhao: { dmg: 120, r: 40, cd: 2.2, alc: 360 }, mg: { dmg: 10, cd: 0.22 }, cor: '#6b6245' },
+    ft17: { nome: 'Renault FT (1917)', arte: 'ft17', hp: 540, armor: 180, vel: 44, giro: 2, r: 14, canhao: { dmg: 80, r: 30, cd: 1.3, alc: 300 }, mg: { dmg: 9, cd: 0.2 }, cor: '#6a6a4a' },
+    sherman: { nome: 'M4 Sherman (1942)', arte: 'sherman', hp: 1250, armor: 300, vel: 58, giro: 1.7, r: 20, canhao: { dmg: 160, r: 46, cd: 1.5, alc: 420 }, mg: { dmg: 14, cd: 0.12 }, cor: '#5b6136' },
+    tiger: { nome: 'Tiger I (1942)', arte: 'tiger', hp: 1900, armor: 430, vel: 40, giro: 1.15, r: 23, canhao: { dmg: 240, r: 52, cd: 2, alc: 480 }, mg: { dmg: 14, cd: 0.12 }, cor: '#8f8460' },
+    panzer4: { nome: 'Panzer IV (1942)', arte: 'panzer4', hp: 1350, armor: 320, vel: 52, giro: 1.6, r: 21, canhao: { dmg: 180, r: 48, cd: 1.7, alc: 440 }, mg: { dmg: 14, cd: 0.12 }, cor: '#6c6f6a' },
+    caminhao: { nome: 'Caminhão (1914)', hp: 340, armor: 40, vel: 110, giro: 2.2, r: 16, cor: '#5a5a40' },
+    jipe: { nome: 'Jipe Willys (1942)', hp: 300, armor: 40, vel: 165, giro: 3, r: 13, cor: '#56603e' },
+    biplano: { nome: 'Biplano (1917)', hp: 260, armor: 20, vel: 140, giro: 1.6, voa: true, r: 14, mg: { dmg: 14, cd: 0.13 }, bomba: { dmg: 130, r: 42, cd: 1.6 }, cor: '#a08850' },
+    caca: { nome: 'Caça (1940)', hp: 360, armor: 40, vel: 220, giro: 1.9, voa: true, r: 15, mg: { dmg: 22, cd: 0.08 }, bomba: { dmg: 210, r: 56, cd: 1.4 }, cor: '#6a7a6a' },
+    navio: { nome: 'Encouraçado', hp: 3200, armor: 400, vel: 70, giro: 0.7, agua: true, r: 36, canhao: { dmg: 240, r: 62, cd: 2.6, alc: 520 }, mg: { dmg: 14, cd: 0.16 }, cor: '#7a8088' }
   };
-  for (const [k, T] of Object.entries(TIPOS)) ENEMIES['veic_' + k] = { name: T.nome, look: { k: 'hum', body: T.cor }, hp: T.hp, dmg: 0, spd: T.vel, ai: 'melee', xp: Math.round(T.hp / 6), armor: T.armor, gold: [10, 40], r: T.voa ? 12 : T.agua ? 26 : 13 };
+  TIPOS.tanque1 = TIPOS.mark4; TIPOS.tanque2 = TIPOS.sherman;      // nomes antigos (jogos salvos)
+  for (const [k, T] of Object.entries(TIPOS)) ENEMIES['veic_' + k] = { name: T.nome, look: { k: 'hum', body: T.cor }, hp: T.hp, dmg: 0, spd: T.vel, ai: 'melee', xp: Math.round(T.hp / 6), armor: T.armor, gold: [10, 40], r: T.r || 13 };
   // armas e munição
   idef('fuzil_ferrolho', { name: 'Fuzil de Ferrolho (1914)', type: 'weapon', slot: 'weapon', wclass: 'musket', bayonet: true, dmg: 58, cd: 0.9, range: 320, ranged: true, two: true, value: 900, icon: { k: 'musket', c: '#5a4a32', g: '#ffd080' }, lvl: 1, tier: 5, desc: 'Era moderna (ADM). Tiro certeiro e baioneta.' });
   idef('submetralhadora', { name: 'Submetralhadora (1940)', type: 'weapon', slot: 'weapon', wclass: 'pistol', dmg: 17, cd: 0.11, range: 230, ranged: true, value: 1200, icon: { k: 'pistol', c: '#3a3a3a', g: '#ffd080' }, lvl: 1, tier: 5, desc: 'Era moderna (ADM). Segure o ataque para rajadas.' });
@@ -132,7 +136,7 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
         if (mv.mag > 0.15) {
           v.ang = giro(v.ang, Math.atan2(mv.y, mv.x), T.giro * dt * 2.2);
           const sp = T.vel * Math.min(1, mv.mag * 1.2) * dt, nx = m.x + Math.cos(v.ang) * sp, ny = m.y + Math.sin(v.ang) * sp;
-          const pode = (x, y) => { for (const [ox, oy] of [[-10, 0], [10, 0], [0, -4], [0, 3]]) { const tx = Math.floor((x + ox) / 16), ty = Math.floor((y + oy) / 16), t = L.tileAt(tx, ty); if (T.agua ? !TWATER[t] : (L.solidAt(tx, ty) || TWATER[t])) return false; } return true; };
+          const rr = Math.min(18, (T.r || 13) * 0.75), pode = (x, y) => { for (const [ox, oy] of [[-rr, 0], [rr, 0], [0, -4], [0, 3]]) { const tx = Math.floor((x + ox) / 16), ty = Math.floor((y + oy) / 16), t = L.tileAt(tx, ty); if (T.agua ? !TWATER[t] : (L.solidAt(tx, ty) || TWATER[t])) return false; } return true; };
           if (pode(nx, m.y)) m.x = nx; if (pode(m.x, ny)) m.y = ny;
           m.moving = true; v.anim += sp * 0.4;
           if (Math.random() < dt * 6) Game.particle(m.x - Math.cos(v.ang) * 16, m.y - 2, (Math.random() - 0.5) * 10, -6, T.agua ? '#e0f0ff' : '#a09070', 0.5);
@@ -155,7 +159,9 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
       if (T.mg) this.metralhadora(m, P);
     },
     canhao(m, ang, src) {
-      const T = TIPOS[m.veic.tipo], c = T.canhao, x = m.x + Math.cos(ang) * 20, y = m.y - 12 + Math.sin(ang) * 8;
+      const T = TIPOS[m.veic.tipo], c = T.canhao, b = m.veic.boca, x = b ? b.x : m.x + Math.cos(ang) * 20, y = b ? b.y : m.y - 12 + Math.sin(ang) * 8;
+      m.veic.recuo = Game.t + 0.15;
+      Game.fx.push({ kind: 'glowfx', x, y, r: 14, t: 0, dur: 0.18, color: '#ffd080' });
       Combat.projectile(src, x, y, ang, 'bullet', c.dmg, { spd: 420, life: c.alc / 420, aoe: c.r, color: '#ffb040', r: 4, weapon: src === Game.player });
       Game.musketFx(x, y, ang, '#ffd080'); Sfx.play('boom'); Game.shake = Math.max(Game.shake, 3);
       for (let i = 0; i < 6; i++) Game.particle(x, y, Math.cos(ang) * 40 + (Math.random() - 0.5) * 30, -20 - Math.random() * 20, '#9a9a9a', 0.8);
@@ -163,7 +169,7 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
     metralhadora(m, src) {
       const v = m.veic, T = TIPOS[v.tipo]; if (v.cdmg > Game.t) return; v.cdmg = Game.t + T.mg.cd;
       const ang = (v.mira || v.ang) + (Math.random() - 0.5) * 0.08, alt = v.alt || 0;
-      const x = m.x + Math.cos(ang) * 16, y = m.y - 10 - alt + Math.sin(ang) * 6;
+      const b = v.boca, x = (b ? b.x : m.x) + Math.cos(ang) * 4, y = (b ? b.y : m.y - 10 - alt) + Math.sin(ang) * 2;
       Combat.projectile(src, x, y, ang, 'bullet', T.mg.dmg, { spd: 620, life: 0.5, color: '#ffe080', r: 2, weapon: src === Game.player, z: alt });
       if (Math.random() < 0.5) Sfx.play('shot');
     },
@@ -206,71 +212,79 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
     },
     // ---------- desenhos (pixel art feita no código) ----------
     desenhar(ctx, m, cx, cy) {
-      const v = m.veic, T = TIPOS[v.tipo], alt = v.alt || 0;
-      const x = Math.round(m.x - cx), y = Math.round(m.y - cy), dir = Math.cos(v.ang) >= 0 ? 1 : -1;
-      const K = m.faction && War.K[m.faction], cor = m.meu ? T.cor : K ? mix(T.cor, K.color, 0.25) : T.cor;
-      // sombra
-      ctx.fillStyle = `rgba(0,0,0,${T.voa ? 0.18 + 0.1 * (1 - alt / 44) : 0.3})`;
-      ctx.beginPath(); ctx.ellipse(x, y, T.agua ? 40 : T.voa ? 16 : 22, T.agua ? 6 : 4, 0, 0, 6.29); ctx.fill();
-      if (m.flash > 0) ctx.globalAlpha = 0.6;
-      ctx.save(); ctx.translate(x, y - alt); ctx.scale(dir, 1);
-      const sombra = shade(cor, -0.3), luz = shade(cor, 0.18);
-      const t = v.tipo;
-      if (t === 'tanque1') {
-        // tanque losango: esteiras em volta do casco
-        ctx.fillStyle = '#2e2a20'; ctx.beginPath(); ctx.moveTo(-23, -2); ctx.lineTo(-18, -17); ctx.lineTo(16, -17); ctx.lineTo(23, -2); ctx.lineTo(18, 1); ctx.lineTo(-18, 1); ctx.closePath(); ctx.fill();
-        ctx.fillStyle = cor; ctx.beginPath(); ctx.moveTo(-19, -3); ctx.lineTo(-15, -14); ctx.lineTo(13, -14); ctx.lineTo(19, -3); ctx.closePath(); ctx.fill();
-        px(ctx, -15, -14, 28, 2, luz);
-        for (let i = 0; i < 9; i++) px(ctx, -18 + ((i * 5 + Math.floor(v.anim)) % 40), 0, 2, 1, '#5a5444');
-        for (let i = 0; i < 6; i++) px(ctx, -12 + i * 5, -10, 1, 1, sombra);
-        px(ctx, -4, -11, 8, 6, sombra); px(ctx, 4, -9, 10, 2, '#2a2a22');      // canhão lateral
-        px(ctx, -6, -20, 12, 4, sombra); px(ctx, -4, -19, 3, 1, '#20201a');    // cabine
-      } else if (t === 'tanque2') {
-        ctx.fillStyle = '#26261e'; ctx.fillRect(-19, -6, 38, 7);
-        for (let i = 0; i < 6; i++) { ctx.fillStyle = '#4a4a3e'; ctx.beginPath(); ctx.arc(-15 + i * 6, -2, 2.2, 0, 6.29); ctx.fill(); }
-        for (let i = 0; i < 10; i++) px(ctx, -19 + ((i * 4 + Math.floor(v.anim)) % 38), -6, 2, 1, '#3a3a30');
-        ctx.fillStyle = cor; ctx.beginPath(); ctx.moveTo(-18, -6); ctx.lineTo(-14, -12); ctx.lineTo(14, -12); ctx.lineTo(19, -6); ctx.closePath(); ctx.fill();
-        px(ctx, -14, -12, 28, 1, luz);
-        px(ctx, -8, -17, 15, 6, cor); px(ctx, -8, -17, 15, 1, luz); px(ctx, -5, -19, 5, 2, sombra);   // torre e escotilha
-        const atras = Math.cos(v.mira) * dir < 0;
-        px(ctx, atras ? -22 : 6, -15, 16, 2, '#2a2a22');                     // cano
-        if (m.faction || m.meu) px(ctx, -12, -10, 4, 3, m.meu ? '#e0e0e0' : (K ? K.color : '#fff'));
-      } else if (t === 'jipe' || t === 'caminhao') {
-        const L_ = t === 'caminhao' ? 26 : 20;
-        px(ctx, -L_ / 2, -9, L_, 6, cor); px(ctx, -L_ / 2, -9, L_, 1, luz);
-        if (t === 'caminhao') { px(ctx, -13, -17, 16, 8, '#8a8460'); px(ctx, -13, -17, 16, 1, '#a8a27a'); px(ctx, 5, -14, 7, 5, shade(cor, -0.1)); px(ctx, 9, -13, 2, 3, '#a0c0d0'); }
-        else { px(ctx, 2, -14, 1, 5, '#2a2a22'); px(ctx, 3, -14, 4, 1, '#a0c0d0'); px(ctx, -8, -11, 9, 2, sombra); }
-        for (const wx of t === 'caminhao' ? [-9, 9] : [-6, 6]) { ctx.fillStyle = '#1a1a16'; ctx.beginPath(); ctx.arc(wx, -2, 3, 0, 6.29); ctx.fill(); px(ctx, wx - 1, -3, 2, 2, '#6a6a5a'); }
-      } else if (t === 'biplano' || t === 'caca') {
-        const helice = Math.floor(Game.t * 30) % 2;
-        if (t === 'biplano') {
-          px(ctx, -14, -2, 26, 4, cor); px(ctx, -14, -2, 26, 1, luz);
-          px(ctx, -6, -8, 15, 2, shade(cor, 0.1)); px(ctx, -6, 3, 15, 2, sombra);              // as duas asas
-          px(ctx, -3, -6, 1, 9, '#3a3020'); px(ctx, 6, -6, 1, 9, '#3a3020');                    // escoras
-          px(ctx, -16, -6, 3, 5, cor); px(ctx, -17, -1, 6, 2, sombra);                           // cauda
-          px(ctx, 12, -3, 2, 6, '#2a2a2a'); ctx.globalAlpha = 0.5; px(ctx, 14, helice ? -6 : -3, 1, helice ? 12 : 6, '#e0e0e0'); ctx.globalAlpha = 1;
-          ctx.fillStyle = m.meu ? '#c03030' : K ? K.color : '#2a2a2a'; ctx.beginPath(); ctx.arc(2, -7, 1.5, 0, 6.29); ctx.fill();
-          px(ctx, -2, -4, 3, 2, '#6a4a2a');                                                      // o piloto
+      const v = m.veic, T = TIPOS[v.tipo], alt = v.alt || 0, A_ = window.EraArte;
+      const x = Math.round(m.x - cx), y = Math.round(m.y - cy);
+      const K = m.faction && War.K[m.faction], R = Game.player && Game.player.reino;
+      const cor = m.meu ? T.cor : K ? mix(T.cor, K.color, 0.2) : shade(T.cor, -0.12);
+      const em = m.meu ? ((R && R.cor && Reino.ativo()) ? R.cor : '#f0f0f0') : K ? K.color : '#2a2a2a';
+      const c = Math.cos(v.ang), s = Math.sin(v.ang), f = m.moving ? Math.floor(v.anim) % 3 : 0;
+      if (Math.abs(c) > 0.3) v.lado = c >= 0 ? 1 : -1;
+      const ld = v.lado || 1, recuo = v.recuo > Game.t ? 2 : 0;
+      let topo = y - 30;
+      if (m.flash > 0) ctx.globalAlpha = 0.65;
+      if (T.arte && A_.TANQUES[T.arte]) {
+        const A = A_.tanque(T.arte, cor, em), M = A.M;
+        const vista = Math.abs(c) >= Math.abs(s) * 0.75 ? 'lado' : s > 0 ? 'frente' : 'tras';
+        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(x, y + 1, vista === 'lado' ? M.W * 0.48 : M.frenteW * 0.55, 5, 0, 0, 6.29); ctx.fill();
+        let ax, ay, hx, hy;
+        if (vista === 'lado') {
+          const img = (ld > 0 ? A.lado : A.ladoE)[f]; hx = x - Math.round(M.W / 2); hy = y - M.H + 3 + (m.moving && f === 1 ? -1 : 0);
+          ctx.drawImage(img, hx, hy); topo = hy;
+          if (M.ancora) { ax = ld > 0 ? hx + M.ancora[0] : hx + M.W - M.ancora[0]; ay = hy + M.ancora[1]; }
+          else { v.boca = { x: (ld > 0 ? hx + M.cano[0] : hx + M.W - M.cano[0]) + cx, y: hy + M.cano[1] + cy }; }
         } else {
-          ctx.fillStyle = cor; ctx.beginPath(); ctx.moveTo(-16, -1); ctx.lineTo(-14, -4); ctx.lineTo(12, -3); ctx.lineTo(16, 0); ctx.lineTo(12, 2); ctx.lineTo(-14, 1); ctx.closePath(); ctx.fill();
-          px(ctx, -14, -4, 26, 1, luz); px(ctx, -2, -6, 7, 2, '#8ab0c8'); px(ctx, -2, -6, 7, 1, '#c8e0f0');   // cabine de vidro
-          px(ctx, -6, 0, 14, 3, sombra); px(ctx, -16, -8, 3, 6, cor); px(ctx, -17, -1, 6, 2, sombra);
-          ctx.globalAlpha = 0.5; px(ctx, 16, helice ? -5 : -2, 1, helice ? 10 : 4, '#e0e0e0'); ctx.globalAlpha = 1;
-          ctx.fillStyle = m.meu ? '#e0e0e0' : K ? K.color : '#c02020'; ctx.beginPath(); ctx.arc(1, 1, 1.5, 0, 6.29); ctx.fill();
+          const img = vista === 'frente' ? A.frente : A.tras; hx = x - Math.round(img.width / 2); hy = y - img.height + 3 + (m.moving && f === 1 ? -1 : 0);
+          ctx.drawImage(img, hx, hy); topo = hy;
+          if (M.ancora) { ax = x; ay = hy + img.height - 18; } else v.boca = { x: m.x, y: hy + 12 + cy };
         }
-      } else if (t === 'navio') {
-        ctx.fillStyle = '#4a5058'; ctx.beginPath(); ctx.moveTo(-42, -8); ctx.lineTo(38, -8); ctx.lineTo(46, -12); ctx.lineTo(40, 0); ctx.lineTo(-38, 0); ctx.closePath(); ctx.fill();
-        px(ctx, -40, -11, 80, 3, cor); px(ctx, -40, -11, 80, 1, luz);
-        px(ctx, -10, -21, 20, 10, cor); px(ctx, -8, -24, 12, 3, luz); px(ctx, -6, -20, 2, 1, '#e0e8f0'); px(ctx, 0, -20, 2, 1, '#e0e8f0');
-        px(ctx, -3, -31, 6, 8, '#3a3e44');                                                       // chaminé
-        for (const tx of [-30, 18]) { px(ctx, tx, -15, 12, 4, sombra); px(ctx, tx + (tx > 0 ? 12 : -10), -14, 10, 2, '#2a2e34'); }
-        px(ctx, 26, -22, 1, 10, '#2a2a2a');                                                      // mastro
-        if (Math.random() < 0.4) Game.particle(m.x + dir * 0, m.y - 32 - alt, (Math.random() - 0.5) * 8, -18, '#6a6a6a', 1.6);
-        if (m.moving && Math.random() < 0.6) Game.particle(m.x + dir * 44, m.y - 2, (Math.random() - 0.5) * 20, -4, '#f0f8ff', 0.5);
+        if (M.ancora) {
+          // a torre gira sozinha para onde está mirando
+          const mc = Math.cos(v.mira), ms = Math.sin(v.mira);
+          if (Math.abs(mc) >= Math.abs(ms) * 0.75) {
+            const td = mc >= 0 ? 1 : -1, ti = td > 0 ? A.torre : A.torreE, px = td > 0 ? M.pivo[0] : ti.width - M.pivo[0];
+            ctx.drawImage(ti, ax - px - td * recuo, ay - M.pivo[1]);
+            v.boca = { x: ax + td * (M.cano[0] - M.pivo[0] - recuo) + cx, y: ay + M.cano[1] - M.pivo[1] + cy };
+          } else {
+            const ti = ms > 0 ? A.tFrente : A.tTras; ctx.drawImage(ti, ax - Math.round(ti.width / 2), ay - ti.height + 2 + (ms > 0 ? recuo : -recuo));
+            v.boca = { x: ax + cx, y: ay - 6 + cy };
+          }
+          topo = Math.min(topo, ay - 20);
+        }
+      } else if (v.tipo === 'jipe' || v.tipo === 'caminhao') {
+        const A = A_[v.tipo](cor, em), img = (ld > 0 ? A.lado : A.ladoE)[f];
+        ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath(); ctx.ellipse(x, y + 1, A.W * 0.45, 4, 0, 0, 6.29); ctx.fill();
+        const hy = y - A.H + 3 + (m.moving && f === 1 ? -1 : 0); ctx.drawImage(img, x - Math.round(A.W / 2), hy); topo = hy;
+      } else if (T.voa) {
+        const A = A_[v.tipo](cor, em), ang = v.ang + Math.PI / 2;
+        v.inclina = (v.inclina || 0) * 0.9 + clamp(angDiff(v.angAnt === undefined ? v.ang : v.angAnt, v.ang) * 30, -0.5, 0.5) * 0.1; v.angAnt = v.ang;
+        const esc = 1 - Math.min(0.4, Math.abs(v.inclina));
+        ctx.save(); ctx.translate(x + alt * 0.25, y + 2); ctx.rotate(ang); ctx.scale(esc * (0.7 + 0.3 * (1 - alt / 50)), 0.7 + 0.3 * (1 - alt / 50)); ctx.globalAlpha = 0.25; ctx.drawImage(A.sombra, -A.W / 2, -A.H / 2); ctx.restore();
+        ctx.save(); ctx.translate(x, y - alt); ctx.rotate(ang); ctx.scale(esc, 1);
+        ctx.drawImage(A.c, -Math.round(A.W / 2), -Math.round(A.H / 2));
+        // a hélice girando
+        const giro_ = Math.floor(Game.t * 40) % 3, ny = -A.H / 2 + A.nariz;
+        ctx.globalAlpha = 0.55; ctx.fillStyle = '#e8e8e0';
+        if (v.vel > 5 || this.pil === m) { if (giro_ === 0) ctx.fillRect(-7, ny - 1, 14, 1); else if (giro_ === 1) ctx.fillRect(-5, ny - 1, 10, 1); else ctx.fillRect(-1, ny - 1, 2, 1); ctx.globalAlpha = 0.18; ctx.beginPath(); ctx.ellipse(0, ny - 1, 7, 1.4, 0, 0, 6.29); ctx.fill(); }
+        else ctx.fillRect(-6, ny - 1, 12, 1);
+        ctx.restore(); topo = y - alt - A.H / 2;
+        v.boca = { x: m.x + Math.cos(v.ang) * 18, y: m.y - alt + Math.sin(v.ang) * 18 };
+      } else if (v.tipo === 'navio') {
+        const A = A_.navio(cor, em), img = ld > 0 ? A.c : A.cE, hx = x - Math.round(A.W / 2), hy = y - A.H + 12 + Math.round(Math.sin(Game.t * 1.4) * 1);
+        ctx.drawImage(img, hx, hy); topo = hy;
+        ctx.fillStyle = 'rgba(180,220,255,0.35)'; ctx.fillRect(hx + 6, y + 8, A.W - 14, 2);
+        v.boca = { x: m.x + ld * 50, y: hy + 32 + cy };
+        if (Math.random() < 0.35) { Game.particle(m.x + ld * -12, hy + 14 + cy, (Math.random() - 0.5) * 8, -16, '#5a5a5a', 1.8); Game.particle(m.x + ld * -24, hy + 17 + cy, (Math.random() - 0.5) * 8, -14, '#6a6a6a', 1.6); }
+        if (m.moving && Math.random() < 0.7) Game.particle(m.x + ld * 74, m.y + 6, ld * 20 + (Math.random() - 0.5) * 20, -6, '#f0f8ff', 0.6);
       }
-      ctx.restore(); ctx.globalAlpha = 1;
-      // vida (quando ferido)
-      if (m.hp < m.maxHp) { const f = clamp(m.hp / m.maxHp, 0, 1); px(ctx, x - 14, y - alt - (T.agua ? 36 : 28), 28, 3, '#200'); px(ctx, x - 14, y - alt - (T.agua ? 36 : 28), Math.round(28 * f), 3, m.meu ? '#40c040' : '#e04040'); }
+      ctx.globalAlpha = 1;
+      // fumaça e fogo quando está avariado, poeira e escapamento andando
+      if (!T.voa && !T.agua) {
+        if (m.moving && Math.random() < 0.5) Game.particle(m.x - ld * 30 + (Math.random() - 0.5) * 6, m.y, -ld * 10 + (Math.random() - 0.5) * 10, -8, '#b0a080', 0.6);
+        if (m.moving && Math.random() < 0.25) Game.particle(m.x - ld * 26, topo + 6 + cy, -ld * 6, -14, '#7a7a7a', 1.2);
+      }
+      if (m.hp < m.maxHp * 0.5 && Math.random() < 0.3) Game.particle(m.x + (Math.random() - 0.5) * 12, topo + 4 + cy, (Math.random() - 0.5) * 8, -20, '#4a4a4a', 1.6);
+      if (m.hp < m.maxHp * 0.25 && Math.random() < 0.35) Game.particle(m.x + (Math.random() - 0.5) * 10, topo + 6 + cy, (Math.random() - 0.5) * 8, -26, Math.random() < 0.5 ? '#ff9030' : '#ffd060', 0.5);
+      if (m.hp < m.maxHp) { const fr = clamp(m.hp / m.maxHp, 0, 1); px(ctx, x - 14, topo - 5, 28, 3, '#200'); px(ctx, x - 14, topo - 5, Math.round(28 * fr), 3, m.meu ? '#40c040' : '#e04040'); }
     },
     // ---------- estruturas ----------
     construir(tipo) {
@@ -346,7 +360,8 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
         for (const [k, s] of [[a, -1], [b, 1]]) {
           const so = Game.actors.filter(o => o.faction === k && !o.veic && !o.dead);
           const cx = so.length ? so.reduce((t, o) => t + o.x, 0) / so.length : P.x + s * 160, cy = so.length ? so.reduce((t, o) => t + o.y, 0) / so.length : P.y;
-          for (let i = 0; i < 2; i++) this.novo(E.tanque, cx + s * 40, cy + (i ? 30 : -30), k, s < 0 ? 0 : Math.PI);
+          const tq = E.tanques[hashStr(k) % E.tanques.length];
+          for (let i = 0; i < 2; i++) this.novo(i ? E.tanques[(hashStr(k) + 1) % E.tanques.length] : tq, cx + s * 50, cy + (i ? 36 : -36), k, s < 0 ? 0 : Math.PI);
           const av = this.novo(E.aviao, cx + s * 120, cy - 40, k, s < 0 ? 0 : Math.PI); av.veic.alt = 30; av.z = 30;
         }
         Adm.msg('batalha moderna: tanques e aviões dos dois lados');
@@ -378,7 +393,7 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
       const body = `<div class="adm-row">Era: ${b('Medieval (desligado)', () => { S.era = null; this.painel(); }, !e ? 'on' : '')} ${b('1ª Guerra (1914)', () => { S.era = 'ww1'; War.clearLive(); this.painel(); }, e === 'ww1' ? 'on' : '')} ${b('2ª Guerra (1940)', () => { S.era = 'ww2'; War.clearLive(); this.painel(); }, e === 'ww2' ? 'on' : '')}</div>
         <small class="dim">Só existe no modo ADM. Com uma era ligada, os exércitos dos reinos usam farda, capacete e fuzil, e aparecem os veículos e as estruturas abaixo.</small>
         <h3>Veículos${so}</h3><div class="adm-grid">
-          ${e ? b(`🛡 ${TIPOS[E.tanque].nome}`, () => { UI.close(); this.criar(E.tanque); }) + b(`🚙 ${TIPOS[E.carro].nome}`, () => { UI.close(); this.criar(E.carro); }) + b(`✈ ${TIPOS[E.aviao].nome}`, () => { UI.close(); this.criar(E.aviao); }) + b('🚢 Encouraçado (no mar mais perto)', () => { UI.close(); this.criar('navio'); }) : ''}
+          ${e ? E.tanques.map(t => b(`🛡 ${TIPOS[t].nome}`, () => { UI.close(); this.criar(t); })).join('') + b(`🚙 ${TIPOS[E.carro].nome}`, () => { UI.close(); this.criar(E.carro); }) + b(`✈ ${TIPOS[E.aviao].nome}`, () => { UI.close(); this.criar(E.aviao); }) + b('🚢 Encouraçado (no mar mais perto)', () => { UI.close(); this.criar('navio'); }) : ''}
         </div>
         <h3>Estruturas (na sua frente)${so}</h3><div class="adm-grid">
           ${e === 'ww1' ? b('Trincheira', () => { UI.close(); this.construir('trincheira'); }) + b('Arame farpado', () => { UI.close(); this.construir('arame'); }) : ''}
