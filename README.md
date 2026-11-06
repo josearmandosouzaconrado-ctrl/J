@@ -123,6 +123,18 @@ Só no **APK ADM** (o APK normal nem leva esse código). No painel ADM, aba **�
 
 Só no **APK ADM**. No painel ADM, aba **⚔ Batalhas**: escolha o **cenário** (planície verde, floresta densa, deserto, campo de neve, travessia do rio, cerco ao castelo, desembarque na praia, trincheiras ou cidade em ruínas), o reino de cada lado (🔴 e 🔵), a hora e o clima, e toque em **Criar a batalha**. No editor, a barra de baixo mostra a **imagem de cada unidade** (medievais de cada reino, monstros, e na era moderna fuzileiros, infantaria, tanques e aviões). Escolha o lado e quantas (×1, ×5, ×10 ou ×20, em formação) e toque no mapa para colocar; arraste para mover a câmera; 🧽 Apagar tira unidades. Depois **▶ Começar**: dá para pausar, acelerar (2x e 4x), mandar reforços no meio da luta, **↺ Recomeçar** com as mesmas tropas e ver o placar e o vencedor.
 
+**🏗 Decorações (236)**: a quarta aba da barra de baixo monta o cenário. Os grupos são:
+
+- 💣 Guerra: sacos de areia, ninhos de metralhadora, arame farpado, ouriços tchecos, dentes de dragão, crateras, trincheiras, minas, placas de perigo, munição, barris, 12 bandeiras, tendas, hospital de campanha, rádio, holofote, postes, barricadas e torres de vigia.
+- 🏰 Fortificações: bunkers, casamata, muros de concreto, barreiras, portão da base, canhões, obus, antitanque, morteiro, metralhadora pesada e antiaérea.
+- 🔥 Destroços: tanques, caminhão e jipe queimados, aviões caídos, carros queimados e sucata.
+- 🏚 Ruínas: muros, casas bombardeadas, colunas, igreja e entulho.
+- 🌳 Natureza: árvores queimadas, tocos, lama e mato seco.
+- 🏙 Cidade e corporativo: prédios de escritório, arranha-céus de vidro, lojas, casas, fábricas, posto de gasolina, postes, semáforo, placas, outdoors, bancos, lixeiras, hidrante, cabine telefônica, ponto de ônibus, banca, carros, ônibus, cercas e faixa de pedestres.
+- ⚔ Medieval: os objetos do jogo.
+
+As decorações sólidas viram cobertura e bloqueiam a passagem. As **minas explodem** quando alguém pisa e deixam uma cratera, e o **arame farpado** fere quem atravessa. O 🧽 Apagar também tira decorações, e **🧹 Tirar todas** limpa o cenário.
+
 ## Multiplayer — salas com código (coop)
 
 Até **9 jogadores** no mesmo mundo, sem servidor: em **Multiplayer → Criar sala**, o jogo mostra um **código de convite** de 6 letras, e os amigos entram com **Entrar na sala**. A conexão é direta entre os aparelhos (precisa de internet).

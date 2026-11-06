@@ -360,5 +360,6 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
       cache.set(k, r); return r;
     }
   };
+  Arte.Tela = Tela; Arte.P = P; Arte.roda = roda; Arte.emblema = emblema;
   window.EraArte = Arte;
 })();

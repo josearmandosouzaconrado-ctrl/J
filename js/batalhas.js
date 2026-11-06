@@ -46,15 +46,24 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
       const W = Game.world, P = Game.player;
       this.regIndex = W && P ? W.regAt(Math.floor((Game.worldPos ? Game.worldPos.x : P.x) / 16), Math.floor((Game.worldPos ? Game.worldPos.y : P.y) / 16)) : 0;
       this.entry = { x: BW >> 1, y: BH >> 1 }; this.canvas = null;
+      this.decos = []; this.mask = new Uint8Array(BW * BH);
     }
     inb(x, y) { return x >= 0 && y >= 0 && x < this.w && y < this.h; }
     tileAt(x, y) { return this.inb(x, y) ? this.tiles[y * this.w + x] : T.ROCK; }
     objAt(x, y) { return this.inb(x, y) ? this.objs[y * this.w + x] : 0; }
     regAt() { return this.regIndex; }
     setObj(x, y, o) { if (this.inb(x, y)) { this.objs[y * this.w + x] = o; } }
-    solidAt(x, y) { if (!this.inb(x, y)) return true; const i = y * this.w + x; return TSOLID[this.tiles[i]] || OSOLID[this.objs[i]]; }
+    solidAt(x, y) { if (!this.inb(x, y)) return true; const i = y * this.w + x; return TSOLID[this.tiles[i]] || OSOLID[this.objs[i]] || this.mask[i] > 0; }
+    // as decorações sólidas viram cobertura (bloqueiam passagem e tiros)
+    refazMascara() {
+      this.mask.fill(0);
+      for (const d of this.decos) { const D = BatDeco.porId[d.id]; if (!D || !D.sol) continue; const [sw, sh] = D.sol; for (let ty = Math.floor((d.y - sh) / 16); ty <= Math.floor((d.y - 1) / 16); ty++) for (let tx = Math.floor((d.x - sw / 2) / 16); tx <= Math.floor((d.x + sw / 2 - 1) / 16); tx++) if (this.inb(tx, ty)) this.mask[ty * this.w + tx] = 1; }
+    }
     render() { const c = Sprites.cv(this.w * 16, this.h * 16); Sprites.paintTiles(c.getContext('2d'), this.w, this.h, (x, y) => this.tileAt(x, y), 777); this.canvas = c; }
-    drawGround(ctx, camX, camY, vw, vh) { if (!this.canvas) this.render(); ctx.fillStyle = '#2a3a20'; ctx.fillRect(0, 0, vw, vh); ctx.drawImage(this.canvas, -camX, -camY); }
+    drawGround(ctx, camX, camY, vw, vh) {
+      if (!this.canvas) this.render(); ctx.fillStyle = '#2a3a20'; ctx.fillRect(0, 0, vw, vh); ctx.drawImage(this.canvas, -camX, -camY);
+      for (const d of this.decos) { const D = BatDeco.porId[d.id]; if (!D || !D.plano) continue; const img = BatDeco.img(D); ctx.drawImage(img, Math.round(d.x - img.width / 2 - camX), Math.round(d.y - img.height / 2 - camY)); }
+    }
     miniatura() {
       const c = document.createElement('canvas'); c.width = this.w; c.height = this.h; const x = c.getContext('2d');
       for (let y = 0; y < this.h; y++) for (let xx = 0; xx < this.w; xx++) { const t = this.tiles[y * this.w + xx], o = this.objs[y * this.w + xx]; x.fillStyle = o && OSOLID[o] ? '#2a4a1a' : (TILE_DEFS[t] && TILE_DEFS[t].c) || '#555'; x.fillRect(xx, y, 1, 1); }
@@ -69,7 +78,7 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
   const MEDIEVAIS = [['milicia', 'Miliciano'], ['soldado', 'Soldado'], ['arqueiro', 'Arqueiro'], ['cavaleiro', 'Cavaleiro'], ['mosqueteiro', 'Mosqueteiro'], ['elite', 'Elite Real']];
   const MONSTROS = ['goblin', 'goblin_arqueiro', 'bandido', 'esqueleto', 'esqueleto_arqueiro', 'zumbi', 'lobo', 'urso', 'aranha', 'troll', 'ogro', 'yeti', 'necromante', 'lich', 'cavaleiro_morto', 'campeao_orc', 'troll_rei', 'dragao'];
   const Bat = {
-    on: false, fase: 'editar', lado: 'A', qtd: 5, sel: null, cat: 'medieval', vel: 1, apagar: false,
+    on: false, fase: 'editar', lado: 'A', qtd: 5, sel: null, cat: 'medieval', vel: 1, apagar: false, dcat: 'guerra',
     ka: 'valdoria', kb: 'gorthak', hora: 12, clima: null, cen: 'planicie', colocadas: [], mortos: { A: 0, B: 0 },
     reino(l) { return l === 'A' ? this.ka : this.kb; },
     cor(l) { const K = War.K[this.reino(l)]; return (K && K.color) || (l === 'A' ? '#e04040' : '#4060e0'); },
@@ -84,6 +93,7 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
         out.push({ id: 'v:biplano', nome: 'Biplano', img: foto('vb' + cor, () => A.biplano('#a08850', cor).c.toDataURL()), larga: true });
         out.push({ id: 'v:caca', nome: 'Caça', img: foto('vc' + cor, () => A.caca('#6a7a6a', cor).c.toDataURL()), larga: true });
       }
+      if (this.cat === 'deco' && window.BatDeco) for (const d of BatDeco.DECOS) if (d.cat === this.dcat) out.push({ id: 'd:' + d.id, nome: d.nome, img: BatDeco.url(d), larga: d.w > 30 });
       return out;
     },
     soldadoModerno(k, kind, x, y, era) {
@@ -109,6 +119,7 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
     soltar(m) { if (m._upd === undefined) return; if (m._upd) m.update = m._upd; else delete m.update; delete m._upd; },
     colocar(wx, wy) {
       if (!this.sel) return this.aviso('Escolha uma unidade na barra de baixo.');
+      if (this.sel.startsWith('d:')) return this.decorar(this.sel.slice(2), wx, wy);
       const v = this.sel.startsWith('v:'), n = v ? Math.min(this.qtd, 5) : this.qtd, cols = Math.min(n, 5), esp = v ? 56 : 15;
       const rows = Math.ceil(n / cols), dir = this.lado === 'A' ? 1 : -1;
       for (let i = 0; i < n; i++) {
@@ -119,10 +130,21 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
       void rows;
       Sfx.play('equip'); this.atualizar();
     },
+    decorar(id, wx, wy) {
+      const D = BatDeco.porId[id], L = Game.level; if (!D || !L.isBatalha) return;
+      if (D.obj !== undefined) { const tx = Math.floor(wx / 16), ty = Math.floor(wy / 16); if (L.inb(tx, ty)) { L.objs[ty * L.w + tx] = D.obj; } }
+      else { L.decos.push({ id, x: Math.round(wx), y: Math.round(D.plano ? wy : wy + D.h / 2 - 2) }); L.refazMascara(); }
+      Sfx.play('equip');
+    },
     apagarPerto(wx, wy) {
+      const L = Game.level;
+      // primeiro as decorações (a mais perto do toque)
+      // distância do toque até o retângulo do desenho (0 se tocou em cima dele)
+      let di = -1, dd = 14; L.decos.forEach((d, i) => { const D = BatDeco.porId[d.id]; if (!D) return; const y0 = D.plano ? d.y - D.h / 2 : d.y - D.h, x0 = d.x - D.w / 2; const k = Math.hypot(Math.max(x0 - wx, 0, wx - x0 - D.w), Math.max(y0 - wy, 0, wy - y0 - D.h)); if (k < dd || (k === 0 && dd === 0 && d.y > L.decos[di].y)) { dd = k; di = i; } });
+      const tx = Math.floor(wx / 16), ty = Math.floor(wy / 16), temObj = L.inb(tx, ty) && L.objs[ty * L.w + tx];
       let best = null, bd = 26;
       for (const a of Game.actors) if (a.batalha && !a.dead) { const d = dist(a.x, a.y - 8, wx, wy); if (d < bd) { bd = d; best = a; } }
-      if (!best) return;
+      if (!best) { if (di >= 0) { L.decos.splice(di, 1); L.refazMascara(); } else if (temObj) L.objs[ty * L.w + tx] = 0; this.atualizar(); return; }
       Game.actors = Game.actors.filter(a => a !== best);
       let ci = -1, cd = Infinity; this.colocadas.forEach((c, i) => { const d = dist(c.x, c.y, best.x, best.y); if (c.lado === best.lado && d < cd) { cd = d; ci = i; } });
       if (ci >= 0 && cd < 40) this.colocadas.splice(ci, 1);
@@ -196,11 +218,28 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
           if (alvo) { const ang = angleTo(a.x, a.y, alvo.x, alvo.y), sp = 34 * dt, nx = a.x + Math.cos(ang) * sp, ny = a.y + Math.sin(ang) * sp; a.veic.ang = ang; if (!Game.level.solidAt(Math.floor(nx / 16), Math.floor(ny / 16))) { a.x = nx; a.y = ny; a.moving = true; a.veic.anim += sp * 0.4; } }
         }
       }
+      if (this.fase === 'lutar' && Game.level.decos) this.armadilhas(dt);
       if (this.fase === 'lutar' && !this.fim && (!n.A || !n.B)) {
         this.fim = true; const l = n.A ? 'A' : 'B', K = War.K[this.reino(l)];
         Game.centerMsg(`🏆 VITÓRIA DO LADO ${l === 'A' ? '🔴' : '🔵'}`, `${K ? K.name : 'Lado ' + l} venceu • sobreviveram ${n[l]}`); Sfx.play('levelup');
       }
       this.placar(n);
+    },
+    armadilhas(dt) {
+      const L = Game.level;
+      for (let i = L.decos.length - 1; i >= 0; i--) {
+        const d = L.decos[i], D = BatDeco.porId[d.id]; if (!D) continue;
+        if (D.mina) {
+          const pisou = Game.actors.find(a => a.batalha && !a.dead && !(a.veic && a.z > 4) && dist(a.x, a.y, d.x, d.y) < 10);
+          if (!pisou) continue;
+          L.decos.splice(i, 1);
+          for (const a of Game.actors) { const r = a.batalha && !a.dead ? dist(a.x, a.y, d.x, d.y) : 99; if (r < 44) Combat.damage(a, (a.veic ? 260 : Math.max(240, a.maxHp * 1.5)) * (r < 18 ? 1 : 0.45), { kb: { x: (a.x - d.x) * 4, y: (a.y - d.y) * 4 } }); }
+          Juice.explode(d.x, d.y, 40, '#ff8030'); Game.fx.push({ kind: 'ring', x: d.x, y: d.y, r0: 4, r1: 44, t: 0, dur: 0.35, color: '#ff9030' }); Game.burst(d.x, d.y, '#ff9030', 16, 90); Sfx.play('boom'); Game.shake = Math.max(Game.shake, 5);
+          L.decos.push({ id: 'cratera16', x: d.x, y: d.y });
+        } else if (D.arame) {
+          for (const a of Game.actors) if (a.batalha && !a.dead && !a.veic && Math.abs(a.x - d.x) < D.w / 2 && a.y < d.y + 2 && a.y > d.y - 14) { a._arame = (a._arame || 0) + dt; if (a._arame > 0.5) { a._arame = 0; Combat.damage(a, 6, {}); } }
+        }
+      }
     },
     placar(n) {
       const e = document.getElementById('bat-placar'); if (!e) return;
@@ -240,8 +279,15 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
       // a barra das unidades
       baixo.innerHTML = '';
       const cats = document.createElement('div'); cats.style.cssText = 'display:flex;gap:4px;margin-bottom:3px';
-      for (const [c, n] of [['medieval', '⚔ Medievais'], ['monstros', '👹 Monstros'], ['moderno', '🛡 Era moderna']]) if (c !== 'moderno' || window.Era) cats.append(bt(n, this.cat === c, () => { this.cat = c; this.atualizar(); }));
-      const dica = document.createElement('span'); dica.style.cssText = 'font-size:14px;color:#c8b890;align-self:center;margin-left:6px'; dica.textContent = this.fase === 'editar' ? 'Toque numa unidade e depois no mapa. Arraste para mover a câmera.' : 'Toque no mapa para mandar reforços.'; cats.append(dica);
+      for (const [c, n] of [['medieval', '⚔ Medievais'], ['monstros', '👹 Monstros'], ['moderno', '🛡 Era moderna'], ['deco', '🏗 Decorações']]) if ((c !== 'moderno' || window.Era) && (c !== 'deco' || window.BatDeco)) cats.append(bt(n, this.cat === c, () => { this.cat = c; this.atualizar(); }));
+      if (this.cat === 'deco') {
+        const sub = document.createElement('div'); sub.style.cssText = 'display:flex;gap:3px;margin-bottom:3px;overflow-x:auto;scrollbar-width:none';
+        const mini = b => { b.style.cssText += ';flex:0 0 auto;white-space:nowrap;font-size:13px;padding:1px 6px'; return b; };
+        for (const [c, n] of BatDeco.CATS) sub.append(mini(bt(`${n} <small>${BatDeco.DECOS.filter(d => d.cat === c).length}</small>`, this.dcat === c, () => { this.dcat = c; this.atualizar(); })));
+        sub.append(mini(bt('🧹 Tirar todas', false, () => { Game.level.decos = []; Game.level.refazMascara(); this.atualizar(); }, '#ff8060')));
+        this._sub = sub;
+      } else this._sub = null;
+      const dica = document.createElement('span'); dica.style.cssText = 'font-size:14px;color:#c8b890;align-self:center;margin-left:6px'; dica.textContent = this.cat === 'deco' ? `${BatDeco.DECOS.length} decorações: toque numa e depois no mapa. As sólidas viram cobertura; as minas explodem.` : this.fase === 'editar' ? 'Toque numa unidade e depois no mapa. Arraste para mover a câmera.' : 'Toque no mapa para mandar reforços.'; cats.append(dica);
       const lista = document.createElement('div'); lista.style.cssText = 'display:flex;gap:4px;overflow-x:auto;background:rgba(20,12,10,.82);border:2px solid #6a4a2a;padding:3px';
       for (const u of this.catalogo()) {
         const b = document.createElement('button'); b.className = 'sbtn' + (this.sel === u.id ? ' on' : '');
@@ -250,7 +296,7 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
         b.onclick = e => { e.stopPropagation(); this.sel = u.id; this.apagar = false; this.atualizar(); };
         lista.append(b);
       }
-      baixo.append(cats, lista);
+      baixo.append(cats); if (this._sub) baixo.append(this._sub); baixo.append(lista);
       this.placar(this.contar());
     }
   };
@@ -280,6 +326,17 @@ if (typeof IS_ADM !== 'undefined' && IS_ADM) (function () {
   const od0 = Game.onMonsterDeath; Game.onMonsterDeath = function (m) { if (Bat.on && m && m.lado) Bat.mortos[m.lado]++; return od0.apply(this, arguments); };
   // não deixa abrir menus do mundo no meio da batalha
   const fi0 = Muralhas.findInteract; Muralhas.findInteract = function () { if (Bat.on) return null; return fi0.apply(this, arguments); };
+  const cdw0 = Ceu.drawables;
+  Ceu.drawables = function (D, camX, camY, vw, vh) {
+    const r = cdw0.apply(this, arguments), L = Game.level;
+    if (L && L.isBatalha && window.BatDeco) for (const d of L.decos) {
+      const De = BatDeco.porId[d.id]; if (!De || De.plano) continue;
+      const img = BatDeco.img(De), x = d.x - img.width / 2, yy = d.y - img.height + 2;
+      if (x > camX + vw + 20 || x + img.width < camX - 20 || yy > camY + vh + 20 || yy + img.height < camY - 20) continue;
+      D.push({ y: d.y, img, x: Math.round(x), yy: Math.round(yy) });
+    }
+    return r;
+  };
   // a aba ⚔ Batalhas no painel ADM
   const op0 = Adm.open;
   Adm.open = function (tab) {
