@@ -37,8 +37,9 @@ const Atalhos = {
   // ---------- os botões ----------
   montar() {
     const top = document.getElementById('topbtns'); if (!top || document.getElementById('atalhos')) return;
+    // uma fileira logo abaixo do livro vermelho e do mapa (não cobre o meio da tela)
     const box = document.createElement('div'); box.id = 'atalhos';
-    box.style.cssText = 'display:flex;gap:4px;margin-right:4px';
+    box.style.cssText = 'position:absolute;display:flex;gap:4px;pointer-events:auto;top:calc(52px + var(--sa-t, 0px));right:calc(118px + var(--sa-r, 0px))';
     for (let i = 0; i < ATALHOS_N; i++) {
       const b = document.createElement('button'); b.className = 'tbtn atalho'; b.id = 'atalho' + i;
       b.style.cssText = 'position:relative;width:36px;height:36px;opacity:.92';
@@ -47,7 +48,7 @@ const Atalhos = {
       b.addEventListener('touchstart', go, { passive: false }); b.addEventListener('mousedown', go);
       box.appendChild(b);
     }
-    top.insertBefore(box, top.firstChild);
+    top.parentNode.appendChild(box);
     this.atualizar(true);
   },
   atualizar(forcar) {

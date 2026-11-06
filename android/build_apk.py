@@ -32,11 +32,12 @@ PACKAGE = 'com.eldoria.cronicas.adm' if ADM else 'com.eldoria.cronicas'
 ACTIVITY = PACKAGE + '.MainActivity'
 APP_NAME = 'Eldoria ADM' if ADM else 'Crônicas de Eldoria'
 UA_TAG = ' EldoriaAPK EldoriaADM' if ADM else ' EldoriaAPK'
-VERSION_CODE = 61
-VERSION_NAME = '0.35.0-beta'
+VERSION_CODE = 62
+VERSION_NAME = '0.36.0-beta'
 MIN_SDK, TARGET_SDK = 24, 34
 # img/ não entra: as imagens vão embutidas em js/imgdata.js (tools/gerar_imgdata.py)
 WEB_FILES = ['index.html', 'manifest.json', 'css', 'js', 'icons']
+ADM_SO = ['js/eramoderna.js']   # arquivos que só vão no APK ADM
 
 
 # ======================================================================
@@ -513,9 +514,12 @@ def main():
         from pacote import scripts_do_index, index_com_pacote, pacote_js
         html = open(os.path.join(ROOT, 'index.html'), encoding='utf-8').read()
         scripts = scripts_do_index(html)
+        # a era moderna (WW1/WW2) só existe no APK ADM
+        if not ADM: scripts = [x for x in scripts if x not in ADM_SO]
         no_pacote = {}
         for full, rel in web_files():
             dados = enxugar(rel, open(full, 'rb').read())
+            if rel in ADM_SO and not ADM: continue
             if rel in scripts: no_pacote[rel] = dados; continue
             if rel == 'index.html': dados = index_com_pacote(html).encode('utf-8')
             add(z, 'assets/' + rel, dados, store=rel.endswith('.png'))

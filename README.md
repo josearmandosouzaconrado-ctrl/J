@@ -107,6 +107,18 @@ Criar um reino é difícil e leva tempo:
 - **Carroça com passageiros** (multiplayer): atrele a carroça no cavalo, monte e conduza; os amigos chegam perto e tocam em **Subir** para ir sentados. Para sair: **Descer**.
 - Os **balões de fala** e os **nomes dos jogadores** agora são nítidos, e a sua mensagem no chat aparece num balão em cima de você.
 
+## Missão: o resgate da menina das minas
+
+A menina que os guardas do reino tirano levaram na abertura está viva. No segundo dia, um **mineiro fugido** conta onde ela está: nas **Minas do Rei**, perto da capital do reino tirano (a missão aparece no rastreador e na bússola). Lá dentro há guardas, besteiros e o **Capataz das Minas**, que guarda a chave das correntes. Derrote o capataz, solte a menina e fuja com ela; os guardas vêm atrás. Leve-a até uma cidade fora do reino tirano (ou até a sua vila) e escolha: **adotar** (ela vira sua filha, se você tiver casa) ou deixá-la aos cuidados do templo.
+
+## Modo ADM: era moderna (1ª e 2ª Guerra)
+
+Só no **APK ADM** (o APK normal nem leva esse código). No painel ADM, aba **⚙ Eras**, ligue **1ª Guerra (1914)** ou **2ª Guerra (1940)**:
+- Os exércitos dos reinos passam a usar farda, capacete de aço e fuzil.
+- **Veículos pilotáveis** (chegue perto e toque em **Entrar**): tanque losango Mark e caminhão (1ª Guerra), tanque de torre e jipe (2ª Guerra), biplano ou caça, e o encouraçado (no mar). Ataque = canhão ou metralhadora; Magia = bomba (avião) ou metralhadora (tanque); Interagir = sair ou pousar.
+- **Estruturas**: trincheira (protege de metade do dano) e arame farpado (1ª Guerra); bunker com metralhadora e canhão antiaéreo (2ª Guerra); base aérea com pista, hangar (pegar avião), torre e biruta.
+- **Guerra**: kit de soldado (fuzil ou submetralhadora, cartuchos, granadas e capacete), batalha moderna com tanques e aviões dos dois lados e ataque aéreo inimigo.
+
 ## Multiplayer — salas com código (coop)
 
 Até **9 jogadores** no mesmo mundo, sem servidor: em **Multiplayer → Criar sala**, o jogo mostra um **código de convite** de 6 letras, e os amigos entram com **Entrar na sala**. A conexão é direta entre os aparelhos (precisa de internet).
