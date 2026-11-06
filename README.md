@@ -119,6 +119,10 @@ Só no **APK ADM** (o APK normal nem leva esse código). No painel ADM, aba **�
 - **Estruturas**: trincheira (protege de metade do dano) e arame farpado (1ª Guerra); bunker com metralhadora e canhão antiaéreo (2ª Guerra); base aérea com pista, hangar (pegar avião), torre e biruta.
 - **Guerra**: kit de soldado (fuzil ou submetralhadora, cartuchos, granadas e capacete), batalha moderna com tanques e aviões dos dois lados e ataque aéreo inimigo.
 
+## Modo ADM: Criador de Batalhas
+
+Só no **APK ADM**. No painel ADM, aba **⚔ Batalhas**: escolha o **cenário** (planície verde, floresta densa, deserto, campo de neve, travessia do rio, cerco ao castelo, desembarque na praia, trincheiras ou cidade em ruínas), o reino de cada lado (🔴 e 🔵), a hora e o clima, e toque em **Criar a batalha**. No editor, a barra de baixo mostra a **imagem de cada unidade** (medievais de cada reino, monstros, e na era moderna fuzileiros, infantaria, tanques e aviões). Escolha o lado e quantas (×1, ×5, ×10 ou ×20, em formação) e toque no mapa para colocar; arraste para mover a câmera; 🧽 Apagar tira unidades. Depois **▶ Começar**: dá para pausar, acelerar (2x e 4x), mandar reforços no meio da luta, **↺ Recomeçar** com as mesmas tropas e ver o placar e o vencedor.
+
 ## Multiplayer — salas com código (coop)
 
 Até **9 jogadores** no mesmo mundo, sem servidor: em **Multiplayer → Criar sala**, o jogo mostra um **código de convite** de 6 letras, e os amigos entram com **Entrar na sala**. A conexão é direta entre os aparelhos (precisa de internet).
