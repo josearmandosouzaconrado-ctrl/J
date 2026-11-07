@@ -61,7 +61,7 @@ export class UI {
       <div id="info" class="oculto"></div>
       <div id="joy" class="oculto"><div id="joy-bola"></div></div>
       <button class="bt oculto" id="b-sair-controle">⏏ Sair do controle</button>
-      <div id="creditos">Imagens/mapa © Esri, Maxar, Earthstar Geographics e comunidade GIS</div>
+      <div id="creditos">Dados do mapa © Esri e comunidade GIS</div>
     `;
     const on = (id, fn) => $(id).addEventListener('click', (e) => { e.stopPropagation(); iniciarSom(); fn(e); });
     on('#b-pausa', () => { G.pausado = !G.pausado; this.atualizarTopo(); });
@@ -370,12 +370,10 @@ export class UI {
     const m = this.modal(`<h2>Pausado</h2>
       <button class="bt grande" data-a="voltar">▶ Continuar</button>
       <button class="bt" data-a="ajuda">❓ Como jogar</button>
-      <label><input type="checkbox" data-a="sat" ${G.cfg.satelite ? 'checked' : ''}> 🛰️ Imagens de satélite (precisa de internet)</label>
       <label><input type="checkbox" data-a="som" ${G.cfg.som ? 'checked' : ''}> 🔊 Som</label>
       <button class="bt" data-a="nova">🔄 Nova partida</button>`);
     m.querySelector('[data-a=voltar]').onclick = () => { m.remove(); G.pausado = false; this.atualizarTopo(); };
     m.querySelector('[data-a=ajuda]').onclick = () => this.ajuda();
-    m.querySelector('[data-a=sat]').onchange = (e) => { G.cfg.satelite = e.target.checked; G.ligarSatelite && G.ligarSatelite(e.target.checked); G.salvarCfg(); };
     m.querySelector('[data-a=som]').onchange = (e) => { G.cfg.som = e.target.checked; somLigado(e.target.checked); G.salvarCfg(); };
     m.querySelector('[data-a=nova]').onclick = () => location.reload();
   }

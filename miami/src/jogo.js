@@ -64,7 +64,7 @@ function addBloco(cx, cz, w, d, ang, h) {
 }
 
 export function construirVisual() {
-  construirChao(G.cena);
+  G.chao = construirChao(G.cena);
   G.agua = construirAgua(G.cena);
   const naoBase = predios.filter((p) => p.base);
   for (const p of naoBase) p.removido = true;   // não desenha os blocos (os modelos da base aparecem no lugar)

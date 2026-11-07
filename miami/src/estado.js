@@ -7,7 +7,7 @@ export const G = {
   resgatados: 0, civisMortos: 0, zumbisMortos: 0, perdas: 0, populacao: 0, meta: 250,
   selecao: [], alertas: [], focos: 0, proxFoco: 25,
   dificuldade: 'normal', base: null, porta: null, estr: {},
-  satelite: null, cfg: { satelite: true, som: true, qualidade: 1 },
+  satelite: null, cfg: { som: true, qualidade: 1 },
   controlando: null,
   idSeq: 1,
 };

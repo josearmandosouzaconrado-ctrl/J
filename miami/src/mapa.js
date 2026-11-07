@@ -1,5 +1,6 @@
 // Mapa real de Miami: grade de terreno, prédios em 3D, água, satélite e palmeiras
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { META, GRADE_RLE, PREDIOS } from './dados_mapa.js';
 
 export const MPP = META.mpp;                 // metros por pixel (z17)
@@ -116,80 +117,182 @@ export function removerPrediosEm(x, z, r) {
   for (const p of predios) if (!p.removido && Math.hypot(p.cx - x, p.cz - z) < r + p.raio * 0.3) p.removido = true;
 }
 
-// ---------------- textura das fachadas ----------------
-function texturaJanelas() {
-  const c = document.createElement('canvas');
-  c.width = 64; c.height = 64;
+// ---------------- texturas das fachadas (desenhadas, sem fotos) ----------------
+// cada textura cobre 4 janelas x 4 andares; a versão "acesa" vira luz das janelas à noite
+const BAIA = 3.6, ANDAR = 3.4, REP = 4;
+function semente(n) { let s = n >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+function texFachada(estilo) {
+  const N = 256, c = document.createElement('canvas'), e = document.createElement('canvas');
+  c.width = c.height = e.width = e.height = N;
+  const g = c.getContext('2d'), ge = e.getContext('2d');
+  const r = semente(estilo === 'vidro' ? 7 : estilo === 'concreto' ? 11 : 23);
+  ge.fillStyle = '#000'; ge.fillRect(0, 0, N, N);
+  const B = N / REP;
+  if (estilo === 'vidro') {
+    // pele de vidro: painéis refletindo o céu, montantes finos e faixas de laje
+    for (let j = 0; j < REP; j++) for (let i = 0; i < REP; i++) {
+      const x = i * B, y = j * B;
+      const gr = g.createLinearGradient(x, y, x + B, y + B);
+      const k = 0.85 + r() * 0.25;
+      gr.addColorStop(0, `rgb(${150 * k | 0},${178 * k | 0},${200 * k | 0})`);
+      gr.addColorStop(1, `rgb(${92 * k | 0},${118 * k | 0},${142 * k | 0})`);
+      g.fillStyle = gr; g.fillRect(x, y, B, B);
+      g.fillStyle = 'rgba(255,255,255,0.18)'; g.fillRect(x + B * 0.12, y + 4, B * 0.18, B - 10);
+      if (r() < 0.35) { ge.fillStyle = `rgb(255,${220 + r() * 30 | 0},${150 + r() * 60 | 0})`; ge.fillRect(x + 3, y + 6, B - 6, B - 12); }
+    }
+    g.fillStyle = '#d7dde2';
+    for (let j = 0; j <= REP; j++) g.fillRect(0, j * B - 3, N, 6);
+    g.fillStyle = '#aeb8c0';
+    for (let i = 0; i <= REP * 2; i++) g.fillRect(i * B / 2 - 1, 0, 2, N);
+  } else if (estilo === 'concreto') {
+    g.fillStyle = '#f2f0ec'; g.fillRect(0, 0, N, N);
+    for (let k = 0; k < 1400; k++) { g.fillStyle = `rgba(0,0,0,${r() * 0.05})`; g.fillRect(r() * N, r() * N, 2, 2); }
+    for (let j = 0; j < REP; j++) for (let i = 0; i < REP; i++) {
+      const x = i * B, y = j * B;
+      g.fillStyle = '#d9d6d0'; g.fillRect(x + 6, y + B * 0.72, B - 12, 4);           // peitoril
+      g.fillStyle = '#3c4a57'; g.fillRect(x + 9, y + B * 0.2, B - 18, B * 0.52);      // vidro
+      g.fillStyle = 'rgba(160,190,215,0.55)'; g.fillRect(x + 9, y + B * 0.2, (B - 18) * 0.45, B * 0.52);
+      if (r() < 0.3) { g.fillStyle = '#e8e2d2'; g.fillRect(x + 9, y + B * 0.2, B - 18, B * 0.52 * r()); } // persiana
+      g.fillStyle = '#9aa0a6'; g.fillRect(x + B / 2 - 1, y + B * 0.2, 2, B * 0.52);
+      if (r() < 0.4) { ge.fillStyle = `rgb(255,${200 + r() * 40 | 0},${120 + r() * 60 | 0})`; ge.fillRect(x + 9, y + B * 0.2, B - 18, B * 0.52); }
+    }
+    g.fillStyle = 'rgba(0,0,0,0.12)';
+    for (let j = 0; j < REP; j++) g.fillRect(0, j * B + B - 3, N, 3);
+  } else {
+    // art déco de Miami Beach: parede pastel, janelas menores e "sobrancelhas" de concreto
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, N, N);
+    for (let k = 0; k < 900; k++) { g.fillStyle = `rgba(0,0,0,${r() * 0.04})`; g.fillRect(r() * N, r() * N, 2, 2); }
+    for (let j = 0; j < REP; j++) for (let i = 0; i < REP; i++) {
+      const x = i * B, y = j * B;
+      g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(x + 8, y + B * 0.22 + 4, B - 16, 5);
+      g.fillStyle = '#fafafa'; g.fillRect(x + 6, y + B * 0.2, B - 12, 5);              // sobrancelha
+      g.fillStyle = '#2f4a5a'; g.fillRect(x + 14, y + B * 0.3, B - 28, B * 0.42);
+      g.fillStyle = 'rgba(170,210,230,0.5)'; g.fillRect(x + 14, y + B * 0.3, (B - 28) * 0.4, B * 0.42);
+      g.fillStyle = '#ffffff'; g.fillRect(x + B / 2 - 1.5, y + B * 0.3, 3, B * 0.42);
+      if (r() < 0.45) { ge.fillStyle = `rgb(255,${190 + r() * 50 | 0},${110 + r() * 60 | 0})`; ge.fillRect(x + 14, y + B * 0.3, B - 28, B * 0.42); }
+    }
+    g.fillStyle = 'rgba(0,0,0,0.08)'; g.fillRect(0, N - 8, N, 8);
+  }
+  const t = new THREE.CanvasTexture(c), te = new THREE.CanvasTexture(e);
+  for (const x of [t, te]) { x.wrapS = x.wrapT = THREE.RepeatWrapping; x.anisotropy = 8; x.colorSpace = THREE.SRGBColorSpace; }
+  return { t, te };
+}
+
+function texTelhado() {
+  const N = 128, c = document.createElement('canvas');
+  c.width = c.height = N;
   const g = c.getContext('2d');
-  g.fillStyle = '#ffffff'; g.fillRect(0, 0, 64, 64);
-  g.fillStyle = '#5d6f80'; g.fillRect(10, 18, 44, 34);
-  g.fillStyle = '#7f95a8'; g.fillRect(12, 20, 20, 30);
-  g.fillStyle = '#e6e6e6'; g.fillRect(0, 58, 64, 6);
+  const r = semente(5);
+  g.fillStyle = '#8f8c86'; g.fillRect(0, 0, N, N);
+  for (let k = 0; k < 2600; k++) { const v = 100 + r() * 90 | 0; g.fillStyle = `rgb(${v},${v - 2},${v - 6})`; g.fillRect(r() * N, r() * N, 1 + r() * 2, 1 + r() * 2); }
+  g.strokeStyle = 'rgba(60,60,60,0.25)'; g.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) { g.beginPath(); g.moveTo(i * 32, 0); g.lineTo(i * 32, N); g.stroke(); }
   const t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.anisotropy = 4;
-  t.colorSpace = THREE.SRGBColorSpace;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
 
-const PASTEIS = [0xf6c6c8, 0xbfe6d8, 0xf5e6a8, 0xbcd8ef, 0xf3f0e8, 0xf8d6b0, 0xd9c8ef, 0xffffff];
-const VIDROS = [0x8fb3c9, 0x7fa6b8, 0x9fc3c0, 0xa8b9c9, 0xc9d3db, 0x6d8fa6, 0xb6c4b2];
-const CONCRETO = [0xe8e2d6, 0xd9d4c9, 0xf0ece4, 0xcfc8bc, 0xe0d8cc];
+const PASTEIS = [0xf7c7cc, 0xbfe8dc, 0xf7e7a6, 0xbfdcf2, 0xf6f2ea, 0xf9d7b2, 0xdccbf0, 0xffffff, 0xc9f0e6, 0xffd0dc];
+const VIDROS = [0xe6f0f7, 0xd2e4ef, 0xd9ebe8, 0xe9e9f2, 0xf2f2f2, 0xc8dbe8, 0xdfe9df];
+const CONCRETO = [0xf0ebe2, 0xe3ddd2, 0xf7f4ee, 0xd8d1c5, 0xece4d8, 0xe9e0cf];
+export const MAT_PREDIOS = {};
 
 export function construirPredios(cena) {
-  const mat = new THREE.MeshLambertMaterial({ vertexColors: true, map: texturaJanelas() });
+  const estilos = ['vidro', 'concreto', 'deco'];
+  for (const e of estilos) {
+    const { t, te } = texFachada(e);
+    MAT_PREDIOS[e] = new THREE.MeshLambertMaterial({ vertexColors: true, map: t, emissiveMap: te, emissive: 0xffffff, emissiveIntensity: 0 });
+  }
+  MAT_PREDIOS.telhado = new THREE.MeshLambertMaterial({ vertexColors: true, map: texTelhado() });
   const TAM = 1200;
-  const chunks = new Map();
+  const grupos = new Map();
+  const pega = (k) => { let ch = grupos.get(k); if (!ch) { ch = { pos: [], nor: [], col: [], uv: [] }; grupos.set(k, ch); } return ch; };
   const cor = new THREE.Color();
+  const quad = (ch, ax, az, bx, bz, y0, y1, nx, nz, u0, u1, cr, cg, cb, sv) => {
+    ch.pos.push(ax, y0, az, bx, y0, bz, bx, y1, bz, ax, y0, az, bx, y1, bz, ax, y1, az);
+    for (let k = 0; k < 6; k++) { ch.nor.push(nx, 0, nz); ch.col.push(cr, cg, cb); }
+    const v0 = y0 / sv, v1 = y1 / sv;
+    ch.uv.push(u0, v0, u1, v0, u1, v1, u0, v0, u1, v1, u0, v1);
+  };
+  const caixa = (ch, cx, cz, w, d, y0, h, c) => {
+    // caixinha no telhado (ar-condicionado, casa de máquinas)
+    const x0 = cx - w / 2, x1 = cx + w / 2, z0 = cz - d / 2, z1 = cz + d / 2, y1 = y0 + h;
+    const lados = [[x0, z1, x1, z1, 0, 1], [x1, z1, x1, z0, 1, 0], [x1, z0, x0, z0, 0, -1], [x0, z0, x0, z1, -1, 0]];
+    for (const [ax, az, bx, bz, nx, nz] of lados) quad(ch, ax, az, bx, bz, y0, y1, nx, nz, 0, 0.3, c, c, c * 0.98, 6);
+    ch.pos.push(x0, y1, z0, x0, y1, z1, x1, y1, z1, x0, y1, z0, x1, y1, z1, x1, y1, z0);
+    for (let k = 0; k < 6; k++) { ch.nor.push(0, 1, 0); ch.col.push(c * 1.05, c * 1.05, c * 1.03); }
+    ch.uv.push(0, 0, 0, 0.2, 0.2, 0.2, 0, 0, 0.2, 0.2, 0.2, 0);
+  };
   for (const p of predios) {
     if (p.removido) continue;
-    const key = Math.floor(p.cx / TAM) + ',' + Math.floor(p.cz / TAM);
-    let ch = chunks.get(key);
-    if (!ch) { ch = { pos: [], nor: [], col: [], uv: [] }; chunks.set(key, ch); }
+    const base = Math.floor(p.cx / TAM) + ',' + Math.floor(p.cz / TAM);
     const n = p.pts.length / 2, h = p.h, pts = p.pts;
     const sem = (p.id * 2654435761) >>> 0;
-    if (h > 45) cor.setHex(VIDROS[sem % VIDROS.length]);
-    else if (h > 14) cor.setHex(CONCRETO[sem % CONCRETO.length]);
-    else cor.setHex(PASTEIS[sem % PASTEIS.length]);
+    const estilo = h > 45 ? 'vidro' : h > 14 ? 'concreto' : 'deco';
+    const lista = estilo === 'vidro' ? VIDROS : estilo === 'concreto' ? CONCRETO : PASTEIS;
+    cor.setHex(lista[sem % lista.length]);
     p.cor = cor.getHex();
-    const { pos, nor, col, uv } = ch;
-    let along = 0;
+    const W = pega(base + ',' + estilo), R = pega(base + ',telhado');
+    const parapeito = h > 6 ? 1.1 : 0;
+    let along = (sem % 7) * BAIA;
     for (let i = 0; i < n; i++) {
       const j = (i + 1) % n;
       const ax = pts[i * 2], az = pts[i * 2 + 1], bx = pts[j * 2], bz = pts[j * 2 + 1];
       const ex = bx - ax, ez = bz - az, len = Math.hypot(ex, ez) || 1;
       const nx = -ez / len, nz = ex / len;
-      const u0 = along / 3.6, u1 = (along + len) / 3.6, v1 = h / 3.4;
-      along += len;
-      pos.push(ax, 0, az, bx, 0, bz, bx, h, bz, ax, 0, az, bx, h, bz, ax, h, az);
-      for (let k = 0; k < 6; k++) { nor.push(nx, 0, nz); col.push(cor.r, cor.g, cor.b); }
-      uv.push(u0, 0, u1, 0, u1, v1, u0, 0, u1, v1, u0, v1);
+      // arredonda o número de janelas para não cortar no meio
+      const nb = Math.max(1, Math.round(len / BAIA));
+      const u0 = along / (BAIA * REP), u1 = (along + nb * BAIA) / (BAIA * REP);
+      along += nb * BAIA;
+      // térreo um pouco mais escuro (lojas/portaria)
+      const terreo = Math.min(h, 4);
+      quad(W, ax, az, bx, bz, 0, terreo, nx, nz, u0, u1, cor.r * 0.8, cor.g * 0.8, cor.b * 0.82, ANDAR * REP);
+      if (h > terreo) quad(W, ax, az, bx, bz, terreo, h, nx, nz, u0, u1, cor.r, cor.g, cor.b, ANDAR * REP);
+      if (parapeito) {
+        // mureta do telhado (lado de fora e de dentro)
+        const c2 = 0.92;
+        quad(R, ax, az, bx, bz, h, h + parapeito, nx, nz, u0 * 3, u1 * 3, cor.r * c2, cor.g * c2, cor.b * c2, 8);
+        quad(R, bx, bz, ax, az, h, h + parapeito, -nx, -nz, u0 * 3, u1 * 3, cor.r * 0.7, cor.g * 0.7, cor.b * 0.7, 8);
+      }
     }
     // telhado
     const cont = [];
     for (let i = 0; i < n; i++) cont.push(new THREE.Vector2(pts[i * 2], pts[i * 2 + 1]));
     let tris;
     try { tris = THREE.ShapeUtils.triangulateShape(cont, []); } catch (e) { tris = []; }
-    const rr = cor.r * 0.78, rg = cor.g * 0.78, rb = cor.b * 0.78;
+    const tom = 0.85 + ((sem >> 8) % 20) / 100;
     for (const t of tris) {
       let [a, b, c] = t;
       const cross = (cont[b].x - cont[a].x) * (cont[c].y - cont[a].y) - (cont[b].y - cont[a].y) * (cont[c].x - cont[a].x);
       if (cross > 0) { const tmp = b; b = c; c = tmp; }
       for (const k of [a, b, c]) {
-        pos.push(cont[k].x, h, cont[k].y);
-        nor.push(0, 1, 0); col.push(rr, rg, rb); uv.push(0.03, 0.97);
+        R.pos.push(cont[k].x, h, cont[k].y);
+        R.nor.push(0, 1, 0); R.col.push(tom, tom, tom * 0.98); R.uv.push(cont[k].x / 8, cont[k].y / 8);
+      }
+    }
+    // equipamentos no telhado
+    if (h > 8 && p.area > 150) {
+      const nq = 1 + (sem % 3) + (h > 40 ? 2 : 0);
+      for (let q = 0; q < nq; q++) {
+        const ang = ((sem >> (q * 3)) % 628) / 100, dd = p.raio * 0.25 * ((q % 3) / 2);
+        const cx = p.cx + Math.sin(ang) * dd, cz = p.cz + Math.cos(ang) * dd;
+        if (!dentroPoligono(p, cx, cz)) continue;
+        const big = h > 40 && q === 0;
+        caixa(R, cx, cz, big ? 8 : 2.2 + (q % 2), big ? 8 : 1.6 + (q % 2), h, big ? 4 : 1.4, big ? 0.8 : 0.72);
       }
     }
   }
   const malhas = [];
-  for (const ch of chunks.values()) {
+  for (const [k, ch] of grupos) {
+    const est = k.split(',')[2];
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(ch.pos, 3));
     g.setAttribute('normal', new THREE.Float32BufferAttribute(ch.nor, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(ch.col, 3));
     g.setAttribute('uv', new THREE.Float32BufferAttribute(ch.uv, 2));
     g.computeBoundingSphere();
-    const m = new THREE.Mesh(g, mat);
+    const m = new THREE.Mesh(g, MAT_PREDIOS[est]);
     m.matrixAutoUpdate = false;
     m.updateMatrix();
     m.name = 'predios';
@@ -199,8 +302,8 @@ export function construirPredios(cena) {
   return malhas;
 }
 
-// ---------------- chão (cores por tipo de terreno) ----------------
-const CORES_T = [[44, 104, 140], [205, 200, 188], [96, 98, 104], [104, 150, 84], [232, 214, 164], [170, 168, 160], [120, 120, 124]];
+// ---------------- chão desenhado (asfalto, calçada, grama, areia) ----------------
+const CORES_T = [[44, 104, 140], [205, 200, 188], [86, 88, 94], [96, 146, 70], [232, 214, 164], [170, 168, 160], [110, 110, 114]];
 export function canvasTerreno(escala = 1) {
   const c = document.createElement('canvas');
   c.width = Math.ceil(GW / escala); c.height = Math.ceil(GH / escala);
@@ -212,9 +315,8 @@ export function canvasTerreno(escala = 1) {
       const i = Math.min(GH - 1, y * escala) * GW + Math.min(GW - 1, x * escala);
       const t = predioId[i] >= 0 ? 5 : grade[i];
       const cc = CORES_T[t];
-      const ru = ((i * 1103515245 + 12345) >>> 16) & 15;
       const o = (y * c.width + x) * 4;
-      d[o] = cc[0] + ru - 8; d[o + 1] = cc[1] + ru - 8; d[o + 2] = cc[2] + ru - 8; d[o + 3] = 255;
+      d[o] = cc[0]; d[o + 1] = cc[1]; d[o + 2] = cc[2]; d[o + 3] = 255;
     }
   }
   g.putImageData(img, 0, 0);
@@ -222,22 +324,77 @@ export function canvasTerreno(escala = 1) {
 }
 
 export function construirChao(cena) {
-  const tex = new THREE.CanvasTexture(canvasTerreno(1));
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
+  // máscaras por tipo de terreno: R rua/ponte, G grama, B areia, A prédio (sombra de contato)
+  const m = new Uint8Array(GW * GH * 4);
+  for (let i = 0; i < GW * GH; i++) {
+    const t = grade[i], o = i * 4;
+    m[o] = t === T.RUA || t === T.PONTE ? 255 : 0;
+    m[o + 1] = t === T.PARQUE ? 255 : 0;
+    m[o + 2] = t === T.AREIA ? 255 : 0;
+    m[o + 3] = predioId[i] >= 0 ? 255 : 0;
+  }
+  const tex = new THREE.DataTexture(m, GW, GH, THREE.RGBAFormat, THREE.UnsignedByteType);
+  tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearFilter;
+  tex.needsUpdate = true;
+  const mat = new THREE.ShaderMaterial({
+    uniforms: {
+      mapa: { value: tex }, tam: { value: new THREE.Vector2(LARG, ALT) }, luz: { value: 1 }, corLuz: { value: new THREE.Color(1, 1, 1) },
+      corNevoa: { value: new THREE.Color(0xa9c8de) }, nevoaPerto: { value: 2000 }, nevoaLonge: { value: 9000 },
+    },
+    vertexShader: `varying vec3 vW; varying float vProf;
+      void main(){ vec4 w = modelMatrix * vec4(position,1.0); vW = w.xyz; vec4 mv = viewMatrix * w; vProf = -mv.z; gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `
+      uniform sampler2D mapa; uniform vec2 tam; uniform float luz; uniform vec3 corLuz;
+      uniform vec3 corNevoa; uniform float nevoaPerto; uniform float nevoaLonge;
+      varying vec3 vW; varying float vProf;
+      float h1(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
+      float ru(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f*f*(3.0-2.0*f);
+        return mix(mix(h1(i), h1(i+vec2(1,0)), u.x), mix(h1(i+vec2(0,1)), h1(i+vec2(1,1)), u.x), u.y); }
+      float fbm(vec2 p){ return ru(p)*0.5 + ru(p*2.07)*0.3 + ru(p*4.13)*0.2; }
+      void main(){
+        vec2 uv = vW.xz / tam;
+        vec4 m = texture2D(mapa, uv);
+        float det = 1.0 - smoothstep(250.0, 1400.0, vProf);
+        vec2 p = vW.xz;
+        float n1 = fbm(p * 0.18), n2 = ru(p * 3.1) * det, n3 = fbm(p * 0.012);
+        float rua = smoothstep(0.42, 0.58, m.r), grama = smoothstep(0.35, 0.6, m.g), areia = smoothstep(0.35, 0.6, m.b);
+        // calçada de placas de concreto
+        vec2 q = abs(fract(p / 2.4) - 0.5);
+        float junta = smoothstep(0.46, 0.5, max(q.x, q.y)) * det;
+        vec3 calc = vec3(0.68, 0.66, 0.62) * (0.9 + 0.1 * n1 + 0.06 * n2) - junta * 0.07;
+        // asfalto com faixa branca na borda da pista
+        vec3 asf = vec3(0.20, 0.205, 0.215) * (0.85 + 0.25 * n1 + 0.12 * n2);
+        float faixa = (smoothstep(0.60, 0.63, m.r) - smoothstep(0.66, 0.70, m.r)) * det;
+        asf = mix(asf, vec3(0.86, 0.85, 0.80), faixa * 0.75);
+        vec3 gr = mix(vec3(0.22, 0.38, 0.14), vec3(0.36, 0.52, 0.20), n1) * (0.85 + 0.3 * n2);
+        vec3 ar = vec3(0.92, 0.85, 0.67) * (0.93 + 0.08 * n1 + 0.05 * n2);
+        // terreno urbano variado: estacionamentos e gramados entre os prédios
+        float lote = fbm(p * 0.021 + 7.0), jard = fbm(p * 0.03 - 3.0);
+        vec3 c = mix(calc, vec3(0.38, 0.385, 0.39) * (0.9 + 0.2 * n2), smoothstep(0.58, 0.68, lote) * 0.85);
+        c = mix(c, gr * 0.95, smoothstep(0.6, 0.7, jard) * 0.85);
+        c = mix(c, gr, grama);
+        c = mix(c, ar, areia);
+        c = mix(c, asf, rua);
+        c *= 0.9 + 0.18 * n3;
+        // sombra de contato junto aos prédios
+        c *= 1.0 - smoothstep(0.05, 0.6, m.a) * 0.32;
+        c *= (0.14 + 0.8 * luz) * corLuz;
+        float f = smoothstep(nevoaPerto, nevoaLonge, vProf);
+        gl_FragColor = vec4(mix(c, corNevoa, f), 1.0);
+        #include <colorspace_fragment>
+      }`,
+  });
   const geo = new THREE.PlaneGeometry(LARG, ALT);
   geo.rotateX(-Math.PI / 2);
   geo.translate(LARG / 2, 0, ALT / 2);
-  const chao = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex }));
+  const chao = new THREE.Mesh(geo, mat);
   chao.name = 'chao';
   cena.add(chao);
-  // fundo do mar além do mapa
   const fundo = new THREE.Mesh(new THREE.PlaneGeometry(80000, 80000).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x1d5a7a }));
   fundo.position.set(LARG / 2, -0.6, ALT / 2);
   cena.add(fundo);
   return chao;
 }
-
 // ---------------- água animada ----------------
 export function construirAgua(cena) {
   const m = new Uint8Array(GW * GH);
@@ -272,7 +429,7 @@ export function construirAgua(cena) {
         c += vec3(0.9) * pow(max(0.0, o), 6.0) * 0.12;
         c *= luz;
         float f = smoothstep(nevoaPerto, nevoaLonge, vProf);
-        gl_FragColor = vec4(mix(c, corNevoa, f), alfa * (0.55 + 0.45*costa));
+        gl_FragColor = vec4(mix(c, corNevoa, f), alfa * (0.86 + 0.14*costa));
       }`,
   });
   const geo = new THREE.PlaneGeometry(LARG + 30000, ALT + 30000);
@@ -284,142 +441,57 @@ export function construirAgua(cena) {
   return agua;
 }
 
-// ---------------- imagens de satélite (Esri World Imagery) ----------------
-export function carregarSatelite(cena, z, aoCarregar) {
-  const grupo = new THREE.Group();
-  grupo.name = 'satelite';
-  cena.add(grupo);
-  const tilePx = 256 * Math.pow(2, 17 - z);          // tamanho do tile em pixels z17
-  const tileM = tilePx * MPP;
-  const tx0 = Math.floor(META.gx0 / tilePx), ty0 = Math.floor(META.gy0 / tilePx);
-  const tx1 = Math.floor((META.gx0 + META.wpx) / tilePx), ty1 = Math.floor((META.gy0 + META.hpx) / tilePx);
-  const B = 4; // tiles por bloco
-  let pendentes = 0, ok = 0, falhas = 0;
-  for (let by = ty0; by <= ty1; by += B) {
-    for (let bx = tx0; bx <= tx1; bx += B) {
-      const nx = Math.min(B, tx1 - bx + 1), ny = Math.min(B, ty1 - by + 1);
-      const cv = document.createElement('canvas');
-      cv.width = nx * 256; cv.height = ny * 256;
-      const g = cv.getContext('2d');
-      const tex = new THREE.CanvasTexture(cv);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.anisotropy = 4;
-      const geo = new THREE.PlaneGeometry(nx * tileM, ny * tileM).rotateX(-Math.PI / 2);
-      const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex }));
-      mesh.position.set((bx * tilePx - META.gx0) * MPP + nx * tileM / 2, 0.05, (by * tilePx - META.gy0) * MPP + ny * tileM / 2);
-      mesh.visible = false;
-      grupo.add(mesh);
-      for (let j = 0; j < ny; j++) {
-        for (let i = 0; i < nx; i++) {
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          pendentes++;
-          img.onload = () => {
-            g.drawImage(img, i * 256, j * 256);
-            tex.needsUpdate = true; mesh.visible = true; ok++;
-            if (--pendentes === 0 && aoCarregar) aoCarregar(ok, falhas);
-          };
-          img.onerror = () => { falhas++; if (--pendentes === 0 && aoCarregar) aoCarregar(ok, falhas); };
-          img.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${by + j}/${bx + i}`;
-        }
-      }
-    }
-  }
-  return grupo;
-}
 
 // ---------------- palmeiras ----------------
+function geoPalmeira() {
+  const partes = [];
+  // tronco levemente curvo, em segmentos
+  for (let i = 0; i < 4; i++) {
+    const g = new THREE.CylinderGeometry(0.2 - i * 0.02, 0.24 - i * 0.02, 2.4, 6).toNonIndexed();
+    g.rotateZ(i * 0.04); g.translate(i * i * 0.06, 1.2 + i * 2.3, 0);
+    partes.push(g);
+  }
+  const topo = new THREE.Vector3(0.55, 9.4, 0);
+  // folhas: lâminas caídas em volta do topo
+  for (let k = 0; k < 9; k++) {
+    const a = (k / 9) * Math.PI * 2 + (k % 2) * 0.2;
+    const s = new THREE.Shape();
+    s.moveTo(0, 0); s.quadraticCurveTo(0.7, 1.8, 0, 4.2); s.quadraticCurveTo(-0.7, 1.8, 0, 0);
+    const g = new THREE.ShapeGeometry(s, 3).toNonIndexed();
+    g.rotateX(-Math.PI / 2 - 0.12 - (k % 3) * 0.18);
+    g.rotateY(a);
+    g.translate(topo.x, topo.y, topo.z);
+    partes.push(g);
+  }
+  return partes;
+}
+
 export function construirPalmeiras(cena, qtd = 1800) {
-  const tronco = new THREE.CylinderGeometry(0.18, 0.3, 9, 5).translate(0, 4.5, 0);
-  const folhas = new THREE.ConeGeometry(4.2, 2.2, 7, 1, true).translate(0, 8.6, 0);
-  const mt = new THREE.MeshLambertMaterial({ color: 0x8a7354 });
-  const mf = new THREE.MeshLambertMaterial({ color: 0x3f7f3a, side: THREE.DoubleSide });
+  const p = geoPalmeira();
+  const tronco = mergeGeometries(p.slice(0, 4).map((g) => { g.deleteAttribute('uv'); return g; }));
+  const folhas = mergeGeometries(p.slice(4).map((g) => { g.deleteAttribute('uv'); return g; }));
+  const mt = new THREE.MeshLambertMaterial({ color: 0x8c7454 });
+  const mf = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide });
   const it = new THREE.InstancedMesh(tronco, mt, qtd), ifo = new THREE.InstancedMesh(folhas, mf, qtd);
-  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), s = new THREE.Vector3(), p = new THREE.Vector3();
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), s = new THREE.Vector3(), pp = new THREE.Vector3(), c = new THREE.Color();
   let n = 0, tent = 0;
   while (n < qtd && tent < qtd * 40) {
     tent++;
     const x = Math.random() * LARG, z = Math.random() * ALT;
-    const c = cel(x, z);
-    if (c < 0 || predioId[c] >= 0) continue;
-    const t = grade[c];
+    const ce = cel(x, z);
+    if (ce < 0 || predioId[ce] >= 0) continue;
+    const t = grade[ce];
     const chance = t === T.PARQUE ? 0.5 : t === T.AREIA ? 0.35 : t === T.CHAO ? 0.05 : 0;
     if (Math.random() > chance) continue;
-    const k = 0.7 + Math.random() * 0.6;
-    e.set((Math.random() - 0.5) * 0.15, Math.random() * 6.28, (Math.random() - 0.5) * 0.15);
+    const k = 0.75 + Math.random() * 0.55;
+    e.set((Math.random() - 0.5) * 0.1, Math.random() * 6.28, (Math.random() - 0.5) * 0.1);
     q.setFromEuler(e);
-    m.compose(p.set(x, 0, z), q, s.set(k, k, k));
+    m.compose(pp.set(x, 0, z), q, s.set(k, k, k));
     it.setMatrixAt(n, m); ifo.setMatrixAt(n, m);
+    c.setHSL(0.27 + Math.random() * 0.07, 0.45, 0.28 + Math.random() * 0.12);
+    ifo.setColorAt(n, c);
     n++;
   }
   it.count = ifo.count = n;
   cena.add(it); cena.add(ifo);
-}
-
-// ---------------- satélite em alta resolução perto da câmera ----------------
-export class SateliteDetalhe {
-  constructor(cena) {
-    this.cena = cena;
-    this.cache = new Map();
-    this.z = 17;
-    this.t = 0;
-    this.ligado = true;
-    this.carregando = 0;
-    this.geo = null;
-  }
-  atualizar(dt, alvo, distCam) {
-    this.t -= dt;
-    if (this.t > 0) return;
-    this.t = 0.4;
-    const ver = this.ligado && distCam < 900;
-    const tilePx = 256, tileM = tilePx * MPP;
-    if (!this.geo) this.geo = new THREE.PlaneGeometry(tileM, tileM).rotateX(-Math.PI / 2);
-    const R = Math.min(1100, Math.max(350, distCam * 1.8));
-    const gx = META.gx0 + alvo.x / MPP, gy = META.gy0 + alvo.z / MPP;
-    const x0 = Math.floor((gx - R / MPP) / tilePx), x1 = Math.floor((gx + R / MPP) / tilePx);
-    const y0 = Math.floor((gy - R / MPP) / tilePx), y1 = Math.floor((gy + R / MPP) / tilePx);
-    const agora = performance.now();
-    for (const m of this.cache.values()) m.visible = false;
-    if (!ver) return;
-    for (let ty = y0; ty <= y1; ty++) {
-      for (let tx = x0; tx <= x1; tx++) {
-        const k = tx + ',' + ty;
-        let m = this.cache.get(k);
-        if (!m) {
-          if (this.carregando > 8) continue;
-          const mat = new THREE.MeshLambertMaterial({ color: 0xffffff });
-          m = new THREE.Mesh(this.geo, mat);
-          m.position.set((tx * tilePx - META.gx0) * MPP + tileM / 2, 0.09, (ty * tilePx - META.gy0) * MPP + tileM / 2);
-          m.userData.pronto = false;
-          this.cache.set(k, m);
-          this.carregando++;
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          img.onload = () => {
-            this.carregando--;
-            const t = new THREE.Texture(img);
-            t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; t.needsUpdate = true;
-            mat.map = t; mat.needsUpdate = true;
-            m.userData.pronto = true;
-            this.cena.add(m);
-          };
-          img.onerror = () => { this.carregando--; };
-          img.src = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${this.z}/${ty}/${tx}`;
-        }
-        m.userData.uso = agora;
-        m.visible = m.userData.pronto;
-      }
-    }
-    // limita a memória: descarta os tiles usados há mais tempo
-    if (this.cache.size > 90) {
-      const lista = [...this.cache.entries()].filter(([, m]) => m.userData.pronto).sort((a, b) => a[1].userData.uso - b[1].userData.uso);
-      for (let i = 0; i < lista.length - 70; i++) {
-        const [k, m] = lista[i];
-        this.cena.remove(m);
-        if (m.material.map) m.material.map.dispose();
-        m.material.dispose();
-        this.cache.delete(k);
-      }
-    }
-  }
 }

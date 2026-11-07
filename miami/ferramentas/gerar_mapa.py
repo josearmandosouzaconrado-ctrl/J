@@ -24,6 +24,17 @@ cls = np.load(sys.argv[1])
 H, Wd = cls.shape
 out = sys.argv[2]
 
+# ---------------- ruas na largura real ----------------
+# no mapa as ruas são linhas finas: tira ruído (letras dos rótulos) e alarga só sobre chão livre
+rua = (cls == 2).astype(np.uint8)
+n, lab, st, _ = cv2.connectedComponentsWithStats(rua, connectivity=8)
+grandes = np.zeros(n, np.uint8); grandes[1:] = (st[1:, cv2.CC_STAT_AREA] >= 150)
+rua = grandes[lab]
+larga = cv2.dilate(rua, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9)))
+cls = cls.copy()
+cls[(cls == 2) & (rua == 0)] = 1
+cls[(larga == 1) & (cls == 1)] = 2
+
 # ---------------- grade de terreno ----------------
 gh, gw = H // CEL, Wd // CEL
 c = cls[:gh * CEL, :gw * CEL].reshape(gh, CEL, gw, CEL).transpose(0, 2, 1, 3).reshape(gh, gw, CEL * CEL)

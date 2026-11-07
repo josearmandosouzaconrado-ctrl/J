@@ -1,7 +1,7 @@
 // Miami: Surto Zumbi — estratégia em tempo real 3D no mapa real de Miami
 import * as THREE from 'three';
 import { G } from './estado.js';
-import { LARG, ALT, carregarSatelite, lugares, SateliteDetalhe, predios } from './mapa.js';
+import { LARG, ALT, lugares, predios, MAT_PREDIOS } from './mapa.js';
 import { Hash } from './util.js';
 import { Bonecos, CAMO, CAMO2, PELE_SOLD, hex } from './bonecos.js';
 import { Efeitos } from './efeitos.js';
@@ -65,19 +65,6 @@ async function iniciar() {
   configurarEntrada(renderer.domElement, camRTS);
   const ui = new UI(camRTS);
 
-  // satélite
-  G.ligarSatelite = (on) => {
-    if (on && !G.satelite) {
-      G.satelite = carregarSatelite(cena, q >= 2 ? 16 : 15, (ok, falhas) => {
-        if (!ok) { G.cena.remove(G.satelite); G.satelite = null; if (G.satDet) G.satDet.ligado = false; G.agua.material.uniforms.alfa.value = 1; ui.alerta('🛰️ Sem internet: usando o mapa desenhado', null, null, 'info'); }
-      });
-    }
-    if (G.satelite) G.satelite.visible = on;
-    if (on && !G.satDet) G.satDet = new SateliteDetalhe(cena);
-    if (G.satDet) G.satDet.ligado = on;
-    G.agua.material.uniforms.alfa.value = on ? 0.45 : 1;
-  };
-  if (G.cfg.satelite && navigator.onLine !== false) G.ligarSatelite(true);
   somLigado(G.cfg.som !== false);
 
   addEventListener('resize', () => {
@@ -136,6 +123,12 @@ async function iniciar() {
     const u = G.agua.material.uniforms;
     u.tempo.value += dt; u.luz.value = 0.35 + 0.65 * luz; u.corNevoa.value.copy(c);
     u.nevoaPerto.value = cena.fog.near; u.nevoaLonge.value = cena.fog.far;
+    const uc = G.chao.material.uniforms;
+    uc.luz.value = luz; uc.corLuz.value.copy(sol.color).lerp(new THREE.Color(1, 1, 1), 0.6); uc.corNevoa.value.copy(c);
+    uc.nevoaPerto.value = cena.fog.near; uc.nevoaLonge.value = cena.fog.far;
+    // janelas acesas à noite
+    const noite = Math.max(0, Math.min(1, (0.85 - luz) / 0.5));
+    for (const k in MAT_PREDIOS) MAT_PREDIOS[k].emissiveIntensity = noite * 0.9;
   }
   function quadro(agora) {
     requestAnimationFrame(quadro);
@@ -153,7 +146,6 @@ async function iniciar() {
     const t1 = performance.now();
     G.perfSim = (G.perfSim || 0) * 0.95 + (t1 - t0) * 0.05;
     camRTS.aplicar(dt);
-    if (G.satDet) G.satDet.atualizar(dt, camRTS.alvo, camRTS.dist);
     // distância de névoa acompanha o zoom
     cena.fog.near = Math.max(1500, camRTS.dist * 2.2);
     cena.fog.far = Math.max(9000, camRTS.dist * 6);
@@ -196,9 +188,8 @@ async function iniciar() {
     dif = b.dataset.dif;
     menu.querySelectorAll('[data-dif]').forEach((x) => x.classList.toggle('ativo', x === b));
   }));
-  const chkSat = $('#m-sat'), chkSom = $('#m-som'), selQ = $('#m-qual');
-  chkSat.checked = !!G.cfg.satelite; chkSom.checked = G.cfg.som !== false; selQ.value = String(q);
-  chkSat.onchange = () => { G.cfg.satelite = chkSat.checked; G.ligarSatelite(chkSat.checked); G.salvarCfg(); };
+  const chkSom = $('#m-som'), selQ = $('#m-qual');
+  chkSom.checked = G.cfg.som !== false; selQ.value = String(q);
   chkSom.onchange = () => { G.cfg.som = chkSom.checked; somLigado(chkSom.checked); G.salvarCfg(); };
   selQ.onchange = () => { G.cfg.qualidade = +selQ.value; G.salvarCfg(); $('#m-qual-aviso').textContent = 'A qualidade muda ao abrir o jogo de novo.'; };
   $('#m-ajuda').onclick = () => ui.ajuda();

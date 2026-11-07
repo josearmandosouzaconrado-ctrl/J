@@ -17,7 +17,7 @@ gray = (abs(r - g) <= 1)
 bld = gray & ((r - b) >= 1) & ((r - b) <= 3) & (r >= 185) & (r <= 228)
 pink = (r - g >= 15) & (r - g <= 26) & (g - b >= 2) & (g - b <= 9) & (r >= 220) & (r <= 245)
 purpleb = (b >= r + 5) & (b >= g + 16) & (r < 236) & ~water
-road = (gray & (abs(r - b) <= 1) & ((r >= 254) | ((r >= 140) & (r <= 200)))) 
+road = gray & (abs(r - b) <= 1) & (r >= 140)  # ruas brancas, contornos e vias expressas cinza
 cls[road] = 2
 cls[park] = 3
 cls[sand] = 4

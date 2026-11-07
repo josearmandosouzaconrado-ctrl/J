@@ -1,17 +1,41 @@
-// Modelos 3D (low-poly, feitos com formas simples) de veículos, aeronaves, navios e estruturas.
+// Modelos 3D (feitos com formas simples) de veículos, aeronaves, navios e estruturas.
 // Frente dos modelos = +Z. Medidas em metros, em escala real.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _s = new THREE.Vector3(), _p = new THREE.Vector3(), _c = new THREE.Color();
 
-export const MAT = new THREE.MeshLambertMaterial({ vertexColors: true });
-export const MAT_ROTOR = new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true, opacity: 0.75 });
+// textura de chapas: emendas, rebites e sujeira (multiplica a cor de cada peça)
+function texChapas() {
+  const N = 128, c = document.createElement('canvas');
+  c.width = c.height = N;
+  const g = c.getContext('2d');
+  g.fillStyle = '#f4f4f4'; g.fillRect(0, 0, N, N);
+  let s = 9;
+  const r = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  for (let k = 0; k < 900; k++) { const v = 200 + r() * 55 | 0; g.fillStyle = `rgba(${v},${v},${v},0.5)`; g.fillRect(r() * N, r() * N, 1 + r() * 3, 1 + r() * 3); }
+  const sujo = g.createLinearGradient(0, 0, 0, N);
+  sujo.addColorStop(0, 'rgba(90,70,40,0.0)'); sujo.addColorStop(1, 'rgba(90,70,40,0.18)');
+  g.fillStyle = sujo; g.fillRect(0, 0, N, N);
+  g.strokeStyle = 'rgba(0,0,0,0.45)'; g.lineWidth = 2; g.strokeRect(1, 1, N - 2, N - 2);
+  g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 1; g.strokeRect(3.5, 3.5, N - 7, N - 7);
+  g.fillStyle = 'rgba(0,0,0,0.35)';
+  for (let i = 10; i < N; i += 20) { g.fillRect(i, 6, 2, 2); g.fillRect(i, N - 8, 2, 2); g.fillRect(6, i, 2, 2); g.fillRect(N - 8, i, 2, 2); }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const TEX_CHAPAS = texChapas();
+
+export const MAT = new THREE.MeshPhongMaterial({ vertexColors: true, map: TEX_CHAPAS, shininess: 28, specular: 0x2a2a2a });
+export const MAT_ROTOR = new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true, opacity: 0.8 });
 
 export class Mont {
   constructor() { this.g = []; }
-  add(geo, cor, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) {
+  add(geo, cor, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1, uvEsc = 0) {
     const g = geo.index ? geo.toNonIndexed() : geo;
+    if (!g.attributes.uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+    if (uvEsc) { const uv = g.attributes.uv.array; for (let i = 0; i < uv.length; i++) uv[i] *= uvEsc; }
     _e.set(rx, ry, rz); _q.setFromEuler(_e);
     _m.compose(_p.set(x, y, z), _q, _s.set(sx, sy, sz));
     g.applyMatrix4(_m);
@@ -19,14 +43,13 @@ export class Mont {
     const n = g.attributes.position.count, col = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) { col[i * 3] = _c.r; col[i * 3 + 1] = _c.g; col[i * 3 + 2] = _c.b; }
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    if (g.attributes.uv) g.deleteAttribute('uv');
     if (g.attributes.uv1) g.deleteAttribute('uv1');
     this.g.push(g);
     return this;
   }
   box(w, h, d, cor, x, y, z, rx, ry, rz) { return this.add(new THREE.BoxGeometry(w, h, d), cor, x, y, z, rx, ry, rz); }
   cil(rt, rb, h, seg, cor, x, y, z, rx, ry, rz) { return this.add(new THREE.CylinderGeometry(rt, rb, h, seg), cor, x, y, z, rx, ry, rz); }
-  esf(r, cor, x, y, z, sx = 1, sy = 1, sz = 1) { return this.add(new THREE.SphereGeometry(r, 10, 7), cor, x, y, z, 0, 0, 0, sx, sy, sz); }
+  esf(r, cor, x, y, z, sx = 1, sy = 1, sz = 1) { return this.add(new THREE.SphereGeometry(r, 12, 8), cor, x, y, z, 0, 0, 0, sx, sy, sz); }
   // forma vista de cima (pontos [x,z]) extrudada para cima com espessura esp, a partir de y
   planta(pts, esp, cor, y = 0, bisel = 0) {
     const s = new THREE.Shape();
@@ -34,125 +57,270 @@ export class Mont {
     for (let i = 1; i < pts.length; i++) s.lineTo(pts[i][0], pts[i][1]);
     s.closePath();
     const g = new THREE.ExtrudeGeometry(s, { depth: esp, bevelEnabled: bisel > 0, bevelSize: bisel, bevelThickness: bisel, bevelSegments: 1 });
-    return this.add(g, cor, 0, y + esp, 0, Math.PI / 2, 0, 0);
+    return this.add(g, cor, 0, y + esp, 0, Math.PI / 2, 0, 0, 1, 1, 1, 0.25);
   }
   // planta espelhada em x (passa só metade direita, x>=0, de trás para frente)
   simetrica(meia, esp, cor, y = 0) {
     const pts = meia.concat(meia.slice().reverse().map(([x, z]) => [-x, z]));
     return this.planta(pts, esp, cor, y);
   }
-  roda(r, larg, cor, x, y, z) { return this.cil(r, r, larg, 10, cor, x, y, z, 0, 0, Math.PI / 2); }
-  build() { const g = mergeGeometries(this.g); g.computeBoundingSphere(); return g; }
+  // perfil lateral (pontos [z,y]) extrudado na largura (centrado em x)
+  perfil(pts, larg, cor, x = 0) {
+    const s = new THREE.Shape();
+    s.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) s.lineTo(pts[i][0], pts[i][1]);
+    s.closePath();
+    const g = new THREE.ExtrudeGeometry(s, { depth: larg, bevelEnabled: false });
+    // shape (z,y) no plano XY -> gira para que X do shape vire Z do mundo
+    return this.add(g, cor, x + larg / 2, 0, 0, 0, -Math.PI / 2, 0, 1, 1, 1, 0.3);
+  }
+  roda(r, larg, cor, x, y, z) {
+    this.cil(r, r, larg, 14, cor, x, y, z, 0, 0, Math.PI / 2);
+    const lado = Math.sign(x) || 1;
+    this.cil(r * 0.55, r * 0.55, 0.04, 10, 0x55574f, x + lado * larg / 2, y, z, 0, 0, Math.PI / 2);
+    this.cil(r * 0.18, r * 0.22, 0.12, 8, 0x3a3a36, x + lado * (larg / 2 + 0.05), y, z, 0, 0, Math.PI / 2);
+    return this;
+  }
+  build(ao = true) {
+    const g = mergeGeometries(this.g);
+    if (ao) {
+      // sombreamento falso: partes de baixo mais escuras, topo mais claro
+      const p = g.attributes.position, n = g.attributes.normal, c = g.attributes.color;
+      let y0 = Infinity, y1 = -Infinity;
+      for (let i = 0; i < p.count; i++) { const y = p.getY(i); if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      const alt = Math.max(0.5, Math.min(3, y1 - y0));
+      for (let i = 0; i < p.count; i++) {
+        let f = 0.62 + 0.38 * Math.min(1, (p.getY(i) - y0) / alt);
+        if (n.getY(i) > 0.6) f *= 1.08; else if (n.getY(i) < -0.6) f *= 0.6;
+        c.setXYZ(i, c.getX(i) * f, c.getY(i) * f, c.getZ(i) * f);
+      }
+    }
+    g.computeBoundingSphere();
+    return g;
+  }
 }
 
 const cache = {};
-function malha(nome, fn, mat = MAT) {
-  if (!cache[nome]) cache[nome] = fn();
-  return new THREE.Mesh(cache[nome], mat);
-}
 
 // ---------------- cores ----------------
-const VERDE = 0x55603a, VERDE2 = 0x434d2c, AREIA = 0xb39e70, PRETO = 0x1f2124, PNEU = 0x222222, VIDRO = 0x2d3e4a,
-  CINZA_N = 0x7d868f, CINZA_N2 = 0x5f676f, CINZA_J = 0x5b6168, CINZA_F = 0x9aa3ac, BRANCO = 0xf0f0ea, METAL = 0x3a3d40, VERM = 0xb3261e;
+const VERDE = 0x5a6440, VERDE2 = 0x47502f, AREIA = 0xb8a477, AREIA2 = 0x9e8a5e, PRETO = 0x1f2124, PNEU = 0x1c1c1c, VIDRO = 0x1f3442,
+  CINZA_N = 0x7d868f, CINZA_N2 = 0x5f676f, CINZA_J = 0x5b6168, CINZA_F = 0x9aa3ac, BRANCO = 0xf0f0ea, METAL = 0x34373a, VERM = 0xb3261e,
+  FAROL = 0xfff3c4, LANTERNA = 0xc0281e;
 
 // ---------------- veículos terrestres ----------------
 function rodas(M, xs, zs, r, l, y) { for (const x of xs) for (const z of zs) M.roda(r, l, PNEU, x, y ?? r, z); }
-function lagartas(M, comp, larg, alt, x) {
+
+// lagarta completa: esteira, rodas de apoio, roda motriz e tensora, saia lateral
+function lagartas(M, comp, alt, x, larg = 0.66, saia = true, cor = AREIA) {
   for (const s of [-1, 1]) {
-    M.box(0.7, alt, comp, PRETO, s * x, alt / 2 + 0.05, 0);
-    for (let i = 0; i < 6; i++) M.roda(alt * 0.36, 0.72, 0x2a2a2a, s * x, alt * 0.38, -comp / 2 + 0.7 + i * (comp - 1.4) / 5);
+    const xx = s * x;
+    M.box(larg, 0.12, comp, PRETO, xx, alt, 0);                         // esteira de cima
+    M.box(larg, 0.12, comp - 1.2, PRETO, xx, 0.06, 0);                    // esteira de baixo
+    M.box(larg, alt * 0.8, 0.12, PRETO, xx, alt * 0.5, comp / 2 - 0.3, 0.6);
+    M.box(larg, alt * 0.8, 0.12, PRETO, xx, alt * 0.5, -comp / 2 + 0.3, -0.6);
+    const nr = Math.max(5, Math.round(comp / 1.1));
+    for (let i = 0; i < nr; i++) M.roda(alt * 0.34, larg * 0.9, 0x2c2e2a, xx, alt * 0.36, -comp / 2 + 1.0 + i * (comp - 2.0) / (nr - 1));
+    M.roda(alt * 0.4, larg * 0.95, 0x30312c, xx, alt * 0.62, -comp / 2 + 0.35);
+    M.roda(alt * 0.36, larg * 0.95, 0x30312c, xx, alt * 0.6, comp / 2 - 0.35);
+    if (saia) M.box(0.1, alt * 0.55, comp - 0.6, cor, s * (x + larg / 2 + 0.06), alt * 0.82, 0);
   }
 }
+function faroisFrente(M, x, y, z) { for (const s of [-1, 1]) M.box(0.22, 0.14, 0.06, FAROL, s * x, y, z); }
+function lanternas(M, x, y, z) { for (const s of [-1, 1]) M.box(0.16, 0.12, 0.06, LANTERNA, s * x, y, z); }
+function antena(M, x, y, z, h = 2.6) { M.cil(0.012, 0.025, h, 4, PRETO, x, y + h / 2, z); }
 
 const VEIC = {
   humvee() {
     const c = new Mont();
-    c.box(2.2, 0.75, 4.6, AREIA, 0, 0.95, 0);
-    c.box(2.05, 0.75, 2.4, AREIA, 0, 1.7, -0.3);
-    c.box(1.95, 0.5, 0.1, VIDRO, 0, 1.75, 0.92, -0.3);
-    c.box(2.1, 0.35, 1.5, AREIA, 0, 1.45, 1.55, -0.12);
-    c.box(2.25, 0.08, 0.5, METAL, 0, 0.7, 2.35);
-    rodas(c, [-0.95, 0.95], [-1.5, 1.6], 0.46, 0.38);
+    const C = AREIA, C2 = AREIA2;
+    // chassi e carroceria baixa
+    c.box(1.9, 0.5, 4.5, C2, 0, 0.72, 0);
+    c.perfil([[-2.3, 0.75], [-2.3, 1.5], [0.75, 1.5], [1.5, 1.42], [2.3, 1.28], [2.32, 0.75]], 2.16, C);
+    // para-lamas sobre as rodas
+    for (const s of [-1, 1]) for (const z of [-1.5, 1.55]) c.box(0.42, 0.14, 1.25, C, s * 0.95, 1.22, z);
+    // cabine com teto, colunas e vidros
+    c.box(2.1, 0.08, 2.25, C, 0, 2.0, -0.35);
+    for (const [x, z] of [[-1.0, 0.72], [1.0, 0.72], [-1.0, -1.45], [1.0, -1.45], [-1.0, -0.4], [1.0, -0.4]]) c.box(0.1, 0.5, 0.1, C, x, 1.75, z);
+    c.box(1.85, 0.48, 0.05, VIDRO, 0, 1.76, 0.78, -0.12);
+    for (const s of [-1, 1]) { c.box(0.04, 0.4, 0.95, VIDRO, s * 1.04, 1.76, 0.15); c.box(0.04, 0.4, 0.95, VIDRO, s * 1.04, 1.76, -0.92); }
+    c.box(2.05, 0.5, 0.05, VIDRO, 0, 1.76, -1.48);
+    // portas blindadas (linhas)
+    for (const s of [-1, 1]) for (const z of [0.15, -0.92]) c.box(0.03, 0.62, 1.0, C2, s * 1.09, 1.18, z);
+    // grade, faróis, para-choque, guincho
+    c.box(1.3, 0.42, 0.05, 0x2a2a26, 0, 1.0, 2.33);
+    for (let i = 0; i < 6; i++) c.box(0.04, 0.38, 0.06, C, -0.5 + i * 0.2, 1.0, 2.34);
+    faroisFrente(c, 0.72, 1.1, 2.34);
+    c.box(2.2, 0.18, 0.22, METAL, 0, 0.62, 2.4);
+    c.box(0.6, 0.22, 0.3, 0x3a3a34, 0, 0.62, 2.55);
+    lanternas(c, 0.85, 1.3, -2.33);
+    // espelhos, antenas, carga atrás
+    for (const s of [-1, 1]) { c.box(0.04, 0.24, 0.18, METAL, s * 1.25, 1.75, 0.8); c.box(0.18, 0.04, 0.04, METAL, s * 1.15, 1.75, 0.8); }
+    antena(c, 0.9, 1.5, -2.1); antena(c, -0.9, 1.5, -2.1, 2.0);
+    c.box(1.8, 0.35, 0.7, 0x4b4a3a, 0, 1.7, -1.95);
+    c.cil(0.4, 0.4, 0.22, 12, PNEU, 0, 1.62, -2.42, Math.PI / 2);
+    rodas(c, [-0.95, 0.95], [-1.5, 1.55], 0.47, 0.4);
+    // torre: anel, escudo de proteção e metralhadora .50
     const t = new Mont();
-    t.cil(0.55, 0.6, 0.35, 10, AREIA, 0, 0, 0);
-    t.box(0.9, 0.5, 0.12, AREIA, 0, 0.35, 0.4);
-    t.cil(0.05, 0.05, 1.5, 6, METAL, 0, 0.45, 0.95, Math.PI / 2);
-    t.box(0.25, 0.25, 0.6, METAL, 0, 0.45, 0.1);
-    return { corpo: c.build(), torre: t.build(), torreY: 2.1, torreZ: -0.4, canoZ: 1.7, canoY: 0.45 };
+    t.cil(0.6, 0.62, 0.18, 14, C2, 0, 0, 0);
+    t.box(1.3, 0.62, 0.06, C, 0, 0.42, 0.45, -0.12);
+    for (const s of [-1, 1]) t.box(0.06, 0.55, 0.65, C, s * 0.66, 0.38, 0.15, 0, s * 0.35, 0);
+    t.box(0.5, 0.3, 0.12, VIDRO, 0, 0.62, 0.47, -0.12);
+    t.box(0.18, 0.2, 0.75, METAL, 0, 0.35, 0.25);
+    t.cil(0.035, 0.035, 1.25, 6, METAL, 0, 0.38, 1.2, Math.PI / 2);
+    t.cil(0.06, 0.06, 0.12, 6, METAL, 0, 0.38, 1.82, Math.PI / 2);
+    t.box(0.22, 0.2, 0.3, 0x4b4a3a, 0.25, 0.28, 0.1);
+    return { corpo: c.build(), torre: t.build(), torreY: 2.08, torreZ: -0.45, canoZ: 1.85, canoY: 0.38 };
   },
   ambulancia() {
     const c = new Mont();
-    c.box(2.2, 0.75, 5.0, AREIA, 0, 0.95, 0);
-    c.box(2.1, 0.7, 1.2, AREIA, 0, 1.65, 1.15);
-    c.box(1.95, 0.45, 0.1, VIDRO, 0, 1.7, 1.78, -0.3);
-    c.box(2.2, 1.6, 2.6, 0xe7e1cf, 0, 2.05, -1.1);
-    c.box(2.22, 0.35, 2.62, 0x2e6fae, 0, 2.2, -1.1);
-    c.box(0.5, 0.18, 0.18, 0x3a7bd5, 0, 2.95, 0.2);
-    rodas(c, [-0.95, 0.95], [-1.6, 1.6], 0.46, 0.38);
+    const C = AREIA;
+    c.box(1.9, 0.5, 4.9, AREIA2, 0, 0.72, 0);
+    c.perfil([[0.6, 0.75], [0.6, 1.5], [1.6, 1.45], [2.45, 1.3], [2.47, 0.75]], 2.16, C);
+    c.box(2.1, 0.08, 1.0, C, 0, 2.0, 1.05);
+    c.box(1.85, 0.45, 0.05, VIDRO, 0, 1.76, 1.58, -0.12);
+    for (const s of [-1, 1]) c.box(0.04, 0.4, 0.8, VIDRO, s * 1.04, 1.76, 1.05);
+    // baú do paciente
+    c.box(2.2, 1.85, 2.9, 0xe9e4d4, 0, 1.75, -1.05);
+    c.box(2.22, 0.32, 2.92, 0x2e6fae, 0, 2.15, -1.05);
+    c.box(2.24, 0.06, 2.94, 0x8a8576, 0, 2.7, -1.05);
+    for (const s of [-1, 1]) c.box(0.04, 0.4, 0.6, VIDRO, s * 1.12, 2.1, -0.4);
+    c.box(1.8, 1.4, 0.04, 0xd9d3c2, 0, 1.6, -2.52);
+    c.box(0.3, 0.15, 0.15, 0x3a7bd5, -0.7, 2.75, -0.1); c.box(0.3, 0.15, 0.15, 0xd03030, 0.7, 2.75, -0.1);
+    faroisFrente(c, 0.72, 1.1, 2.45); lanternas(c, 0.85, 1.0, -2.55);
+    c.box(1.3, 0.42, 0.05, 0x2a2a26, 0, 1.0, 2.44);
+    c.box(2.2, 0.18, 0.22, METAL, 0, 0.62, 2.5);
+    rodas(c, [-0.95, 0.95], [-1.6, 1.6], 0.47, 0.4);
     return { corpo: c.build() };
   },
   stryker() {
     const c = new Mont();
-    c.simetrica([[1.35, -3.5], [1.35, 2.4], [0.9, 3.5]], 1.5, VERDE, 0.7);
-    c.box(2.5, 0.6, 5.4, VERDE2, 0, 2.45, -0.6);
-    c.box(2.3, 0.3, 0.8, VERDE2, 0, 2.3, 2.6, -0.4);
-    rodas(c, [-1.25, 1.25], [-2.6, -1.2, 0.8, 2.2], 0.55, 0.45);
+    const C = VERDE, C2 = VERDE2;
+    // casco em cunha com laterais inclinadas
+    c.perfil([[-3.5, 0.75], [-3.5, 2.55], [2.2, 2.55], [3.5, 1.6], [3.5, 0.75], [2.9, 0.55]], 2.3, C);
+    for (const s of [-1, 1]) c.box(0.25, 1.3, 6.6, C2, s * 1.28, 1.7, -0.3, 0, 0, s * 0.18);
+    c.box(2.5, 0.12, 5.6, C2, 0, 2.6, -0.7);
+    c.box(1.2, 0.4, 0.8, C2, -0.55, 2.8, 1.7);
+    c.box(0.5, 0.25, 0.05, VIDRO, -0.55, 2.85, 2.11);
+    c.box(1.6, 1.4, 0.1, C2, 0, 1.8, -3.55);
+    for (let i = 0; i < 4; i++) c.box(0.1, 0.08, 0.5, METAL, 0.9, 2.66, -1.5 - i * 0.6);
+    faroisFrente(c, 0.95, 1.45, 3.12); lanternas(c, 0.95, 1.6, -3.56);
+    antena(c, 1.0, 2.6, -3.0, 3); antena(c, -1.0, 2.6, -3.0, 2.4);
+    // mochilas e caixas penduradas nas laterais
+    for (const s of [-1, 1]) for (let i = 0; i < 3; i++) c.box(0.3, 0.45, 0.8, 0x4a4a36, s * 1.5, 2.1, -2.4 + i * 1.1);
+    rodas(c, [-1.25, 1.25], [-2.55, -1.15, 0.85, 2.25], 0.56, 0.48);
+    // estação de armas remota (RWS)
     const t = new Mont();
-    t.box(0.8, 0.6, 0.9, VERDE2, 0, 0.3, 0);
-    t.cil(0.05, 0.05, 1.5, 6, METAL, 0, 0.35, 0.9, Math.PI / 2);
-    t.box(0.3, 0.3, 0.3, VIDRO, 0.35, 0.65, 0.1);
-    return { corpo: c.build(), torre: t.build(), torreY: 2.75, torreZ: 0.5, canoZ: 1.6, canoY: 0.35 };
+    t.cil(0.45, 0.5, 0.25, 12, C2, 0, 0, 0);
+    t.box(0.7, 0.55, 0.8, C, 0, 0.42, 0);
+    t.box(0.35, 0.35, 0.35, VIDRO, 0.42, 0.55, 0.2);
+    t.box(0.2, 0.2, 0.8, METAL, -0.15, 0.48, 0.5);
+    t.cil(0.035, 0.035, 1.3, 6, METAL, -0.15, 0.48, 1.4, Math.PI / 2);
+    t.box(0.25, 0.3, 0.4, 0x4b4a3a, 0.45, 0.25, -0.3);
+    return { corpo: c.build(), torre: t.build(), torreY: 2.62, torreZ: 0.4, canoZ: 2.05, canoY: 0.48 };
   },
   bradley() {
     const c = new Mont();
-    c.simetrica([[1.6, -3.2], [1.6, 2.2], [1.1, 3.3]], 1.4, AREIA, 0.6);
-    c.box(3.0, 0.5, 4.2, AREIA, 0, 2.2, -0.6);
-    lagartas(c, 6.3, 3.4, 1.2, 1.55);
+    const C = AREIA, C2 = AREIA2;
+    c.perfil([[-3.3, 0.55], [-3.3, 2.35], [1.5, 2.35], [3.3, 1.35], [3.3, 0.85], [2.6, 0.55]], 3.0, C);
+    lagartas(c, 6.4, 1.2, 1.55, 0.6, true, C2);
+    c.box(3.6, 0.1, 6.6, C2, 0, 1.42, 0);
+    // blindagem reativa nas laterais
+    for (const s of [-1, 1]) for (let i = 0; i < 5; i++) c.box(0.14, 0.5, 1.1, C, s * 1.98, 1.15, -2.4 + i * 1.2);
+    c.box(1.2, 1.5, 0.1, C2, 0.6, 1.5, -3.35);
+    faroisFrente(c, 1.2, 1.4, 3.3); lanternas(c, 1.3, 1.6, -3.32);
+    antena(c, -1.3, 2.35, -2.8, 2.8);
     const t = new Mont();
-    t.simetrica([[1.1, -1.2], [1.1, 0.8], [0.7, 1.3]], 0.85, AREIA, 0);
-    t.cil(0.07, 0.07, 2.4, 6, METAL, -0.2, 0.45, 2.3, Math.PI / 2);
-    t.box(0.5, 0.45, 1.2, VERDE2, 1.35, 0.55, 0);
-    return { corpo: c.build(), torre: t.build(), torreY: 2.45, torreZ: 0.2, canoZ: 3.5, canoY: 0.45 };
+    t.simetrica([[1.05, -1.2], [1.05, 0.7], [0.6, 1.25]], 0.85, C, 0);
+    t.box(1.9, 0.14, 2.2, C2, 0, 0.92, -0.2);
+    t.box(0.5, 0.45, 0.6, C2, -0.45, 0.6, 1.2);
+    t.cil(0.09, 0.09, 2.3, 8, METAL, -0.45, 0.6, 2.6, Math.PI / 2);
+    t.cil(0.12, 0.12, 0.3, 8, METAL, -0.45, 0.6, 3.7, Math.PI / 2);
+    t.box(0.55, 0.55, 1.4, C2, 1.35, 0.55, -0.1);                         // lançador TOW
+    t.box(0.42, 0.2, 0.06, PRETO, 1.35, 0.68, 0.61); t.box(0.42, 0.2, 0.06, PRETO, 1.35, 0.4, 0.61);
+    t.box(0.35, 0.3, 0.3, VIDRO, 0.5, 1.05, 0.3);
+    for (const s of [-1, 1]) for (let i = 0; i < 4; i++) t.cil(0.06, 0.06, 0.25, 6, METAL, s * 0.95, 0.65 + (i % 2) * 0.14, 0.75 + Math.floor(i / 2) * 0.15, Math.PI / 2.6);
+    return { corpo: c.build(), torre: t.build(), torreY: 2.36, torreZ: 0.1, canoZ: 3.8, canoY: 0.6 };
   },
   abrams() {
     const c = new Mont();
-    c.simetrica([[1.8, -3.9], [1.8, 3.2], [1.4, 4.0]], 1.0, AREIA, 0.7);
-    c.box(3.6, 0.2, 7.6, 0x9f8b60, 0, 1.75, 0);
-    lagartas(c, 7.6, 3.7, 1.3, 1.75);
+    const C = AREIA, C2 = AREIA2;
+    // casco: chapa frontal inclinada e traseira com grade do motor
+    c.perfil([[-3.95, 0.55], [-3.95, 1.75], [3.0, 1.75], [4.0, 1.2], [3.9, 0.7], [3.2, 0.5]], 2.6, C);
+    lagartas(c, 7.7, 1.3, 1.55, 0.68, true, C2);
+    c.box(3.7, 0.1, 7.7, C2, 0, 1.78, -0.1);
+    for (let i = 0; i < 7; i++) c.box(2.2, 0.03, 0.12, 0x3e3b33, 0, 1.84, -3.1 + i * 0.22);
+    for (const s of [-1, 1]) for (let i = 0; i < 6; i++) c.box(0.06, 0.62, 1.15, C, s * 1.99, 1.25, -3.1 + i * 1.22);
+    faroisFrente(c, 1.3, 1.6, 3.42); lanternas(c, 1.5, 1.55, -3.97);
+    c.box(1.4, 0.4, 0.4, 0x4a4436, 0, 1.6, -4.05);
     const t = new Mont();
-    t.simetrica([[1.75, -2.6], [1.75, 1.0], [1.2, 2.2], [0.5, 2.5]], 0.85, AREIA, 0);
-    t.box(3.0, 0.3, 1.0, 0x9f8b60, 0, 0.9, -2.2);
-    t.cil(0.12, 0.14, 5.3, 8, AREIA, 0, 0.42, 4.9, Math.PI / 2);
-    t.cil(0.2, 0.2, 0.7, 8, AREIA, 0, 0.42, 4.1, Math.PI / 2);
-    t.cil(0.3, 0.3, 0.3, 8, METAL, 0.8, 1.0, -0.6);
-    t.cil(0.03, 0.03, 1.0, 5, METAL, 0.8, 1.2, -0.1, Math.PI / 2);
-    return { corpo: c.build(), torre: t.build(), torreY: 1.85, torreZ: -0.3, canoZ: 7.6, canoY: 0.42 };
+    // torre angulosa (blindagem composta), cesto traseiro e mantelete
+    t.simetrica([[1.8, -2.4], [1.8, 0.9], [1.25, 2.2], [0.55, 2.55]], 0.95, C, 0);
+    t.simetrica([[1.6, -2.2], [1.6, 0.8], [1.1, 1.95], [0.5, 2.3]], 0.08, C2, 0.95);
+    // cesto (bustle rack) com bolsas
+    t.box(3.4, 0.05, 1.3, METAL, 0, 0.6, -3.0);
+    for (const s of [-1, 1]) t.box(0.05, 0.5, 1.3, METAL, s * 1.7, 0.85, -3.0);
+    t.box(3.4, 0.5, 0.05, METAL, 0, 0.85, -3.65);
+    t.box(3.0, 0.4, 1.1, 0x5b5641, 0, 0.85, -2.95);
+    t.box(1.0, 0.75, 0.6, C2, 0, 0.45, 2.55);
+    // canhão 120mm com luva térmica e extrator de fumos
+    t.cil(0.13, 0.15, 5.6, 10, C, 0, 0.45, 5.4, Math.PI / 2);
+    t.cil(0.21, 0.21, 0.8, 10, C2, 0, 0.45, 4.0, Math.PI / 2);
+    t.cil(0.17, 0.17, 0.25, 10, METAL, 0, 0.45, 8.15, Math.PI / 2);
+    // cúpula do comandante, metralhadoras e mira
+    t.cil(0.38, 0.42, 0.35, 12, C2, 0.75, 1.12, -0.5);
+    t.box(0.18, 0.2, 0.9, METAL, 0.75, 1.42, 0.0);
+    t.cil(0.03, 0.03, 1.0, 5, METAL, 0.75, 1.42, 0.9, Math.PI / 2);
+    t.cil(0.3, 0.3, 0.12, 10, C2, -0.75, 1.02, -0.6);
+    t.box(0.12, 0.15, 0.7, METAL, -0.75, 1.2, -0.2);
+    t.box(0.5, 0.45, 0.45, C2, -0.65, 1.2, 0.8);
+    t.box(0.3, 0.25, 0.04, VIDRO, -0.65, 1.25, 1.03);
+    for (const s of [-1, 1]) for (let i = 0; i < 6; i++) t.cil(0.055, 0.055, 0.3, 6, METAL, s * (1.35 + (i % 3) * 0.12), 0.85 + Math.floor(i / 3) * 0.13, 1.25, Math.PI / 2.4);
+    antena(t, 1.4, 0.95, -2.2, 2.6); antena(t, -1.4, 0.95, -2.2, 2.0);
+    return { corpo: c.build(), torre: t.build(), torreY: 1.83, torreZ: -0.3, canoZ: 8.3, canoY: 0.45 };
   },
   paladin() {
     const c = new Mont();
-    c.simetrica([[1.7, -3.4], [1.7, 2.8], [1.2, 3.5]], 1.0, AREIA, 0.7);
-    lagartas(c, 6.8, 3.6, 1.2, 1.7);
+    const C = AREIA, C2 = AREIA2;
+    c.perfil([[-3.45, 0.55], [-3.45, 1.7], [2.8, 1.7], [3.5, 1.2], [3.4, 0.7], [2.8, 0.5]], 2.9, C);
+    lagartas(c, 6.9, 1.2, 1.6, 0.62, true, C2);
+    c.box(3.5, 0.1, 6.8, C2, 0, 1.73, 0);
+    faroisFrente(c, 1.2, 1.5, 3.2); lanternas(c, 1.4, 1.5, -3.47);
     const t = new Mont();
-    t.box(3.2, 1.6, 4.4, AREIA, 0, 0.8, -0.8);
-    t.box(2.6, 0.4, 3.6, 0x9f8b60, 0, 1.75, -0.8);
-    t.cil(0.12, 0.15, 6.5, 8, AREIA, 0, 0.9, 4.3, Math.PI / 2);
-    t.cil(0.22, 0.22, 0.6, 8, METAL, 0, 0.9, 7.4, Math.PI / 2);
-    return { corpo: c.build(), torre: t.build(), torreY: 1.75, torreZ: -0.2, canoZ: 7.6, canoY: 0.9 };
+    t.box(3.2, 1.7, 4.6, C, 0, 0.85, -0.9);
+    t.box(3.25, 0.1, 4.65, C2, 0, 1.72, -0.9);
+    t.box(1.5, 1.2, 0.6, C2, 0, 0.75, 1.6);
+    for (const s of [-1, 1]) { t.box(0.05, 0.9, 1.2, C2, s * 1.62, 0.9, -0.5); t.box(0.3, 0.3, 0.6, 0x4a4436, s * 1.75, 1.2, -2.2); }
+    t.cil(0.4, 0.4, 0.3, 10, C2, 0.8, 1.85, -1.5);
+    t.box(0.15, 0.18, 0.8, METAL, 0.8, 2.05, -1.0);
+    t.cil(0.14, 0.18, 6.5, 10, C, 0, 0.9, 5.0, Math.PI / 2);
+    t.cil(0.25, 0.25, 0.9, 10, C2, 0, 0.9, 2.6, Math.PI / 2);
+    t.box(0.6, 0.35, 0.55, METAL, 0, 0.9, 8.35);
+    antena(t, -1.3, 1.75, -2.8, 2.5);
+    return { corpo: c.build(), torre: t.build(), torreY: 1.75, torreZ: -0.1, canoZ: 8.5, canoY: 0.9 };
   },
   himars() {
     const c = new Mont();
-    c.box(2.4, 0.7, 7.0, AREIA, 0, 1.15, 0);
-    c.box(2.4, 1.5, 1.9, AREIA, 0, 2.2, 2.4);
-    c.box(2.2, 0.7, 0.1, VIDRO, 0, 2.5, 3.36, -0.2);
-    rodas(c, [-1.05, 1.05], [-2.7, -1.2, 2.5], 0.55, 0.45);
+    const C = AREIA, C2 = AREIA2;
+    c.box(1.9, 0.45, 7.0, C2, 0, 0.95, 0);
+    c.box(2.4, 0.15, 4.6, C2, 0, 1.25, -1.1);
+    // cabine blindada
+    c.perfil([[1.6, 1.0], [1.6, 3.05], [2.6, 3.05], [3.45, 2.3], [3.5, 1.0]], 2.45, C);
+    c.box(2.1, 0.62, 0.05, VIDRO, 0, 2.6, 3.06, -0.73);
+    for (const s of [-1, 1]) c.box(0.04, 0.55, 0.8, VIDRO, s * 1.24, 2.55, 2.3);
+    faroisFrente(c, 0.95, 1.35, 3.5); lanternas(c, 1.0, 1.1, -3.5);
+    c.box(2.5, 0.2, 0.25, METAL, 0, 1.0, 3.6);
+    antena(c, 1.1, 3.05, 1.8, 2.2);
+    for (const s of [-1, 1]) c.box(0.5, 0.6, 1.2, 0x4a4436, s * 1.0, 1.6, 0.9);
+    rodas(c, [-1.05, 1.05], [-2.6, -1.25, 2.5], 0.56, 0.48);
     const t = new Mont();
-    t.box(2.3, 1.0, 4.0, 0x9f8b60, 0, 0.5, 0);
-    t.box(2.0, 0.85, 0.05, PRETO, 0, 0.5, 2.02);
-    for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) t.cil(0.22, 0.22, 0.06, 8, METAL, -0.6 + i * 0.6, 0.3 + j * 0.42, 2.04, Math.PI / 2);
-    return { corpo: c.build(), torre: t.build(), torreY: 1.6, torreZ: -1.4, canoZ: 2.1, canoY: 0.5 };
+    t.box(0.6, 0.3, 4.0, METAL, 0, 0.15, 0);
+    t.box(2.3, 1.05, 4.1, C, 0, 0.75, 0);
+    t.box(2.32, 0.08, 4.12, C2, 0, 1.3, 0);
+    t.box(2.1, 0.9, 0.05, PRETO, 0, 0.75, 2.06);
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) t.cil(0.24, 0.24, 0.06, 10, 0x8a8470, -0.65 + i * 0.65, 0.52 + j * 0.46, 2.09, Math.PI / 2);
+    return { corpo: c.build(), torre: t.build(), torreY: 1.35, torreZ: -1.5, canoZ: 2.1, canoY: 0.75 };
   },
 };
-
 // ---------------- aeronaves ----------------
 function rotor(pas, r, cor = 0x2a2a2a, larg = 0.55) {
   const m = new Mont();

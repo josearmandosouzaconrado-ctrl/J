@@ -8,7 +8,7 @@ para conter a infecção e **resgatar os civis**.
 ## Baixar
 
 - **APK (Android 7+):** [`MiamiSurtoZumbi.apk`](../MiamiSurtoZumbi.apk) na raiz do repositório.
-  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.0.0/MiamiSurtoZumbi.apk
+  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.1.0/MiamiSurtoZumbi.apk
 - No navegador: abra `miami/www/index.html` por um servidor web (ex.: `python3 -m http.server` dentro de `miami/www`).
 
 O Android pede para permitir "instalar apps desconhecidos", porque o APK não vem da Play Store.
@@ -21,8 +21,10 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
 - **4.868 prédios reais**, com o contorno tirado do mapa da Esri e altura estimada por bairro
   (arranha-céus em Downtown e Brickell, prédios art déco em tons pastel em South Beach, galpões no porto).
 - Litoral, pontes (Port Blvd, MacArthur e Venetian Causeway), ruas, parques e praias também vêm do mapa.
-- **Imagens de satélite** reais no chão quando há internet (Esri World Imagery), com detalhe alto perto da câmera.
-  Sem internet o jogo usa o mapa desenhado.
+- O chão é desenhado pelo jogo (asfalto, calçadas, estacionamentos, gramados, areia), sem fotos de satélite:
+  os mapas de satélite servem só para saber onde ficam as ruas, os prédios e o litoral.
+- Fachadas desenhadas em três estilos (torres de vidro, prédios de concreto, art déco em tons pastel), telhados com
+  mureta e equipamentos, e janelas que acendem à noite.
 - Palmeiras, água animada e ciclo de dia e noite.
 
 ## Forças militares
@@ -88,5 +90,4 @@ python3 gerar_icone.py ..                          # ícone do app
 
 ## Créditos
 
-Mapas e imagens de satélite © Esri, Maxar, Earthstar Geographics, USDA, USGS, AeroGRID, IGN e a comunidade de
-usuários GIS. Motor 3D: [three.js](https://threejs.org) (MIT). Modelos 3D, sons e código feitos para este jogo.
+Posição de prédios, ruas e litoral a partir de dados de mapa © Esri e da comunidade de usuários GIS. Motor 3D: [three.js](https://threejs.org) (MIT). Modelos 3D, sons e código feitos para este jogo.
