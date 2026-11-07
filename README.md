@@ -362,6 +362,10 @@ Os empregos de **Taverneiro**, **Fazendeiro** e **Minerador** não pagam mais s�
   Corsário → Capitão Pirata → Terror dos Mares → Rei dos Piratas.
 - Se o casco chegar a zero o navio afunda e você acorda na praia do porto mais próximo.
 
+## 🧟 Outro jogo: Miami: Surto Zumbi
+
+Estratégia em tempo real 3D na Miami real (mapa 1:1 feito a partir de mapas e imagens de satélite), com base militar, porta-aviões, jatos, helicópteros, navios e veículos modernos dos EUA contra um surto zumbi. Veja [`miami/README.md`](miami/README.md). APK: [`MiamiSurtoZumbi.apk`](MiamiSurtoZumbi.apk).
+
 ## Baixar o APK
 
 - **Jogo (Android):** https://github.com/josearmandosouzaconrado-ctrl/J/releases/latest/download/CronicasDeEldoria.apk

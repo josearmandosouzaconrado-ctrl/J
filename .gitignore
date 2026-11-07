@@ -3,6 +3,8 @@ node_modules/
 .DS_Store
 # chave privada de assinatura do APK (não versionar)
 android/signing/key.pem
+android/signing_miami/key.pem
+miami/node_modules/
 __pycache__/
 # estado da Sala Oficial (gerado pelo servidor)
 rede/sala.json
