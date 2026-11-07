@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d1830">
+<title>Miami: Surto Zumbi</title>
+<style>
+  :root { --fundo: rgba(10, 18, 30, 0.82); --borda: rgba(120, 170, 220, 0.35); --txt: #eef4ff; --verde: #5dff6f; --verm: #ff5050; --amar: #ffd23b; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0d1830; color: var(--txt); font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; touch-action: none; }
+  #jogo canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #overlay { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .oculto, .escondida { display: none !important; }
+  .bt { background: rgba(30, 50, 80, 0.88); color: var(--txt); border: 1px solid var(--borda); border-radius: 10px; padding: 7px 10px; font-size: 14px; cursor: pointer; font-family: inherit; }
+  .bt:active { transform: scale(0.95); background: rgba(60, 100, 150, 0.95); }
+  .bt.ativo { background: #2b7a3a; border-color: var(--verde); }
+  .bt.destaque { background: #6b3a12; border-color: #ffa040; }
+  .bt.grande { font-size: 17px; padding: 10px 16px; }
+  #topo { position: fixed; top: env(safe-area-inset-top, 0); left: 0; right: 0; display: flex; gap: 5px; padding: 6px 8px; align-items: center; flex-wrap: wrap; pointer-events: auto; background: linear-gradient(rgba(0,0,0,0.55), transparent); }
+  #topo .esp { flex: 1; }
+  .chip { background: var(--fundo); border: 1px solid var(--borda); border-radius: 14px; padding: 4px 9px; font-size: 13px; white-space: nowrap; font-weight: 600; }
+  .chip.verde { color: #b9ffc2; } .chip.verm { color: #ffb4b4; }
+  #lateral { position: fixed; right: 6px; top: 50px; bottom: 8px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; pointer-events: auto; padding-bottom: 4px; }
+  #lateral .bt { width: 58px; padding: 5px 2px; font-size: 18px; display: flex; flex-direction: column; align-items: center; line-height: 1.05; }
+  #lateral .bt small { font-size: 9.5px; opacity: 0.85; margin-top: 2px; }
+  #mini { position: fixed; left: 8px; bottom: 8px; width: 220px; height: 128px; border: 2px solid var(--borda); border-radius: 8px; background: #123; pointer-events: auto; }
+  #selecao { position: fixed; left: 236px; right: 72px; bottom: 8px; background: var(--fundo); border: 1px solid var(--borda); border-radius: 12px; padding: 7px 9px; pointer-events: auto; max-height: 40vh; overflow-y: auto; }
+  #sel-info .tag { display: inline-block; background: rgba(255,255,255,0.08); border-radius: 8px; padding: 2px 7px; margin: 0 4px 4px 0; font-size: 13px; }
+  #sel-info .sub { font-size: 12px; opacity: 0.85; margin: 2px 0; }
+  .barra { height: 6px; background: #400; border-radius: 3px; overflow: hidden; margin: 3px 0; max-width: 260px; } .barra i { display: block; height: 100%; background: #46e05a; }
+  #sel-bts { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
+  #sel-bts .bt { font-size: 13px; padding: 6px 9px; }
+  #alertas { position: fixed; top: 46px; left: 50%; transform: translateX(-50%); width: min(560px, 70vw); display: flex; flex-direction: column; gap: 4px; pointer-events: auto; }
+  .alerta { background: var(--fundo); border-left: 4px solid #5bc0ff; border-radius: 8px; padding: 6px 10px; font-size: 13.5px; transition: opacity .5s, transform .5s; animation: entra .3s; }
+  .alerta.bom { border-color: var(--verde); } .alerta.ruim { border-color: var(--verm); } .alerta.surto { border-color: #c03bff; background: rgba(60, 10, 30, 0.9); font-weight: 600; }
+  .alerta.clicavel { cursor: pointer; } .alerta.saindo { opacity: 0; transform: translateY(-8px); }
+  @keyframes entra { from { opacity: 0; transform: translateY(-8px); } }
+  #producao { position: fixed; right: 72px; top: 48px; bottom: 8px; width: min(460px, 62vw); background: rgba(8, 15, 26, 0.94); border: 1px solid var(--borda); border-radius: 14px; padding: 8px; display: flex; flex-direction: column; pointer-events: auto; }
+  #producao .cab { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; } #producao .cab b { font-size: 16px; } #producao .cab span { flex: 1; color: #b9ffc2; }
+  #p-abas { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+  .aba { background: rgba(255,255,255,0.06); color: var(--txt); border: 1px solid var(--borda); border-radius: 8px; padding: 6px 8px; font-size: 13px; font-family: inherit; }
+  .aba.ativo { background: #24527e; border-color: #7ac0ff; }
+  #p-lista { flex: 1; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; align-content: start; }
+  .carta { display: flex; gap: 6px; align-items: center; background: rgba(40, 70, 110, 0.5); border: 1px solid var(--borda); border-radius: 10px; padding: 6px; cursor: pointer; }
+  .carta:active { background: rgba(80, 130, 190, 0.7); } .carta.caro { opacity: 0.45; }
+  .carta .ic { font-size: 26px; } .carta .tx { display: flex; flex-direction: column; font-size: 12px; line-height: 1.2; }
+  .carta .tx b { font-size: 13px; } .carta .tx small { opacity: 0.75; } .carta .tx span { color: #b9ffc2; font-weight: 600; }
+  #p-fila { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; min-height: 40px; font-size: 12px; opacity: 0.95; align-items: center; }
+  #p-fila .item { position: relative; width: 40px; height: 40px; background: rgba(255,255,255,0.08); border-radius: 8px; font-size: 22px; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; }
+  #p-fila .item i { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--verde); }
+  #info { position: fixed; left: 236px; bottom: 8px; max-width: 420px; background: var(--fundo); border: 1px solid var(--borda); border-radius: 12px; padding: 8px 10px; font-size: 13px; pointer-events: auto; }
+  #joy { position: fixed; left: 30px; bottom: 30px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,0.12); border: 2px solid rgba(255,255,255,0.35); pointer-events: auto; touch-action: none; }
+  #joy-bola { position: absolute; left: 45px; top: 45px; width: 50px; height: 50px; border-radius: 50%; background: rgba(255,255,255,0.55); }
+  #b-sair-controle { position: fixed; right: 10px; bottom: 12px; pointer-events: auto; }
+  #creditos { position: fixed; left: 236px; bottom: 1px; font-size: 9px; opacity: 0.55; pointer-events: none; white-space: nowrap; }
+  #selecao:not(.oculto) ~ #creditos { display: none; }
+  .modal { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); display: flex; align-items: center; justify-content: center; z-index: 50; pointer-events: auto; }
+  .modal .caixa { background: #0e1b2c; border: 1px solid var(--borda); border-radius: 16px; padding: 16px 20px; max-width: min(620px, 92vw); max-height: 88vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+  .modal h2 { margin: 0 0 4px; } .modal label { font-size: 14px; display: flex; gap: 8px; align-items: center; }
+  .ajuda { font-size: 13.5px; line-height: 1.4; } .ajuda p { margin: 6px 0; }
+  .stats { line-height: 1.6; }
+  #carregando, #menu { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 16px; }
+  #carregando { background: #0d1830; }
+  #menu { background: linear-gradient(rgba(5, 10, 20, 0.55), rgba(40, 5, 15, 0.75)); overflow-y: auto; }
+  .titulo { font-size: clamp(30px, 7vw, 58px); font-weight: 900; letter-spacing: 1px; text-shadow: 0 3px 0 #000, 0 0 30px #ff2a6a; margin: 0; line-height: 1; }
+  .titulo span { color: #ff3b6b; }
+  .subt { opacity: 0.9; font-size: 15px; max-width: 620px; }
+  .linha { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .creditos-menu { font-size: 11px; opacity: 0.65; max-width: 640px; }
+  select { background: #1c2f48; color: var(--txt); border: 1px solid var(--borda); border-radius: 8px; padding: 5px; font-size: 14px; }
+  @media (max-height: 430px) {
+    #mini { width: 170px; height: 99px; }
+    #selecao, #info, #creditos { left: 184px; }
+    #lateral .bt { width: 52px; font-size: 16px; }
+    #lateral .bt small { font-size: 8.5px; }
+    .chip { font-size: 12px; padding: 3px 7px; }
+  }
+</style>
+</head>
+<body>
+<div id="jogo"></div>
+<canvas id="overlay"></canvas>
+<div id="ui"></div>
+<div id="carregando"><div class="titulo">MIAMI: <span>SURTO ZUMBI</span></div><div id="carregando-txt">Carregando...</div></div>
+<div id="menu" class="oculto">
+  <div class="titulo">MIAMI: <span>SURTO ZUMBI</span></div>
+  <div class="subt">Estratégia em tempo real 3D na Miami de verdade: ruas, prédios e litoral posicionados a partir de mapas de satélite. Comande o Exército, a Marinha e a Força Aérea dos EUA, segure o surto zumbi e resgate os civis.</div>
+  <div class="linha">
+    <button class="bt" data-dif="facil">😌 Fácil</button>
+    <button class="bt ativo" data-dif="normal">⚔️ Normal</button>
+    <button class="bt" data-dif="dificil">☠️ Difícil</button>
+  </div>
+  <div class="linha">
+    <label><input type="checkbox" id="m-som" checked> 🔊 Som</label>
+    <label>🎨 Qualidade <select id="m-qual"><option value="0">Baixa</option><option value="1">Média</option><option value="2">Alta</option></select></label>
+  </div>
+  <div id="m-qual-aviso" style="font-size:12px;opacity:.7"></div>
+  <div class="linha">
+    <button class="bt grande" id="m-jogar">▶ JOGAR</button>
+    <button class="bt grande" id="m-ajuda">❓ Como jogar</button>
+  </div>
+  <div class="creditos-menu">Mapa 1:1 de Downtown, Brickell, PortMiami, Watson Island, Venetian Islands, South Beach e Fisher Island (≈ 9 × 5 km), com 4.800 prédios reais. Posição de prédios, ruas e litoral a partir de dados de mapa © Esri e comunidade de usuários GIS.</div>
+</div>
+<script src="jogo.js"></script>
+</body>
+</html>

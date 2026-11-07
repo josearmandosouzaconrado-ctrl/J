@@ -26,14 +26,27 @@ import zlib
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HERE = os.path.join(ROOT, 'android')
 ADM = '--adm' in sys.argv
+# --miami: gera o APK do jogo "Miami: Surto Zumbi" (pasta miami/www)
+MIAMI = '--miami' in sys.argv
 OUT = os.path.join(ROOT, 'CronicasDeEldoria-ADM.apk' if ADM else 'CronicasDeEldoria.apk')
 
 PACKAGE = 'com.eldoria.cronicas.adm' if ADM else 'com.eldoria.cronicas'
-ACTIVITY = PACKAGE + '.MainActivity'
 APP_NAME = 'Eldoria ADM' if ADM else 'Crônicas de Eldoria'
 UA_TAG = ' EldoriaAPK EldoriaADM' if ADM else ' EldoriaAPK'
 VERSION_CODE = 66
 VERSION_NAME = '0.38.0-beta'
+SIGN_DIR = 'signing'
+CERT_NOME = 'Cronicas de Eldoria'
+if MIAMI:
+    OUT = os.path.join(ROOT, 'MiamiSurtoZumbi.apk')
+    PACKAGE = 'com.miami.surtozumbi'
+    APP_NAME = 'Miami: Surto Zumbi'
+    UA_TAG = ' MiamiZumbiAPK'
+    VERSION_CODE = 2
+    VERSION_NAME = '1.1.0'
+    SIGN_DIR = 'signing_miami'
+    CERT_NOME = 'Miami Surto Zumbi'
+ACTIVITY = PACKAGE + '.MainActivity'
 MIN_SDK, TARGET_SDK = 24, 34
 # img/ não entra: as imagens vão embutidas em js/imgdata.js (tools/gerar_imgdata.py)
 WEB_FILES = ['index.html', 'manifest.json', 'css', 'js', 'icons']
@@ -414,12 +427,12 @@ def load_key():
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.asymmetric import rsa
     from cryptography.x509.oid import NameOID
-    d = os.path.join(HERE, 'signing')
+    d = os.path.join(HERE, SIGN_DIR)
     kp, cp = os.path.join(d, 'key.pem'), os.path.join(d, 'cert.pem')
     if not os.path.exists(kp):
         os.makedirs(d, exist_ok=True)
         key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-        name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'Cronicas de Eldoria'), x509.NameAttribute(NameOID.ORGANIZATION_NAME, 'Eldoria')])
+        name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, CERT_NOME), x509.NameAttribute(NameOID.ORGANIZATION_NAME, CERT_NOME.split()[0])])
         now = datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc)
         cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key())
                 .serial_number(x509.random_serial_number()).not_valid_before(now)
@@ -496,7 +509,26 @@ def add(z, name, data, store=False):
     z.writestr(info, data, compresslevel=None if store else 9)
 
 
+def main_miami():
+    # o jogo já vem compilado em um só arquivo (miami/www/jogo.js, gerado com `npm run build` em miami/)
+    www = os.path.join(ROOT, 'miami', 'www')
+    icon = os.path.join(ROOT, 'miami', 'icone-192.png')
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, 'w') as z:
+        add(z, 'AndroidManifest.xml', build_manifest())
+        add(z, 'classes.dex', build_dex())
+        add(z, 'resources.arsc', build_arsc('res/drawable/icon.png'), store=True)
+        add(z, 'res/drawable/icon.png', open(icon, 'rb').read(), store=True)
+        for nome in sorted(os.listdir(www)):
+            add(z, 'assets/' + nome, open(os.path.join(www, nome), 'rb').read())
+    apk = sign_v2(buf.getvalue())
+    open(OUT, 'wb').write(apk)
+    print(f'APK gerado: {OUT} ({len(apk) // 1024} KB)')
+
+
 def main():
+    if MIAMI:
+        return main_miami()
     # imagens embutidas sempre em dia com img/
     import subprocess, sys
     subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'gerar_imgdata.py')], check=True)

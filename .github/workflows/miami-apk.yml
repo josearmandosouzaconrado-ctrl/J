@@ -1,0 +1,27 @@
+# Publica o APK de "Miami: Surto Zumbi" numa Release do GitHub sempre que ele muda.
+# Link: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v<versão>/MiamiSurtoZumbi.apk
+name: Publicar APK Miami
+on:
+  push:
+    paths:
+      - 'MiamiSurtoZumbi.apk'
+      - '.github/workflows/miami-apk.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Criar ou atualizar a Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER=$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' miami/package.json)
+          TAG="miami-v$VER"
+          NOTAS="Miami: Surto Zumbi $VER. Baixe MiamiSurtoZumbi.apk no celular Android e instale (permita instalar de fontes desconhecidas). Precisa de internet só para as imagens de satélite."
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "Miami: Surto Zumbi $VER" --notes "$NOTAS" --latest=false
+          fi
+          gh release upload "$TAG" MiamiSurtoZumbi.apk --clobber
