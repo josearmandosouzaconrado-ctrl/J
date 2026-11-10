@@ -111,6 +111,17 @@ Criar um reino é difícil e leva tempo:
 
 A menina que os guardas do reino tirano levaram na abertura está viva. No segundo dia, um **mineiro fugido** conta onde ela está: nas **Minas do Rei**, perto da capital do reino tirano (a missão aparece no rastreador e na bússola). Lá dentro há guardas, besteiros e o **Capataz das Minas**, que guarda a chave das correntes. Derrote o capataz, solte a menina e fuja com ela; os guardas vêm atrás. Leve-a até uma cidade fora do reino tirano (ou até a sua vila) e escolha: **adotar** (ela vira sua filha, se você tiver casa) ou deixá-la aos cuidados do templo.
 
+## Exércitos mais espertos contra os jogadores (0.43)
+
+Antes, um herói forte destruía um exército de 100 homens matando só os 11 soldados que apareciam na batalha. Agora, quando os exércitos lutam **contra jogadores**:
+
+- **Reforços**: o exército inteiro luta. Quem cai é substituído por novas levas que chegam pela retaguarda, até o exército acabar de verdade. Cada soldado na tela vale no máximo 2 homens.
+- **Veteranos**: quem enfrenta você tem o nível perto do seu e aguenta mais. Quanto mais soldados de um reino você mata, mais experientes eles mandam (o "terror" que você causa). Essa força extra vale só contra os jogadores e os companheiros deles: entre os reinos de IA a guerra continua igual.
+- **Cercam você**: os de corpo a corpo se espalham em volta em vez de vir em fila. Arqueiros e fuzileiros miram em você quando você é a maior ameaça.
+- **Escudos**: soldados e elites bloqueiam golpes vindos de frente. Ataque pelos lados e pelas costas.
+- **Capitão**: se você derruba 8 soldados de um exército numa batalha, o capitão entra na luta (bem mais forte) e anima os soldados perto dele (+20% de dano).
+- **Reinos aterrorizados** reforçam todo dia os exércitos que estão em guerra com você.
+
 ## O Palácio Real de verdade (0.42)
 
 - **Por fora** é um palácio de filme, enorme: 34 × 14 quadrados, quase 3× o castelo antigo, maior que a tela do celular. Tem:
