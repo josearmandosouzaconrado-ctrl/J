@@ -298,6 +298,26 @@ const VEIC = {
     antena(t, -1.3, 1.75, -2.8, 2.5);
     return { corpo: c.build(), torre: t.build(), torreY: 1.75, torreZ: -0.1, canoZ: 8.5, canoY: 0.9 };
   },
+  bearcat() {
+    // Lenco BearCat da SWAT: blindado preto com faixa e giroflex
+    const c = new Mont();
+    const C = 0x17191c, C2 = 0x24272b;
+    c.box(2.0, 0.5, 5.6, C2, 0, 0.72, 0);
+    c.perfil([[-2.85, 0.8], [-2.85, 2.75], [1.2, 2.75], [1.6, 2.2], [2.75, 1.85], [2.85, 0.8]], 2.35, C);
+    c.box(2.37, 0.28, 5.0, 0xe9e9e9, 0, 1.55, -0.4);                  // faixa branca
+    c.box(2.38, 0.12, 5.02, 0x2a55a8, 0, 1.36, -0.4);                 // faixa azul
+    c.box(2.1, 0.5, 0.05, VIDRO, 0, 2.35, 1.42, -0.85);
+    for (const s of [-1, 1]) { c.box(0.04, 0.42, 0.7, VIDRO, s * 1.19, 2.3, 0.7); c.box(0.04, 0.35, 0.45, VIDRO, s * 1.19, 2.3, -0.9); c.box(0.04, 0.35, 0.45, VIDRO, s * 1.19, 2.3, -2.0); }
+    c.box(1.9, 1.5, 0.06, C2, 0, 1.75, -2.88);
+    c.box(1.4, 0.14, 0.3, 0x111111, 0, 2.84, 0.6);                    // giroflex
+    c.box(0.6, 0.15, 0.28, 0xff2020, -0.38, 2.92, 0.6); c.box(0.6, 0.15, 0.28, 0x2050ff, 0.38, 2.92, 0.6);
+    c.cil(0.45, 0.5, 0.35, 12, C2, 0, 2.9, -1.1);                     // escotilha
+    c.box(2.5, 0.35, 0.3, METAL, 0, 0.75, 2.95);                      // aríete
+    faroisFrente(c, 0.85, 1.4, 2.86); lanternas(c, 0.9, 1.3, -2.9);
+    antena(c, 0.9, 2.75, -2.4, 2.4);
+    rodas(c, [-1.05, 1.05], [-1.8, 1.9], 0.55, 0.45);
+    return { corpo: c.build() };
+  },
   himars() {
     const c = new Mont();
     const C = AREIA, C2 = AREIA2;

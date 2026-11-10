@@ -2,7 +2,7 @@
 import { G, alerta } from './estado.js';
 import { andavel, predioEm, predios } from './mapa.js';
 import { rand, escolher, dist, dist2, girarPara, angDif } from './util.js';
-import { CAMISAS, CALCAS, PELES, PELE_ZUMBI, CAMO, CAMO2, hex } from './bonecos.js';
+import { CAMISAS, CALCAS, PELES, CABELOS, PELE_ZUMBI, CAMO, CAMO2, hex } from './bonecos.js';
 import { somZumbi } from './som.js';
 
 const ZB = {
@@ -17,7 +17,7 @@ function novoAgente(x, z) {
   return {
     agente: true, id: G.idSeq++, x, z, y: 0, ang: rand(0, 6.28), zumbi: false, sub: 'civil', hp: 30, vivo: true,
     estado: 'vagar', lider: null, alvo: null, t: rand(0, 1), fase: rand(0, 6), vel: 0, dx: 0, dz: 0, cd: 0,
-    camisa: escolher(CAMISAS), calca: escolher(CALCAS), pele: escolher(PELES), soldado: false,
+    camisa: escolher(CAMISAS), calca: escolher(CALCAS), pele: escolher(PELES), cabelo: Math.random() < 0.9 ? escolher(CABELOS) : null, soldado: false,
     dentro: null, virando: 0, mortoT: 0, casa: { x, z }, d: RAIO, espera: 0, acena: 0, esc: 1,
   };
 }
@@ -93,8 +93,9 @@ export function danoAgente(a, dano, fonte) {
 function moverAgente(a, dx, dz) {
   const nx = a.x + dx, nz = a.z + dz;
   if (andavel(nx, nz)) { a.x = nx; a.z = nz; return true; }
-  if (andavel(nx, a.z)) { a.x = nx; return true; }
-  if (andavel(a.x, nz)) { a.z = nz; return true; }
+  const L = Math.hypot(dx, dz) * 0.25;
+  if (Math.abs(dx) > L && andavel(nx, a.z)) { a.x = nx; return true; }
+  if (Math.abs(dz) > L && andavel(a.x, nz)) { a.z = nz; return true; }
   return false;
 }
 
@@ -322,7 +323,7 @@ export function desenharAgentes(bon, visivel) {
     if (!a.vivo || a.dentro) continue;
     if (!visivel(a.x, a.z)) continue;
     const pose = a.estado === 'morto' ? 3 : a.zumbi ? 1 : (a.vel === 0 && a.acena > 0 ? 4 : 0);
-    bon.add(a.x, a.y, a.z, a.ang, a.fase, pose, a.camisa, a.calca, a.pele, a.soldado, a.esc);
+    bon.add(a.x, a.y, a.z, a.ang, a.fase, pose, a.camisa, a.calca, a.pele, a.soldado ? 3 : 0, a.esc, a.cabelo);
   }
 }
 

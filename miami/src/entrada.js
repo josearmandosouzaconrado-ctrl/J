@@ -4,7 +4,7 @@ import { G } from './estado.js';
 import { LARG, ALT, predioEm, predios } from './mapa.js';
 import { clamp, lerp, dist, dist2 } from './util.js';
 import {
-  ordenar, ordenarMover, marcarSelecao, cabe, desembarcar, sairDoPredio, chaoEm,
+  ordenar, ordenarMover, marcarSelecao, cabe, desembarcar, sairDoPredio, chaoEm, ordenarAreaJatos,
 } from './unidades.js';
 import { somUI, iniciarSom } from './som.js';
 
@@ -89,6 +89,11 @@ export function configurarEntrada(canvas, camRTS) {
     if (ptrs.size === 1) {
       const ch = camRTS.chao(e.clientX, e.clientY);
       arrasto = { ch, moveu: false, girar: e.button === 2 };
+      // jatos selecionados: arrastar marca a área de bombardeio
+      if (G.modoArea && e.button !== 2 && ch && G.selecao.some((u) => u.classe === 'jato')) {
+        G.area = { x0: ch.x, z0: ch.z, x1: ch.x, z1: ch.z };
+        return;
+      }
       if (G.modoCaixa || e.shiftKey) caixa = { x0: e.clientX, y0: e.clientY, x1: e.clientX, y1: e.clientY };
       else {
         clearTimeout(pressao);
@@ -113,6 +118,12 @@ export function configurarEntrada(canvas, camRTS) {
     const p = ptrs.get(e.pointerId);
     if (!p) return;
     p.x = e.clientX; p.y = e.clientY;
+    if (G.area && ptrs.size === 1) {
+      const ch = camRTS.chao(p.x, p.y);
+      if (ch) { G.area.x1 = ch.x; G.area.z1 = ch.z; }
+      if (Math.hypot(p.x - p.x0, p.y - p.y0) > 10 && arrasto) arrasto.moveu = true;
+      return;
+    }
     if (caixa && ptrs.size === 1) { caixa.x1 = p.x; caixa.y1 = p.y; G.caixa = caixa; return; }
     if (ptrs.size === 1 && arrasto) {
       if (Math.hypot(p.x - p.x0, p.y - p.y0) > 10) { arrasto.moveu = true; clearTimeout(pressao); }
@@ -147,6 +158,22 @@ export function configurarEntrada(canvas, camRTS) {
     clearTimeout(pressao);
     if (!p) return;
     ptrs.delete(e.pointerId);
+    if (G.area) {
+      const a = G.area;
+      G.area = null;
+      const L = Math.hypot(a.x1 - a.x0, a.z1 - a.z0);
+      const jatos = G.selecao.filter((u) => u.classe === 'jato' && u.vivo);
+      if (L > 25 && jatos.length) {
+        const w = Math.max(40, Math.min(160, L * 0.35));
+        ordenarAreaJatos(jatos, a.x0, a.z0, a.x1, a.z1, w);
+        G.areaMarcada = { ...a, w, t: performance.now() };
+        G.ui && G.ui.alerta(`🎯 Área de bombardeio marcada (${Math.round(L)} m). ${jatos.length > 1 ? jatos.length + ' jatos' : 'Jato'} a caminho!`, (a.x0 + a.x1) / 2, (a.z0 + a.z1) / 2, 'info');
+        somUI('ok');
+        if (ptrs.size === 0) { pinca = null; arrasto = null; }
+        return;
+      }
+      // toque curto: ataque num ponto (comportamento normal)
+    }
     if (caixa) {
       selecionarCaixa(caixa, camRTS, e.shiftKey);
       caixa = null; G.caixa = null;
@@ -203,18 +230,25 @@ export function configurarEntrada(canvas, camRTS) {
   };
 }
 
+export function ligarModoAreaSeJatos() {
+  const so = G.selecao.length && G.selecao.every((u) => u.classe === 'jato');
+  if (so && !G.modoArea && G.ui) G.ui.alerta('🎯 Arraste o dedo no mapa para marcar a área que os jatos vão bombardear (ou toque num ponto)', null, null, 'info');
+  G.modoArea = !!so;
+}
+
 function selecionarCaixa(cx, camRTS, somar) {
   const x0 = Math.min(cx.x0, cx.x1), x1 = Math.max(cx.x0, cx.x1), y0 = Math.min(cx.y0, cx.y1), y1 = Math.max(cx.y0, cx.y1);
   if (!somar) { G.selecao.slice().forEach((u) => marcarSelecao(u, false)); G.selecao = []; }
   const achados = [];
   for (const u of G.unidades) {
-    if (!u.vivo || u.estr || u.dentro || u.tipo === 'portaavioes') continue;
+    if (!u.vivo || u.estr || u.dentro || u.tipo === 'portaavioes' || u.policia) continue;
     const t = telaDe(u.x, u.y + 1, u.z, camRTS.cam);
     if (t && t.x >= x0 && t.x <= x1 && t.y >= y0 && t.y <= y1) achados.push(u);
   }
   // se a caixa pegou infantaria e veículos, prefere as tropas que se movem por terra
   for (const u of achados) if (!G.selecao.includes(u)) { G.selecao.push(u); marcarSelecao(u, true); }
   if (achados.length) somUI('clique');
+  ligarModoAreaSeJatos();
   G.ui && G.ui.atualizarSelecao();
 }
 
@@ -222,7 +256,7 @@ function selecionarCaixa(cx, camRTS, somar) {
 function unidadeNoToque(sx, sy, cam, filtro) {
   let melhor = null, md = Infinity;
   for (const u of G.unidades) {
-    if (!u.vivo || u.dentro) continue;
+    if (!u.vivo || u.dentro || u.policia) continue;
     if (filtro && !filtro(u)) continue;
     const t = telaDe(u.x, u.y + (u.classe === 'inf' ? 1 : (u.d.raio || 2) * 0.4), u.z, cam);
     if (!t) continue;
@@ -303,6 +337,7 @@ function toque(sx, sy, camRTS, duplo, ultimo) {
     }
     ultimo.u = u;
     somUI('clique');
+    ligarModoAreaSeJatos();
     G.ui.atualizarSelecao();
     return;
   }

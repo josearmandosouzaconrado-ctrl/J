@@ -3,17 +3,18 @@ import * as THREE from 'three';
 import { G } from './estado.js';
 import { LARG, ALT, lugares, predios, MAT_PREDIOS } from './mapa.js';
 import { Hash } from './util.js';
-import { Bonecos, CAMO, CAMO2, PELE_SOLD, hex } from './bonecos.js';
+import { Bonecos, CAMO, CAMO2, PELE_SOLD, SWAT_ROUPA, SWAT_CALCA } from './bonecos.js';
 import { Efeitos } from './efeitos.js';
 import { CameraRTS, configurarEntrada } from './entrada.js';
 import { montarMundo, construirVisual, iniciarPartida, atualizarJogo } from './jogo.js';
 import { atualizarUnidades, atualizarProjeteis, chaoEm, ordenar, ordenarMover, desembarcar } from './unidades.js';
 import { telaDe } from './entrada.js';
 import * as NAV from './caminho.js';
+import * as MAPA from './mapa.js';
 import { enfileirar } from './jogo.js';
 import { atualizarAgentes, desenharAgentes } from './agentes.js';
 import { UI, AJUDA } from './ui.js';
-import { iniciarSom, somLigado, somHeli } from './som.js';
+import { iniciarSom, somLigado, somHeli, somJato, somMotor } from './som.js';
 
 const $ = (s) => document.querySelector(s);
 const status = (t) => { const e = $('#carregando-txt'); if (e) e.textContent = t; };
@@ -24,7 +25,7 @@ function lerCfg() {
 G.salvarCfg = () => { try { localStorage.setItem('miami-cfg', JSON.stringify(G.cfg)); } catch (e) { /* ignora */ } };
 
 const CEU_DIA = new THREE.Color(0xa9cfe8), CEU_TARDE = new THREE.Color(0xf0b27a), CEU_NOITE = new THREE.Color(0x0d1830);
-const SNIPER = hex(0x5a6b3c);
+const SNIPER = [0.78, 0.86, 0.66];
 
 async function iniciar() {
   lerCfg();
@@ -146,6 +147,8 @@ async function iniciar() {
     const t1 = performance.now();
     G.perfSim = (G.perfSim || 0) * 0.95 + (t1 - t0) * 0.05;
     camRTS.aplicar(dt);
+    // árvores e carros somem no zoom muito afastado (não dá para ver e pesa no celular)
+    if (G.decor) { const vis = camRTS.dist < 2200; for (const d of G.decor) d.visible = vis; }
     // distância de névoa acompanha o zoom
     cena.fog.near = Math.max(1500, camRTS.dist * 2.2);
     cena.fog.far = Math.max(9000, camRTS.dist * 6);
@@ -160,7 +163,8 @@ async function iniciar() {
         if (u.classe !== 'inf' || !u.vivo || u.dentro) continue;
         if (!visivel(u.x, u.z)) continue;
         const pose = u.mirando > 0 && u.velAtual < 0.5 ? 2 : 0;
-        bon.add(u.x, u.y, u.z, u.ang, u.fase, pose, u.tipo === 'sniper' ? SNIPER : CAMO, CAMO2, PELE_SOLD, true);
+        if (u.policia) bon.add(u.x, u.y, u.z, u.ang, u.fase, pose, SWAT_ROUPA, SWAT_CALCA, PELE_SOLD, 2);
+        else bon.add(u.x, u.y, u.z, u.ang, u.fase, pose, u.tipo === 'sniper' ? SNIPER : CAMO, CAMO2, PELE_SOLD, 1);
       }
       desenharAgentes(bon, visivel);
     }
@@ -174,6 +178,16 @@ async function iniciar() {
       hv = Math.max(hv, 1 - d / 700);
     }
     somHeli(G.pausado ? 0 : Math.max(0, hv));
+    // jatos e motores dos blindados perto da câmera
+    let jv = 0, mv = 0, rot = 0;
+    for (const u of G.unidades) {
+      if (!u.vivo || u.dentro) continue;
+      const d = Math.hypot(u.x - camRTS.alvo.x, u.z - camRTS.alvo.z) + camRTS.dist * 0.5;
+      if (u.classe === 'jato' && (u.estadoJato === 'voando' || u.estadoJato === 'voltando')) jv = Math.max(jv, 1 - d / 2600);
+      else if (u.classe === 'veic') { const v = (1 - d / 350) * (u.d.raio >= 3.4 ? 1 : 0.55); if (v > mv) { mv = v; rot = Math.min(1, u.velAtual / u.d.vel); } }
+    }
+    somJato(G.pausado ? 0 : Math.max(0, jv));
+    somMotor(G.pausado ? 0 : Math.max(0, mv), rot);
     renderer.render(cena, camera);
     if (G.iniciado) ui.quadro(dt);
   }
@@ -206,7 +220,7 @@ async function iniciar() {
   };
   if (/[?&]auto/.test(location.search)) $('#m-jogar').click();
   window.G = G;
-  window.__dbg = { ordenar, ordenarMover, desembarcar, enfileirar, simular, predios, NAV, tela: (x, y, z) => telaDe(x, y, z, camera) };
+  window.__dbg = { ordenar, ordenarMover, desembarcar, enfileirar, simular, predios, NAV, MAPA, tela: (x, y, z) => telaDe(x, y, z, camera) };
 }
 
 iniciar().catch((e) => {

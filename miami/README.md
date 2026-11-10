@@ -8,7 +8,7 @@ para conter a infecção e **resgatar os civis**.
 ## Baixar
 
 - **APK (Android 7+):** [`MiamiSurtoZumbi.apk`](../MiamiSurtoZumbi.apk) na raiz do repositório.
-  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.1.0/MiamiSurtoZumbi.apk
+  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.2.0/MiamiSurtoZumbi.apk
 - No navegador: abra `miami/www/index.html` por um servidor web (ex.: `python3 -m http.server` dentro de `miami/www`).
 
 O Android pede para permitir "instalar apps desconhecidos", porque o APK não vem da Play Store.
@@ -25,7 +25,11 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
   os mapas de satélite servem só para saber onde ficam as ruas, os prédios e o litoral.
 - Fachadas desenhadas em três estilos (torres de vidro, prédios de concreto, art déco em tons pastel), telhados com
   mureta e equipamentos, e janelas que acendem à noite.
-- Palmeiras, água animada e ciclo de dia e noite.
+- Palmeiras com cocos e árvores de copa larga em parques e calçadas, faixa amarela no meio das ruas,
+  carros estacionados (os blindados amassam ao passar por cima), água animada e ciclo de dia e noite.
+- Soldados com farda camuflada, colete, capacete com visão noturna, mochila e fuzil no ombro.
+- Sons gerados pelo jogo: tiros em camadas com eco entre os prédios, canhões, explosões, rotores de
+  helicóptero, ronco dos jatos e motores dos blindados.
 
 ## Forças militares
 
@@ -43,7 +47,12 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
 - **Resgate:** civis seguem as tropas e embarcam sozinhos nos transportes. Prédios com **SOS** têm civis
   presos: as tropas os tiram pela porta e os helicópteros pelo telhado. Leve-os à **Zona Segura** da base
   ou ao porta-aviões.
-- **Jatos** decolam do porta-aviões, bombardeiam o ponto marcado e voltam para rearmar.
+- **Jatos:** arraste o dedo no mapa para marcar a área de bombardeio; eles decolam do porta-aviões, fazem
+  passadas soltando bombas ao longo da faixa e voltam para rearmar.
+- **Soldados nas janelas:** parte da tropa fica nas janelas dos prédios (quebra o vidro e atira para fora) e
+  parte no telhado.
+- **🚓 Polícia SWAT:** quando o vírus aparece, equipes da SWAT saem das delegacias de Miami e de Miami Beach
+  num blindado BearCat. Agem sozinhas: vão aos focos, combatem e levam civis para a zona segura.
 - **🎮 Controlar:** assuma qualquer unidade em 3ª pessoa com o joystick.
 
 ## O surto

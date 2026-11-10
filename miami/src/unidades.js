@@ -3,10 +3,10 @@ import * as THREE from 'three';
 import { G, alerta } from './estado.js';
 import { TIPOS, ESTRUTURAS } from './tipos.js';
 import { criarModelo, criarAnel } from './modelos.js';
-import { andavel, predios, dentroPoligono, CEL, cel, predioId, agua as ehAgua } from './mapa.js';
+import { andavel, predios, dentroPoligono, CEL, cel, predioId, agua as ehAgua, esmagarCarros } from './mapa.js';
 import { acharCaminho, livre, pontoLivreProximo } from './caminho.js';
 import { rand, clamp, angDif, girarPara, dist, dist2 } from './util.js';
-import { somTiro, somExplosao, somUI } from './som.js';
+import { somTiro, somExplosao, somUI, somVidro, somEsmagar } from './som.js';
 import { criarCivilSeguindo, danoAgente } from './agentes.js';
 
 const ARMAS_COR = { fuzil: [1, 0.9, 0.5], mg: [1, 0.8, 0.4], sniper: [1, 1, 0.8], pistola: [1, 0.9, 0.5], '50cal': [1, 0.7, 0.3], '25mm': [1, 0.6, 0.2], '30mm': [1, 0.6, 0.2], m134: [1, 0.45, 0.2], m240: [1, 0.7, 0.3] };
@@ -128,6 +128,60 @@ function ordenarJato(j, x, z) {
   j.passe = 0;
 }
 
+// bombardeio de área: faixa de (x0,z0) até (x1,z1) com largura w; cada passada despeja a carga ao longo dela
+export function ordenarAreaJatos(jatos, x0, z0, x1, z1, w) {
+  jatos.forEach((j, i) => {
+    if (j.estadoJato === 'rearmando') { alerta(`${j.d.nome} está sendo rearmado no porta-aviões`, j.x, j.z); return; }
+    ordenarJato(j, (x0 + x1) / 2, (z0 + z1) / 2);
+    // jatos em sequência: o segundo faz a faixa no sentido contrário
+    const inv = i % 2 === 1;
+    j.ordem = { tipo: 'area', ax: inv ? x1 : x0, az: inv ? z1 : z0, bx: inv ? x0 : x1, bz: inv ? z0 : z1, w, fase: 'aprox', soltas: 0, deslocamento: (i - (jatos.length - 1) / 2) * Math.min(25, w / 3) };
+  });
+}
+
+function jatoArea(u, o, dt) {
+  const d = u.d;
+  const dx = o.bx - o.ax, dz = o.bz - o.az, L = Math.max(1, Math.hypot(dx, dz)), ux = dx / L, uz = dz / L;
+  const px = -uz * o.deslocamento, pz = ux * o.deslocamento;
+  let tx, tz, alt = d.arma === 'bomba' ? 130 : 80;
+  if (o.fase === 'aprox') {
+    tx = o.ax - ux * 900 + px; tz = o.az - uz * 900 + pz;
+    alt = d.altCruz;
+    if (dist(u.x, u.z, tx, tz) < 220) o.fase = 'alinhar';
+  } else if (o.fase === 'alinhar') {
+    tx = o.ax + px; tz = o.az + pz;
+    if (dist(u.x, u.z, tx, tz) < 120 || ((u.x - o.ax) * ux + (u.z - o.az) * uz) > -30) { o.fase = 'corrida'; o.soltas = 0; }
+  } else {
+    tx = o.bx + ux * 500 + px; tz = o.bz + uz * 500 + pz;
+    // posição ao longo da faixa
+    const t = (u.x - o.ax) * ux + (u.z - o.az) * uz;
+    const n = d.arma === 'bomba' ? 6 : 10;
+    const esp = L / n;
+    // a bomba cai um pouco à frente: compensa
+    const queda = d.arma === 'bomba' ? u.velAtual * 0.6 * Math.sqrt(2 * u.y / 9.8) * 0.5 : 120;
+    while (o.soltas < n && t + queda >= o.soltas * esp + esp / 2) {
+      const at = Math.min(L, o.soltas * esp + esp / 2);
+      const lat = rand(-o.w / 2, o.w / 2);
+      const bx = o.ax + ux * at - uz * lat + px * 0.3, bz = o.az + uz * at + ux * lat + pz * 0.3;
+      if (d.arma === 'bomba') lancarProjetil(u.x, u.y, u.z, bx, bz, { arma: 'bomba', dano: d.dano, splash: d.splash, precisao: 1 }, u);
+      else lancarProjetil(u.x, u.y - 1, u.z, bx, bz, { arma: 'foguete', dano: d.dano, splash: d.splash, precisao: 1, missil: true }, u);
+      o.soltas++;
+      if (o.soltas === 1) { ruido(o.ax, o.az, 700); }
+      somTiro(d.arma === 'bomba' ? 'bomba' : 'foguete', volEm(u.x, u.z));
+    }
+    if (t > L + 450) {
+      u.municao--;
+      if (u.municao <= 0) { u.estadoJato = 'voltando'; u.ordem = null; alerta(`${d.nome} lançou toda a carga, voltando ao porta-aviões`, u.x, u.z); }
+      else {
+        // próxima passada no sentido contrário
+        const a0x = o.ax, a0z = o.az;
+        o.ax = o.bx; o.az = o.bz; o.bx = a0x; o.bz = a0z; o.fase = 'aprox'; o.deslocamento = -o.deslocamento;
+      }
+    }
+  }
+  return { tx, tz, alt };
+}
+
 // ---------------- prédios ----------------
 export function pontoEntrada(p, deX, deZ) {
   // ponto andável perto do prédio, do lado de quem chega
@@ -152,12 +206,44 @@ function posTelhado(p, k) {
   return { x: p.cx + rand(-1, 1), z: p.cz + rand(-1, 1) };
 }
 
+// janela: um ponto na parede, num andar, com o soldado debruçado para fora
+function posJanela(p, k) {
+  const n = p.pts.length / 2;
+  const andares = Math.max(1, Math.floor((p.h - 3) / 3.4));
+  for (let tent = 0; tent < 12; tent++) {
+    const i = (k * 5 + tent * 3 + p.id) % n, j = (i + 1) % n;
+    const ax = p.pts[i * 2], az = p.pts[i * 2 + 1], bx = p.pts[j * 2], bz = p.pts[j * 2 + 1];
+    const ex = bx - ax, ez = bz - az, len = Math.hypot(ex, ez);
+    if (len < 4) continue;
+    const t = 0.2 + ((k * 0.37 + tent * 0.21) % 0.6);
+    const nx = -ez / len, nz = ex / len;
+    const andar = 1 + ((k + tent) % Math.min(andares, 6));
+    const y = Math.min(p.h - 2.6, andar * 3.4 + 0.2);
+    const x = ax + ex * t + nx * 0.28, z = az + ez * t + nz * 0.28;
+    // não usa janela que dá de cara com outro prédio
+    if (predioEmXZ(x + nx * 3, z + nz * 3)) continue;
+    return { x, z, y, nx, nz };
+  }
+  return null;
+}
+function predioEmXZ(x, z) { const c = cel(x, z); return c >= 0 && predioId[c] >= 0; }
+
 export function entrarNoPredio(u, p) {
   if (p.guarnicao.length >= p.cap) { alerta(`Prédio cheio (${p.cap} soldados)`, p.cx, p.cz); return false; }
   p.guarnicao.push(u);
   u.predio = p;
-  const pos = posTelhado(p, p.guarnicao.length - 1);
-  u.x = pos.x; u.z = pos.z; u.y = p.h;
+  const k = p.guarnicao.length - 1;
+  // metade nas janelas (atirando pelo vidro), metade no telhado
+  const jan = p.h > 6 && k % 2 === 0 ? posJanela(p, k) : null;
+  if (jan) {
+    u.x = jan.x; u.z = jan.z; u.y = jan.y;
+    u.janela = { nx: jan.nx, nz: jan.nz, ang: Math.atan2(jan.nx, jan.nz), quebrou: false };
+    u.ang = u.janela.ang;
+  } else {
+    const pos = posTelhado(p, k);
+    u.x = pos.x; u.z = pos.z; u.y = p.h;
+    u.janela = null;
+  }
   u.ordem = null; u.caminho = null;
   if (p.integridade <= 0) p.integridade = 30;
   if (p.sos && p.civis > 0) resgatarDoPredio(p, u);
@@ -172,6 +258,7 @@ export function sairDoPredio(u) {
   u.x = e.x + rand(-2, 2); u.z = e.z + rand(-2, 2); u.y = 0;
   if (!andavel(u.x, u.z)) { u.x = e.x; u.z = e.z; }
   u.predio = null;
+  u.janela = null;
 }
 
 export function resgatarDoPredio(p, lider) {
@@ -281,8 +368,12 @@ function acharAlvo(u, alcance, splash, minAlc = 0) {
   if (!splash) {
     let melhor = null, md = Infinity;
     const min2 = minAlc * minAlc;
+    const jn = u.janela;
     G.hashA.busca(ox, oz, alcance, (a, d2) => {
-      if (a.zumbi && a.vivo && !a.dentro && a.virando <= 0 && d2 < md && d2 >= min2) { md = d2; melhor = a; }
+      if (a.zumbi && a.vivo && !a.dentro && a.virando <= 0 && d2 < md && d2 >= min2) {
+        if (jn && (a.x - ox) * jn.nx + (a.z - oz) * jn.nz < Math.sqrt(d2) * 0.25) return;
+        md = d2; melhor = a;
+      }
     });
     return melhor;
   }
@@ -329,6 +420,11 @@ function atirar(u, alvo, w) {
   const ef = G.efeitos;
   const vol = volEm(u.x, u.z);
   ruido(u.x, u.z, RUIDO[w.arma] || 150);
+  if (u.janela && !u.janela.quebrou) {
+    u.janela.quebrou = true;
+    for (let i = 0; i < 14; i++) ef.particula(u.x, u.y + 1.3, u.z, u.janela.nx * rand(1, 3) + rand(-1, 1), rand(0, 2), u.janela.nz * rand(1, 3) + rand(-1, 1), 0.18, 1.2, [0.8, 0.92, 1], [0.6, 0.75, 0.85], 0.9, 9.8, 0);
+    somVidro(vol);
+  }
   if (w.missil || w.arma === '120mm' || w.arco || w.arma === 'foguete') {
     const fx = ax + rand(-1, 1) * (1 - w.precisao) * 12, fz = az + rand(-1, 1) * (1 - w.precisao) * 12;
     lancarProjetil(o.x, o.y, o.z, fx, fz, w, u);
@@ -390,7 +486,7 @@ export function explodir(x, y, z, raio, dano, dono, pequeno) {
   const agua = ehAgua(x, z) && chaoEm(x, z) === 0;
   if (!pequeno || raio > 2) G.efeitos.explosao(x, y, z, raio * 0.8, agua);
   else G.efeitos.particula(x, y, z, 0, 2, 0, raio, 0.3, [1, 0.8, 0.3], [0.4, 0.4, 0.4], 1, 0, raio);
-  if (raio >= 6) somExplosao(volEm(x, z));
+  if (raio >= 6) somExplosao(volEm(x, z), raio >= 15);
   ruido(x, z, raio >= 6 ? 500 : 200);
   const r2 = raio * raio;
   G.hashA.busca(x, z, raio * 1.3, (a, d2) => {
@@ -519,9 +615,20 @@ function podePisar(u, x, z, modo) {
 function mover(u, dx, dz, modo) {
   const nx = u.x + dx, nz = u.z + dz;
   if (podePisar(u, nx, nz, modo)) { u.x = nx; u.z = nz; }
-  else if (podePisar(u, u.x + dx, u.z, modo)) u.x += dx;
-  else if (podePisar(u, u.x, u.z + dz, modo)) u.z += dz;
-  else { u.travado += 0.1; }
+  else if (Math.abs(dx) > Math.hypot(dx, dz) * 0.25 && podePisar(u, u.x + dx, u.z, modo)) u.x += dx;
+  else if (Math.abs(dz) > Math.hypot(dx, dz) * 0.25 && podePisar(u, u.x, u.z + dz, modo)) u.z += dz;
+  else {
+    // tenta contornar girando o passo; se ficar preso muito tempo, passa assim mesmo
+    let ok = false;
+    for (const a of [0.6, -0.6, 1.2, -1.2]) {
+      const c = Math.cos(a), sn = Math.sin(a), rx = dx * c - dz * sn, rz = dx * sn + dz * c;
+      if (podePisar(u, u.x + rx, u.z + rz, modo)) { u.x += rx; u.z += rz; ok = true; break; }
+    }
+    if (!ok) {
+      u.travado += 0.1;
+      if (u.travado > 1.5 && (modo === 0 || modo === 3)) { u.x = nx; u.z = nz; }
+    }
+  }
   // destrava
   u.checa = (u.checa || 0) + 0.016;
   if (u.checa > 1.2) {
@@ -570,6 +677,13 @@ function atualizarTerrestre(u, dt) {
   separar(u, dt);
   if (u.velAtual > 3) {
     if (Math.random() < dt * 4) G.efeitos.poeira(u.x - Math.sin(u.ang) * u.d.raio, u.z - Math.cos(u.ang) * u.d.raio, 1);
+    if (u.d.raio >= 3.4) {
+      u.tEsm = (u.tEsm || 0) - dt;
+      if (u.tEsm <= 0) {
+        u.tEsm = 0.25;
+        if (esmagarCarros(u.x, u.z, u.d.raio + 0.8)) { somEsmagar(volEm(u.x, u.z)); G.efeitos.poeira(u.x, u.z, 4); }
+      }
+    }
     if (u.d.atropela) {
       G.hashA.busca(u.x, u.z, u.d.raio + 0.6, (a) => {
         if (a.vivo && a.zumbi && !a.dentro) danoAgente(a, (a.sub === 'bruto' ? 40 : 200) * dt * u.velAtual / 8, u);
@@ -716,6 +830,9 @@ function atualizarJato(u, dt) {
       u.estadoJato = 'rearmando'; u.rearme = 18; u.ordem = null;
       return;
     }
+  } else if (o.tipo === 'area') {
+    const r = jatoArea(u, o, dt);
+    tx = r.tx; tz = r.tz; alvoAlt = r.alt;
   } else {
     tx = o.x; tz = o.z;
     const dd = dist(u.x, u.z, tx, tz);
@@ -800,6 +917,7 @@ function combate(u, dt) {
     const dd = dist(u.x, u.z, a.x, a.z);
     const angA = Math.atan2(a.x - u.x, a.z - u.z);
     if (u.m && u.m.torre) u.torreAng = girarPara(u.torreAng, angDif(u.ang, angA), 3 * dt) ;
+    else if (u.janela) u.ang = girarPara(u.ang, u.janela.ang + Math.max(-1.1, Math.min(1.1, angDif(u.janela.ang, angA))), 8 * dt);
     else if (u.classe === 'inf' && u.velAtual < 0.5) u.ang = girarPara(u.ang, angA, 8 * dt);
     else if (u.classe === 'aereo' && !u.ordem && u.velAtual < 5) u.ang = girarPara(u.ang, angA, 2 * dt);
     if (u.cd <= 0 && dd <= d.alcance * bonus && dd >= (d.minAlc || 0)) {
@@ -855,7 +973,7 @@ export function danoUnidade(u, dano, porZumbi) {
 
 export function matarUnidade(u, porZumbi) {
   if (!u.vivo) return;
-  G.perdas += u.estr ? 0 : 1;
+  G.perdas += u.estr || u.policia ? 0 : 1;
   if (u.estr) {
     G.efeitos.explosao(u.x, 5, u.z, 18);
     somExplosao(volEm(u.x, u.z));
@@ -874,7 +992,7 @@ export function matarUnidade(u, porZumbi) {
   if (!(u.classe === 'aereo' && u.y > 8) && u.classe !== 'naval') { u.pousado = true; desembarcar(u); }
   if (u.classe === 'inf') {
     if (porZumbi) G.virarZumbi(u);
-    alerta(porZumbi ? '☣️ Um soldado foi mordido e virou zumbi!' : 'Soldado abatido', u.x, u.z, 'ruim');
+    alerta(u.policia ? (porZumbi ? '☣️ Um policial da SWAT foi mordido!' : 'Policial da SWAT abatido') : porZumbi ? '☣️ Um soldado foi mordido e virou zumbi!' : 'Soldado abatido', u.x, u.z, 'ruim');
   } else {
     G.efeitos.explosao(u.x, u.y + 1, u.z, u.d.raio * 2.5, ehAgua(u.x, u.z));
     somExplosao(volEm(u.x, u.z));

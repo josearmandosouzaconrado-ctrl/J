@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { G, alerta } from './estado.js';
 import {
   lugares, predios, rasterizarPredios, removerPrediosEm, construirPredios, construirChao, construirAgua,
-  construirPalmeiras, andavel, LARG, ALT, GW, GH, CEL, grade, predioId, T, agua as ehAgua,
+  construirPalmeiras, construirCarros, andavel, LARG, ALT, GW, GH, CEL, grade, predioId, T, agua as ehAgua,
 } from './mapa.js';
 import { prepararNavegacao, pontoLivreProximo, livre } from './caminho.js';
 import { TIPOS, ESTRUTURAS } from './tipos.js';
@@ -14,6 +14,7 @@ import {
 import { criarCivil, criarZumbi, soldadoVirouZumbi, tornarZumbi } from './agentes.js';
 import { rand, randi, escolher, dist, dist2 } from './util.js';
 import { somUI } from './som.js';
+import { enviarSwat, atualizarPolicia } from './policia.js';
 
 const DIF = {
   facil: { dinheiro: 5000, civis: 600, sos: 22, meta: 150, intervalo: 1.35, renda: 7 },
@@ -70,7 +71,9 @@ export function construirVisual() {
   for (const p of naoBase) p.removido = true;   // não desenha os blocos (os modelos da base aparecem no lugar)
   G.malhasPredios = construirPredios(G.cena);
   for (const p of naoBase) p.removido = false;
-  construirPalmeiras(G.cena, 1600);
+  G.decor = construirPalmeiras(G.cena, 2600);
+  const b = lugares.base;
+  G.decor.push(construirCarros(G.cena, 3200, (x, z) => dist(x, z, b.x, b.z) < 450));
   for (const p of predios) if (!p.base) { p.integMax = 150 + Math.min(900, p.area * 0.4); p.integridade = p.integMax; }
 }
 
@@ -294,6 +297,7 @@ function novoFoco() {
     if (p) { criarZumbi(p.x, p.z); G.infectados++; G.populacao++; }
   }
   const nome = nomePerto(cx, cz);
+  (G.swatPendente || (G.swatPendente = [])).push({ t: G.tempo + 4, x: cx, z: cz, nome });
   alerta(G.focos === 1 ? `☣️ Primeiro caso confirmado em ${nome}! O surto começou.` : `☣️ Novo foco de infecção: ${nome}`, cx, cz, 'surto');
   somUI('alerta');
 }
@@ -311,6 +315,7 @@ function hordaDeFora() {
     const p = pontoLivreProximo(0, cx + rand(-30, 30), cz + rand(-30, 30));
     if (p) { const z = criarZumbi(p.x, p.z, G.dia >= 3 && Math.random() < 0.06 ? 'bruto' : G.dia >= 2 && Math.random() < 0.2 ? 'corredor' : 'comum'); z.estado = 'ruido'; z.destino = { x: lugares.freedom.x, z: lugares.freedom.z }; }
   }
+  enviarSwat(cx, cz, nomePerto(cx, cz));
   alerta(`🧟 Horda de ${n} zumbis chegando do continente (${nomePerto(cx, cz)})`, cx, cz, 'surto');
   somUI('alerta');
 }
@@ -335,6 +340,8 @@ export function atualizarJogo(dt) {
     if (!G.proxHorda) G.proxHorda = G.tempo + 30;
     if (G.tempo >= G.proxHorda) { hordaDeFora(); G.proxHorda = G.tempo + Math.max(70, 160 - G.dia * 20) * G.cfgDif.intervalo; }
   }
+  if (G.swatPendente) for (let i = G.swatPendente.length - 1; i >= 0; i--) { const q = G.swatPendente[i]; if (G.tempo >= q.t) { G.swatPendente.splice(i, 1); enviarSwat(q.x, q.z, q.nome); } }
+  atualizarPolicia(dt);
   // porta-aviões produz
   const p = G.porta;
   if (p && p.vivo && p.fila.length) {

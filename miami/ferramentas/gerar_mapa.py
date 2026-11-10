@@ -49,6 +49,12 @@ grid[cnt[..., 0] >= 9] = 0
 # ruas sobre a água (pontes) continuam transitáveis
 ponte = (cnt[..., 0] >= 9) & ((cnt[..., 2] + cnt[..., 1]) >= 2)
 grid[ponte] = 6
+# linha central das ruas (a linha fina original do mapa)
+k7 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+larga_via = cv2.dilate(cv2.erode(rua, k7), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11)))
+fina = rua & (1 - larga_via)           # vias expressas (largas no mapa) ficam sem faixa central
+cr = fina[:gh * CEL, :gw * CEL].reshape(gh, CEL, gw, CEL).sum(axis=(1, 3))
+grid[(cr >= 4) & (grid == 2)] = 7
 def rle(a):
     a = a.ravel(); res = bytearray(); i = 0; n = len(a)
     while i < n:

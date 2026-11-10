@@ -3,7 +3,7 @@ import { G } from './estado.js';
 import { TIPOS, PRODUCAO, NOMES_PROD } from './tipos.js';
 import { enfileirar, cancelar } from './jogo.js';
 import { predios, canvasTerreno, LARG, ALT, lugares } from './mapa.js';
-import { telaDe } from './entrada.js';
+import { telaDe, ligarModoAreaSeJatos } from './entrada.js';
 import { marcarSelecao, desembarcar, sairDoPredio, ordenar, entregarCivis, naZonaSegura } from './unidades.js';
 import { somUI, somLigado, iniciarSom } from './som.js';
 
@@ -112,13 +112,14 @@ export class UI {
 
   selecionarGrupo(f) {
     G.selecao.slice().forEach((u) => marcarSelecao(u, false));
-    G.selecao = G.unidades.filter((u) => u.vivo && !u.estr && !u.dentro && f(u));
+    G.selecao = G.unidades.filter((u) => u.vivo && !u.estr && !u.dentro && !u.policia && f(u));
     G.selecao.forEach((u) => marcarSelecao(u, true));
     somUI('clique');
+    ligarModoAreaSeJatos();
     this.atualizarSelecao();
     if (G.selecao.length) {
       let x = 0, z = 0; for (const u of G.selecao) { x += u.x; z += u.z; }
-      if (G.selecao.length === 1 || G.selecao.every((u) => u.classe === 'jato')) this.cam.irPara(x / G.selecao.length, z / G.selecao.length);
+      if (G.selecao.length === 1 && G.selecao[0].classe !== 'jato') this.cam.irPara(x / G.selecao.length, z / G.selecao.length);
     }
   }
 
@@ -178,10 +179,11 @@ export class UI {
     if (s.some((u) => u.passageiros && u.passageiros.length)) bt('⬇️ Desembarcar', () => { for (const u of s) if (u.passageiros && u.passageiros.length) desembarcar(u); });
     if (s.some((u) => u.classe === 'aereo')) bt('🛬 Pousar', () => { for (const u of s) if (u.classe === 'aereo') u.ordem = { tipo: 'pousar' }; });
     if (s.some((u) => u.predio)) bt('🏃 Sair do prédio', () => { for (const u of s) if (u.predio) sairDoPredio(u); });
+    if (s.some((u) => u.classe === 'jato')) bt(G.modoArea ? '🎯 Área: LIGADA' : '🎯 Marcar área', () => { G.modoArea = !G.modoArea; }, G.modoArea ? 'ativo' : '');
     if (s.some((u) => u.classe === 'jato')) bt('🛳️ Voltar', () => { for (const u of s) if (u.classe === 'jato' && u.estadoJato === 'voando') u.estadoJato = 'voltando'; });
     if (s.length === 1 && s[0].classe !== 'jato') bt('🎮 Controlar', () => this.controlar(s[0]), 'destaque');
     bt('🎥 Seguir', () => { this.cam.seguir = s[0]; if (this.cam.dist > 300) this.cam.dist = s[0].classe === 'inf' ? 60 : 150; });
-    bt('✖', () => { s.forEach((u) => marcarSelecao(u, false)); G.selecao = []; });
+    bt('✖', () => { s.forEach((u) => marcarSelecao(u, false)); G.selecao = []; G.modoArea = false; });
   }
 
   controlar(u) {
@@ -267,7 +269,7 @@ export class UI {
     for (const p of predios) if (p.civis > 0) { g.fillStyle = p.sos ? '#ffd23b' : '#5bc0ff'; g.fillRect(p.cx * sx - 1.5, p.cz * sz - 1.5, 3, 3); }
     for (const u of G.unidades) {
       if (!u.vivo || u.dentro) continue;
-      g.fillStyle = u.estr ? '#7ad1ff' : u.sel ? '#7dff8a' : '#3b8bff';
+      g.fillStyle = u.estr ? '#7ad1ff' : u.policia ? '#ffe14d' : u.sel ? '#7dff8a' : '#3b8bff';
       const r = u.tipo === 'portaavioes' ? 3.5 : u.estr ? 2.5 : 2;
       g.fillRect(u.x * sx - r / 2, u.z * sz - r / 2, r, r);
     }
@@ -301,7 +303,7 @@ export class UI {
         if (!u.vivo || u.dentro || u.estr) continue;
         const t = telaDe(u.x, u.y, u.z, cam);
         if (!t) continue;
-        g.fillStyle = u.sel ? '#5dff6f' : '#3d8bff';
+        g.fillStyle = u.policia ? '#ffe14d' : u.sel ? '#5dff6f' : '#3d8bff';
         g.strokeStyle = '#001b44';
         g.beginPath(); g.arc(t.x, t.y, u.classe === 'inf' ? 3 : 5, 0, 6.29); g.fill(); g.stroke();
       }
@@ -352,6 +354,26 @@ export class UI {
       const cor = { mover: '#5dff6f', atacar: '#ff4040', embarque: '#5bc0ff', guarnecer: '#ffd23b', resgate: '#ffd23b' }[p.tipo] || '#fff';
       g.strokeStyle = cor; g.lineWidth = 2.5; g.globalAlpha = 1 - p.t / 0.8;
       g.beginPath(); g.arc(t.x, t.y, 6 + p.t * 30, 0, 6.29); g.stroke();
+      g.globalAlpha = 1;
+    }
+    // área de bombardeio (sendo marcada ou recém-marcada)
+    const areas = [];
+    if (G.area) areas.push({ ...G.area, w: Math.max(40, Math.min(160, Math.hypot(G.area.x1 - G.area.x0, G.area.z1 - G.area.z0) * 0.35)), alfa: 1 });
+    if (G.areaMarcada) { const t = (performance.now() - G.areaMarcada.t) / 1000; if (t < 6) areas.push({ ...G.areaMarcada, alfa: 1 - t / 6 }); else G.areaMarcada = null; }
+    for (const a of areas) {
+      const L = Math.hypot(a.x1 - a.x0, a.z1 - a.z0) || 1, ux = (a.x1 - a.x0) / L, uz = (a.z1 - a.z0) / L, px = -uz * a.w / 2, pz = ux * a.w / 2;
+      const cs = [[a.x0 + px, a.z0 + pz], [a.x1 + px, a.z1 + pz], [a.x1 - px, a.z1 - pz], [a.x0 - px, a.z0 - pz]].map(([x, z]) => telaDe(x, 0.5, z, cam));
+      if (cs.some((q) => !q)) continue;
+      g.globalAlpha = a.alfa;
+      g.fillStyle = 'rgba(255,40,40,0.22)'; g.strokeStyle = '#ff3b3b'; g.lineWidth = 2.5;
+      g.setLineDash([10, 6]);
+      g.beginPath(); cs.forEach((q, i) => (i ? g.lineTo : g.moveTo).call(g, q.x, q.y)); g.closePath(); g.fill(); g.stroke();
+      g.setLineDash([]);
+      const ini = telaDe(a.x0, 0.5, a.z0, cam), fim = telaDe(a.x1, 0.5, a.z1, cam);
+      if (ini && fim) {
+        g.beginPath(); g.moveTo(ini.x, ini.y); g.lineTo(fim.x, fim.y); g.stroke();
+        g.fillStyle = '#ff3b3b'; g.font = 'bold 13px sans-serif'; g.fillText('🎯 BOMBARDEIO', (ini.x + fim.x) / 2, (ini.y + fim.y) / 2 - 10);
+      }
       g.globalAlpha = 1;
     }
     // caixa de seleção
@@ -433,6 +455,8 @@ export const AJUDA = `
 <p><b>Ordens</b> (com unidades selecionadas): toque no chão para mover • num zumbi para atacar • num <b>prédio</b> para pôr os soldados no telhado (atiram de cima com mais alcance) • num prédio com <b>SOS</b> para resgatar os civis presos (helicópteros pegam pelo telhado) • num <b>veículo, helicóptero ou barco</b> para embarcar as tropas • com aeronaves selecionadas, toque no porta-aviões para pousar no convés.</p>
 <p><b>Civis</b> seguem soldados e veículos que chegam perto e entram sozinhos em transportes. Leve-os para a zona segura: ao chegar lá, são resgatados (+$40 cada). Civis que acenam viram você ao longe.</p>
 <p><b>Produção:</b> 🏭 Produzir abre o Quartel (infantaria), o Pátio (Humvee, Stryker, Bradley, Abrams, Paladin, HIMARS, ambulância), o Heliporto (Black Hawk, Chinook, Apache, drone Reaper), as Docas (lancha, hovercraft LCAC, destróier) e o porta-aviões (F-35, F/A-18, Osprey).</p>
-<p><b>Jatos:</b> selecione um jato e toque no mapa: ele decola do porta-aviões, bombardeia o ponto e volta para rearmar.</p>
+<p><b>Jatos:</b> selecione os jatos (toque num jato ou no botão ✈️) e <b>arraste o dedo no mapa</b> para marcar a área de bombardeio: eles decolam do porta-aviões, fazem passadas soltando bombas ao longo da faixa e voltam para rearmar. Um toque simples ataca um ponto.</p>
+<p><b>Prédios:</b> metade dos soldados fica nas janelas (quebram o vidro e atiram para fora) e metade no telhado.</p>
+<p><b>🚓 Polícia SWAT:</b> quando o vírus aparece, equipes da SWAT de Miami saem das delegacias sozinhas num blindado BearCat, combatem os zumbis e levam civis para a zona segura. Você não controla a polícia.</p>
 <p><b>🎮 Controlar:</b> com uma unidade selecionada, assuma o controle em 3ª pessoa com o joystick; ela atira sozinha nos zumbis.</p>
 <p><b>Dicas:</b> tiros e explosões fazem barulho e atraem zumbis. À noite eles ficam mais rápidos. A partir do dia 2 chegam hordas do continente e aparecem zumbis corredores; no dia 3, brutamontes. Cuidado com o fogo amigo de artilharia perto de civis.</p>`;
