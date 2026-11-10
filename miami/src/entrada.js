@@ -54,7 +54,6 @@ export class CameraRTS {
     if (c.position.y < hmax + 6) c.position.y = hmax + 6;
     c.lookAt(this.alvo.x, y0, this.alvo.z);
     c.near = Math.max(0.5, this.dist * 0.01);
-    c.far = Math.max(12000, this.dist * 6);
     c.updateProjectionMatrix();
     G.camAlvo = this.alvo; G.camDist = this.dist;
   }

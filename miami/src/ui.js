@@ -327,7 +327,7 @@ export class UI {
 
   // ---------------- marcadores sobre o 3D ----------------
   desenharOverlay(dt) {
-    const W = innerWidth, H = innerHeight, dpr = Math.min(2, devicePixelRatio || 1);
+    const W = innerWidth, H = innerHeight, dpr = (G.cfg.qualidade ?? 1) === 0 ? 1 : Math.min(1.5, devicePixelRatio || 1);
     if (this.ov.width !== Math.round(W * dpr)) { this.ov.width = Math.round(W * dpr); this.ov.height = Math.round(H * dpr); }
     const g = this.ctx;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);

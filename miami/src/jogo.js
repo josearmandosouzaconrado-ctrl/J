@@ -83,7 +83,7 @@ export function construirVisual() {
     return Math.abs(l) < 180 && t > -110 && t < 40;
   } : null);
   const b = lugares.base;
-  G.decor.push(construirCarros(G.cena, 3200, (x, z) => dist(x, z, b.x, b.z) < 450));
+  G.decor.push(...construirCarros(G.cena, 3200, (x, z) => dist(x, z, b.x, b.z) < 450));
   for (const p of predios) if (!p.base) { p.integMax = 150 + Math.min(900, p.area * 0.4); p.integridade = p.integMax; }
 }
 

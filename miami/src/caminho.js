@@ -167,5 +167,7 @@ export function acharCaminho(modo, x0, z0, x1, z1, limite = 70000) {
   }
   const pts = lisa.slice(1).map((k) => ({ x: (k % NW + 0.5) * NCEL, z: (((k / NW) | 0) + 0.5) * NCEL }));
   if (achou) pts.push({ x: x1, z: z1 });
-  return pts.length ? pts : [{ x: x1, z: z1 }];
+  const r = pts.length ? pts : [{ x: x1, z: z1 }];
+  r.parcial = !achou;   // busca interrompida: o caminho leva até o ponto mais perto achado
+  return r;
 }

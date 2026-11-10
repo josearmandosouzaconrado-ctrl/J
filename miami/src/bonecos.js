@@ -4,6 +4,8 @@
 // Andando: fuzil baixo, cano apontado para o chão à frente. Atirando: fuzil no ombro, mirando.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { QUAL } from './mapa.js';
+const G_QUAL = () => QUAL;
 
 // ---------- geometria com cores por vértice ----------
 function peca(lista, geo, cor, x, y, z, rx = 0, ry = 0, rz = 0) {
@@ -174,7 +176,7 @@ class Conjunto {
       const im = new THREE.InstancedMesh(geos[k], mat, mx);
       im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(mx * 3), 3);
-      im.count = 0; im.frustumCulled = false; im.castShadow = true;
+      im.count = 0; im.frustumCulled = false; im.castShadow = (G_QUAL() >= 2);
       cena.add(im);
       this.m[k] = im; this.n[k] = 0; this.max[k] = mx;
     }

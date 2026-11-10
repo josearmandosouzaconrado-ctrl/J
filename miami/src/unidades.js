@@ -589,8 +589,8 @@ function andarCaminho(u, dt, alvo, vel, modo) {
       u.caminho = ach.pts.slice(0, -1).concat([{ x: alvo.x, z: alvo.z }]);
     } else {
       G.orcamentoCaminhos--;
-      u.caminho = acharCaminho(modo, u.x, u.z, alvo.x, alvo.z);
-      if (u.caminho) { c.push({ modo, sx: u.x, sz: u.z, ex: alvo.x, ez: alvo.z, pts: u.caminho, t: G.tempo }); if (c.length > 20) c.shift(); }
+      u.caminho = acharCaminho(modo, u.x, u.z, alvo.x, alvo.z, G.limiteCaminho || 40000);
+      if (u.caminho && !u.caminho.parcial) { c.push({ modo, sx: u.x, sz: u.z, ex: alvo.x, ez: alvo.z, pts: u.caminho, t: G.tempo }); if (c.length > 20) c.shift(); }
     }
     u.caminhoAlvo = { x: alvo.x, z: alvo.z };
     u.wp = 0; u.repath = 2.5;
@@ -599,12 +599,12 @@ function andarCaminho(u, dt, alvo, vel, modo) {
   }
   if (!u.caminho) { u.velAtual = 0; return; }
   let w = u.caminho[u.wp];
-  if (!w) { u.caminho = null; u.velAtual = 0; if (alvo.fim) alvo.fim(); else u.repath = 1.2; return; }
+  if (!w) { const parcial = u.caminho && u.caminho.parcial; u.caminho = null; u.velAtual = 0; if (alvo.fim && !parcial) alvo.fim(); else u.repath = parcial ? 0 : 1.2; return; }
   const ult = u.wp === u.caminho.length - 1;
   if (dist(u.x, u.z, w.x, w.z) < (ult ? chegada : Math.max(4, u.d.raio * 2))) {
     u.wp++;
     w = u.caminho[u.wp];
-    if (!w) { u.caminho = null; u.velAtual = 0; if (alvo.fim) alvo.fim(); else u.repath = 1.2; return; }
+    if (!w) { const parcial = u.caminho && u.caminho.parcial; u.caminho = null; u.velAtual = 0; if (alvo.fim && !parcial) alvo.fim(); else u.repath = parcial ? 0 : 1.2; return; }
   }
   const angAlvo = Math.atan2(w.x - u.x, w.z - u.z);
   const giro = u.classe === 'inf' ? 10 : u.classe === 'naval' ? (u.d.raio > 20 ? 0.25 : 0.9) : 2.2;

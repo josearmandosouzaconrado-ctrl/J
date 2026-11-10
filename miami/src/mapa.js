@@ -10,6 +10,9 @@ export const GW = META.gw, GH = META.gh;
 export const LARG = GW * CEL, ALT = GH * CEL; // tamanho do mapa em metros
 export const T = { AGUA: 0, CHAO: 1, RUA: 2, PARQUE: 3, AREIA: 4, PREDIO: 5, PONTE: 6, CENTRO: 7 };
 export const ehRua = (t) => t === 2 || t === 7;
+// qualidade gráfica (0 baixa, 1 média, 2 alta), definida antes de construir o mundo
+export let QUAL = 1;
+export function definirQualidade(q) { QUAL = q; }
 
 function b64(s) {
   const bin = atob(s), u = new Uint8Array(bin.length);
@@ -262,7 +265,7 @@ export function construirPredios(cena) {
   MAT_PREDIOS.telhado = new THREE.MeshLambertMaterial({ vertexColors: true, map: texTelhado() });
   MAT_PREDIOS.telha = new THREE.MeshLambertMaterial({ vertexColors: true, map: texTelha() });
   { const { t, te } = texTijolo(); MAT_PREDIOS.tijolo = new THREE.MeshLambertMaterial({ vertexColors: true, map: t, emissiveMap: te, emissive: 0xffffff, emissiveIntensity: 0 }); }
-  const TAM = 1200;
+  const TAM = 700;
   const grupos = new Map();
   const pega = (k) => { let ch = grupos.get(k); if (!ch) { ch = { pos: [], nor: [], col: [], uv: [] }; grupos.set(k, ch); } return ch; };
   const cor = new THREE.Color();
@@ -308,7 +311,7 @@ export function construirPredios(cena) {
     cor.setHex(lista[sem % lista.length]);
     p.cor = cor.getHex();
     const W = pega(base + ',' + estilo), R = pega(base + ',telhado');
-    const parapeito = h > 6 && !casa ? 1.1 : 0;
+    const parapeito = h > 6 && !casa && QUAL >= 1 ? 1.1 : 0;
     let along = (sem % 7) * BAIA;
     for (let i = 0; i < n; i++) {
       const j = (i + 1) % n;
@@ -320,9 +323,12 @@ export function construirPredios(cena) {
       const u0 = along / (BAIA * REP), u1 = (along + nb * BAIA) / (BAIA * REP);
       along += nb * BAIA;
       // térreo um pouco mais escuro (lojas/portaria)
-      const terreo = Math.min(h, 4);
-      quad(W, ax, az, bx, bz, 0, terreo, nx, nz, u0, u1, cor.r * 0.8, cor.g * 0.8, cor.b * 0.82, ANDAR * REP);
-      if (h > terreo) quad(W, ax, az, bx, bz, terreo, h, nx, nz, u0, u1, cor.r, cor.g, cor.b, ANDAR * REP);
+      if (QUAL === 0) quad(W, ax, az, bx, bz, 0, h, nx, nz, u0, u1, cor.r, cor.g, cor.b, ANDAR * REP);
+      else {
+        const terreo = Math.min(h, 4);
+        quad(W, ax, az, bx, bz, 0, terreo, nx, nz, u0, u1, cor.r * 0.8, cor.g * 0.8, cor.b * 0.82, ANDAR * REP);
+        if (h > terreo) quad(W, ax, az, bx, bz, terreo, h, nx, nz, u0, u1, cor.r, cor.g, cor.b, ANDAR * REP);
+      }
       if (parapeito) {
         // mureta do telhado (lado de fora e de dentro)
         const c2 = 0.92;
@@ -379,7 +385,7 @@ export function construirPredios(cena) {
       }
     }
     // equipamentos no telhado
-    if (h > 8 && p.area > 150) {
+    if (QUAL >= 1 && h > 8 && p.area > 150) {
       const nq = 1 + (sem % 3) + (h > 40 ? 2 : 0);
       for (let q = 0; q < nq; q++) {
         const ang = ((sem >> (q * 3)) % 628) / 100, dd = p.raio * 0.25 * ((q % 3) / 2);
@@ -393,6 +399,7 @@ export function construirPredios(cena) {
   const malhas = [];
   for (const [k, ch] of grupos) {
     const est = k.split(',')[2];
+    const [kx, kz] = k.split(',').map(Number);
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(ch.pos, 3));
     g.setAttribute('normal', new THREE.Float32BufferAttribute(ch.nor, 3));
@@ -402,7 +409,8 @@ export function construirPredios(cena) {
     const m = new THREE.Mesh(g, MAT_PREDIOS[est]);
     m.matrixAutoUpdate = false;
     m.updateMatrix();
-    m.castShadow = true; m.receiveShadow = true;
+    m.castShadow = QUAL >= 1; m.receiveShadow = QUAL >= 1;
+    m.userData.cx = (kx + 0.5) * TAM; m.userData.cz = (kz + 0.5) * TAM;
     m.name = 'predios';
     cena.add(m);
     malhas.push(m);
@@ -522,10 +530,11 @@ export function construirChao(cena) {
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
       uniform sampler2D mapa; uniform sampler2D marcas; uniform vec2 tam; varying vec3 vW;
-      float h1(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
+      ${QUAL === 0 ? `float ru(vec2 p){ return 0.5; }
+      float fbm(vec2 p){ return 0.5; }` : `float h1(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
       float ru(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f*f*(3.0-2.0*f);
         return mix(mix(h1(i), h1(i+vec2(1,0)), u.x), mix(h1(i+vec2(0,1)), h1(i+vec2(1,1)), u.x), u.y); }
-      float fbm(vec2 p){ return ru(p)*0.5 + ru(p*2.07)*0.3 + ru(p*4.13)*0.2; }`)
+      float fbm(vec2 p){ return ru(p)*0.5 + ru(p*2.07)*0.3 + ru(p*4.13)*0.2; }`}`)
       .replace('#include <map_fragment>', `
       {
         vec2 uv = vW.xz / tam;
@@ -607,9 +616,9 @@ export function construirAgua(cena) {
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
       uniform sampler2D mascara; uniform vec2 tam; uniform float tempo; varying vec3 vW;
-      float h1a(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
+      ${QUAL === 0 ? `float rua2(vec2 p){ return 0.45 + 0.1 * sin(p.x * 3.0 + p.y * 2.0); }` : `float h1a(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
       float rua2(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f*f*(3.0-2.0*f);
-        return mix(mix(h1a(i), h1a(i+vec2(1,0)), u.x), mix(h1a(i+vec2(0,1)), h1a(i+vec2(1,1)), u.x), u.y); }`)
+        return mix(mix(h1a(i), h1a(i+vec2(1,0)), u.x), mix(h1a(i+vec2(0,1)), h1a(i+vec2(1,1)), u.x), u.y); }`}`)
       .replace('#include <map_fragment>', `
       {
         vec2 uv = vW.xz / tam;
@@ -659,28 +668,29 @@ function corVert(g, f) {
 function geoPalmeira() {
   const tr = [], fo = [];
   // tronco curvo em anéis (claro/escuro alternados)
-  const seg = 6;
+  const seg = QUAL >= 2 ? 6 : 3;
   for (let i = 0; i < seg; i++) {
-    const g = new THREE.CylinderGeometry(0.19 - i * 0.012, 0.22 - i * 0.012, 1.62, 6).toNonIndexed();
+    const L = 9.5 / seg;
+    const g = new THREE.CylinderGeometry(0.19 - i * 0.02, 0.22 - i * 0.02, L * 1.03, 5, 1, true).toNonIndexed();
     const curva = (i / seg) ** 2 * 0.9;
-    g.rotateZ(-0.06 * i / seg); g.translate(curva, 0.81 + i * 1.58, 0);
+    g.rotateZ(-0.06 * i / seg); g.translate(curva, L / 2 + i * L, 0);
     const k = i % 2 ? 0.86 : 1;
     tr.push(corVert(g, (y) => [0.62 * k, 0.5 * k, 0.36 * k]));
   }
   const tx = 0.9, ty = 9.6;
   // cocos
-  for (let k = 0; k < 4; k++) {
+  for (let k = 0; k < (QUAL >= 2 ? 4 : 0); k++) {
     const g = new THREE.SphereGeometry(0.16, 6, 4).toNonIndexed();
     g.translate(tx + Math.cos(k * 1.6) * 0.22, ty - 0.25, Math.sin(k * 1.6) * 0.22);
     tr.push(corVert(g, () => [0.42, 0.33, 0.12]));
   }
   // folhas: cada uma é uma lâmina arqueada com folíolos (duas camadas)
-  const nf = 10;
+  const nf = QUAL >= 2 ? 10 : QUAL === 1 ? 8 : 7;
   for (let k = 0; k < nf; k++) {
     const a = (k / nf) * Math.PI * 2 + (k % 2) * 0.25;
     const comp = 4.0 + (k % 3) * 0.6, queda = 0.25 + (k % 4) * 0.18 + (k >= 8 ? 0.35 : -0.1);
     const pts = [];
-    const n = 5;
+    const n = QUAL >= 2 ? 5 : 2;
     // lâmina: duas tiras laterais (folíolos) ao longo de uma curva que cai
     const pos = [], cor = [];
     let px = 0, py = 0;
@@ -713,15 +723,15 @@ function geoPalmeira() {
 function geoArvore() {
   // árvore de copa larga (carvalho/figueira): tronco com galhos e copa de "nuvens" facetadas
   const tr = [], co = [];
-  const t = new THREE.CylinderGeometry(0.25, 0.42, 3.4, 7).toNonIndexed(); t.translate(0, 1.7, 0);
+  const t = new THREE.CylinderGeometry(0.25, 0.42, 3.4, 5, 1, true).toNonIndexed(); t.translate(0, 1.7, 0);
   tr.push(corVert(t, () => [0.42, 0.33, 0.24]));
-  for (let k = 0; k < 3; k++) {
-    const g = new THREE.CylinderGeometry(0.1, 0.18, 2.2, 5).toNonIndexed();
+  for (let k = 0; k < (QUAL >= 1 ? 3 : 0); k++) {
+    const g = new THREE.CylinderGeometry(0.1, 0.18, 2.2, 4, 1, true).toNonIndexed();
     g.rotateZ(0.8); g.rotateY(k * 2.1); g.translate(Math.cos(k * 2.1) * 0.6, 3.6, -Math.sin(k * 2.1) * 0.6);
     tr.push(corVert(g, () => [0.4, 0.31, 0.22]));
   }
   const bolas = [[0, 5.4, 0, 2.6], [1.7, 4.8, 0.6, 1.9], [-1.5, 4.9, -0.7, 2.0], [0.4, 4.6, -1.8, 1.8], [-0.6, 4.7, 1.7, 1.8], [0.3, 6.6, 0.2, 1.7]];
-  for (const [x, y, z, r] of bolas) {
+  for (const [x, y, z, r] of (QUAL >= 1 ? bolas : [[0, 5.2, 0, 3.0], [0.6, 6.4, 0.3, 2.0]])) {
     const g = new THREE.IcosahedronGeometry(r, 0).toNonIndexed();
     g.scale(1, 0.8, 1); g.translate(x, y, z);
     co.push(corVert(g, (yy, i) => { const v = 0.75 + ((yy - 3.5) / 4) * 0.35 + ((i * 7919) % 13) / 100; return [0.3 * v, 0.47 * v, 0.2 * v]; }));
@@ -750,110 +760,136 @@ function lugarArvore() {
   return null;
 }
 
+// Agrupa instâncias por bloco de BLOCO metros: cada bloco é um InstancedMesh separado, e a cada quadro
+// só os blocos perto da câmera ficam visíveis (as árvores e carros longe nem são enviados à placa de vídeo).
+const BLOCO = 400;
+function blocos(cena, geo, mat, itens, sombra, tipo) {
+  const mapa = new Map();
+  for (const it of itens) {
+    const k = Math.floor(it.x / BLOCO) + ',' + Math.floor(it.z / BLOCO);
+    let l = mapa.get(k); if (!l) { l = []; mapa.set(k, l); } l.push(it);
+  }
+  const out = [];
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), s = new THREE.Vector3(), pp = new THREE.Vector3(), c = new THREE.Color();
+  for (const [k, l] of mapa) {
+    const im = new THREE.InstancedMesh(geo, mat, l.length);
+    l.forEach((it, n) => {
+      e.set(0, it.ang, 0); q.setFromEuler(e);
+      m.compose(pp.set(it.x, it.y || 0, it.z), q, s.set(it.sx, it.sy, it.sz));
+      im.setMatrixAt(n, m);
+      if (it.cor) im.setColorAt(n, c.setHex(it.cor)); else if (it.hsl) im.setColorAt(n, c.setHSL(...it.hsl));
+      it.malha = im; it.idx = n;
+    });
+    im.computeBoundingSphere();
+    im.castShadow = sombra; im.receiveShadow = false;
+    const [bx, bz] = k.split(',').map(Number);
+    im.userData.cx = (bx + 0.5) * BLOCO; im.userData.cz = (bz + 0.5) * BLOCO; im.userData.tipo = tipo;
+    cena.add(im);
+    out.push(im);
+  }
+  return out;
+}
+
 export function construirPalmeiras(cena, qtd = 2600, evitar = null) {
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
   const matF = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   const P = geoPalmeira(), A = geoArvore();
+  if (QUAL === 0) qtd = Math.round(qtd * 0.7);
   const nP = Math.round(qtd * 0.65), nA = qtd - nP;
-  const ip = new THREE.InstancedMesh(P.tronco, mat, nP), ipf = new THREE.InstancedMesh(P.folhas, matF, nP);
-  const ia = new THREE.InstancedMesh(A.tronco, mat, nA), iac = new THREE.InstancedMesh(A.copa, mat, nA);
-  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), s = new THREE.Vector3(), pp = new THREE.Vector3(), c = new THREE.Color();
-  let a = 0, b = 0, tent = 0;
-  while ((a < nP || b < nA) && tent < qtd * 6) {
+  const palmas = [], copas = [];
+  let tent = 0;
+  while ((palmas.length < nP || copas.length < nA) && tent < qtd * 6) {
     tent++;
     const l = lugarArvore();
     if (!l || (evitar && evitar(l.x, l.z))) continue;
-    if (l.tipo === 0 && a < nP) {
+    if (l.tipo === 0 && palmas.length < nP) {
       const k = 0.8 + Math.random() * 0.5;
-      e.set(0, Math.random() * 6.28, 0); q.setFromEuler(e);
-      m.compose(pp.set(l.x, 0, l.z), q, s.set(k, k * (0.9 + Math.random() * 0.3), k));
-      ip.setMatrixAt(a, m); ipf.setMatrixAt(a, m);
-      c.setHSL(0.24 + Math.random() * 0.08, 0.5, 0.75 + Math.random() * 0.4); ipf.setColorAt(a, c);
-      ip.setColorAt(a, c.setRGB(1, 1, 1));
-      a++;
-    } else if (l.tipo === 1 && b < nA) {
+      palmas.push({ x: l.x, z: l.z, ang: Math.random() * 6.28, sx: k, sy: k * (0.9 + Math.random() * 0.3), sz: k, hsl: [0.24 + Math.random() * 0.08, 0.5, 0.75 + Math.random() * 0.4] });
+    } else if (l.tipo === 1 && copas.length < nA) {
       const k = 0.75 + Math.random() * 0.6;
-      e.set(0, Math.random() * 6.28, 0); q.setFromEuler(e);
-      m.compose(pp.set(l.x, 0, l.z), q, s.set(k, k, k));
-      ia.setMatrixAt(b, m); iac.setMatrixAt(b, m);
-      c.setHSL(0.22 + Math.random() * 0.1, 0.45, 0.8 + Math.random() * 0.35); iac.setColorAt(b, c);
-      ia.setColorAt(b, c.setRGB(1, 1, 1));
-      b++;
+      copas.push({ x: l.x, z: l.z, ang: Math.random() * 6.28, sx: k, sy: k, sz: k, hsl: [0.22 + Math.random() * 0.1, 0.45, 0.8 + Math.random() * 0.35] });
     }
   }
-  ip.count = ipf.count = a; ia.count = iac.count = b;
-  for (const x of [ip, ipf, ia, iac]) { x.computeBoundingSphere(); x.castShadow = true; cena.add(x); }
-  return [ip, ipf, ia, iac];
+  const sombra = QUAL >= 2;
+  const troncos = palmas.map((p) => ({ ...p, hsl: null, cor: 0xffffff })), troncosA = copas.map((p) => ({ ...p, hsl: null, cor: 0xffffff }));
+  return [
+    ...blocos(cena, P.tronco, mat, troncos, sombra, 'arvore'),
+    ...blocos(cena, P.folhas, matF, palmas, sombra, 'arvore'),
+    ...blocos(cena, A.tronco, mat, troncosA, sombra, 'arvore'),
+    ...blocos(cena, A.copa, mat, copas, sombra, 'arvore'),
+  ];
 }
 
 // ---------------- carros estacionados ----------------
-export const carros = { x: null, z: null, n: 0, malha: null, esmagado: null };
+export const carros = { lista: [] };
 export function construirCarros(cena, qtd = 1600, evitar) {
   const L = [];
   const add = (geo, cor, x, y, z) => { const g = geo.toNonIndexed(); g.translate(x, y, z); L.push(corVert(g, () => cor)); };
-  add(new THREE.BoxGeometry(1.8, 0.62, 4.4), [1, 1, 1], 0, 0.55, 0);
-  add(new THREE.BoxGeometry(1.62, 0.5, 2.2), [0.95, 0.95, 0.95], 0, 1.1, -0.25);
-  add(new THREE.BoxGeometry(1.64, 0.4, 2.0), [0.18, 0.22, 0.27], 0, 1.1, -0.25);        // vidros
-  add(new THREE.BoxGeometry(1.4, 0.38, 0.05), [0.18, 0.22, 0.27], 0, 1.08, 0.88);
-  for (const [x, z] of [[-0.82, 1.35], [0.82, 1.35], [-0.82, -1.35], [0.82, -1.35]]) {
-    const r = new THREE.CylinderGeometry(0.33, 0.33, 0.24, 6).toNonIndexed(); r.rotateZ(Math.PI / 2); r.translate(x, 0.33, z);
-    L.push(corVert(r, () => [0.08, 0.08, 0.08]));
+  add(new THREE.BoxGeometry(1.8, 0.62, 4.4), [1, 1, 1], 0, 0.6, 0);
+  add(new THREE.BoxGeometry(1.62, 0.5, 2.2), [0.95, 0.95, 0.95], 0, 1.15, -0.25);
+  add(new THREE.BoxGeometry(1.64, 0.36, 2.04), [0.18, 0.22, 0.27], 0, 1.15, -0.25);          // vidros
+  add(new THREE.BoxGeometry(1.7, 0.42, 3.4), [0.08, 0.08, 0.08], 0, 0.26, 0);              // rodas (bloco escuro)
+  if (QUAL >= 1) {
+    add(new THREE.BoxGeometry(1.2, 0.12, 0.05), [2.2, 2.1, 1.8], 0, 0.7, 2.21);             // faróis
+    add(new THREE.BoxGeometry(1.2, 0.12, 0.05), [1.6, 0.2, 0.15], 0, 0.75, -2.21);          // lanternas
   }
-  add(new THREE.BoxGeometry(0.3, 0.12, 0.05), [2.2, 2.1, 1.8], 0.6, 0.65, 2.21);
-  add(new THREE.BoxGeometry(0.3, 0.12, 0.05), [2.2, 2.1, 1.8], -0.6, 0.65, 2.21);
-  add(new THREE.BoxGeometry(0.3, 0.12, 0.05), [1.6, 0.2, 0.15], 0.6, 0.7, -2.21);
-  add(new THREE.BoxGeometry(0.3, 0.12, 0.05), [1.6, 0.2, 0.15], -0.6, 0.7, -2.21);
   const geo = mergeGeometries(L);
-  const mat = new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 60, specular: 0x444444 });
-  const im = new THREE.InstancedMesh(geo, mat, qtd);
+  const mat = QUAL >= 1 ? new THREE.MeshPhongMaterial({ vertexColors: true, shininess: 60, specular: 0x444444 }) : new THREE.MeshLambertMaterial({ vertexColors: true });
   const CORES = [0xf2f2f2, 0x1c1c1c, 0x9a9fa6, 0xb3261e, 0x22427a, 0x6a6f74, 0xd8c8a0, 0x2c5e3a, 0xe8b830, 0x5a2a6a, 0xd0d4d8, 0x3a4048];
-  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), s = new THREE.Vector3(1, 1, 1), pp = new THREE.Vector3(), c = new THREE.Color();
-  carros.x = new Float32Array(qtd); carros.z = new Float32Array(qtd); carros.ang = new Float32Array(qtd); carros.esmagado = new Uint8Array(qtd);
-  let n = 0, tent = 0;
-  while (n < qtd && tent < qtd * 80) {
+  if (QUAL === 0) qtd = Math.round(qtd * 0.6);
+  const lista = [];
+  let tent = 0;
+  while (lista.length < qtd && tent < qtd * 80) {
     tent++;
     const cx = 1 + Math.floor(Math.random() * (GW - 2)), cz = 1 + Math.floor(Math.random() * (GH - 2));
     const k = cz * GW + cx;
     if (grade[k] !== T.RUA || predioId[k] >= 0) continue;
-    // lado da calçada: vizinho que não é rua
     let dx = 0, dz = 0;
     for (const [ox, oz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const t = grade[k + oz * GW + ox]; if (!ehRua(t) && t !== T.AGUA && t !== T.PONTE) { dx = ox; dz = oz; } }
     if (!dx && !dz) continue;
     const x = (cx + 0.5) * CEL + dx * 0.9, z = (cz + 0.5) * CEL + dz * 0.9;
     if (evitar && evitar(x, z)) continue;
     let perto = false;
-    for (let i = Math.max(0, n - 40); i < n; i++) if (Math.abs(carros.x[i] - x) < 6 && Math.abs(carros.z[i] - z) < 6) { perto = true; break; }
+    for (let i = Math.max(0, lista.length - 40); i < lista.length; i++) if (Math.abs(lista[i].x - x) < 6 && Math.abs(lista[i].z - z) < 6) { perto = true; break; }
     if (perto) continue;
     const ang = (dx !== 0 ? 0 : Math.PI / 2) + (Math.random() < 0.5 ? Math.PI : 0) + (Math.random() - 0.5) * 0.08;
-    e.set(0, ang, 0); q.setFromEuler(e);
-    m.compose(pp.set(x, 0, z), q, s);
-    im.setMatrixAt(n, m);
-    c.setHex(CORES[(Math.random() * CORES.length) | 0]);
-    im.setColorAt(n, c);
-    carros.x[n] = x; carros.z[n] = z; carros.ang[n] = ang;
-    n++;
+    lista.push({ x, z, ang, sx: 1, sy: 1, sz: 1, cor: CORES[(Math.random() * CORES.length) | 0] });
   }
-  im.count = n; carros.n = n; carros.malha = im;
-  im.computeBoundingSphere();
-  im.castShadow = true; im.receiveShadow = true;
-  cena.add(im);
-  return im;
+  carros.lista = lista;
+  return blocos(cena, geo, mat, lista, false, 'carro');
+}
+
+// mostra só os blocos de árvores, carros e prédios perto da câmera
+export function atualizarDecoracao(lista, alvo, distCam) {
+  const fator = QUAL === 0 ? 1.0 : QUAL === 1 ? 1.4 : 2.0;
+  const rArv = distCam > 1600 ? 0 : Math.max(300, Math.min(1400, distCam * 1.3 * fator + 200));
+  const rCar = distCam > 900 ? 0 : Math.max(250, Math.min(900, distCam * 1.0 * fator + 150));
+  for (const m of lista) {
+    const r = m.userData.tipo === 'carro' ? rCar : rArv;
+    const dx = m.userData.cx - alvo.x, dz = m.userData.cz - alvo.z;
+    m.visible = r > 0 && dx * dx + dz * dz < (r + BLOCO * 0.7) * (r + BLOCO * 0.7);
+  }
+}
+export function atualizarPredios(malhas, alvo, distCam, alcance) {
+  for (const m of malhas) {
+    const dx = m.userData.cx - alvo.x, dz = m.userData.cz - alvo.z;
+    m.visible = dx * dx + dz * dz < (alcance + 400) * (alcance + 400);
+  }
 }
 
 // veículo pesado passando por cima amassa o carro
 const _m4 = new THREE.Matrix4(), _q4 = new THREE.Quaternion(), _e4 = new THREE.Euler(), _s4 = new THREE.Vector3(), _p4 = new THREE.Vector3();
 export function esmagarCarros(x, z, r) {
-  if (!carros.malha) return 0;
   let k = 0;
-  for (let i = 0; i < carros.n; i++) {
-    if (carros.esmagado[i]) continue;
-    const dx = carros.x[i] - x, dz = carros.z[i] - z;
+  for (const c of carros.lista) {
+    if (c.esmagado) continue;
+    const dx = c.x - x, dz = c.z - z;
     if (dx * dx + dz * dz < r * r) {
-      carros.esmagado[i] = 1;
-      _e4.set(0, carros.ang[i], (Math.random() - 0.5) * 0.2); _q4.setFromEuler(_e4);
-      _m4.compose(_p4.set(carros.x[i], -0.1, carros.z[i]), _q4, _s4.set(1.08, 0.35, 1.04));
-      carros.malha.setMatrixAt(i, _m4);
-      carros.malha.instanceMatrix.needsUpdate = true;
+      c.esmagado = true;
+      _e4.set(0, c.ang, (Math.random() - 0.5) * 0.2); _q4.setFromEuler(_e4);
+      _m4.compose(_p4.set(c.x, -0.1, c.z), _q4, _s4.set(1.08, 0.35, 1.04));
+      c.malha.setMatrixAt(c.idx, _m4);
+      c.malha.instanceMatrix.needsUpdate = true;
       k++;
     }
   }
