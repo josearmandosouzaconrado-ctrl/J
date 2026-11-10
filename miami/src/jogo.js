@@ -4,9 +4,10 @@ import { G, alerta } from './estado.js';
 import {
   lugares, predios, rasterizarPredios, removerPrediosEm, construirPredios, construirChao, construirAgua,
   construirPalmeiras, construirCarros, andavel, LARG, ALT, GW, GH, CEL, grade, predioId, T, agua as ehAgua,
+  META, COSTA,
 } from './mapa.js';
 import { prepararNavegacao, pontoLivreProximo, livre } from './caminho.js';
-import { TIPOS, ESTRUTURAS } from './tipos.js';
+import { TIPOS, ESTRUTURAS, CONSTRUIR } from './tipos.js';
 import { criarModelo } from './modelos.js';
 import {
   criarUnidade, danoUnidade, naZonaSegura, volEm, vagas, embarcarCivil, embarcar, chaoEm, marcarSelecao,
@@ -15,6 +16,7 @@ import { criarCivil, criarZumbi, soldadoVirouZumbi, tornarZumbi } from './agente
 import { rand, randi, escolher, dist, dist2 } from './util.js';
 import { somUI } from './som.js';
 import { enviarSwat, atualizarPolicia } from './policia.js';
+import { atualizarSobreviventes } from './sobreviventes.js';
 
 const DIF = {
   facil: { dinheiro: 5000, civis: 600, sos: 22, meta: 150, intervalo: 1.35, renda: 7 },
@@ -25,11 +27,13 @@ const DIF = {
 export function montarMundo() {
   // ligações para evitar importações circulares
   G.danoUnidade = danoUnidade; G.naZonaSegura = naZonaSegura; G.volEm = volEm; G.vagas = vagas;
-  G.embarcarCivil = embarcarCivil; G.virarZumbi = soldadoVirouZumbi; G.produzir = produzir;
+  G.construir = construir;
+  G.embarcarCivil = embarcarCivil; G.criarCivil = criarCivil; G.virarZumbi = soldadoVirouZumbi; G.produzir = produzir;
   const b = lugares.base;
   removerPrediosEm(b.x, b.z, 380);
   // eixo da ilha (Dodge Island vai de oeste-noroeste para leste-sudeste)
-  const ax = { x: Math.cos(0.43), z: Math.sin(0.43) }, pp = { x: -ax.z, z: ax.x };
+  const ab = META.baseAng ?? 0.43;
+  const ax = { x: Math.cos(ab), z: Math.sin(ab) }, pp = { x: -ax.z, z: ax.x };
   G.baseEixo = { ax, pp, ang: Math.atan2(ax.x, ax.z) };
   const L = (u, v) => ({ x: b.x + ax.x * u + pp.x * v, z: b.z + ax.z * u + pp.z * v });
   // prédios da base viram obstáculos (e dá para pôr soldados no telhado)
@@ -77,7 +81,7 @@ export function construirVisual() {
   for (const p of predios) if (!p.base) { p.integMax = 150 + Math.min(900, p.area * 0.4); p.integridade = p.integMax; }
 }
 
-function criarEstrutura(tipo, x, z, ang) {
+export function criarEstrutura(tipo, x, z, ang) {
   const d = ESTRUTURAS[tipo];
   const m = criarModelo(tipo);
   m.grupo.position.set(x, 0, z);
@@ -85,7 +89,53 @@ function criarEstrutura(tipo, x, z, ang) {
   G.cena.add(m.grupo);
   const u = { id: G.idSeq++, estr: true, tipoEstr: tipo, tipo, d, classe: 'estr', x, z, y: 0, ang, hp: d.hp, hpMax: d.hp, vivo: true, m, fila: [], passageiros: [], cargaUsada: 0, busca: rand(0, 1), cd: 0 };
   G.unidades.push(u);
+  if (['qg', 'zona', 'fob'].includes(tipo)) (G.abrigos || (G.abrigos = [])).push(u);
   return u;
+}
+
+// estrutura da produção: a escolhida no painel, senão a mais perto da câmera
+export function fonteDe(tipoFonte) {
+  if (tipoFonte === 'porta') return G.porta;
+  if (G.fonteSel && G.fonteSel.vivo && G.fonteSel.tipoEstr === tipoFonte && !(G.fonteSel.construindo > 0)) return G.fonteSel;
+  let melhor = null, md = Infinity;
+  const c = G.camAlvo || { x: 0, z: 0 };
+  for (const u of G.unidades) {
+    if (!u.vivo || !u.estr || u.tipoEstr !== tipoFonte || u.construindo > 0) continue;
+    const d = dist2(u.x, u.z, c.x, c.z);
+    if (d < md) { md = d; melhor = u; }
+  }
+  return melhor;
+}
+
+// constrói uma estrutura nova onde o jogador tocou
+export function construir(tipo, x, z) {
+  const d = CONSTRUIR[tipo];
+  if (G.dinheiro < d.custo) { alerta('Dinheiro insuficiente', null, null, 'ruim'); somUI('erro'); return false; }
+  if (!andavel(x, z)) { alerta('Não dá para construir aí (prédio ou água)', x, z, 'ruim'); somUI('erro'); return false; }
+  const r = Math.min(d.raio, 24);
+  if (!d.agua && tipo !== 'muro' && tipo !== 'torre') {
+    let bloq = 0;
+    for (let a = 0; a < 6.28; a += 0.5) for (const f of [0.5, 1]) if (!andavel(x + Math.sin(a) * r * f, z + Math.cos(a) * r * f)) bloq++;
+    if (bloq > 3) { alerta('Pouco espaço livre aqui: escolha um terreno aberto (praça, estacionamento, rua larga)', x, z, 'ruim'); somUI('erro'); return false; }
+  }
+  for (const u of G.unidades) if (u.vivo && u.estr && dist(u.x, u.z, x, z) < (u.d.raio + d.raio) * 0.6) { alerta('Muito perto de outra estrutura', x, z, 'ruim'); somUI('erro'); return false; }
+  let ang = G.cam ? G.cam.yaw : 0;
+  let saidaAgua = null;
+  if (d.agua) {
+    const b = acharBeiraMar(x, z);
+    if (!b || b.r > 80) { alerta('As docas precisam ficar na beira da água', x, z, 'ruim'); somUI('erro'); return false; }
+    x = b.x; z = b.z; ang = b.ang; saidaAgua = b.agua;
+  }
+  G.dinheiro -= d.custo;
+  const u = criarEstrutura(tipo, x, z, ang);
+  u.construindo = d.tempo; u.tempoObra = d.tempo;
+  u.hp = u.hpMax * 0.2;
+  u.m.grupo.scale.y = 0.15;
+  if (saidaAgua) u.saidaAgua = saidaAgua;
+  if (tipo === 'quartel' || tipo === 'patio') u.saida = lugarLivre({ x: x + Math.sin(ang) * 40, z: z + Math.cos(ang) * 40 });
+  alerta(`🏗️ Construindo ${d.nome}...`, x, z, 'info');
+  somUI('ok');
+  return true;
 }
 
 function lugarLivre(p, modo = 0) {
@@ -111,25 +161,39 @@ export function iniciarPartida(dif) {
   G.estr.zona = criarEstrutura('zona', zz.x, zz.z, ang);
   for (const t of L.torres) { const p = lugarLivre(t); if (dist(p.x, p.z, t.x, t.z) < 60) criarEstrutura('torre', p.x, p.z, ang); }
   for (const t of L.patriot) { const p = lugarLivre(t); criarEstrutura('patriot', p.x, p.z, ang + 0.5); }
-  // docas: na beira d'água mais próxima
-  const docas = acharBeiraMar(G.estr.qg.x, G.estr.qg.z);
-  G.estr.docas = criarEstrutura('docas', docas.x, docas.z, docas.ang);
-  G.estr.docas.saidaAgua = docas.agua;
+  // docas: na beira d'água mais próxima (só em cidades com costa)
+  const docas = COSTA ? acharBeiraMar(G.estr.qg.x, G.estr.qg.z) : null;
+  if (docas) {
+    G.estr.docas = criarEstrutura('docas', docas.x, docas.z, docas.ang);
+    G.estr.docas.saidaAgua = docas.agua;
+  }
   // saídas de produção
   for (const k of ['quartel', 'patio']) {
     const e = G.estr[k];
     const fr = { x: e.x + G.baseEixo.pp.x * 45, z: e.z + G.baseEixo.pp.z * 45 };
     e.saida = lugarLivre(fr);
   }
-  // porta-aviões e escolta
-  let pa = lugares.portaavioes;
-  if (!livre(2, pa.x, pa.z)) pa = pontoLivreProximo(2, pa.x, pa.z) || pa;
-  G.porta = criarUnidade('portaavioes', pa.x, pa.z, Math.PI);
-  G.porta.fila = [];
-  const de = pontoLivreProximo(2, pa.x - 250, pa.z + 300) || { x: pa.x, z: pa.z + 400 };
-  criarUnidade('destroier', de.x, de.z, Math.PI);
-  const lan = G.estr.docas.saidaAgua;
-  criarUnidade('lancha', lan.x, lan.z, docas.ang);
+  let pa;
+  if (COSTA) {
+    // porta-aviões e escolta
+    pa = lugares.portaavioes;
+    if (!livre(2, pa.x, pa.z)) pa = pontoLivreProximo(2, pa.x, pa.z) || pa;
+    G.porta = criarUnidade('portaavioes', pa.x, pa.z, Math.PI);
+    G.porta.fila = [];
+    G.porta.deck = 9.2;
+    const de = pontoLivreProximo(2, pa.x - 250, pa.z + 300) || { x: pa.x, z: pa.z + 400 };
+    criarUnidade('destroier', de.x, de.z, Math.PI);
+    const lan = G.estr.docas.saidaAgua;
+    criarUnidade('lancha', lan.x, lan.z, docas.ang);
+  } else {
+    // cidade sem mar: os jatos operam de uma pista de pouso ao lado da base
+    const b = lugares.base, ax = G.baseEixo.ax, pp = G.baseEixo.pp;
+    const L2 = (u, v) => ({ x: b.x + ax.x * u + pp.x * v, z: b.z + ax.z * u + pp.z * v });
+    const pp2 = L2(0, -330);
+    G.porta = criarEstrutura('pista', pp2.x, pp2.z, G.baseEixo.ang);
+    G.porta.deck = 0.3; G.porta.aerodromo = true;
+    pa = G.porta;
+  }
   // tropas iniciais
   const qs = G.estr.quartel.saida, ps = G.estr.patio.saida;
   const tropas = { fuzileiro: 8, metralhador: 2, sniper: 1, medico: 1 };
@@ -205,7 +269,7 @@ function espalharCivis(n) {
 // ---------------- produção ----------------
 export function enfileirar(tipo) {
   const d = TIPOS[tipo];
-  const fonte = d.de === 'porta' ? G.porta : G.estr[d.de];
+  const fonte = fonteDe(d.de);
   if (!fonte || !fonte.vivo) { alerta('Estrutura destruída: não dá para produzir', 0, 0, 'ruim'); somUI('erro'); return false; }
   if (G.dinheiro < d.custo) { alerta('Dinheiro insuficiente', null, null, 'ruim'); somUI('erro'); return false; }
   if (fonte.fila.length >= 8) { alerta('Fila cheia', null, null); somUI('erro'); return false; }
@@ -219,7 +283,7 @@ export function enfileirar(tipo) {
 }
 
 export function cancelar(fonteNome, i) {
-  const fonte = fonteNome === 'porta' ? G.porta : G.estr[fonteNome];
+  const fonte = fonteDe(fonteNome);
   if (!fonte || !fonte.fila[i]) return;
   const f = fonte.fila.splice(i, 1)[0];
   G.dinheiro += TIPOS[f.tipo].custo;
@@ -237,8 +301,8 @@ function produzir(tipo, fonte) {
       u.vagaConves = v;
     } else {
       const k = -60 - randi(0, 3) * 25;
-      u = criarUnidade(tipo, p.x + Math.sin(p.ang) * k, p.z + Math.cos(p.ang) * k, p.ang, { alt: 9.2 });
-      u.y = 9.2; u.pousado = true;
+      u = criarUnidade(tipo, p.x + Math.sin(p.ang) * k, p.z + Math.cos(p.ang) * k, p.ang, { alt: p.deck });
+      u.y = p.deck; u.pousado = true;
     }
   } else if (d.de === 'heliporto') {
     const pads = [[-30, 0], [0, 0], [30, 0], [-15, 32], [15, 32]];
@@ -262,7 +326,7 @@ function produzir(tipo, fonte) {
 }
 
 // ---------------- surto ----------------
-const FOCOS_NOMES = ['bayside', 'brickell', 'ocean', 'kaseya', 'havana', 'southpointe', 'overtown', 'convention', 'lummus', 'freedom', 'venetian', 'fisher', 'star'];
+const FOCOS_NOMES = META.focos || ['bayside'];
 
 function nomePerto(x, z) {
   let n = 'Miami', md = Infinity;
@@ -278,8 +342,7 @@ function novoFoco() {
   G.focos++;
   let cx, cz;
   const civis = G.agentes.filter((a) => a.vivo && !a.zumbi && !a.dentro && a.estado !== 'morto' && dist(a.x, a.z, G.estr.qg.x, G.estr.qg.z) > 700);
-  if (G.focos === 1) { cx = lugares.bayside.x; cz = lugares.bayside.z; }
-  else if (G.focos <= 4) { const l = lugares[FOCOS_NOMES[G.focos - 1]]; cx = l.x; cz = l.z; }
+  if (G.focos <= 4 && lugares[FOCOS_NOMES[G.focos - 1]]) { const l = lugares[FOCOS_NOMES[G.focos - 1]]; cx = l.x; cz = l.z; }
   else if (civis.length) { const a = escolher(civis); cx = a.x; cz = a.z; }
   else return;
   const n = Math.min(14, 3 + Math.floor(G.focos * 0.8));
@@ -303,20 +366,22 @@ function novoFoco() {
 }
 
 function hordaDeFora() {
-  // zumbis chegando do continente (bordas oeste e norte)
+  // zumbis chegando de fora da cidade por qualquer borda com terra
   const n = Math.min(30, 6 + G.dia * 4);
   let cx, cz, t = 0;
   do {
     t++;
-    if (Math.random() < 0.6) { cx = rand(5, 60); cz = rand(0, ALT); } else { cx = rand(0, LARG * 0.25); cz = rand(5, 60); }
-  } while (!andavel(cx, cz) && t < 200);
-  if (t >= 200) return;
+    const lado = (Math.random() * 4) | 0, k = Math.random();
+    cx = lado === 0 ? rand(5, 50) : lado === 1 ? LARG - rand(5, 50) : k * LARG;
+    cz = lado === 2 ? rand(5, 50) : lado === 3 ? ALT - rand(5, 50) : k * ALT;
+  } while ((!andavel(cx, cz) || dist(cx, cz, G.estr.qg.x, G.estr.qg.z) < 900) && t < 300);
+  if (t >= 300) return;
   for (let i = 0; i < n; i++) {
     const p = pontoLivreProximo(0, cx + rand(-30, 30), cz + rand(-30, 30));
-    if (p) { const z = criarZumbi(p.x, p.z, G.dia >= 3 && Math.random() < 0.06 ? 'bruto' : G.dia >= 2 && Math.random() < 0.2 ? 'corredor' : 'comum'); z.estado = 'ruido'; z.destino = { x: lugares.freedom.x, z: lugares.freedom.z }; }
+    if (p) { const z = criarZumbi(p.x, p.z, G.dia >= 3 && Math.random() < 0.06 ? 'bruto' : G.dia >= 2 && Math.random() < 0.2 ? 'corredor' : 'comum'); z.estado = 'ruido'; const f0 = lugares[FOCOS_NOMES[0]]; z.destino = { x: f0.x, z: f0.z }; }
   }
   enviarSwat(cx, cz, nomePerto(cx, cz));
-  alerta(`🧟 Horda de ${n} zumbis chegando do continente (${nomePerto(cx, cz)})`, cx, cz, 'surto');
+  alerta(`🧟 Horda de ${n} zumbis chegando de fora da cidade (${nomePerto(cx, cz)})`, cx, cz, 'surto');
   somUI('alerta');
 }
 
@@ -342,6 +407,7 @@ export function atualizarJogo(dt) {
   }
   if (G.swatPendente) for (let i = G.swatPendente.length - 1; i >= 0; i--) { const q = G.swatPendente[i]; if (G.tempo >= q.t) { G.swatPendente.splice(i, 1); enviarSwat(q.x, q.z, q.nome); } }
   atualizarPolicia(dt);
+  atualizarSobreviventes(dt);
   // porta-aviões produz
   const p = G.porta;
   if (p && p.vivo && p.fila.length) {
@@ -351,7 +417,7 @@ export function atualizarJogo(dt) {
   }
   if (G.resgateAcum) {
     if (!G._ultResg || G.tempo - G._ultResg > 2) {
-      alerta(`✅ ${G.resgateAcum} civis chegaram à zona segura (+$${G.resgateAcum * 40})`, G.estr.zona.x, G.estr.zona.z, 'bom');
+      alerta(`✅ ${G.resgateAcum} civis chegaram à zona segura (+$${G.resgateAcum * 40})`, null, null, 'bom');
       somUI('resgate');
       G.resgateAcum = 0; G._ultResg = G.tempo;
     }

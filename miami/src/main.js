@@ -1,7 +1,7 @@
 // Miami: Surto Zumbi — estratégia em tempo real 3D no mapa real de Miami
 import * as THREE from 'three';
 import { G } from './estado.js';
-import { LARG, ALT, lugares, predios, MAT_PREDIOS } from './mapa.js';
+import { LARG, ALT, lugares, predios, MAT_PREDIOS, META, COSTA } from './mapa.js';
 import { Hash } from './util.js';
 import { Bonecos, CAMO, CAMO2, PELE_SOLD, SWAT_ROUPA, SWAT_CALCA } from './bonecos.js';
 import { Efeitos } from './efeitos.js';
@@ -73,10 +73,12 @@ async function iniciar() {
 
   const camRTS = new CameraRTS(camera);
   G.cam = camRTS;
-  camRTS.irPara(lugares.bayside.x, lugares.bayside.z, 1400);
+  const f0 = lugares[(META.focos || [])[0]] || lugares.base;
+  camRTS.irPara(f0.x, f0.z, 1400);
   camRTS.yaw = 0.6;
   configurarEntrada(renderer.domElement, camRTS);
   const ui = new UI(camRTS);
+  ui.ajustarCidade();
 
   somLigado(G.cfg.som !== false);
 
@@ -185,8 +187,9 @@ async function iniciar() {
         if (u.classe !== 'inf' || !u.vivo || u.dentro) continue;
         if (!visivel(u.x, u.z)) continue;
         const pose = u.mirando > 0 && u.velAtual < 0.5 ? 2 : 0;
-        if (u.policia) bon.add(u.x, u.y, u.z, u.ang, u.fase, pose, SWAT_ROUPA, SWAT_CALCA, PELE_SOLD, 2);
-        else bon.add(u.x, u.y, u.z, u.ang, u.fase, pose, u.tipo === 'sniper' ? SNIPER : CAMO, CAMO2, PELE_SOLD, 1);
+        const vn = Math.min(1, u.velAtual / 3);
+        if (u.policia) bon.add(u.x, u.y, u.z, u.ang, u.fase, pose, SWAT_ROUPA, SWAT_CALCA, PELE_SOLD, 2, 1, null, vn);
+        else bon.add(u.x, u.y, u.z, u.ang, u.fase, pose, u.tipo === 'sniper' ? SNIPER : CAMO, CAMO2, PELE_SOLD, 1, 1, null, vn);
       }
       desenharAgentes(bon, visivel);
     }
@@ -229,6 +232,15 @@ async function iniciar() {
   chkSom.onchange = () => { G.cfg.som = chkSom.checked; somLigado(chkSom.checked); G.salvarCfg(); };
   selQ.onchange = () => { G.cfg.qualidade = +selQ.value; G.salvarCfg(); $('#m-qual-aviso').textContent = 'A qualidade muda ao abrir o jogo de novo.'; };
   $('#m-ajuda').onclick = () => ui.ajuda();
+  // escolha da cidade: recarrega com o mapa novo
+  menu.querySelectorAll('[data-cidade]').forEach((b) => {
+    b.classList.toggle('ativo', b.dataset.cidade === (META.cidade || 'miami'));
+    b.addEventListener('click', () => {
+      if (b.dataset.cidade === (META.cidade || 'miami')) return;
+      try { localStorage.setItem('miami-cidade', b.dataset.cidade); } catch (e) { /* sem armazenamento */ }
+      location.href = location.pathname + '?cidade=' + b.dataset.cidade;
+    });
+  });
   $('#m-jogar').onclick = () => {
     iniciarSom();
     menu.classList.add('oculto');
@@ -237,7 +249,7 @@ async function iniciar() {
     camRTS.irPara(G.estr.qg.x, G.estr.qg.z, 420);
     camRTS.yaw = G.baseEixo.ang + Math.PI;
     ui.atualizarTopo();
-    ui.alerta('📻 Base Militar de Miami operante. Relatos de ataques estranhos no centro...', G.estr.qg.x, G.estr.qg.z, 'info');
+    ui.alerta(`📻 ${lugares.base.nome} operante. Relatos de ataques estranhos em ${META.nome}...`, G.estr.qg.x, G.estr.qg.z, 'info');
     ui.alerta('Dica: toque em ❓ no menu ⚙️ para ver os controles', null, null, 'info');
   };
   if (/[?&]auto/.test(location.search)) $('#m-jogar').click();

@@ -1,5 +1,5 @@
 // Busca de caminhos (A*) numa grade mais grossa que a do terreno (2x2 células)
-import { GW, GH, CEL, grade, predioId, T } from './mapa.js';
+import { GW, GH, CEL, grade, predioId, T, COSTA } from './mapa.js';
 
 const F = 2;
 export const NW = Math.ceil(GW / F), NH = Math.ceil(GH / F);
@@ -45,7 +45,7 @@ export function prepararNavegacao() {
 
 export function livre(modo, x, z) {
   const cx = Math.floor(x / NCEL), cz = Math.floor(z / NCEL);
-  if (cx < 0 || cz < 0 || cx >= NW || cz >= NH) return modo === 1 || modo === 2;
+  if (cx < 0 || cz < 0 || cx >= NW || cz >= NH) return COSTA && (modo === 1 || modo === 2);
   return mapas[modo][cz * NW + cx] === 1;
 }
 

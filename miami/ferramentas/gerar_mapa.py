@@ -1,11 +1,16 @@
-"""Transforma classes.npy (saída de classificar.py) nos dados do jogo: src/dados_mapa.js
+"""Transforma classes.npy (saída de classificar.py) nos dados do jogo: www/mapas/<cidade>.js
+Uso: python3 gerar_mapa.py <cidade> classes.npy saida.js   (cidades em cidades.py)
 
 - grade de terreno (1 célula = 4 px de z17 ≈ 4,3 m), codificada em RLE + base64
 - prédios: polígonos simplificados + altura estimada por bairro, Uint16 + base64
 """
-import sys, math, base64, json, hashlib, numpy as np, cv2
+import sys, os, math, base64, json, hashlib, numpy as np, cv2
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from cidades import CIDADES
 
-S, W, N, E = 25.752, -80.210, 25.800, -80.118
+CID = sys.argv[1]
+CFG = CIDADES[CID]
+S, W, N, E = CFG['bbox']
 Z = 17
 CEL = 4
 
@@ -20,9 +25,9 @@ MPP = 156543.03392 * math.cos(math.radians((S + N) / 2)) / 2 ** Z
 
 def px(lat, lon): return tx(lon) - GX0, ty(lat) - GY0
 
-cls = np.load(sys.argv[1])
+cls = np.load(sys.argv[2])
 H, Wd = cls.shape
-out = sys.argv[2]
+out = sys.argv[3]
 
 # ---------------- ruas na largura real ----------------
 # no mapa as ruas são linhas finas: tira ruído (letras dos rótulos) e alarga só sobre chão livre
@@ -72,29 +77,22 @@ m = cv2.morphologyEx(m, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8))
 cont, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
 def zona_altura(x, y, area_m2, h):
-    """altura estimada (m) conforme o bairro real de Miami e o tamanho da base"""
+    """altura estimada (m) conforme o bairro real e o tamanho da base do prédio"""
     rnd = int(hashlib.md5(f'{x:.0f},{y:.0f}'.encode()).hexdigest()[:8], 16) / 0xffffffff
-    def em(lat0, lat1, lon0, lon1):
-        x0, y1 = px(lat0, lon0); x1, y0 = px(lat1, lon1)
-        return x0 <= x <= x1 and y0 <= y <= y1
     big = min(1.0, area_m2 / 2500)
-    if em(25.7695, 25.7925, -80.1975, -80.1855):        # Downtown
-        return 25 + big * (80 + rnd * 140) + rnd * 30
-    if em(25.7525, 25.7695, -80.2010, -80.1860):        # Brickell
-        return 20 + big * (70 + rnd * 140) + rnd * 30
-    if em(25.7925, 25.8000, -80.1925, -80.1855):        # Edgewater (beira da baía)
-        return 18 + big * (60 + rnd * 110)
-    if em(25.7620, 25.7720, -80.1440, -80.1300):        # South Pointe (torres)
-        return 15 + big * (60 + rnd * 70)
-    if em(25.7720, 25.8000, -80.1335, -80.1265):        # Collins / beira-mar
-        return 10 + big * (25 + rnd * 60)
-    if em(25.7720, 25.8000, -80.1460, -80.1380):        # West Ave (torres na baía)
-        return 10 + big * (30 + rnd * 60)
-    if em(25.7650, 25.7800, -80.1850, -80.1550):        # Porto (Dodge Island): galpões
-        return 9 + rnd * 8 + big * 6
-    if em(25.7500, 25.7650, -80.1550, -80.1300):        # Fisher Island
-        return 6 + big * (20 + rnd * 25)
-    return 4 + rnd * 4 + big * (6 + rnd * 12)            # bairros residenciais
+    rnd2 = int(hashlib.md5(f'{y:.0f}:{x:.0f}'.encode()).hexdigest()[:8], 16) / 0xffffffff
+    for z in CFG['zonas']:
+        la0, la1, lo0, lo1, base, mult, var = z[:7]
+        chance = z[7] if len(z) > 7 else CFG.get('chance_alto', 1.0)
+        x0, y1 = px(la0, lo0); x1, y0 = px(la1, lo1)
+        if x0 <= x <= x1 and y0 <= y <= y1:
+            if rnd2 > chance:
+                return base * 0.6 + rnd * base   # prédio comum do bairro
+            if area_m2 > 6000:
+                big = 0.5 + rnd2 * 0.5           # quarteirão inteiro: torre um pouco mais baixa
+            return base + big * (mult + rnd * var) + rnd * min(30, base)
+    b0, b1, m0, m1 = CFG.get('altura_padrao', (4, 4, 6, 12))
+    return b0 + rnd * b1 + big * (m0 + rnd * m1)
 
 blds = []
 for ct in cont:
@@ -115,35 +113,18 @@ for hgt, ap in blds:
         arr += [int(x) * 2, int(y) * 2]
 barr = np.array(arr, np.uint16).tobytes()
 
-LUGARES = {
-    'base': ('Base Militar - PortMiami', 25.7745, -80.1700),
-    'heliporto': ('Heliporto da Base', 25.7728, -80.1640),
-    'docas': ('Docas da Marinha', 25.7705, -80.1570),
-    'portaavioes': ('Porta-aviões USS Liberty', 25.7660, -80.1218),
-    'bayside': ('Bayside Marketplace', 25.7785, -80.1867),
-    'kaseya': ('Kaseya Center', 25.7814, -80.1870),
-    'freedom': ('Freedom Tower', 25.7800, -80.1897),
-    'brickell': ('Brickell City Centre', 25.7670, -80.1932),
-    'bayfront': ('Bayfront Park', 25.7752, -80.1860),
-    'ocean': ('Ocean Drive', 25.7800, -80.1310),
-    'lummus': ('Lummus Park', 25.7760, -80.1305),
-    'southpointe': ('South Pointe Park', 25.7680, -80.1340),
-    'watson': ('Watson Island', 25.7850, -80.1780),
-    'star': ('Star Island', 25.7770, -80.1500),
-    'fisher': ('Fisher Island', 25.7600, -80.1430),
-    'havana': ('Little Havana', 25.7730, -80.2060),
-    'overtown': ('Overtown', 25.7880, -80.2000),
-    'convention': ('Centro de Convenções', 25.7950, -80.1340),
-    'venetian': ('Venetian Islands', 25.7900, -80.1600),
-}
+LUGARES = CFG['lugares']
 lug = {k: [n, round(px(la, lo)[0], 1), round(px(la, lo)[1], 1)] for k, (n, la, lo) in LUGARES.items()}
 
-meta = dict(gx0=GX0, gy0=GY0, z=Z, mpp=MPP, cel=CEL, gw=gw, gh=gh, wpx=Wd, hpx=H, lugares=lug,
+dele = [[n, round(px(la, lo)[0], 1), round(px(la, lo)[1], 1)] for (n, la, lo) in CFG['delegacias']]
+meta = dict(cidade=CID, nome=CFG['nome'], pais=CFG['pais'], costa=CFG['costa'], baseAng=CFG['base_ang'],
+            focos=CFG['focos'], delegacias=dele,
+            gx0=GX0, gy0=GY0, z=Z, mpp=MPP, cel=CEL, gw=gw, gh=gh, wpx=Wd, hpx=H, lugares=lug,
             bbox=[S, W, N, E])
-js = ('// gerado por ferramentas/gerar_mapa.py a partir do mapa Esri World_Topo_Map (z17) de Miami\n'
-      'export const META = ' + json.dumps(meta, ensure_ascii=False) + ';\n'
-      'export const GRADE_RLE = "' + base64.b64encode(grle).decode() + '";\n'
-      'export const PREDIOS = "' + base64.b64encode(barr).decode() + '";\n')
+js = ('// gerado por ferramentas/gerar_mapa.py a partir do mapa Esri World_Topo_Map (z17): ' + CFG['nome'] + '\n'
+      'window.MAPA_DADOS = {META: ' + json.dumps(meta, ensure_ascii=False) + ',\n'
+      'GRADE_RLE: "' + base64.b64encode(grle).decode() + '",\n'
+      'PREDIOS: "' + base64.b64encode(barr).decode() + '"};\n')
 open(out, 'w', encoding='utf-8').write(js)
 print('grade', gw, gh, 'rle', len(grle), 'prédios', len(blds), 'bytes', len(barr), 'js', len(js), 'MPP', MPP)
 print('alturas>60m', sum(1 for h, _ in blds if h > 60), 'max', max(h for h, _ in blds))

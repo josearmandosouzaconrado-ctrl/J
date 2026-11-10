@@ -297,6 +297,11 @@ function predioNoToque(sx, sy, cam) {
 
 function toque(sx, sy, camRTS, duplo, ultimo) {
   const cam = camRTS.cam;
+  if (G.construindo) {
+    const ch = camRTS.chao(sx, sy);
+    if (ch && G.construir(G.construindo, ch.x, ch.z)) { G.construindo = null; G.ui.atualizarConstrucao(); }
+    return;
+  }
   const sel = G.selecao.filter((u) => u.vivo && !u.dentro);
   G.selecao = sel;
   const u = unidadeNoToque(sx, sy, cam);
@@ -341,7 +346,7 @@ function toque(sx, sy, camRTS, duplo, ultimo) {
     G.ui.atualizarSelecao();
     return;
   }
-  if (u && u.estr && !sel.length) { G.ui.abrirProducao(u.tipoEstr); return; }
+  if (u && u.estr && !sel.length) { G.fonteSel = u; if (['quartel', 'patio', 'heliporto', 'docas'].includes(u.tipoEstr)) G.ui.abrirProducao(u.tipoEstr); else G.ui.alerta(`${u.d.nome}${u.construindo > 0 ? ' (em construção)' : ''}`, u.x, u.z, 'info'); return; }
   if (!sel.length) {
     // sem seleção: tocar num prédio mostra informações
     const p = predioNoToque(sx, sy, cam);

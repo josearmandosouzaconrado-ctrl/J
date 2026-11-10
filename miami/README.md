@@ -1,5 +1,7 @@
 # 🧟 Miami: Surto Zumbi
 
+**Cidades:** Miami 🌴, São Francisco 🌉 e Cidade do México 🇲🇽 — cada uma em escala real, escolhida no menu inicial.
+
 Jogo de **estratégia em tempo real 3D** para celular (Android) na **Miami de verdade, em tamanho real (1:1)**.
 Um surto zumbi começa aos poucos no centro da cidade e se espalha pelas mordidas. Você comanda o Exército,
 a Marinha e a Força Aérea dos EUA a partir de uma base militar no Porto de Miami e de um porta-aviões no mar
@@ -8,7 +10,7 @@ para conter a infecção e **resgatar os civis**.
 ## Baixar
 
 - **APK (Android 7+):** [`MiamiSurtoZumbi.apk`](../MiamiSurtoZumbi.apk) na raiz do repositório.
-  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.3.0/MiamiSurtoZumbi.apk
+  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.4.0/MiamiSurtoZumbi.apk
 - No navegador: abra `miami/www/index.html` por um servidor web (ex.: `python3 -m http.server` dentro de `miami/www`).
 
 O Android pede para permitir "instalar apps desconhecidos", porque o APK não vem da Play Store.
@@ -57,6 +59,11 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
   passadas soltando bombas ao longo da faixa e voltam para rearmar.
 - **Soldados nas janelas:** parte da tropa fica nas janelas dos prédios (quebra o vidro e atira para fora) e
   parte no telhado.
+- **🔨 Construir bases** em qualquer lugar: posto avançado (FOB), quartel, pátio, heliporto, docas, zona segura,
+  torre e barreiras. Cada base produz unidades ali mesmo.
+- **🏕️ Sobreviventes:** civis que ninguém resgata se juntam, acham armas e montam acampamentos com barricadas;
+  defendem-se sozinhos e aceitam o resgate quando suas tropas chegam. Com a cidade tomada, a polícia e a SWAT
+  desistem e viram sobreviventes também.
 - **🚓 Polícia SWAT:** quando o vírus aparece, equipes da SWAT saem das delegacias de Miami e de Miami Beach
   num blindado BearCat. Agem sozinhas: vão aos focos, combatem e levam civis para a zona segura.
 - **🎮 Controlar:** assuma qualquer unidade em 3ª pessoa com o joystick.
@@ -99,7 +106,7 @@ sem ela o Android não deixa atualizar o app por cima da versão instalada (é p
 cd miami/ferramentas
 python3 baixar_tiles.py World_Topo_Map 17 25.752 -80.210 25.800 -80.118 topo17.png
 python3 classificar.py topo17.png classes          # água, chão, ruas, parques, areia, prédios
-python3 gerar_mapa.py classes.npy ../src/dados_mapa.js
+python3 gerar_mapa.py miami classes.npy ../www/mapas/miami.js   # sf e mexico: veja cidades.py
 python3 gerar_icone.py ..                          # ícone do app
 ```
 

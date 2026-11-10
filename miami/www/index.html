@@ -85,7 +85,12 @@
 <div id="carregando"><div class="titulo">MIAMI: <span>SURTO ZUMBI</span></div><div id="carregando-txt">Carregando...</div></div>
 <div id="menu" class="oculto">
   <div class="titulo">MIAMI: <span>SURTO ZUMBI</span></div>
-  <div class="subt">Estratégia em tempo real 3D na Miami de verdade: ruas, prédios e litoral posicionados a partir de mapas de satélite. Comande o Exército, a Marinha e a Força Aérea dos EUA, segure o surto zumbi e resgate os civis.</div>
+  <div class="subt" id="m-sub">Estratégia em tempo real 3D na Miami de verdade: ruas, prédios e litoral posicionados a partir de mapas de satélite. Comande o Exército, a Marinha e a Força Aérea dos EUA, segure o surto zumbi e resgate os civis.</div>
+  <div class="linha" id="m-cidades">
+    <button class="bt" data-cidade="miami">🌴 Miami, EUA</button>
+    <button class="bt" data-cidade="sf">🌉 São Francisco, EUA</button>
+    <button class="bt" data-cidade="mexico">🇲🇽 Cidade do México</button>
+  </div>
   <div class="linha">
     <button class="bt" data-dif="facil">😌 Fácil</button>
     <button class="bt ativo" data-dif="normal">⚔️ Normal</button>
@@ -102,6 +107,16 @@
   </div>
   <div class="creditos-menu">Mapa 1:1 de Downtown, Brickell, PortMiami, Watson Island, Venetian Islands, South Beach e Fisher Island (≈ 9 × 5 km), com 4.800 prédios reais. Posição de prédios, ruas e litoral a partir de dados de mapa © Esri e comunidade de usuários GIS.</div>
 </div>
+<script>
+  // carrega o mapa da cidade escolhida antes do jogo
+  (function () {
+    var c = (location.search.match(/[?&]cidade=(\w+)/) || [])[1];
+    try { c = c || localStorage.getItem('miami-cidade'); } catch (e) {}
+    if (['miami', 'sf', 'mexico'].indexOf(c) < 0) c = 'miami';
+    window.CIDADE_ESCOLHIDA = c;
+    document.write('<script src="mapas/' + c + '.js"><\/script>');
+  })();
+</script>
 <script src="jogo.js"></script>
 </body>
 </html>

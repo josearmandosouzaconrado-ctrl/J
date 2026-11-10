@@ -42,8 +42,8 @@ if MIAMI:
     PACKAGE = 'com.miami.surtozumbi'
     APP_NAME = 'Miami: Surto Zumbi'
     UA_TAG = ' MiamiZumbiAPK'
-    VERSION_CODE = 4
-    VERSION_NAME = '1.3.0'
+    VERSION_CODE = 5
+    VERSION_NAME = '1.4.0'
     SIGN_DIR = 'signing_miami'
     CERT_NOME = 'Miami Surto Zumbi'
 ACTIVITY = PACKAGE + '.MainActivity'
@@ -519,8 +519,10 @@ def main_miami():
         add(z, 'classes.dex', build_dex())
         add(z, 'resources.arsc', build_arsc('res/drawable/icon.png'), store=True)
         add(z, 'res/drawable/icon.png', open(icon, 'rb').read(), store=True)
-        for nome in sorted(os.listdir(www)):
-            add(z, 'assets/' + nome, open(os.path.join(www, nome), 'rb').read())
+        for d, _, fs in sorted(os.walk(www)):
+            for nome in sorted(fs):
+                full = os.path.join(d, nome)
+                add(z, 'assets/' + os.path.relpath(full, www).replace(os.sep, '/'), open(full, 'rb').read())
     apk = sign_v2(buf.getvalue())
     open(OUT, 'wb').write(apk)
     print(f'APK gerado: {OUT} ({len(apk) // 1024} KB)')

@@ -3,7 +3,7 @@ import { G, alerta } from './estado.js';
 import { andavel, predioEm, predios } from './mapa.js';
 import { rand, escolher, dist, dist2, girarPara, angDif } from './util.js';
 import { CAMISAS, CALCAS, PELES, CABELOS, PELE_ZUMBI, CAMO, CAMO2, hex } from './bonecos.js';
-import { somZumbi } from './som.js';
+import { somZumbi, somTiro } from './som.js';
 
 const ZB = {
   comum: { hp: 70, vel: 4.0, vagar: 0.9, dano: 12, cd: 1.0, perc: 32, esc: 1 },
@@ -85,7 +85,7 @@ export function danoAgente(a, dano, fonte) {
   } else {
     a.estado = 'morto'; a.mortoT = 15; a.virando = 0;
     G.civisMortos++;
-    if (fonte && !fonte.zumbi && G.tempo - (G._avisoFogo || -99) > 20) { G._avisoFogo = G.tempo; alerta('⚠️ Civis atingidos por fogo amigo!', a.x, a.z, 'ruim'); }
+    if (fonte && !fonte.zumbi && !fonte.agente && G.tempo - (G._avisoFogo || -99) > 20) { G._avisoFogo = G.tempo; alerta('⚠️ Civis atingidos por fogo amigo!', a.x, a.z, 'ruim'); }
   }
   G.efeitos.sangue(a.x, 1, a.z, 8);
 }
@@ -143,6 +143,7 @@ function decidirZumbi(a) {
 }
 
 function decidirCivil(a) {
+  if (a.campo) { decidirAcampado(a); return; }
   // perigo
   let perigo = null, pd = 20 * 20;
   G.hashA.busca(a.x, a.z, 20, (o, d2) => { if (o.zumbi && o.vivo && o.estado !== 'morto' && d2 < pd) { pd = d2; perigo = o; } });
@@ -174,6 +175,40 @@ function decidirCivil(a) {
     // não se afasta muito de casa
     if (dist(a.x, a.z, a.casa.x, a.casa.z) > 60) { const d = dist(a.x, a.z, a.casa.x, a.casa.z); a.dx = (a.casa.x - a.x) / d; a.dz = (a.casa.z - a.z) / d; }
   }
+}
+
+// ---------------- sobreviventes ----------------
+function decidirAcampado(a) {
+  const c = a.campo;
+  if (!c.ativo) { a.campo = null; a.estado = 'vagar'; return; }
+  a.estado = 'acampar';
+  // desarmados fogem para dentro do acampamento se um zumbi chega perto
+  if (!a.armado) {
+    let perigo = false;
+    G.hashA.busca(a.x, a.z, 10, (o) => { if (o.zumbi && o.vivo && o.estado !== 'morto') perigo = true; });
+    if (perigo) a.posto = { x: c.x + rand(-3, 3), z: c.z + rand(-3, 3) };
+  }
+}
+
+function tiroSobrevivente(a, dt) {
+  a.cdTiro = (a.cdTiro || 0) - dt;
+  if (a.mirando > 0) a.mirando -= dt;
+  if (a.cdTiro > 0) return;
+  a.cdTiro = a.policial ? 0.45 : 0.75 + Math.random() * 0.4;
+  const alc = a.policial ? 55 : 40;
+  let alvo = null, md = alc * alc;
+  G.hashA.busca(a.x, a.z, alc, (o, d2) => { if (o.zumbi && o.vivo && o.estado !== 'morto' && o.virando <= 0 && d2 < md) { md = d2; alvo = o; } });
+  if (!alvo) return;
+  a.ang = Math.atan2(alvo.x - a.x, alvo.z - a.z);
+  a.mirando = 0.8;
+  const ef = G.efeitos;
+  const ox = a.x + Math.sin(a.ang) * 0.7, oz = a.z + Math.cos(a.ang) * 0.7;
+  ef.clarao(ox, 1.4, oz, 0.8);
+  const acerto = Math.random() < (a.policial ? 0.55 : 0.38);
+  ef.tracante(ox, 1.4, oz, alvo.x + (acerto ? 0 : rand(-3, 3)), 1.1, alvo.z + (acerto ? 0 : rand(-3, 3)), [1, 0.85, 0.45]);
+  if (acerto) danoAgente(alvo, a.policial ? 18 : 22, a);
+  somTiro(a.policial ? 'fuzil' : 'pistola', G.volEm(a.x, a.z) * 0.8);
+  G.ruidos.push({ x: a.x, z: a.z, r: 90, t: G.tempo });
 }
 
 // ---------------- atualização ----------------
@@ -287,6 +322,17 @@ export function atualizarAgentes(dt) {
           }
           if (dd > 160) { a.estado = 'vagar'; a.lider = null; }
         }
+      } else if (a.estado === 'acampar' && a.campo) {
+        const c = a.campo, dd = dist(a.x, a.z, a.posto.x, a.posto.z);
+        if (dd > 1.5) {
+          const ang = Math.atan2(a.posto.x - a.x, a.posto.z - a.z);
+          a.ang = girarPara(a.ang, ang, 8 * dt);
+          vel = dd > 30 ? 4 : 1.6;
+          if (!moverAgente(a, Math.sin(a.ang) * vel * dt, Math.cos(a.ang) * vel * dt)) {
+            const lado = (a.id & 1) ? 1.3 : -1.3;
+            moverAgente(a, Math.sin(a.ang + lado) * vel * dt, Math.cos(a.ang + lado) * vel * dt);
+          }
+        } else if (!a.mirando || a.mirando <= 0) a.ang = girarPara(a.ang, Math.atan2(a.x - c.x, a.z - c.z), 2 * dt);
       } else if (a.dx || a.dz) {
         vel = 1.3;
         a.ang = girarPara(a.ang, Math.atan2(a.dx, a.dz), 4 * dt);
@@ -294,6 +340,7 @@ export function atualizarAgentes(dt) {
       }
       a.vel = vel;
       a.fase += dt * vel * 2.4;
+      if (a.armado) tiroSobrevivente(a, dt);
       if (vel === 0 && a.acena > 0) { a.acena -= dt; a.fase += dt * 6; }
       // chegou na zona segura
       if ((a.id + G.quadro) % 20 === 0 && G.naZonaSegura(a.x, a.z, 0)) {
@@ -323,7 +370,9 @@ export function desenharAgentes(bon, visivel) {
     if (!a.vivo || a.dentro) continue;
     if (!visivel(a.x, a.z)) continue;
     const pose = a.estado === 'morto' ? 3 : a.zumbi ? 1 : (a.vel === 0 && a.acena > 0 ? 4 : 0);
-    bon.add(a.x, a.y, a.z, a.ang, a.fase, pose, a.camisa, a.calca, a.pele, a.soldado ? 3 : 0, a.esc, a.cabelo);
+    const est = a.soldado ? 3 : a.armado ? (a.policial ? 5 : 4) : 0;
+    const pz = a.armado && pose === 0 && a.mirando > 0 ? 2 : pose;
+    bon.add(a.x, a.y, a.z, a.ang, a.fase, pz, a.camisa, a.calca, a.pele, est, a.esc, a.policial ? null : a.cabelo, Math.min(1, a.vel / 2.5));
   }
 }
 

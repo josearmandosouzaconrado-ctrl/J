@@ -50,7 +50,7 @@ export function removerUnidade(u) {
 // ---------------- utilidades ----------------
 export function chaoEm(x, z) {
   const p = G.porta;
-  if (p && p.vivo) {
+  if (p && p.vivo && p.tipo === 'portaavioes') {
     const dx = x - p.x, dz = z - p.z, c = Math.cos(-p.ang), s = Math.sin(-p.ang);
     const lx = dx * c + dz * s, lz = -dx * s + dz * c;
     if (Math.abs(lx) < 34 && Math.abs(lz) < 158) return 9.2;
@@ -61,12 +61,13 @@ export function chaoEm(x, z) {
 }
 
 export function naZonaSegura(x, z, y = 0) {
-  const zs = G.estr.zona;
-  if (zs && zs.vivo && dist2(x, z, zs.x, zs.z) < 170 * 170) return true;
-  const qg = G.estr.qg;
-  if (qg && qg.vivo && dist2(x, z, qg.x, qg.z) < 120 * 120) return true;
+  for (const e of G.abrigos || []) {
+    if (!e.vivo || e.construindo > 0) continue;
+    const r = e.tipoEstr === 'zona' ? 170 : e.tipoEstr === 'fob' ? 110 : 120;
+    if (dist2(x, z, e.x, e.z) < r * r) return true;
+  }
   const p = G.porta;
-  if (p && p.vivo && y > 7 && dist2(x, z, p.x, p.z) < 170 * 170) return true;
+  if (p && p.vivo && (y > 7 || p.aerodromo) && dist2(x, z, p.x, p.z) < 170 * 170) return true;
   return false;
 }
 
@@ -812,7 +813,7 @@ function atualizarJato(u, dt) {
     const k = u.vagaConves ?? 0;
     const lx = -24 + (k % 2) * 10, lz = 40 + k * 22;
     const c = Math.cos(p.ang), s = Math.sin(p.ang);
-    u.x = p.x + lx * c + lz * s; u.z = p.z - lx * s + lz * c; u.y = 9.4; u.ang = p.ang + Math.PI * 0.75;
+    u.x = p.x + lx * c + lz * s; u.z = p.z - lx * s + lz * c; u.y = (p.deck ?? 9.2) + 0.2; u.ang = p.ang + Math.PI * 0.75;
     u.velAtual = 0;
     if (u.estadoJato === 'rearmando') {
       u.rearme -= dt;
@@ -951,6 +952,15 @@ function atualizarTransporte(t, dt) {
 
 // estruturas da base (torres atiram sozinhas)
 function atualizarEstrutura(u, dt) {
+  if (u.construindo > 0) {
+    u.construindo -= dt;
+    const f = 1 - Math.max(0, u.construindo) / u.tempoObra;
+    u.m.grupo.scale.y = 0.15 + 0.85 * f;
+    u.hp = Math.max(u.hp, u.hpMax * (0.2 + 0.8 * f));
+    if (Math.random() < dt * 3) G.efeitos.poeira(u.x + rand(-u.d.raio, u.d.raio) * 0.5, u.z + rand(-u.d.raio, u.d.raio) * 0.5, 1);
+    if (u.construindo <= 0) { u.m.grupo.scale.y = 1; alerta(`🏗️ ${u.d.nome} construído!`, u.x, u.z, 'bom'); somUI('ok'); }
+    return;
+  }
   if (u.d.arma) {
     u.busca -= dt; u.cd -= dt;
     if (u.busca <= 0) { u.busca = 0.4; u.alvo = acharAlvo(u, u.d.alcance, 0); }

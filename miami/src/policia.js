@@ -2,16 +2,13 @@
 // Cada equipe tem um blindado BearCat e 6 policiais. Elas vão sozinhas até os focos, combatem os
 // zumbis e levam os civis que embarcam no blindado até a zona segura da base.
 import { G, alerta } from './estado.js';
-import { latlon, andavel } from './mapa.js';
+import { andavel, META } from './mapa.js';
 import { pontoLivreProximo } from './caminho.js';
 import { criarUnidade, embarcar, desembarcar, ordenar, ordenarMover, naZonaSegura, vagas } from './unidades.js';
 import { dist, rand } from './util.js';
 import { somUI } from './som.js';
 
-const DELEGACIAS = [
-  { nome: 'Polícia de Miami (Downtown)', ...latlon(25.7795, -80.1985) },
-  { nome: 'Polícia de Miami Beach', ...latlon(25.7808, -80.1325) },
-];
+const DELEGACIAS = (META.delegacias || []).map(([nome, x, z]) => ({ nome, x: x * META.mpp, z: z * META.mpp }));
 const MAX_EQUIPES = 4;
 const equipes = [];
 G.equipes = equipes;
@@ -19,6 +16,7 @@ G.equipes = equipes;
 function lugar(p) { return andavel(p.x, p.z) ? p : (pontoLivreProximo(0, p.x, p.z) || p); }
 
 export function enviarSwat(x, z, nome) {
+  if (G.policiaDesistiu) return;
   if (equipes.filter((e) => e.vivo).length >= MAX_EQUIPES) return;
   const del = DELEGACIAS.slice().sort((a, b) => dist(a.x, a.z, x, z) - dist(b.x, b.z, x, z))[0];
   const p = lugar(del);
@@ -70,7 +68,7 @@ export function atualizarPolicia(dt) {
       const civis = van.passageiros.filter((p) => p.agente).length;
       if (e.estado !== 'evacuar' && civis > 0 && (vagas(van) < 1 || (civis >= 4 && zumbisPerto(van.x, van.z, 60) === 0 && e.t > 20))) {
         e.estado = 'evacuar';
-        const zs = G.estr.zona;
+        const zs = (G.abrigos || []).filter((e) => e.vivo && !(e.construindo > 0)).sort((a, b) => dist(a.x, a.z, van.x, van.z) - dist(b.x, b.z, van.x, van.z))[0] || G.estr.zona;
         van.ordem = { tipo: 'mover', x: zs.x, z: zs.z };
         alerta(`🚓 Blindado da SWAT levando ${civis} civis para a zona segura`, van.x, van.z, 'bom');
       }

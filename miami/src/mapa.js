@@ -1,7 +1,8 @@
 // Mapa real de Miami: grade de terreno, prédios em 3D, água, satélite e palmeiras
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { META, GRADE_RLE, PREDIOS } from './dados_mapa.js';
+import { META, GRADE_RLE, PREDIOS, COSTA } from './dados_mapa.js';
+export { META, COSTA };
 
 export const MPP = META.mpp;                 // metros por pixel (z17)
 export const CEL = META.cel * MPP;           // tamanho da célula da grade (m)
@@ -30,14 +31,14 @@ export function cel(x, z) {
   if (cx < 0 || cz < 0 || cx >= GW || cz >= GH) return -1;
   return cz * GW + cx;
 }
-export function tipo(x, z) { const c = cel(x, z); return c < 0 ? T.AGUA : grade[c]; }
+export function tipo(x, z) { const c = cel(x, z); return c < 0 ? (COSTA ? T.AGUA : T.CHAO) : grade[c]; }
 export function andavel(x, z) {
   const c = cel(x, z);
   if (c < 0) return false;
   const t = grade[c];
   return t !== T.AGUA && predioId[c] < 0;
 }
-export function agua(x, z) { const c = cel(x, z); return c < 0 || grade[c] === T.AGUA || grade[c] === T.PONTE; }
+export function agua(x, z) { const c = cel(x, z); return c < 0 ? COSTA : grade[c] === T.AGUA || grade[c] === T.PONTE; }
 export function predioEm(x, z) { const c = cel(x, z); return c < 0 ? null : (predioId[c] >= 0 ? predios[predioId[c]] : null); }
 
 export const lugares = {};
@@ -581,7 +582,7 @@ export function construirChao(cena) {
   chao.name = 'chao';
   chao.receiveShadow = true;
   cena.add(chao);
-  const fundo = new THREE.Mesh(new THREE.PlaneGeometry(80000, 80000).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x0f3a3a }));
+  const fundo = new THREE.Mesh(new THREE.PlaneGeometry(80000, 80000).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: COSTA ? 0x0f3a3a : 0x8d8a80 }));
   fundo.position.set(LARG / 2, -4, ALT / 2);
   cena.add(fundo);
   return chao;
@@ -612,7 +613,7 @@ export function construirAgua(cena) {
       .replace('#include <map_fragment>', `
       {
         vec2 uv = vW.xz / tam;
-        float mm = 1.0;
+        float mm = ${COSTA ? '1.0' : '0.0'};
         if (uv.x > 0.0 && uv.y > 0.0 && uv.x < 1.0 && uv.y < 1.0) mm = texture2D(mascara, uv).r;
         if (mm < 0.45) discard;
         float prof = length(vViewPosition);

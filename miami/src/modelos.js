@@ -65,14 +65,38 @@ export class Mont {
     return this.planta(pts, esp, cor, y);
   }
   // perfil lateral (pontos [z,y]) extrudado na largura (centrado em x)
-  perfil(pts, larg, cor, x = 0) {
+  perfil(pts, larg, cor, x = 0, bisel = 0.07) {
     const s = new THREE.Shape();
     s.moveTo(pts[0][0], pts[0][1]);
     for (let i = 1; i < pts.length; i++) s.lineTo(pts[i][0], pts[i][1]);
     s.closePath();
-    const g = new THREE.ExtrudeGeometry(s, { depth: larg, bevelEnabled: false });
+    const b = Math.min(bisel, larg * 0.2);
+    const g = new THREE.ExtrudeGeometry(s, { depth: larg - 2 * b, bevelEnabled: b > 0, bevelSize: b, bevelThickness: b, bevelSegments: 2 });
+    g.translate(0, 0, b);
     // shape (z,y) no plano XY -> gira para que X do shape vire Z do mundo
     return this.add(g, cor, x + larg / 2, 0, 0, 0, -Math.PI / 2, 0, 1, 1, 1, 0.3);
+  }
+  // corpo de revolução ao longo de Z: prof = [[z, raio], ...] (de trás para frente); sx/sy achatam a seção
+  fuso(prof, cor, x = 0, y = 0, z = 0, sx = 1, sy = 1, seg = 14) {
+    const pts = prof.map(([zz, r]) => new THREE.Vector2(Math.max(0.001, r), zz));
+    const g = new THREE.LatheGeometry(pts, seg);
+    g.rotateX(Math.PI / 2);          // eixo Y -> Z
+    g.scale(sx, sy, 1);
+    g.computeVertexNormals();
+    return this.add(g, cor, x, y, z, 0, 0, 0, 1, 1, 1, 0.5);
+  }
+  // caixa com cantos arredondados (largura x altura x comprimento)
+  bloco(w, h, d, cor, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, raio = 0.12) {
+    const r = Math.min(raio, w / 2.2, h / 2.2);
+    const s = new THREE.Shape();
+    const W = w / 2 - r, H = h / 2 - r;
+    s.moveTo(-W, -h / 2); s.lineTo(W, -h / 2); s.quadraticCurveTo(w / 2, -h / 2, w / 2, -H);
+    s.lineTo(w / 2, H); s.quadraticCurveTo(w / 2, h / 2, W, h / 2); s.lineTo(-W, h / 2);
+    s.quadraticCurveTo(-w / 2, h / 2, -w / 2, H); s.lineTo(-w / 2, -H); s.quadraticCurveTo(-w / 2, -h / 2, -W, -h / 2);
+    const b = Math.min(r, d * 0.2);
+    const g = new THREE.ExtrudeGeometry(s, { depth: d - 2 * b, bevelEnabled: b > 0, bevelSize: b * 0.6, bevelThickness: b, bevelSegments: 2, curveSegments: 3 });
+    g.translate(0, 0, -d / 2 + b);
+    return this.add(g, cor, x, y, z, rx, ry, rz, 1, 1, 1, 0.3);
   }
   roda(r, larg, cor, x, y, z) {
     this.cil(r, r, larg, 14, cor, x, y, z, 0, 0, Math.PI / 2);
@@ -346,10 +370,12 @@ function rotor(pas, r, cor = 0x2a2a2a, larg = 0.55) {
   const m = new Mont();
   for (let i = 0; i < pas; i++) {
     const a = (i * Math.PI * 2) / pas;
-    m.box(larg, 0.06, r * 0.98, cor, Math.sin(a) * r / 2, 0, Math.cos(a) * r / 2, 0, a, 0);
+    m.box(larg, 0.05, r * 0.9, cor, Math.sin(a) * r * 0.5, 0, Math.cos(a) * r * 0.5, 0, a, 0);
+    m.box(larg * 0.9, 0.051, 0.35, 0xd8c040, Math.sin(a) * r * 0.95, 0, Math.cos(a) * r * 0.95, 0, a, 0);   // ponta pintada
   }
-  m.cil(0.3, 0.3, 0.4, 8, METAL, 0, -0.1, 0);
-  return m.build();
+  m.cil(0.32, 0.38, 0.35, 10, METAL, 0, -0.08, 0);
+  m.cil(0.1, 0.1, 0.5, 6, METAL, 0, 0.2, 0);
+  return m.build(false);
 }
 function rotorCauda(r) {
   const m = new Mont();
@@ -361,69 +387,109 @@ function rotorCauda(r) {
 const AERO = {
   blackhawk() {
     const c = new Mont();
-    const COR = 0x3b4231;
-    c.box(2.3, 1.9, 6.5, COR, 0, 1.6, 0.3);
-    c.simetrica([[1.15, 3.5], [1.0, 4.8], [0.5, 5.6]], 1.6, COR, 0.75);
-    c.box(1.8, 0.9, 1.3, VIDRO, 0, 2.15, 4.4, 0.35);
-    c.box(1.6, 0.7, 1.6, COR, 0, 2.85, 0.6);
-    c.cil(0.35, 0.6, 7.5, 8, COR, 0, 2.0, -6.2, Math.PI / 2);
-    c.box(0.15, 2.4, 1.4, COR, 0, 3.0, -9.8, -0.3);
-    c.box(4.4, 0.1, 0.9, COR, 0, 2.2, -9.2);
-    c.box(4.0, 0.12, 0.9, COR, 0, 2.3, 0.5);
-    c.box(0.15, 0.15, 1.6, METAL, 1.25, 1.9, 1.8);
-    c.box(0.15, 0.15, 1.6, METAL, -1.25, 1.9, 1.8);
-    for (const s of [-1, 1]) { c.cil(0.06, 0.06, 1.0, 5, METAL, s * 1.1, 0.4, 3.0); c.roda(0.3, 0.2, PNEU, s * 1.1, 0.3, 3.0); }
-    c.roda(0.2, 0.15, PNEU, 0, 0.6, -8.6);
-    return { corpo: c.build(), rotor: rotor(4, 8.2), rotorY: 3.35, rotorZ: 0.6, cauda: rotorCauda(1.7), caudaPos: [0.35, 3.0, -9.9], caudaEixo: 'x' };
+    const C = 0x5f684e, C2 = 0x4f5742;
+    // fuselagem arredondada: nariz, cabine larga e cone de cauda
+    c.fuso([[-9.6, 0.18], [-7.5, 0.32], [-5, 0.55], [-2.6, 0.95], [-1.6, 1.12], [2.6, 1.15], [4.2, 1.05], [5.4, 0.8], [6.3, 0.45], [6.7, 0.1]], C, 0, 1.75, 0, 1.0, 1.05);
+    c.bloco(2.2, 0.5, 4.6, C2, 0, 0.82, 0.8, 0, 0, 0, 0.2);                   // fundo achatado
+    // para-brisa e janelas da cabine (vidro escuro)
+    c.fuso([[3.9, 0.95], [5.0, 0.85], [5.9, 0.55], [6.25, 0.2]], VIDRO, 0, 2.05, 0, 1.06, 0.9);
+    for (const sx of [-1, 1]) {
+      c.box(0.05, 0.75, 1.5, VIDRO, sx * 1.14, 2.05, 1.8);                    // porta da cabine (vidro)
+      c.box(0.05, 0.6, 0.8, VIDRO, sx * 1.12, 2.0, 3.6);                      // janela do piloto
+      c.box(0.06, 1.25, 1.9, C2, sx * 1.15, 1.75, 0.1);                       // porta de correr
+      // metralhadora M134 na janela
+      c.cil(0.04, 0.04, 1.0, 6, METAL, sx * 1.35, 2.1, 1.6, Math.PI / 2);
+      c.box(0.18, 0.2, 0.4, METAL, sx * 1.3, 2.1, 1.0);
+      // trem de pouso principal com amortecedor
+      c.cil(0.05, 0.05, 1.1, 6, METAL, sx * 1.15, 0.75, 2.7, 0, 0, sx * 0.4);
+      c.roda(0.33, 0.22, PNEU, sx * 1.45, 0.33, 2.7);
+      // suportes de armas (ESSS) com tanques
+      c.box(1.6, 0.08, 0.5, C2, sx * 1.75, 2.55, 0.2, 0, 0, sx * -0.25);
+      c.fuso([[-1.6, 0.05], [-1.2, 0.3], [1.2, 0.3], [1.6, 0.05]], 0x464b39, sx * 2.45, 2.1, 0.2);
+    }
+    // carenagem dos motores e pilão do rotor
+    c.bloco(1.5, 0.75, 3.6, C, 0, 2.95, 0.6, 0, 0, 0, 0.3);
+    for (const sx of [-1, 1]) c.fuso([[-1.6, 0.2], [-1.2, 0.36], [1.2, 0.38], [1.6, 0.28]], C, sx * 0.62, 3.0, 0.2);
+    c.cil(0.22, 0.32, 0.6, 10, C2, 0, 3.45, 0.6);
+    // deriva com canto e estabilizador horizontal
+    c.perfil([[-10.6, 2.0], [-9.6, 4.4], [-8.9, 4.4], [-8.7, 2.4], [-7.9, 1.9]], 0.18, C, 0, 0.04);
+    c.box(4.4, 0.1, 1.0, C, 0, 2.15, -9.4);
+    c.roda(0.2, 0.15, PNEU, 0, 0.25, -8.6);
+    c.cil(0.04, 0.04, 1.4, 6, METAL, 0, 0.9, -8.6);
+    antena(c, 0, 2.7, -4, 1.2);
+    return { corpo: c.build(), rotor: rotor(4, 8.2), rotorY: 3.85, rotorZ: 0.6, cauda: rotorCauda(1.7), caudaPos: [0.3, 3.9, -9.6], caudaEixo: 'x' };
   },
   chinook() {
     const c = new Mont();
-    const COR = 0x4a5136;
-    c.box(3.6, 3.4, 13.5, COR, 0, 2.3, 0);
-    c.simetrica([[1.8, 6.7], [1.6, 7.8], [0.9, 8.3]], 2.6, COR, 1.0);
-    c.box(2.6, 1.0, 1.2, VIDRO, 0, 3.1, 7.6, 0.4);
-    c.box(1.4, 2.0, 2.8, COR, 0, 4.7, -6.0);
-    c.box(1.2, 0.8, 1.8, COR, 0, 4.3, 6.0);
-    c.box(4.4, 1.0, 5.0, COR, 0, 1.3, -1.0);
-    for (const s of [-1, 1]) { c.roda(0.45, 0.35, PNEU, s * 1.5, 0.45, 4.6); c.roda(0.45, 0.35, PNEU, s * 1.5, 0.45, -4.4); }
-    return { corpo: c.build(), rotor: rotor(3, 9.1), rotorY: 5.8, rotorZ: -6.5, rotor2: rotor(3, 9.1), rotor2Y: 5.0, rotor2Z: 6.3 };
+    const C = 0x646b50, C2 = 0x535a43;
+    // fuselagem longa de seção quase retangular
+    c.fuso([[-7.6, 1.2], [-7.0, 1.75], [-5, 1.85], [5, 1.85], [6.6, 1.7], [7.6, 1.25], [8.2, 0.6]], C, 0, 2.3, 0, 1.0, 1.12, 8);
+    c.fuso([[6.4, 1.3], [7.4, 1.05], [8.0, 0.55]], VIDRO, 0, 2.75, 0, 1.0, 0.75, 8);
+    for (const sx of [-1, 1]) {
+      for (let i = 0; i < 6; i++) c.box(0.05, 0.38, 0.45, VIDRO, sx * 1.86, 2.75, -4 + i * 1.6);
+      c.bloco(0.9, 0.85, 7.5, C2, sx * 1.95, 1.0, -0.4, 0, 0, 0, 0.3);         // sponsons laterais
+      c.roda(0.45, 0.35, PNEU, sx * 1.55, 0.45, 4.6);
+      c.roda(0.45, 0.35, PNEU, sx * 1.55, 0.45, -4.4);
+      c.roda(0.45, 0.35, PNEU, sx * 1.55, 0.45, -5.4);
+      // motores no pilão traseiro
+      c.fuso([[-8.2, 0.35], [-7.6, 0.5], [-5.6, 0.55], [-5.2, 0.42]], 0x4e543d, sx * 1.4, 4.35, 0);
+    }
+    // pilões: traseiro alto e dianteiro
+    c.perfil([[-8.2, 3.6], [-7.2, 6.0], [-5.0, 6.0], [-4.0, 3.6]], 1.6, C, 0, 0.12);
+    c.bloco(1.3, 0.8, 2.2, C, 0, 4.35, 6.2, 0, 0, 0, 0.3);
+    c.box(1.6, 0.06, 4, 0x2a2e22, 0, 0.48, -6.6, 0.25);                     // rampa traseira
+    return { corpo: c.build(), rotor: rotor(3, 9.1), rotorY: 6.3, rotorZ: -6.5, rotor2: rotor(3, 9.1), rotor2Y: 5.0, rotor2Z: 6.3 };
   },
   apache() {
     const c = new Mont();
-    const COR = 0x3e442f;
-    c.simetrica([[0.5, -2.5], [0.8, -1.0], [0.85, 2.0], [0.55, 4.6], [0.2, 5.3]], 1.6, COR, 0.9);
-    c.box(0.9, 0.9, 3.2, VIDRO, 0, 2.6, 2.8, 0.15);
-    c.box(1.0, 0.8, 2.2, COR, 0, 2.9, 0.0);
-    for (const s of [-1, 1]) {
-      c.box(1.3, 0.8, 2.4, COR, s * 0.95, 2.6, -0.2);
-      c.box(2.3, 0.12, 1.0, COR, s * 1.6, 1.85, 0.6);
-      for (let i = 0; i < 2; i++) c.cil(0.1, 0.1, 1.6, 6, 0x6b6b45, s * (1.8 + i * 0.55), 1.55, 0.7, Math.PI / 2);
-      c.box(0.35, 0.35, 1.8, 0x55583f, s * 2.7, 1.55, 0.6);
-      c.cil(0.05, 0.05, 0.9, 5, METAL, s * 0.8, 0.45, 2.2);
-      c.roda(0.3, 0.2, PNEU, s * 0.8, 0.3, 2.2);
+    const C = 0x5d654b, C2 = 0x4d5440;
+    // fuselagem estreita com cabine em tandem
+    c.fuso([[-9.4, 0.15], [-7, 0.28], [-4, 0.45], [-1.8, 0.75], [1.2, 0.85], [3.4, 0.7], [4.8, 0.45], [5.4, 0.15]], C, 0, 1.75, 0, 0.75, 1.2);
+    c.fuso([[0.6, 0.4], [1.6, 0.55], [3.0, 0.52], [4.4, 0.35], [4.9, 0.1]], VIDRO, 0, 2.45, 0, 0.95, 0.85);
+    c.box(0.06, 0.4, 0.06, C2, 0, 2.75, 2.2);                                  // divisória do canopy
+    // motores laterais e carenagem
+    for (const sx of [-1, 1]) {
+      c.fuso([[-2.6, 0.25], [-2.2, 0.42], [0.4, 0.45], [0.8, 0.32]], C, sx * 0.95, 2.55, -0.4);
+      c.cil(0.2, 0.28, 0.4, 8, 0x22241e, sx * 0.95, 2.55, -2.8, Math.PI / 2);   // escapes
+      // asas curtas com Hellfire e casulo de foguetes
+      c.bloco(2.4, 0.12, 0.95, C2, sx * 1.75, 1.9, 0.5, 0, 0, sx * 0.08);
+      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) c.fuso([[-0.8, 0.08], [0.7, 0.09], [0.9, 0.02]], 0x6a6d45, sx * (2.05 + i * 0.25), 1.55 - j * 0.22, 0.6);
+      c.fuso([[-0.9, 0.3], [0.8, 0.32], [1.0, 0.22]], 0x50543c, sx * 2.85, 1.6, 0.5);
+      // trem de pouso
+      c.cil(0.05, 0.05, 1.0, 6, METAL, sx * 0.8, 0.6, 2.2, 0, 0, sx * 0.3);
+      c.roda(0.3, 0.2, PNEU, sx * 0.95, 0.3, 2.2);
     }
-    c.cil(0.25, 0.45, 7.2, 8, COR, 0, 1.9, -6.0, Math.PI / 2);
-    c.box(0.15, 2.0, 1.3, COR, 0, 2.6, -9.5, -0.25);
-    c.box(3.2, 0.1, 0.8, COR, 0, 1.6, -9.2);
-    c.cil(0.06, 0.06, 1.6, 6, METAL, 0, 0.55, 4.4, Math.PI / 2);
-    return { corpo: c.build(), rotor: rotor(4, 7.3), rotorY: 3.75, rotorZ: 0.1, cauda: rotorCauda(1.4), caudaPos: [0.3, 3.0, -9.6], caudaEixo: 'x', armaZ: 5.2, armaY: 0.55 };
+    // canhão de 30mm no queixo
+    c.esf(0.3, C2, 0, 1.05, 3.6);
+    c.cil(0.04, 0.05, 1.6, 6, METAL, 0, 0.95, 4.4, Math.PI / 2);
+    c.esf(0.25, 0x222222, 0, 1.3, 5.15);                                      // sensor TADS no nariz
+    // cauda: deriva, estabilizador e roda
+    c.perfil([[-10.0, 2.0], [-9.2, 4.2], [-8.6, 4.2], [-8.6, 2.2], [-7.5, 1.9]], 0.16, C, 0, 0.04);
+    c.box(3.2, 0.1, 0.8, C, 0, 1.75, -9.3);
+    c.roda(0.18, 0.12, PNEU, 0, 0.2, -8.9);
+    c.cil(0.04, 0.04, 1.4, 6, METAL, 0, 0.9, -8.9);
+    // mastro com radar Longbow
+    c.cil(0.16, 0.22, 0.9, 8, C2, 0, 3.4, 0.1);
+    return { corpo: c.build(), rotor: rotor(4, 7.3), rotorY: 4.1, rotorZ: 0.1, cauda: rotorCauda(1.4), caudaPos: [0.3, 3.4, -9.4], caudaEixo: 'x', armaZ: 5.2, armaY: 0.95, radar: true };
   },
   reaper() {
     const c = new Mont();
-    const COR = 0x9ba3a9;
-    c.simetrica([[0.25, -5.5], [0.45, -2.0], [0.55, 2.5], [0.4, 4.5], [0.1, 5.5]], 0.9, COR, 0);
-    c.simetrica([[10.0, -0.4], [10.0, 0.4], [0.5, 1.1], [0.5, -0.6]], 0.15, COR, 0.4);
-    c.box(0.1, 1.6, 0.9, COR, 0.7, 0.9, -5.0, 0, 0, -0.7);
-    c.box(0.1, 1.6, 0.9, COR, -0.7, 0.9, -5.0, 0, 0, 0.7);
-    for (const s of [-1, 1]) c.cil(0.1, 0.1, 1.5, 6, 0x6b6b45, s * 3.5, -0.2, 0.3, Math.PI / 2);
-    c.esf(0.4, 0x30363b, 0, -0.2, 4.6);
+    const C = 0xa3abb1;
+    c.fuso([[-5.4, 0.12], [-4, 0.35], [-1, 0.48], [2.5, 0.5], [4.2, 0.45], [5.2, 0.3], [5.6, 0.05]], C, 0, 0.45, 0, 0.9, 1.0);
+    c.fuso([[3.2, 0.3], [4.6, 0.5], [5.4, 0.3]], C, 0, 0.75, 0, 0.9, 0.9);   // corcova do satélite
+    c.simetrica([[10.0, -0.3], [10.0, 0.3], [0.5, 1.0], [0.5, -0.6]], 0.14, C, 0.6);
+    c.box(0.1, 1.5, 0.9, C, 0.65, 0.95, -4.8, 0, 0, -0.75);
+    c.box(0.1, 1.5, 0.9, C, -0.65, 0.95, -4.8, 0, 0, 0.75);
+    c.box(0.1, 0.9, 0.7, C, 0, 0.0, -4.6);
+    for (const s of [-1, 1]) for (const x of [3.2, 5.0]) c.fuso([[-0.8, 0.04], [0.7, 0.1], [0.9, 0.02]], 0x6b6b45, s * x, 0.25, 0.2);
+    c.esf(0.38, 0x2b3035, 0, 0.0, 4.2);
     return { corpo: c.build(), helice: rotor(3, 1.4, 0x333333, 0.25), heliceZ: -5.7, heliceY: 0.45, heliceEixo: 'z' };
   },
   f35() {
     const c = new Mont();
     const COR = CINZA_J;
     c.simetrica([[0.9, -7.6], [2.5, -7.6], [2.9, -5.6], [5.35, -3.2], [5.35, -1.8], [1.6, 2.8], [1.0, 5.5], [0.45, 7.2], [0.0, 8.0]], 0.9, COR, 0.4);
-    c.simetrica([[1.1, -6.5], [1.3, 3.0], [0.9, 5.5]], 0.6, 0x50565c, 1.2);
+    c.fuso([[-7.0, 0.7], [-3, 0.9], [2, 0.85], [5.5, 0.6], [7.5, 0.25], [8.3, 0.05]], 0x50565c, 0, 1.2, 0, 1.3, 0.8);
     c.esf(0.55, 0x9a7a3a, 0, 1.75, 3.9, 1, 0.75, 2.6);
     for (const s of [-1, 1]) {
       c.planta([[s * 1.4, -7.0], [s * 1.8, -6.0], [s * 1.9, -4.6], [s * 1.5, -4.6]], 0.12, COR, 1.2);
@@ -437,12 +503,12 @@ const AERO = {
     const c = new Mont();
     const COR = CINZA_F;
     c.simetrica([[1.5, -8.6], [3.6, -8.6], [3.6, -6.8], [6.8, -3.8], [6.8, -2.6], [1.5, 1.0], [1.4, 5.0], [0.6, 7.8], [0.0, 9.0]], 0.9, COR, 0.4);
-    c.simetrica([[1.3, -8.0], [1.4, 4.0], [0.8, 6.5]], 0.7, 0x86909a, 1.2);
+    c.fuso([[-8.4, 0.75], [-4, 0.95], [3, 0.8], [6.5, 0.5], [8.6, 0.2], [9.2, 0.03]], 0x86909a, 0, 1.2, 0, 1.25, 0.85);
     c.esf(0.55, 0x384650, 0, 1.85, 4.5, 1, 0.75, 2.4);
     for (const s of [-1, 1]) {
       c.box(0.12, 2.4, 2.4, COR, s * 1.4, 2.4, -5.4, 0, 0, s * 0.35);
       c.cil(0.08, 0.08, 3.2, 6, BRANCO, s * 6.8, 0.6, -2.8, Math.PI / 2);
-      c.cil(0.18, 0.18, 2.6, 6, 0x6b6b45, s * 3.8, 0.0, -2.4, Math.PI / 2);
+      c.fuso([[-1.4, 0.05], [-1, 0.18], [1.1, 0.18], [1.4, 0.04]], 0x6b6b45, s * 3.8, 0.0, -2.4);
     }
     c.cil(0.5, 0.55, 0.8, 10, 0x2b2b2b, 0.65, 0.95, -8.9, Math.PI / 2);
     c.cil(0.5, 0.55, 0.8, 10, 0x2b2b2b, -0.65, 0.95, -8.9, Math.PI / 2);
@@ -450,70 +516,124 @@ const AERO = {
   },
   osprey() {
     const c = new Mont();
-    const COR = 0x6c7378;
-    c.box(2.5, 2.4, 11, COR, 0, 1.9, 0);
-    c.simetrica([[1.25, 5.5], [1.0, 7.4], [0.4, 8.6]], 1.8, COR, 1.0);
-    c.box(2.0, 0.8, 1.2, VIDRO, 0, 2.55, 7.6, 0.4);
-    c.box(14.0, 0.4, 2.4, COR, 0, 3.4, 0.6);
-    c.box(1.8, 1.0, 6.0, COR, 0, 2.9, -7.0);
-    c.box(5.4, 0.15, 1.5, COR, 0, 3.3, -9.3);
-    for (const s of [-1, 1]) c.box(0.15, 2.2, 1.4, COR, s * 2.6, 3.8, -9.3);
+    const C = 0x6c7378, C2 = 0x5c6368;
+    c.fuso([[-9, 0.35], [-7, 0.9], [-5, 1.3], [5, 1.35], [6.6, 1.15], [7.8, 0.75], [8.6, 0.2]], C, 0, 2.0, 0, 1.0, 1.1, 10);
+    c.fuso([[6.0, 1.0], [7.2, 0.85], [8.1, 0.4]], VIDRO, 0, 2.35, 0, 1.02, 0.85, 10);
+    for (const sx of [-1, 1]) c.bloco(0.8, 0.8, 4.5, C2, sx * 1.35, 1.0, 0.5, 0, 0, 0, 0.3);
+    c.bloco(14.0, 0.4, 2.4, C, 0, 3.6, 0.6, 0, 0, 0, 0.18);                   // asa alta
+    c.bloco(1.8, 0.7, 4.0, C, 0, 3.25, 0.6, 0, 0, 0, 0.3);
+    c.box(5.4, 0.15, 1.5, C, 0, 3.1, -8.3);
+    for (const s of [-1, 1]) c.perfil([[-9.2, 2.6], [-8.6, 4.8], [-7.8, 4.8], [-7.6, 2.6]], 0.15, C, s * 2.6, 0.04);
+    for (const s of [-1, 1]) c.roda(0.4, 0.3, PNEU, s * 1.5, 0.4, 0.5);
+    c.roda(0.3, 0.2, PNEU, 0, 0.3, 6.0);
     const n = new Mont();
-    n.cil(0.65, 0.65, 4.2, 8, COR, 0, 0, 0, Math.PI / 2);
-    return { corpo: c.build(), nacele: n.build(), rotor: rotor(3, 5.8), naceleX: 7.0, naceleY: 3.5 };
+    n.fuso([[-2.2, 0.45], [-1.6, 0.68], [1.8, 0.66], [2.2, 0.4]], C, 0, 0, 0, 1, 1, 10);
+    n.cil(0.3, 0.3, 0.5, 8, C2, 0, 0, 2.3, Math.PI / 2);
+    // nacele aponta para cima (giramos depois); aqui o "para cima" é +Z
+    const ng = n.build(); ng.rotateX(-Math.PI / 2);
+    return { corpo: c.build(), nacele: ng, rotor: rotor(3, 5.8), naceleX: 7.0, naceleY: 3.7 };
   },
 };
 
-// ---------------- navios ----------------
 const NAVAL = {
   lancha() {
+    // Mark VI: casco de planeio com proa afiada, cabine com vidros inclinados
     const c = new Mont();
-    c.simetrica([[2.6, -12], [2.6, 6], [1.4, 11], [0, 13]], 2.0, CINZA_N, -0.6);
-    c.box(4.0, 2.4, 7.0, CINZA_N2, 0, 2.6, 1.0);
-    c.box(3.6, 0.6, 0.1, VIDRO, 0, 3.3, 4.55, -0.3);
-    c.cil(0.15, 0.15, 3.0, 6, METAL, 0, 4.8, -0.5);
-    c.box(1.6, 0.3, 0.3, METAL, 0, 6.2, -0.5);
+    const C = 0x7a838c, C2 = 0x626a72;
+    c.simetrica([[2.7, -12], [2.8, 4], [2.2, 9], [1.0, 12], [0, 13.2]], 1.6, C, -0.4);
+    c.simetrica([[2.4, -11.5], [2.5, 4], [1.9, 9], [0.7, 12], [0, 12.6]], 0.6, 0x3f454b, -0.9);
+    c.simetrica([[2.65, -11.9], [2.75, 4], [2.15, 9], [0.95, 12], [0, 13.1]], 0.1, 0x9aa3ab, 1.2);
+    c.perfil([[-3.5, 1.3], [-3.5, 3.6], [1.6, 3.6], [3.4, 1.3]], 3.8, C2, 0, 0.12);
+    c.box(3.4, 0.7, 0.06, VIDRO, 0, 2.8, 2.7, -0.86);
+    for (const s of [-1, 1]) c.box(0.06, 0.6, 2.6, VIDRO, s * 1.92, 2.9, -0.2);
+    c.cil(0.12, 0.12, 3.2, 6, METAL, 0, 5.2, -1.5);
+    c.box(1.8, 0.25, 0.25, METAL, 0, 6.2, -1.5);
+    c.esf(0.5, BRANCO, 0, 6.9, -1.5, 1, 0.5, 1);
+    for (const s of [-1, 1]) c.box(0.08, 0.6, 18, 0x4a5056, s * 2.6, 1.6, -1);   // guarda-corpo
+    // metralhadora .50 na popa
+    c.cil(0.3, 0.35, 0.6, 8, C2, 0, 1.6, -9);
+    c.cil(0.05, 0.05, 1.6, 6, METAL, 0, 2.0, -8.0, Math.PI / 2);
     const t = new Mont();
-    t.cil(0.6, 0.7, 0.8, 8, CINZA_N2, 0, 0, 0);
-    t.cil(0.1, 0.1, 2.4, 6, METAL, 0, 0.4, 1.4, Math.PI / 2);
-    return { corpo: c.build(), torre: t.build(), torreY: 1.8, torreZ: 8.5, canoZ: 2.6, canoY: 0.4 };
+    t.cil(0.65, 0.75, 0.6, 10, C2, 0, 0, 0);
+    t.bloco(1.0, 0.7, 1.2, C, 0, 0.6, 0, 0, 0, 0, 0.2);
+    t.cil(0.08, 0.1, 2.4, 8, METAL, 0, 0.6, 1.6, Math.PI / 2);
+    return { corpo: c.build(), torre: t.build(), torreY: 1.25, torreZ: 8.5, canoZ: 2.8, canoY: 0.6 };
   },
   lcac() {
     const c = new Mont();
-    c.simetrica([[7.2, -12.5], [7.2, 11.5], [5.5, 13.2]], 1.6, 0x26292c, 0);
-    c.box(12.5, 0.4, 22, CINZA_N, 0, 1.8, 0);
-    for (const s of [-1, 1]) c.box(2.2, 2.6, 20, CINZA_N2, s * 5.8, 3.3, -0.5);
-    c.box(2.3, 1.2, 2.4, VIDRO, 5.8, 5.2, 6.0);
+    const C = 0x7d868f, C2 = 0x5f676f;
+    // saia de borracha arredondada
+    c.bloco(14.2, 1.9, 26, 0x24272a, 0, 0.95, 0, 0, 0, 0, 0.9);
+    c.box(12.6, 0.35, 23.5, C2, 0, 1.95, 0);                                  // convés de carga
     for (const s of [-1, 1]) {
-      c.cil(2.3, 2.3, 1.6, 14, CINZA_N2, s * 3.6, 4.4, -11.8, Math.PI / 2);
-      c.cil(1.7, 1.7, 1.65, 12, 0x1c1c1c, s * 3.6, 4.4, -11.8, Math.PI / 2);
+      c.bloco(2.3, 2.6, 21, C, s * 5.9, 3.3, -0.5, 0, 0, 0, 0.3);             // costados
+      for (let i = 0; i < 4; i++) c.box(0.06, 0.5, 0.8, VIDRO, s * 7.07, 3.6, -7 + i * 4);
+      // hélices dutadas com lemes
+      c.cil(2.35, 2.35, 1.4, 18, C, s * 3.6, 4.6, -11.6, Math.PI / 2);
+      c.cil(1.95, 1.95, 1.45, 16, 0x1a1a1a, s * 3.6, 4.6, -11.6, Math.PI / 2);
+      c.box(0.15, 3.6, 0.9, C2, s * 3.6, 4.6, -12.7);
+      c.box(0.15, 3.6, 0.9, C2, s * 2.6, 4.6, -12.7);
+      // tomadas de ar
+      c.bloco(1.6, 1.2, 2.4, C2, s * 5.9, 5.1, -6, 0, 0, 0, 0.3);
     }
+    c.bloco(2.4, 1.6, 2.8, C, 5.9, 5.4, 6.5, 0, 0, 0, 0.3);                   // cabine de comando
+    c.box(2.42, 0.5, 2.0, VIDRO, 5.9, 5.7, 7.0);
+    c.box(10.5, 0.15, 2.0, 0x8a8f94, 0, 2.6, 12.0, -0.6);                     // rampa da proa
     return { corpo: c.build() };
   },
   destroier() {
+    // classe Arleigh Burke: casco com proa lançada, superestrutura inclinada com radares,
+    // duas chaminés, mastro treliçado, canhão de 5", células de mísseis e heliponto na popa
     const c = new Mont();
-    c.simetrica([[8.5, -77], [10, -55], [10, 20], [7.5, 50], [3.5, 70], [0, 78]], 9.0, CINZA_N, -5.0);
-    c.simetrica([[8.4, -76], [9.9, -55], [9.9, 20], [7.4, 50], [3.4, 70], [0, 77]], 0.3, 0x55595e, 4.0);
-    c.box(15, 7, 30, CINZA_N, 0, 7.8, 12);
-    c.box(12, 5, 10, CINZA_N, 0, 13.5, 16);
-    c.box(10.5, 1.6, 0.2, VIDRO, 0, 14.5, 21.1);
-    for (const s of [-1, 1]) c.box(0.2, 4, 4, 0x6c7d8c, s * 7.6, 9.5, 20, 0, 0, 0);
-    c.box(1.5, 18, 1.5, CINZA_N2, 0, 22, 12);
-    c.box(8, 0.6, 0.6, CINZA_N2, 0, 26, 12);
-    c.box(4, 2.4, 1.0, 0xbfc5c9, 0, 30.5, 12);
-    c.box(11, 7, 10, CINZA_N, 0, 7.8, -6);
-    c.box(4.5, 8, 6, CINZA_N2, 0, 12, -6);
-    c.box(3.5, 6, 4.5, CINZA_N2, 0, 11, -18);
-    c.box(14, 6, 14, CINZA_N, 0, 7, -30);
-    c.box(8, 0.3, 20, 0x52575c, 0, 4.4, -64);
-    c.box(6.5, 0.4, 0.4, BRANCO, 0, 4.6, -64);
-    c.box(7, 1, 7, 0x4a4f54, 0, 4.6, 42);
-    c.box(6, 1, 6, 0x4a4f54, 0, 10.6, -40);
-    c.cil(1.1, 1.1, 2.4, 10, BRANCO, 5.5, 12.5, -37);
+    const C = 0x7f8890, C2 = 0x667078, C3 = 0x575f66;
+    c.simetrica([[8.8, -77], [10, -60], [10.2, 15], [8.6, 45], [5, 64], [1.2, 78], [0, 80]], 9.0, C, -5.0);
+    c.simetrica([[8.7, -76.5], [9.9, -60], [10.1, 15], [8.5, 45], [4.9, 64], [1.1, 77.5], [0, 79.5]], 0.25, 0x585e64, 4.0);
+    c.simetrica([[9.0, -77.2], [10.2, -60], [10.4, 15], [8.8, 45], [5.2, 64]], 0.6, 0x2e3236, -5.4); // linha d'água
+    // superestrutura dianteira inclinada (perfil chanfrado)
+    c.perfil([[-2, 4.2], [-2, 13.5], [12, 17.5], [24, 17.5], [27, 4.2]], 14.5, C, 0, 0.2);
+    c.perfil([[8, 17.5], [10, 23], [20, 23], [22, 17.5]], 10, C, 0, 0.15);   // ponte
+    c.box(9.6, 1.4, 0.15, VIDRO, 0, 21.2, 21.7, -0.35);
+    for (const s of [-1, 1]) {
+      // painéis octogonais do radar SPY-1
+      c.cil(3.3, 3.3, 0.3, 8, 0x8c959c, s * 7.25, 13, 16, 0, 0, Math.PI / 2 + s * 0.35);
+      c.cil(3.3, 3.3, 0.3, 8, 0x8c959c, s * 4.5, 13, 3.5, Math.PI / 2 - 0.35, 0, 0);
+    }
+    c.cil(3.3, 3.3, 0.3, 8, 0x8c959c, 0, 13.5, 24.5, -Math.PI / 2 + 0.6, 0, 0);
+    // mastro treliçado com antenas
+    for (const [ox, oz] of [[-1.2, -1.2], [1.2, -1.2], [-1.2, 1.2], [1.2, 1.2]]) c.box(0.25, 16, 0.25, C2, ox, 31, 10 + oz);
+    for (let i = 0; i < 4; i++) c.box(2.8, 0.2, 2.8, C2, 0, 25 + i * 4, 10);
+    c.box(7, 0.4, 0.4, C2, 0, 36, 10);
+    c.cil(0.08, 0.08, 6, 6, METAL, 0, 42, 10);
+    c.esf(0.8, BRANCO, 2.5, 34, 10);
+    // chaminés gêmeas
+    c.perfil([[-12, 4.2], [-11, 16], [-6, 16], [-5, 4.2]], 6, C, 0, 0.2);
+    c.box(5.4, 0.6, 1.8, 0x222222, 0, 16.2, -7.8);
+    c.box(5.4, 0.6, 1.8, 0x222222, 0, 16.2, -9.6);
+    c.perfil([[-34, 4.2], [-33, 15], [-28, 15], [-27, 4.2]], 6, C, 0, 0.2);
+    c.box(5.4, 0.6, 1.8, 0x222222, 0, 15.2, -29.8);
+    c.box(5.4, 0.6, 1.8, 0x222222, 0, 15.2, -31.6);
+    c.perfil([[-26, 4.2], [-26, 9], [-13, 9], [-13, 4.2]], 11, C2, 0, 0.15);
+    c.perfil([[-50, 4.2], [-50, 10], [-35, 12], [-35, 4.2]], 14, C, 0, 0.15); // hangar
+    // células de lançamento vertical (VLS) na proa e na popa
+    for (const [z0, n] of [[34, 4], [-46, 4]]) {
+      c.box(8, 0.25, n * 2.2, C3, 0, 4.35, z0);
+      for (let i = 0; i < n; i++) for (let j = 0; j < 4; j++) c.box(1.6, 0.1, 1.7, 0x41474c, -3 + j * 2, 4.5, z0 - (n - 1) * 1.1 + i * 2.2);
+    }
+    // heliponto
+    c.box(14, 0.12, 18, 0x4a4f54, 0, 4.3, -64);
+    c.box(0.4, 0.05, 14, BRANCO, 0, 4.4, -64);
+    c.cil(4.5, 4.5, 0.05, 24, 0xe6c23a, 0, 4.36, -64);
+    c.cil(4.2, 4.2, 0.07, 24, 0x4a4f54, 0, 4.37, -64);
+    // CIWS e botes
+    c.cil(1.1, 1.3, 2.2, 10, BRANCO, 0, 15.2, -19); c.esf(1.1, BRANCO, 0, 16.7, -19);
+    c.cil(1.1, 1.3, 2.2, 10, BRANCO, 0, 18.6, 15); c.esf(1.1, BRANCO, 0, 20, 15);
+    for (const s of [-1, 1]) c.bloco(1.8, 1.0, 6, 0x2f3438, s * 6.5, 10, -20, 0, 0, 0, 0.4);
     const t = new Mont();
-    t.simetrica([[2.0, -2.0], [2.0, 1.0], [1.0, 2.8]], 2.2, CINZA_N, 0);
-    t.cil(0.18, 0.25, 7.5, 8, CINZA_N2, 0, 1.2, 6.0, Math.PI / 2);
-    return { corpo: c.build(), torre: t.build(), torreY: 4.3, torreZ: 56, canoZ: 9.5, canoY: 1.2 };
+    // canhão Mk 45 de 5" com torre facetada
+    t.perfil([[-2.2, 0], [-2.2, 1.8], [0.8, 2.2], [2.6, 1.0], [2.6, 0]], 3.6, C, 0, 0.15);
+    t.cil(0.2, 0.28, 7.0, 10, C2, 0, 1.2, 5.6, Math.PI / 2);
+    t.cil(0.32, 0.32, 0.6, 10, C2, 0, 1.2, 2.8, Math.PI / 2);
+    return { corpo: c.build(), torre: t.build(), torreY: 4.3, torreZ: 56, canoZ: 9.2, canoY: 1.2 };
   },
   portaavioes() {
     const c = new Mont();
@@ -581,6 +701,53 @@ const NAVAL = {
 
 // ---------------- estruturas da base ----------------
 const ESTR = {
+  pista() {
+    // pista de pouso militar com pátio de estacionamento e hangares
+    const c = new Mont();
+    c.box(40, 0.12, 320, 0x3b3e42, 0, 0.06, 0);
+    for (let k = -140; k < 140; k += 16) c.box(0.8, 0.03, 8, 0xf0f0ea, 0, 0.14, k);
+    for (const s of [-1, 1]) c.box(0.6, 0.03, 320, 0xf0f0ea, s * 18, 0.14, 0);
+    for (let i = 0; i < 8; i++) for (const e of [-1, 1]) c.box(1.4, 0.03, 12, 0xf0f0ea, -14 + i * 4, 0.14, e * 150);
+    c.box(50, 0.1, 140, 0x4a4d50, -45, 0.05, 80);                        // pátio dos jatos
+    for (let i = 0; i < 3; i++) {
+      c.perfil([[-12, 0], [-12, 6], [-6, 10], [6, 10], [12, 6], [12, 0]], 30, 0x7d8578, -85 + 0, 0.2);
+    }
+    c.cil(0.3, 0.4, 18, 8, METAL, -75, 9, -120);
+    c.box(6, 4, 6, 0xb0b3a8, -75, 20, -120);
+    c.box(6.2, 1.4, 6.2, VIDRO, -75, 21.5, -120);
+    return { corpo: c.build() };
+  },
+  acampamento() {
+    // acampamento de sobreviventes: barricada de sacos de areia e carros, barracas, caixas e fogueira
+    const c = new Mont();
+    const R = 13;
+    for (let i = 0; i < 26; i++) {
+      const a = (i / 26) * Math.PI * 2;
+      if (i % 9 === 0) continue;                                    // aberturas
+      const x = Math.sin(a) * R, z = Math.cos(a) * R;
+      c.bloco(3.2, 0.5, 0.7, 0xa8956a, x, 0.25, z, 0, a + Math.PI / 2, 0, 0.2);
+      c.bloco(2.9, 0.5, 0.7, 0x9c8a60, x, 0.72, z, 0, a + Math.PI / 2 + 0.1, 0, 0.2);
+      if (i % 3 === 0) c.bloco(2.6, 0.45, 0.65, 0xb09c70, x, 1.15, z, 0, a + Math.PI / 2, 0, 0.2);
+    }
+    // carros virados como barricada
+    for (const [x, z, a, cor] of [[R + 2, 3, 0.2, 0x8a2a24], [-R - 2, -4, -0.3, 0x2c4a7a], [3, -R - 2, 1.5, 0xd0d0d0]]) {
+      c.bloco(1.8, 1.3, 4.3, cor, x, 0.65, z, 0, a, Math.PI / 2 - 0.1, 0.25);
+    }
+    // barracas
+    for (const [x, z, a, cor] of [[-5, 3, 0.3, 0x4f7a3a], [4, 5, -0.5, 0x3a5a8a], [-2, -6, 1.2, 0xb36a2a], [6, -3, 2.0, 0x6a6a3a]]) {
+      const g = new THREE.CylinderGeometry(0.01, 2.0, 2.0, 4, 1);
+      c.add(g, cor, x, 1.0, z, 0, a, 0, 1.2, 1, 0.9);
+    }
+    // caixas, tambores e fogueira
+    for (let i = 0; i < 6; i++) c.box(0.9, 0.7, 0.9, 0x7a5a36, -8 + i * 0.95, 0.35, 8 - (i % 2) * 0.9);
+    for (let i = 0; i < 4; i++) c.cil(0.4, 0.4, 1.0, 10, i % 2 ? 0x2f5a8a : 0x8a3a2a, 8 + (i % 2) * 0.9, 0.5, 6 - Math.floor(i / 2) * 0.9);
+    c.cil(0.9, 1.0, 0.25, 10, 0x55524c, 0, 0.12, 0);
+    for (let i = 0; i < 4; i++) c.box(1.2, 0.18, 0.18, 0x4a3420, 0, 0.3, 0, 0, i * 0.8, 0);
+    // varal e bandeira
+    c.cil(0.06, 0.06, 4.5, 6, METAL, -9, 2.25, -5);
+    c.box(0.04, 0.9, 1.4, 0xf0f0f0, -9, 4.0, -4.3);
+    return { corpo: c.build() };
+  },
   qg() {
     const c = new Mont();
     c.box(40, 12, 26, 0xcbbd9b, 0, 6, 0);
@@ -642,9 +809,32 @@ const ESTR = {
     c.box(56, 0.1, 56, 0x6f8a5a, 0, 0.06, 0);
     return { corpo: c.build() };
   },
+  fob() {
+    // posto avançado: muro de gabiões HESCO, barracas, torre de rádio e heliponto pequeno
+    const c = new Mont();
+    for (let i = 0; i < 32; i++) {
+      const a = (i / 32) * Math.PI * 2;
+      if (i % 8 === 0) continue;
+      c.bloco(2.4, 2.2, 1.2, 0xc2ad82, Math.sin(a) * 26, 1.1, Math.cos(a) * 26, 0, a + Math.PI / 2, 0, 0.1);
+    }
+    for (const [x, z, a] of [[-8, -6, 0], [-8, 4, 0], [6, -8, 1.57], [10, 6, 0.3]]) {
+      c.bloco(5, 2.6, 9, 0x6f7550, x, 1.3, z, 0, a, 0, 1.2);
+    }
+    c.cil(0.15, 0.25, 14, 6, METAL, 0, 7, -14);
+    c.box(0.6, 1.2, 0.1, BRANCO, 0, 12, -13.8);
+    c.cil(6, 6, 0.15, 20, 0x44474a, 8, 0.08, 14);
+    c.box(1.0, 0.05, 4, BRANCO, 7, 0.18, 14); c.box(1.0, 0.05, 4, BRANCO, 9, 0.18, 14); c.box(2.4, 0.05, 0.8, BRANCO, 8, 0.18, 14);
+    c.cil(0.08, 0.08, 6, 6, METAL, -14, 3, 10);
+    c.box(0.05, 1.0, 1.6, 0x2b4a8c, -14, 5.4, 10.8);
+    for (let i = 0; i < 5; i++) c.box(1.0, 0.8, 1.0, 0x6a5a3a, 14 + (i % 2), 0.4, -10 + i);
+    return { corpo: c.build() };
+  },
   muro() {
     const c = new Mont();
-    c.box(1.5, 2.2, 10, 0xb4a079, 0, 1.1, 0);
+    for (let i = 0; i < 5; i++) {
+      c.bloco(1.4, 2.2, 1.9, 0xc2ad82, 0, 1.1, -4 + i * 2, 0, 0, 0, 0.12);
+      c.box(1.45, 0.06, 1.95, 0x77705a, 0, 2.22, -4 + i * 2);
+    }
     return { corpo: c.build() };
   },
   torre() {
@@ -722,7 +912,7 @@ export function criarModelo(nome) {
       const n = new THREE.Mesh(def.nacele, MAT);
       piv.add(n);
       const ro = new THREE.Mesh(def.rotor, MAT_ROTOR);
-      ro.position.set(0, 2.2, 0);
+      ro.position.set(0, 2.65, 0);
       piv.add(ro);
       grupo.add(piv);
       r.naceles.push({ piv, ro });

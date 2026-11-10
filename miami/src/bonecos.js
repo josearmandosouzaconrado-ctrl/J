@@ -1,6 +1,7 @@
-// Pessoas (civis, zumbis, soldados e SWAT) desenhadas com instâncias: poucas chamadas de desenho para milhares.
-// Cada pessoa é feita de partes (tronco, colete, cabeça, cabelo, capacete com visão noturna, pernas com botas,
-// braços, mãos, fuzil e mochila). Os soldados usam um conjunto com textura de camuflagem.
+// Pessoas (civis, zumbis, soldados, SWAT e sobreviventes) desenhadas com instâncias.
+// Esqueleto simples: quadril, tronco (que inclina), cabeça, coxa+canela (joelho), braço+antebraço (cotovelo).
+// Os braços dos armados são resolvidos por cinemática inversa: as mãos seguram o fuzil de verdade.
+// Andando: fuzil baixo, cano apontado para o chão à frente. Atirando: fuzil no ombro, mirando.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
@@ -10,90 +11,118 @@ function peca(lista, geo, cor, x, y, z, rx = 0, ry = 0, rz = 0) {
   if (rx || ry || rz) g.applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(rx, ry, rz)));
   g.translate(x, y, z);
   const n = g.attributes.position.count, c = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) { c[i * 3] = cor; c[i * 3 + 1] = cor; c[i * 3 + 2] = cor; }
+  const cc = Array.isArray(cor) ? cor : [cor, cor, cor];
+  for (let i = 0; i < n; i++) { c[i * 3] = cc[0]; c[i * 3 + 1] = cc[1]; c[i * 3 + 2] = cc[2]; }
   g.setAttribute('color', new THREE.BufferAttribute(c, 3));
   if (!g.attributes.uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(n * 2), 2));
   lista.push(g);
 }
 const B = (w, h, d) => new THREE.BoxGeometry(w, h, d);
-const C = (r1, r2, h, s = 6) => new THREE.CylinderGeometry(r1, r2, h, s);
-function juntar(fn) { const l = []; fn(l); return mergeGeometries(l); }
+const C = (r1, r2, h, s = 7) => new THREE.CylinderGeometry(r1, r2, h, s);
+const E = (r, sx, sy, sz) => { const g = new THREE.SphereGeometry(r, 9, 7); g.scale(sx, sy, sz); return g; };
+// tronco afunilado (seção quadrada com cantos chanfrados)
+function blocoAfunilado(wTop, wBot, h, prof) {
+  const g = new THREE.CylinderGeometry(wTop * 0.72, wBot * 0.72, h, 8);
+  g.rotateY(Math.PI / 8);
+  g.scale(1, 1, prof);
+  return g;
+}
+function juntar(fn) { const l = []; fn(l); const g = mergeGeometries(l); g.computeVertexNormals(); return g; }
 
-// partes: [geometria, pivô]; membros giram em X no pivô
-function partes() {
+// medidas (metros)
+const QUADRIL_Y = 0.93, COXA = 0.44, CANELA = 0.43, BRACO = 0.29, ANTEBRACO = 0.27, TRONCO = 0.5;
+
+// cada geometria tem o pivô na origem; membros se estendem para -Y, tronco e cabeça para +Y
+function geometrias() {
   return {
-    tronco: [juntar((l) => {
-      peca(l, B(0.4, 0.56, 0.23), 1, 0, 1.17, 0);
-      peca(l, B(0.36, 0.1, 0.21), 0.92, 0, 0.86, 0);               // quadril
-      peca(l, B(0.41, 0.06, 0.24), 0.28, 0, 0.92, 0);              // cinto
-      peca(l, B(0.44, 0.1, 0.24), 0.96, 0, 1.42, 0);               // ombros
-    }), [0, 0, 0]],
-    colete: [juntar((l) => {
-      peca(l, B(0.45, 0.4, 0.3), 1, 0, 1.2, 0);
-      for (const x of [-0.13, 0, 0.13]) peca(l, B(0.11, 0.14, 0.06), 0.82, x, 1.1, 0.17);   // porta-carregadores
-      peca(l, B(0.2, 0.12, 0.05), 0.8, 0.09, 1.31, 0.165);
-      peca(l, B(0.14, 0.05, 0.06), 0.75, 0.2, 1.43, 0.05);          // ombreira
-      peca(l, B(0.14, 0.05, 0.06), 0.75, -0.2, 1.43, 0.05);
-    }), [0, 0, 0]],
-    cabeca: [juntar((l) => {
-      peca(l, B(0.21, 0.24, 0.23), 1, 0, 1.61, 0);
-      peca(l, B(0.11, 0.1, 0.11), 0.92, 0, 1.47, 0);                // pescoço
-      peca(l, B(0.045, 0.03, 0.02), 0.12, 0.05, 1.63, 0.116);       // olhos
-      peca(l, B(0.045, 0.03, 0.02), 0.12, -0.05, 1.63, 0.116);
-      peca(l, B(0.04, 0.06, 0.04), 0.95, 0, 1.585, 0.125);          // nariz
-      peca(l, B(0.08, 0.018, 0.02), 0.45, 0, 1.53, 0.116);          // boca
-      peca(l, B(0.03, 0.07, 0.05), 0.9, 0.115, 1.6, 0);             // orelhas
-      peca(l, B(0.03, 0.07, 0.05), 0.9, -0.115, 1.6, 0);
-    }), [0, 0, 0]],
-    cabelo: [juntar((l) => {
-      peca(l, B(0.23, 0.07, 0.25), 1, 0, 1.745, -0.005);
-      peca(l, B(0.23, 0.17, 0.05), 1, 0, 1.65, -0.115);
-      peca(l, B(0.03, 0.1, 0.18), 1, 0.115, 1.68, -0.02);
-      peca(l, B(0.03, 0.1, 0.18), 1, -0.115, 1.68, -0.02);
-    }), [0, 0, 0]],
-    capacete: [juntar((l) => {
-      const d = new THREE.SphereGeometry(0.155, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2);
-      d.scale(1, 0.85, 1.12);
-      peca(l, d, 1, 0, 1.67, -0.005);
-      peca(l, C(0.157, 0.162, 0.05, 12).scale(1, 1, 1.12), 0.85, 0, 1.665, -0.005);
-      peca(l, B(0.06, 0.05, 0.04), 0.3, 0, 1.76, 0.15);             // suporte do visor
-      peca(l, C(0.022, 0.022, 0.09), 0.2, 0.03, 1.79, 0.17, Math.PI / 2 - 0.5);  // visão noturna
-      peca(l, C(0.022, 0.022, 0.09), 0.2, -0.03, 1.79, 0.17, Math.PI / 2 - 0.5);
-      peca(l, B(0.2, 0.035, 0.03), 0.25, 0, 1.66, 0.13);            // óculos/faixa
-      peca(l, B(0.05, 0.06, 0.06), 0.7, 0.14, 1.7, 0);              // trilhos laterais
-      peca(l, B(0.05, 0.06, 0.06), 0.7, -0.14, 1.7, 0);
-    }), [0, 0, 0]],
-    pernaE: [juntar((l) => {
-      peca(l, B(0.17, 0.72, 0.19), 1, 0, -0.36, 0);
-      peca(l, B(0.15, 0.1, 0.06), 0.7, 0, -0.42, 0.11);             // joelheira
-      peca(l, B(0.17, 0.16, 0.27), 0.22, 0, -0.79, 0.04);           // bota
-    }), [0.11, 0.86, 0]],
-    pernaD: [null, [-0.11, 0.86, 0]],
-    bracoE: [juntar((l) => {
-      peca(l, B(0.13, 0.32, 0.14), 1, 0, -0.15, 0);
-      peca(l, B(0.12, 0.28, 0.13), 0.94, 0, -0.44, 0);
-    }), [0.28, 1.42, 0]],
-    bracoD: [null, [-0.28, 1.42, 0]],
-    maoE: [juntar((l) => { peca(l, B(0.1, 0.12, 0.11), 1, 0, -0.64, 0.01); }), [0.28, 1.42, 0]],
-    maoD: [null, [-0.28, 1.42, 0]],
-    // fuzil no "espaço do braço": -y aponta para onde o braço aponta, +z é "para cima"
-    arma: [juntar((l) => {
-      const k = 0.18;
-      peca(l, B(0.05, 0.24, 0.06), 0.35, k, -0.05, -0.02);          // coronha
-      peca(l, B(0.055, 0.32, 0.08), 0.22, k, -0.33, 0.0);           // caixa da culatra
-      peca(l, B(0.06, 0.24, 0.075), 0.3, k, -0.6, 0.0);             // guarda-mão
-      peca(l, C(0.012, 0.012, 0.32), 0.15, k, -0.86, 0.0);          // cano
-      peca(l, B(0.04, 0.05, 0.13), 0.25, k, -0.36, -0.09, 0.25);    // carregador
-      peca(l, B(0.035, 0.04, 0.09), 0.25, k, -0.24, -0.07);         // empunhadura
-      peca(l, B(0.04, 0.11, 0.05), 0.12, k, -0.36, 0.07);           // mira óptica
-      peca(l, B(0.05, 0.02, 0.03), 0.5, k, -0.36, 0.1);
-    }), [-0.28, 1.42, 0.02]],
-    mochila: [juntar((l) => {
-      peca(l, B(0.33, 0.38, 0.16), 1, 0, 1.2, -0.2);
-      peca(l, B(0.29, 0.14, 0.05), 0.85, 0, 1.12, -0.29);
-      peca(l, C(0.07, 0.07, 0.34, 8), 0.8, 0, 1.42, -0.2, 0, 0, Math.PI / 2);
-      peca(l, B(0.04, 0.18, 0.02), 0.3, 0.12, 1.28, -0.12);         // antena do rádio
-    }), [0, 0, 0]],
+    quadril: juntar((l) => {
+      peca(l, blocoAfunilado(0.33, 0.3, 0.2, 0.62), 1, 0, -0.04, 0);
+    }),
+    tronco: juntar((l) => {
+      peca(l, blocoAfunilado(0.43, 0.33, TRONCO, 0.58), 1, 0, TRONCO / 2, 0);
+      peca(l, E(0.085, 1, 0.8, 1), 1, 0.2, TRONCO - 0.04, 0);        // ombros arredondados
+      peca(l, E(0.085, 1, 0.8, 1), 1, -0.2, TRONCO - 0.04, 0);
+      peca(l, C(0.05, 0.055, 0.1), 0.93, 0, TRONCO + 0.05, 0);        // pescoço
+    }),
+    cabeca: juntar((l) => {
+      peca(l, E(0.112, 0.92, 1.08, 1.0), 1, 0, 0.12, 0.005);
+      peca(l, E(0.05, 0.9, 0.7, 0.6), 0.97, 0, 0.065, 0.075);         // queixo/mandíbula
+      peca(l, B(0.04, 0.05, 0.04), 0.95, 0, 0.12, 0.112);              // nariz
+      peca(l, B(0.035, 0.02, 0.012), 0.12, 0.042, 0.15, 0.104);        // olhos
+      peca(l, B(0.035, 0.02, 0.012), 0.12, -0.042, 0.15, 0.104);
+      peca(l, B(0.05, 0.012, 0.01), 0.45, 0, 0.068, 0.103);            // boca
+      peca(l, E(0.03, 0.5, 1, 0.8), 0.92, 0.106, 0.12, 0);             // orelhas
+      peca(l, E(0.03, 0.5, 1, 0.8), 0.92, -0.106, 0.12, 0);
+    }),
+    cabelo: juntar((l) => {
+      const g = new THREE.SphereGeometry(0.118, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.55);
+      g.scale(0.95, 1.05, 1.05);
+      peca(l, g, 1, 0, 0.13, -0.008);
+      peca(l, E(0.1, 1.0, 0.9, 0.6), 1, 0, 0.1, -0.06);
+    }),
+    capacete: juntar((l) => {
+      const d = new THREE.SphereGeometry(0.135, 12, 6, 0, Math.PI * 2, 0, Math.PI * 0.52);
+      d.scale(1, 0.92, 1.1);
+      peca(l, d, 1, 0, 0.145, -0.005);
+      peca(l, C(0.137, 0.142, 0.035, 12).scale(1, 1, 1.1), 0.85, 0, 0.15, -0.005);
+      peca(l, B(0.05, 0.04, 0.035), 0.3, 0, 0.23, 0.13);              // suporte NVG
+      peca(l, C(0.018, 0.018, 0.08), 0.2, 0.026, 0.25, 0.155, Math.PI / 2 - 0.4);
+      peca(l, C(0.018, 0.018, 0.08), 0.2, -0.026, 0.25, 0.155, Math.PI / 2 - 0.4);
+      peca(l, B(0.18, 0.03, 0.025), 0.25, 0, 0.14, 0.115);            // faixa dos óculos
+      peca(l, B(0.04, 0.05, 0.05), 0.65, 0.128, 0.18, 0);              // trilhos
+      peca(l, B(0.04, 0.05, 0.05), 0.65, -0.128, 0.18, 0);
+      peca(l, B(0.07, 0.05, 0.03), 0.4, 0, 0.21, -0.14);               // contrapeso
+    }),
+    colete: juntar((l) => {
+      peca(l, blocoAfunilado(0.47, 0.4, 0.36, 0.72), 1, 0, 0.28, 0);
+      for (const x of [-0.12, 0, 0.12]) peca(l, B(0.1, 0.13, 0.06), 0.8, x, 0.17, 0.15);
+      peca(l, B(0.17, 0.11, 0.05), 0.78, 0.08, 0.33, 0.15);
+      peca(l, B(0.12, 0.09, 0.05), 0.78, -0.13, 0.26, 0.15);
+      peca(l, B(0.36, 0.06, 0.07), 0.6, 0, 0.06, 0.03);                 // cinto tático
+    }),
+    mochila: juntar((l) => {
+      peca(l, blocoAfunilado(0.3, 0.28, 0.38, 0.55), 1, 0, 0.28, -0.18);
+      peca(l, B(0.26, 0.13, 0.05), 0.85, 0, 0.2, -0.27);
+      peca(l, C(0.065, 0.065, 0.3, 8), 0.8, 0, 0.5, -0.18, 0, 0, Math.PI / 2);
+      peca(l, C(0.008, 0.008, 0.35, 4), 0.25, 0.1, 0.62, -0.2);         // antena
+    }),
+    coxa: juntar((l) => {
+      peca(l, C(0.088, 0.072, COXA, 8), 1, 0, -COXA / 2, 0.005);
+      peca(l, E(0.07, 1, 0.8, 1), 1, 0, -COXA, 0);
+      peca(l, B(0.08, 0.1, 0.05), 0.75, 0.07, -0.2, 0.01);              // bolso lateral
+    }),
+    canela: juntar((l) => {
+      peca(l, C(0.068, 0.055, CANELA - 0.06, 8), 1, 0, -(CANELA - 0.06) / 2, 0);
+      peca(l, B(0.1, 0.09, 0.07), 0.8, 0, -0.03, 0.04);                 // joelheira
+    }),
+    bota: juntar((l) => {
+      peca(l, B(0.11, 0.1, 0.25), 1, 0, -0.04, 0.05);
+      peca(l, B(0.115, 0.03, 0.27), 0.5, 0, -0.085, 0.05);              // sola
+    }),
+    braco: juntar((l) => {
+      peca(l, C(0.062, 0.052, BRACO, 7), 1, 0, -BRACO / 2, 0);
+      peca(l, E(0.05, 1, 1, 1), 1, 0, -BRACO, 0);
+    }),
+    antebraco: juntar((l) => {
+      peca(l, C(0.05, 0.04, ANTEBRACO - 0.04, 7), 1, 0, -(ANTEBRACO - 0.04) / 2, 0);
+    }),
+    mao: juntar((l) => {
+      peca(l, B(0.075, 0.095, 0.045), 1, 0, -0.045, 0.01);
+      peca(l, B(0.025, 0.05, 0.03), 1, 0.035, -0.03, 0.03);             // polegar
+    }),
+    // fuzil M4: pivô na empunhadura, cano para +Z
+    arma: juntar((l) => {
+      const P = 0.13, M = 0.2, Q = 0.3;
+      peca(l, B(0.045, 0.07, 0.24), Q, 0, 0.05, -0.27);                 // coronha
+      peca(l, B(0.05, 0.085, 0.3), M, 0, 0.06, -0.02);                  // caixa da culatra
+      peca(l, B(0.058, 0.07, 0.24), Q, 0, 0.055, 0.25);                 // guarda-mão
+      peca(l, C(0.011, 0.011, 0.3), P, 0, 0.055, 0.5, Math.PI / 2);     // cano
+      peca(l, C(0.017, 0.017, 0.06), P, 0, 0.055, 0.66, Math.PI / 2);   // quebra-chamas
+      peca(l, B(0.035, 0.13, 0.06), Q, 0, -0.04, 0.05, 0.3);            // carregador
+      peca(l, B(0.03, 0.09, 0.04), Q, 0, -0.02, -0.06, -0.3);           // empunhadura
+      peca(l, B(0.035, 0.055, 0.12), 0.12, 0, 0.13, 0.03);              // mira óptica
+      peca(l, B(0.04, 0.04, 0.02), 0.5, 0, 0.13, 0.095);
+    }),
   };
 }
 
@@ -105,10 +134,10 @@ function texCamo() {
   let s = 77;
   const r = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
   const cores = ['#8d7f58', '#6f7350', '#cfc4a2', '#7a5f40', '#9a9467'];
-  for (let k = 0; k < 70; k++) {
+  for (let k = 0; k < 90; k++) {
     g.fillStyle = cores[k % cores.length];
     g.beginPath();
-    const x = r() * N, y = r() * N, rr = 4 + r() * 10;
+    const x = r() * N, y = r() * N, rr = 3 + r() * 8;
     for (let a = 0; a < 6.28; a += 0.7) { const q = rr * (0.6 + r() * 0.6); g.lineTo(x + Math.cos(a) * q, y + Math.sin(a) * q * 0.7); }
     g.fill();
   }
@@ -117,115 +146,205 @@ function texCamo() {
   return t;
 }
 
-const LISTA = ['tronco', 'colete', 'cabeca', 'cabelo', 'capacete', 'pernaE', 'pernaD', 'bracoE', 'bracoD', 'maoE', 'maoD', 'arma', 'mochila'];
-const COM_CAMO = { tronco: 1, pernaE: 1, pernaD: 1, bracoE: 1, bracoD: 1, mochila: 1, colete: 1 };
+const COM_CAMO = { quadril: 1, tronco: 1, coxa: 1, canela: 1, braco: 1, antebraco: 1, mochila: 1, colete: 1 };
+const DUPLAS = { coxa: 1, canela: 1, bota: 1, braco: 1, antebraco: 1, mao: 1 };
+
+// ---------- matemática: R = Ry(yaw) * Rx(p) * Rz(r) ----------
+const _v = [0, 0, 0];
+// rotaciona v (local do corpo) por Rx(p)Rz(r)
+function rotPR(x, y, z, cp, sp, cr, sr) {
+  const x1 = cr * x - sr * y, y1 = sr * x + cr * y;
+  _v[0] = x1; _v[1] = cp * y1 - sp * z; _v[2] = sp * y1 + cp * z;
+  return _v;
+}
+// direção unitária d -> (pitch, roll) que leva (0,-1,0) a d
+function dirParaPR(dx, dy, dz, out) {
+  const r = Math.asin(Math.max(-1, Math.min(1, dx)));
+  const p = Math.atan2(-dz, -dy);
+  out[0] = p; out[1] = r;
+}
 
 class Conjunto {
-  constructor(cena, def, max, camo) {
-    this.def = def;
-    this.m = {};
-    this.n = {};
-    for (const k of LISTA) {
-      const geo = def[k][0] || def[k.replace(/D$/, 'E')][0];
+  constructor(cena, geos, max, camo) {
+    this.m = {}; this.n = {};
+    this.max = {};
+    for (const k in geos) {
+      const mx = DUPLAS[k] ? max * 2 : max;
       const mat = new THREE.MeshLambertMaterial({ vertexColors: true, map: camo && COM_CAMO[k] ? camo : null });
-      const im = new THREE.InstancedMesh(geo, mat, max);
+      const im = new THREE.InstancedMesh(geos[k], mat, mx);
       im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(max * 3), 3);
+      im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(mx * 3), 3);
       im.count = 0; im.frustumCulled = false; im.castShadow = true;
       cena.add(im);
-      this.m[k] = im; this.n[k] = 0;
+      this.m[k] = im; this.n[k] = 0; this.max[k] = mx;
     }
-    this.max = max;
   }
-  comecar() { for (const k of LISTA) this.n[k] = 0; }
+  comecar() { for (const k in this.n) this.n[k] = 0; }
   terminar() {
-    for (const k of LISTA) {
+    for (const k in this.m) {
       const m = this.m[k];
-      m.count = Math.min(this.max, this.n[k]);
+      m.count = Math.min(this.max[k], this.n[k]);
       m.instanceMatrix.needsUpdate = true;
       m.instanceColor.needsUpdate = true;
     }
   }
-  // escreve uma parte: R = Ry(yaw) * Rx(ang), escala k
-  parte(k, x, y, z, c, s, ang, esc, cor) {
+  // parte com pivô em (lx,ly,lz) no espaço do corpo (antes do giro yaw), orientação pitch/roll
+  parte(k, bx, by, bz, cy, sy, lx, ly, lz, p, r, esc, cor) {
     const m = this.m[k], i = this.n[k]++;
-    if (i >= this.max) return;
-    const e = m.instanceMatrix.array, o = i * 16, piv = this.def[k][1];
-    const ca = Math.cos(ang), sa = Math.sin(ang);
-    e[o] = c * esc; e[o + 1] = 0; e[o + 2] = -s * esc; e[o + 3] = 0;
-    e[o + 4] = s * sa * esc; e[o + 5] = ca * esc; e[o + 6] = c * sa * esc; e[o + 7] = 0;
-    e[o + 8] = s * ca * esc; e[o + 9] = -sa * esc; e[o + 10] = c * ca * esc; e[o + 11] = 0;
-    e[o + 12] = x + (c * piv[0] + s * piv[2]) * esc;
-    e[o + 13] = y + piv[1] * esc;
-    e[o + 14] = z + (-s * piv[0] + c * piv[2]) * esc;
-    e[o + 15] = 1;
-    const a = m.instanceColor.array, oc = i * 3;
-    a[oc] = cor[0]; a[oc + 1] = cor[1]; a[oc + 2] = cor[2];
-  }
-  // parte deitada (corpo caído no chão)
-  deitada(k, x, y, z, c, s, cor) {
-    const m = this.m[k], i = this.n[k]++;
-    if (i >= this.max) return;
+    if (i >= this.max[k]) return;
     const e = m.instanceMatrix.array, o = i * 16;
-    e[o] = c; e[o + 1] = 0; e[o + 2] = -s; e[o + 3] = 0;
-    e[o + 4] = s; e[o + 5] = 0; e[o + 6] = c; e[o + 7] = 0;
-    e[o + 8] = 0; e[o + 9] = -1; e[o + 10] = 0; e[o + 11] = 0;
-    e[o + 12] = x - s * 0.9; e[o + 13] = y + 0.12; e[o + 14] = z - c * 0.9; e[o + 15] = 1;
+    const cp = Math.cos(p), sp = Math.sin(p), cr = Math.cos(r), sr = Math.sin(r);
+    const m00 = cy * cr + sy * sp * sr, m01 = -cy * sr + sy * sp * cr, m02 = sy * cp;
+    const m10 = cp * sr, m11 = cp * cr, m12 = -sp;
+    const m20 = -sy * cr + cy * sp * sr, m21 = sy * sr + cy * sp * cr, m22 = cy * cp;
+    e[o] = m00 * esc; e[o + 1] = m10 * esc; e[o + 2] = m20 * esc; e[o + 3] = 0;
+    e[o + 4] = m01 * esc; e[o + 5] = m11 * esc; e[o + 6] = m21 * esc; e[o + 7] = 0;
+    e[o + 8] = m02 * esc; e[o + 9] = m12 * esc; e[o + 10] = m22 * esc; e[o + 11] = 0;
+    e[o + 12] = bx + (cy * lx + sy * lz) * esc;
+    e[o + 13] = by + ly * esc;
+    e[o + 14] = bz + (-sy * lx + cy * lz) * esc;
+    e[o + 15] = 1;
     const a = m.instanceColor.array, oc = i * 3;
     a[oc] = cor[0]; a[oc + 1] = cor[1]; a[oc + 2] = cor[2];
   }
 }
 
-const LUVA = [0.22, 0.2, 0.17], PRETO = [0.12, 0.12, 0.13], COLETE_MIL = [0.62, 0.55, 0.4], CAP_MIL = [0.66, 0.6, 0.45];
+const LUVA = [0.25, 0.22, 0.18], PRETO = [0.13, 0.13, 0.14], COLETE_MIL = [0.66, 0.6, 0.45], CAP_MIL = [0.7, 0.64, 0.48];
+const BOTA_MIL = [0.55, 0.45, 0.32], BOTA_CIV = [0.2, 0.18, 0.17];
+const _pr = [0, 0];
 
 export class Bonecos {
   constructor(cena) {
-    const def = partes();
-    this.civ = new Conjunto(cena, def, 3200, null);
-    this.mil = new Conjunto(cena, def, 700, texCamo());
+    const geos = geometrias();
+    this.civ = new Conjunto(cena, geos, 2600, null);
+    this.mil = new Conjunto(cena, geos, 600, texCamo());
   }
   comecar() { this.civ.comecar(); this.mil.comecar(); }
   terminar() { this.civ.terminar(); this.mil.terminar(); }
-  // estilo: 0 civil, 1 soldado, 2 SWAT, 3 soldado zumbi
-  // pose: 0 andando, 1 zumbi (braços à frente), 2 mirando, 3 caído, 4 acenando
-  add(x, y, z, ang, fase, pose, camisa, calca, pele, estilo = 0, esc = 1, cabelo = null) {
-    const S = estilo === 1 || estilo === 3 ? this.mil : this.civ;
-    const c = Math.cos(ang), s = Math.sin(ang);
+
+  // membro de 2 ossos: do ponto S (ombro/quadril) até o alvo H, dobrando para o lado do polo
+  _membro(S, k1, k2, L1, L2, ombro, alvo, polo, bx, by, bz, cy, sy, esc, cor1, cor2, kMao, corMao) {
+    let dx = alvo[0] - ombro[0], dy = alvo[1] - ombro[1], dz = alvo[2] - ombro[2];
+    let D = Math.hypot(dx, dy, dz) || 1e-4;
+    const Dm = Math.min(D, (L1 + L2) * 0.999);
+    const ux = dx / D, uy = dy / D, uz = dz / D;
+    const a = (L1 * L1 - L2 * L2 + Dm * Dm) / (2 * Dm), h = Math.sqrt(Math.max(0, L1 * L1 - a * a));
+    // vetor de dobra perpendicular
+    const pd = polo[0] * ux + polo[1] * uy + polo[2] * uz;
+    let bxv = polo[0] - pd * ux, byv = polo[1] - pd * uy, bzv = polo[2] - pd * uz;
+    const bl = Math.hypot(bxv, byv, bzv) || 1;
+    bxv /= bl; byv /= bl; bzv /= bl;
+    const ex = ombro[0] + ux * a + bxv * h, ey = ombro[1] + uy * a + byv * h, ez = ombro[2] + uz * a + bzv * h;
+    // osso 1
+    let l1 = Math.hypot(ex - ombro[0], ey - ombro[1], ez - ombro[2]) || 1;
+    dirParaPR((ex - ombro[0]) / l1, (ey - ombro[1]) / l1, (ez - ombro[2]) / l1, _pr);
+    S.parte(k1, bx, by, bz, cy, sy, ombro[0], ombro[1], ombro[2], _pr[0], _pr[1], esc, cor1);
+    // osso 2 (termina no alvo alcançável)
+    const hx = ombro[0] + ux * Dm, hy = ombro[1] + uy * Dm, hz = ombro[2] + uz * Dm;
+    const l2 = Math.hypot(hx - ex, hy - ey, hz - ez) || 1;
+    dirParaPR((hx - ex) / l2, (hy - ey) / l2, (hz - ez) / l2, _pr);
+    S.parte(k2, bx, by, bz, cy, sy, ex, ey, ez, _pr[0], _pr[1], esc, cor2);
+    if (kMao) S.parte(kMao, bx, by, bz, cy, sy, hx, hy, hz, _pr[0], _pr[1], esc, corMao);
+    return { ex, ey, ez, hx, hy, hz };
+  }
+
+  // estilo: 0 civil, 1 soldado, 2 SWAT, 3 soldado zumbi, 4 sobrevivente armado, 5 policial sobrevivente
+  // pose: 0 andando, 1 zumbi, 2 mirando/atirando, 3 caído, 4 acenando
+  add(x, y, z, ang, fase, pose, camisa, calca, pele, estilo = 0, esc = 1, cabelo = null, vel = 1) {
+    const mil = estilo === 1 || estilo === 3;
+    const S = mil ? this.mil : this.civ;
+    const cy = Math.cos(ang), sy = Math.sin(ang);
+    const armado = estilo === 1 || estilo === 2 || estilo === 4 || estilo === 5;
     if (pose === 3) {
-      S.deitada('tronco', x, y, z, c, s, camisa);
-      S.deitada('cabeca', x, y, z, c, s, pele);
+      // caído: deitado de costas
+      S.parte('tronco', x, y + 0.15, z, cy, sy, 0, 0, 0, Math.PI / 2, 0, esc, camisa);
+      S.parte('cabeca', x, y + 0.15, z, cy, sy, 0, 0, TRONCO + 0.08, Math.PI / 2, 0, esc, pele);
+      S.parte('quadril', x, y + 0.12, z, cy, sy, 0, 0, 0, Math.PI / 2, 0, esc, calca);
+      for (const s of [1, -1]) {
+        S.parte('coxa', x, y + 0.1, z, cy, sy, s * 0.1, 0, -0.05, -Math.PI / 2, s * 0.15, esc, calca);
+        S.parte('braco', x, y + 0.12, z, cy, sy, s * 0.22, 0, TRONCO - 0.05, -Math.PI / 2 - 0.5, s * 0.5, esc, camisa);
+      }
       return;
     }
-    const sw = Math.sin(fase);
-    const arm = estilo === 1 || estilo === 2;
-    const pernas = sw * 0.55;
-    const bob = Math.abs(Math.cos(fase)) * 0.03 * Math.min(1, Math.abs(pernas) * 3);
-    const yy = y + bob;
-    S.parte('tronco', x, yy, z, c, s, 0, esc, camisa);
-    S.parte('cabeca', x, yy, z, c, s, 0, esc, pele);
-    S.parte('pernaE', x, y, z, c, s, pernas, esc, calca);
-    S.parte('pernaD', x, y, z, c, s, -pernas, esc, calca);
-    let be, bd;
-    if (pose === 1) { be = -1.45 + sw * 0.15; bd = -1.5 - sw * 0.15; }
-    else if (pose === 2) { be = -1.38; bd = -1.5; }
-    else if (pose === 4) { be = Math.PI - 0.3 + sw * 0.3; bd = Math.PI - 0.3 - sw * 0.3; }
-    else if (arm) { be = -0.75 + sw * 0.05; bd = -0.6 - sw * 0.05; }
-    else { be = -sw * 0.45; bd = sw * 0.45; }
-    const braco = pose === 1 && !arm ? pele : camisa;
-    S.parte('bracoE', x, yy, z, c, s, be, esc, braco);
-    S.parte('bracoD', x, yy, z, c, s, bd, esc, braco);
-    const mao = estilo === 0 || estilo === 3 ? pele : LUVA;
-    S.parte('maoE', x, yy, z, c, s, be, esc, mao);
-    S.parte('maoD', x, yy, z, c, s, bd, esc, mao);
-    if (estilo === 0) {
-      if (cabelo) S.parte('cabelo', x, yy, z, c, s, 0, esc, cabelo);
+    const sw = Math.sin(fase), cw = Math.cos(fase);
+    const andando = Math.min(1, vel);
+    // inclinação do tronco: zumbi curvado, mirando um pouco à frente
+    const lean = pose === 1 ? 0.35 : pose === 2 ? 0.12 : 0.05 + andando * 0.08;
+    const bob = Math.abs(cw) * 0.035 * andando;
+    const hy = QUADRIL_Y - bob;
+    const cl = Math.cos(lean), sl = Math.sin(lean);
+    // ---- pernas ----
+    const roupaPerna = calca;
+    const corBota = mil ? BOTA_MIL : estilo === 2 || estilo === 5 ? PRETO : BOTA_CIV;
+    for (const s of [1, -1]) {
+      const f = s === 1 ? sw : -sw;
+      const coxa = -f * 0.55 * andando;                         // negativo = perna para frente
+      const joelho = Math.max(0, (s === 1 ? cw : -cw)) * 0.9 * andando + (pose === 1 ? 0.15 : 0.05);
+      const hxp = s * 0.1;
+      S.parte('coxa', x, y, z, cy, sy, hxp, hy, 0, coxa, 0, esc, roupaPerna);
+      // joelho
+      const kx = hxp, kyy = hy - COXA * Math.cos(coxa), kz = -COXA * Math.sin(coxa);
+      const pc = coxa + joelho;
+      S.parte('canela', x, y, z, cy, sy, kx, kyy, kz, pc, 0, esc, roupaPerna);
+      const ax = kx, ayy = kyy - CANELA * Math.cos(pc), az = kz - CANELA * Math.sin(pc);
+      S.parte('bota', x, y, z, cy, sy, ax, ayy + 0.06, az, 0, 0, esc, corBota);
+    }
+    S.parte('quadril', x, y, z, cy, sy, 0, hy, 0, 0, 0, esc, calca);
+    // ---- tronco e cabeça (inclinam juntos) ----
+    // ponto no tronco: (lx, ly acima do quadril, lz) rotacionado pela inclinação
+    const T = (lx, ly, lz, out) => { out[0] = lx; out[1] = hy + ly * cl - lz * sl; out[2] = ly * sl + lz * cl; return out; };
+    S.parte('tronco', x, y, z, cy, sy, 0, hy, 0, -lean, 0, esc, camisa);
+    const pc0 = T(0, TRONCO + 0.1, 0, [0, 0, 0]);
+    const olhar = pose === 1 ? -0.25 : pose === 2 ? 0.05 : 0;
+    S.parte('cabeca', x, y, z, cy, sy, pc0[0], pc0[1], pc0[2], -lean * 0.4 + olhar, 0, esc, pele);
+    if (mil || estilo === 2 || estilo === 5) {
+      S.parte('colete', x, y, z, cy, sy, 0, hy + 0.12 * cl, 0.12 * sl, -lean, 0, esc, estilo === 2 || estilo === 5 ? PRETO : estilo === 3 ? [0.45, 0.42, 0.33] : COLETE_MIL);
+      S.parte('capacete', x, y, z, cy, sy, pc0[0], pc0[1], pc0[2], -lean * 0.4 + olhar, 0, esc, estilo === 2 || estilo === 5 ? PRETO : estilo === 3 ? [0.5, 0.47, 0.38] : CAP_MIL);
+      if (mil) S.parte('mochila', x, y, z, cy, sy, 0, hy + 0.12 * cl, 0.12 * sl, -lean, 0, esc, estilo === 3 ? [0.6, 0.58, 0.5] : [0.92, 0.9, 0.85]);
+    } else if (cabelo) S.parte('cabelo', x, y, z, cy, sy, pc0[0], pc0[1], pc0[2], -lean * 0.4 + olhar, 0, esc, cabelo);
+    // ---- braços ----
+    const oE = T(0.2, TRONCO - 0.05, 0, [0, 0, 0]), oD = T(-0.2, TRONCO - 0.05, 0, [0, 0, 0]);
+    const corMao = estilo === 0 || estilo === 3 || estilo === 4 ? pele : LUVA;
+    const manga = camisa;
+    if (armado && pose !== 1 && pose !== 4) {
+      // posição do fuzil no corpo: empunhadura (mão direita) e ângulo
+      const mirando = pose === 2;
+      const gx = -0.11, gy = mirando ? 1.38 : 1.0 + bob * 0.5, gz = mirando ? 0.16 + sl * 0.3 : 0.2;
+      const pitch = mirando ? 0 : 0.5 + sw * 0.04 * andando;      // positivo = cano para baixo
+      const yawA = mirando ? 0.03 : 0.35;                            // atravessado no corpo quando baixo
+      // fuzil: pivô na empunhadura; usa roll para o "yaw" local aproximado
+      this._arma(S, x, y, z, cy, sy, gx, gy, gz, pitch, yawA, esc);
+      // mão esquerda no guarda-mão (0.27 m à frente da empunhadura ao longo do cano)
+      const dz = Math.cos(pitch) * Math.cos(yawA), dyv = -Math.sin(pitch), dxv = Math.sin(yawA) * Math.cos(pitch);
+      const mE = [gx + dxv * 0.27, gy + 0.05 + dyv * 0.27, gz + dz * 0.27];
+      const mD = [gx, gy + 0.02, gz - 0.02];
+      this._membro(S, 'braco', 'antebraco', BRACO, ANTEBRACO, oE, mE, [1, -0.6, -0.3], x, y, z, cy, sy, esc, manga, manga, 'mao', corMao);
+      this._membro(S, 'braco', 'antebraco', BRACO, ANTEBRACO, oD, mD, [-1, -0.7, -0.6], x, y, z, cy, sy, esc, manga, manga, 'mao', corMao);
       return;
     }
-    const swat = estilo === 2;
-    S.parte('colete', x, yy, z, c, s, 0, esc, swat ? PRETO : estilo === 3 ? [0.45, 0.42, 0.33] : COLETE_MIL);
-    S.parte('capacete', x, yy, z, c, s, 0, esc, swat ? PRETO : estilo === 3 ? [0.5, 0.47, 0.38] : CAP_MIL);
-    if (!swat) S.parte('mochila', x, yy, z, c, s, 0, esc, estilo === 3 ? [0.6, 0.58, 0.5] : [0.92, 0.9, 0.85]);
-    if (arm) S.parte('arma', x, yy, z, c, s, bd, esc, [0.35, 0.35, 0.36]);
+    // braços sem arma
+    for (const s of [1, -1]) {
+      const o = s === 1 ? oE : oD;
+      let alvo;
+      if (pose === 1) {
+        // zumbi: braços esticados à frente, balançando
+        alvo = [o[0] * 0.8, o[1] - 0.05 + (s === 1 ? sw : -sw) * 0.05, o[2] + 0.52];
+      } else if (pose === 4) {
+        alvo = [o[0] + s * (0.2 + sw * 0.12), o[1] + 0.5, o[2] + 0.05];
+      } else {
+        const f = (s === 1 ? -sw : sw) * 0.45 * andando;
+        alvo = [o[0] + s * 0.05, o[1] - 0.52 * Math.cos(f) + 0.05 * andando, o[2] + 0.52 * Math.sin(f) + 0.04];
+      }
+      this._membro(S, 'braco', 'antebraco', BRACO, ANTEBRACO, o, alvo, [s * 0.4, 0.1, -1], x, y, z, cy, sy, esc, pose === 1 && estilo !== 3 ? pele : manga, pose === 1 ? pele : (estilo === 0 || estilo === 4 ? pele : manga), 'mao', corMao);
+    }
+  }
+
+  // fuzil com pivô na empunhadura; pitch (cano para baixo) e desvio lateral
+  _arma(S, bx, by, bz, cy, sy, gx, gy, gz, pitch, yawA, esc) {
+    // R = Ry(ang+yawA) * Rx(pitch): soma o desvio ao giro do corpo
+    const c2 = Math.cos(Math.atan2(sy, cy) + yawA), s2 = Math.sin(Math.atan2(sy, cy) + yawA);
+    const wx = bx + (cy * gx + sy * gz) * esc, wz = bz + (-sy * gx + cy * gz) * esc;
+    S.parte('arma', wx, by, wz, c2, s2, 0, gy, 0, pitch, 0, esc, [0.38, 0.38, 0.39]);
   }
 }
 

@@ -1,8 +1,8 @@
 // Interface: barra do topo, seleção, produção, minimapa, marcadores, menus e controle direto
 import { G } from './estado.js';
-import { TIPOS, PRODUCAO, NOMES_PROD } from './tipos.js';
-import { enfileirar, cancelar } from './jogo.js';
-import { predios, canvasTerreno, LARG, ALT, lugares } from './mapa.js';
+import { TIPOS, PRODUCAO, NOMES_PROD, CONSTRUIR } from './tipos.js';
+import { enfileirar, cancelar, fonteDe } from './jogo.js';
+import { predios, canvasTerreno, LARG, ALT, lugares, COSTA, META } from './mapa.js';
 import { telaDe, ligarModoAreaSeJatos } from './entrada.js';
 import { marcarSelecao, desembarcar, sairDoPredio, ordenar, entregarCivis, naZonaSegura } from './unidades.js';
 import { somUI, somLigado, iniciarSom } from './som.js';
@@ -108,6 +108,26 @@ export class UI {
     for (const id of ['#topo', '#lateral', '#selecao', '#producao', '#info', '#alertas']) $(id).addEventListener('pointerdown', (e) => e.stopPropagation());
   }
 
+  ajustarCidade() {
+    if (!COSTA) {
+      $('#b-naval').classList.add('oculto');
+      const bp = $('#b-porta'); bp.innerHTML = '✈️<small>Pista</small>';
+    }
+  }
+
+  atualizarConstrucao() {
+    let b = $('#b-cancela-constr');
+    if (!b) {
+      b = el('button', 'bt destaque', '✖ Cancelar construção');
+      b.id = 'b-cancela-constr';
+      b.style.cssText = 'position:fixed;left:50%;bottom:12px;transform:translateX(-50%);pointer-events:auto';
+      b.addEventListener('pointerdown', (e) => e.stopPropagation());
+      b.addEventListener('click', (e) => { e.stopPropagation(); G.construindo = null; this.atualizarConstrucao(); });
+      this.raiz.appendChild(b);
+    }
+    b.classList.toggle('oculto', !G.construindo);
+  }
+
   modoCaixa(v) { G.modoCaixa = v; $('#b-caixa').classList.toggle('ativo', v); }
 
   selecionarGrupo(f) {
@@ -204,17 +224,38 @@ export class UI {
   // ---------------- produção ----------------
   abrirProducao(aba) {
     if (aba) this.abaProd = aba;
-    if (!PRODUCAO[this.abaProd]) this.abaProd = 'quartel';
+    if (!PRODUCAO[this.abaProd] && this.abaProd !== 'construir') this.abaProd = 'quartel';
     $('#producao').classList.remove('oculto');
     const abas = $('#p-abas');
     abas.innerHTML = '';
-    for (const k in PRODUCAO) {
-      const b = el('button', 'aba' + (k === this.abaProd ? ' ativo' : ''), NOMES_PROD[k]);
+    for (const k of ['construir', ...Object.keys(PRODUCAO)]) {
+      if (!COSTA && k === 'docas') continue;
+      const b = el('button', 'aba' + (k === this.abaProd ? ' ativo' : ''), k === 'construir' ? '🔨 Construir' : k === 'porta' && !COSTA ? '✈️ Aeródromo' : NOMES_PROD[k]);
       b.addEventListener('click', (e) => { e.stopPropagation(); this.abaProd = k; this.abrirProducao(); });
       abas.appendChild(b);
     }
     const lista = $('#p-lista');
     lista.innerHTML = '';
+    if (this.abaProd === 'construir') {
+      for (const t in CONSTRUIR) {
+        const d = CONSTRUIR[t];
+        if (d.agua && !COSTA) continue;
+        const c = el('div', 'carta' + (G.construindo === t ? ' sel' : ''), `<div class="ic">${d.icone}</div><div class="tx"><b>${d.nome}</b><small>${d.sub}</small><span>$${d.custo} • ${d.tempo}s</span></div>`);
+        c.dataset.custo = d.custo;
+        c.addEventListener('click', (e) => {
+          e.stopPropagation(); iniciarSom();
+          if (G.dinheiro < d.custo) { somUI('erro'); return; }
+          G.construindo = t;
+          $('#producao').classList.add('oculto');
+          this.alerta(`🔨 Toque no mapa onde quer construir: ${d.nome}${d.agua ? ' (na beira da água)' : ''}. Toque em ✖ para cancelar.`, null, null, 'info');
+          this.atualizarConstrucao();
+        });
+        lista.appendChild(c);
+      }
+      $('#p-fila').innerHTML = '<i>Escolha a estrutura e toque no mapa. Bases novas produzem unidades e as zonas seguras/FOB recebem civis.</i>';
+      $('#p-fila')._chave = null;
+      return;
+    }
     for (const t of PRODUCAO[this.abaProd]) {
       const d = TIPOS[t];
       const c = el('div', 'carta', `<div class="ic">${d.icone}</div><div class="tx"><b>${d.nome}</b><small>${d.sub}</small><span>$${d.custo} • ${d.tempo}s</span></div>`);
@@ -228,7 +269,8 @@ export class UI {
   atualizarProducao() {
     $('#p-din').textContent = ' 💵 $' + fmt(G.dinheiro);
     for (const c of document.querySelectorAll('#p-lista .carta')) c.classList.toggle('caro', G.dinheiro < +c.dataset.custo);
-    const fonte = this.abaProd === 'porta' ? G.porta : G.estr[this.abaProd];
+    if (this.abaProd === 'construir') return;
+    const fonte = fonteDe(this.abaProd);
     const fila = $('#p-fila');
     if (!fonte || !fonte.vivo) { fila.innerHTML = '<i>Estrutura destruída</i>'; return; }
     const chave = fonte.fila.map((f) => f.tipo).join(',');
@@ -267,6 +309,7 @@ export class UI {
     g.fillStyle = '#ffffff';
     for (const a of G.agentes) if (a.vivo && !a.zumbi && !a.dentro && a.estado !== 'morto') g.fillRect(a.x * sx - 0.5, a.z * sz - 0.5, 1.2, 1.2);
     for (const p of predios) if (p.civis > 0) { g.fillStyle = p.sos ? '#ffd23b' : '#5bc0ff'; g.fillRect(p.cx * sx - 1.5, p.cz * sz - 1.5, 3, 3); }
+    for (const c of G.acampamentos || []) if (c.ativo) { g.fillStyle = c.policia ? '#3c5cff' : '#ff9a2e'; g.beginPath(); g.arc(c.x * sx, c.z * sz, 3, 0, 6.29); g.fill(); }
     for (const u of G.unidades) {
       if (!u.vivo || u.dentro) continue;
       g.fillStyle = u.estr ? '#7ad1ff' : u.policia ? '#ffe14d' : u.sel ? '#7dff8a' : '#3b8bff';
@@ -330,6 +373,16 @@ export class UI {
         g.fillStyle = '#300'; g.fillRect(t.x - 22, y + 6, 44, 3);
         g.fillStyle = f > 0.5 ? '#4f4' : f > 0.2 ? '#fd3' : '#f33'; g.fillRect(t.x - 22, y + 6, 44 * f, 3);
       }
+    }
+    // acampamentos de sobreviventes
+    for (const c of G.acampamentos || []) {
+      if (!c.ativo) continue;
+      const t = telaDe(c.x, 6, c.z, cam);
+      if (!t || t.x < -40 || t.y < -40 || t.x > W + 40 || t.y > H + 40) continue;
+      const arm = c.membros.filter((a) => a.armado).length;
+      g.fillStyle = c.policia ? 'rgba(40,70,200,0.9)' : 'rgba(210,120,30,0.92)'; rr(g, t.x - 44, t.y - 11, 88, 20, 6); g.fill();
+      g.fillStyle = '#fff'; g.font = 'bold 11px sans-serif';
+      g.fillText(`${c.policia ? '🚔' : '🏕️'} ${c.membros.length} (${arm}🔫)`, t.x, t.y);
     }
     // barras de vida
     for (const u of G.unidades) {
@@ -449,6 +502,8 @@ function rr(g, x, y, w, h, r) {
 }
 
 export const AJUDA = `
+<p><b>Cidades:</b> no menu inicial escolha <b>Miami</b>, <b>São Francisco</b> (base naval em Treasure Island, porta-aviões na baía) ou a <b>Cidade do México</b> (base no Bosque de Chapultepec; sem mar, os jatos saem de uma pista de pouso).</p>
+<p><b>🔨 Construir:</b> no painel 🏭 Produzir, aba Construir: escolha posto avançado (FOB), quartel, pátio, heliporto, docas, zona segura, torre ou barreira e toque no mapa. Bases novas produzem unidades perto da frente de batalha, e FOB/zonas seguras recebem civis.</p>
 <p><b>Objetivo:</b> um surto zumbi começou em Miami e se espalha aos poucos. Resgate os civis e leve-os para a <b>Zona Segura</b> da base (no Porto de Miami) ou para o <b>porta-aviões</b>. Se o Quartel-General cair, você perde.</p>
 <p><b>Câmera:</b> arraste com um dedo para mover • pinça com dois dedos para zoom • gire os dois dedos para rodar • arraste dois dedos para cima/baixo para inclinar. No PC: arraste, roda do mouse, botão direito gira, WASD e Q/E.</p>
 <p><b>Selecionar:</b> toque numa unidade. Toque duplo seleciona todas do mesmo tipo na tela. Segure o dedo parado e arraste para selecionar em caixa (ou use ⬚ Caixa). ➕ Várias soma unidades à seleção. Os botões 🪖 🚁 ⚓ ✈️ selecionam grupos.</p>
@@ -459,4 +514,5 @@ export const AJUDA = `
 <p><b>Prédios:</b> metade dos soldados fica nas janelas (quebram o vidro e atiram para fora) e metade no telhado.</p>
 <p><b>🚓 Polícia SWAT:</b> quando o vírus aparece, equipes da SWAT de Miami saem das delegacias sozinhas num blindado BearCat, combatem os zumbis e levam civis para a zona segura. Você não controla a polícia.</p>
 <p><b>🎮 Controlar:</b> com uma unidade selecionada, assuma o controle em 3ª pessoa com o joystick; ela atira sozinha nos zumbis.</p>
+<p><b>🏕️ Sobreviventes:</b> civis que ninguém resgata se juntam, acham armas e montam acampamentos com barricadas (marcador laranja). Eles se defendem sozinhos. Leve tropas ou um veículo até o acampamento e eles aceitam o resgate. Se a cidade ficar muito infectada, a polícia e a SWAT desistem e viram sobreviventes também (marcador azul).</p>
 <p><b>Dicas:</b> tiros e explosões fazem barulho e atraem zumbis. À noite eles ficam mais rápidos. A partir do dia 2 chegam hordas do continente e aparecem zumbis corredores; no dia 3, brutamontes. Cuidado com o fogo amigo de artilharia perto de civis.</p>`;

@@ -42,7 +42,9 @@ export const ESTRUTURAS = {
   docas: { nome: 'Docas da Marinha', hp: 3000, raio: 30 },
   zona: { nome: 'Zona Segura (abrigo de civis)', hp: 2000, raio: 32 },
   torre: { nome: 'Torre de Vigia', hp: 900, raio: 4, alcance: 110, dano: 22, cadencia: 0.18, precisao: 0.5, arma: '50cal' },
-  muro: { nome: 'Barreira', hp: 700, raio: 5 },
+  muro: { nome: 'Barreira', hp: 900, raio: 5 },
+  fob: { nome: 'Posto Avançado (FOB)', hp: 2500, raio: 28 },
+  pista: { nome: 'Pista de Pouso', hp: 8000, raio: 60 },
   patriot: { nome: 'Bateria Patriot', hp: 1500, raio: 6 },
 };
 
@@ -54,3 +56,15 @@ export const PRODUCAO = {
   porta: ['f35', 'f18', 'osprey'],
 };
 export const NOMES_PROD = { quartel: '🪖 Quartel', patio: '🚙 Pátio', heliporto: '🚁 Heliporto', docas: '⚓ Docas', porta: '🛳️ Porta-aviões' };
+// estruturas que o jogador pode construir em qualquer lugar do mapa
+export const CONSTRUIR = {
+  fob: { nome: 'Posto Avançado (FOB)', sub: 'Zona segura para civis + QG de campo', icone: '⛺', custo: 900, tempo: 25, raio: 30 },
+  quartel: { nome: 'Quartel', sub: 'Treina infantaria aqui', icone: '🪖', custo: 1200, tempo: 35, raio: 34 },
+  patio: { nome: 'Pátio de Veículos', sub: 'Produz blindados aqui', icone: '🚙', custo: 1600, tempo: 45, raio: 38 },
+  heliporto: { nome: 'Heliporto', sub: 'Produz helicópteros aqui', icone: '🚁', custo: 1500, tempo: 40, raio: 44 },
+  docas: { nome: 'Docas', sub: 'Precisa ficar na beira da água', icone: '⚓', custo: 1400, tempo: 40, raio: 34, agua: true },
+  zona: { nome: 'Zona Segura', sub: 'Abrigo de civis (resgate)', icone: '🏥', custo: 700, tempo: 20, raio: 32 },
+  torre: { nome: 'Torre de Vigia', sub: 'Metralhadora .50 automática', icone: '🗼', custo: 300, tempo: 10, raio: 6 },
+  muro: { nome: 'Barreira', sub: 'Gabiões contra os zumbis', icone: '🧱', custo: 60, tempo: 4, raio: 6 },
+  patriot: { nome: 'Bateria Patriot', sub: 'Defesa antiaérea', icone: '🛰️', custo: 500, tempo: 15, raio: 8 },
+};
