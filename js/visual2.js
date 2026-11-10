@@ -65,6 +65,25 @@ const Visual2 = {
       }
     }
   },
+  // ---------- sombras do sol guardadas ----------
+  // as sombras vêm só de coisas paradas (árvores, casas, pedras): em vez de refazer todas a cada
+  // quadro, desenha uma vez numa tela um pouco maior e só refaz quando a câmera anda 12 pixels,
+  // o sol se move ou a cena muda. Corta quase todo o custo (era mais da metade do quadro).
+  sombrasGuardadas(s0, ctx, D, camX, camY, vw, vh) {
+    if (!Visual.ligado() || !Game.level || !Game.level.isWorld) return s0.call(Visual, ctx, D, camX, camY, vw, vh);
+    const S = Visual.sol(); if (!S) { this._sg = null; return; }
+    const M = 40, W = vw + M * 2, H = vh + M * 2, G = Game;
+    let n = 0; for (const d of D) if (d.img && d.img.height >= 17) n++;
+    const c = this._sg;
+    const refaz = !c || c.W !== W || c.H !== H || Math.abs(camX - c.x) > 12 || Math.abs(camY - c.y) > 12 || Math.abs(S.kx - c.kx) > 0.015 || Math.abs(S.ky - c.ky) > 0.015 || Math.abs(S.a - c.a) > 0.02 || Math.abs(n - c.n) > 2 || G.level !== c.L || G.t - c.t > 4;
+    if (refaz) {
+      const cv = (c && c.W === W && c.H === H) ? c.cv : Sprites.cv(W, H), x = cv.getContext('2d');
+      x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.clearRect(0, 0, W, H);
+      s0.call(Visual, x, D, camX - M, camY - M, W, H);
+      this._sg = { cv, W, H, x: camX, y: camY, kx: S.kx, ky: S.ky, a: S.a, n, L: G.level, t: G.t };
+    }
+    const g = this._sg; ctx.drawImage(g.cv, Math.round(g.x - camX - M), Math.round(g.y - camY - M));
+  },
   // ---------- árvores ao vento ----------
   arvores(D, camX, camY) {
     if (!this.ARV) this.ARV = new Set(['OAK', 'PINE', 'SNOWPINE', 'PALM', 'WILLOW', 'AUTUMN', 'BIRCH', 'CHERRY', 'JUNGLETREE', 'BAMBOO'].filter(k => O[k] !== undefined).map(k => O[k]));
@@ -198,7 +217,7 @@ const Visual2 = {
   Visual.sombras = function (ctx, D, camX, camY, vw, vh) {
     const on = Visual2.on();
     if (on) { try { Visual2.desenharAgua(ctx, camX, camY, vw, vh); } catch (e) { } }
-    const r = s0.apply(this, arguments);
+    const r = Visual2.sombrasGuardadas(s0, ctx, D, camX, camY, vw, vh);
     if (on) { try { Visual2.arvores(D, camX, camY); } catch (e) { } }
     return r;
   };

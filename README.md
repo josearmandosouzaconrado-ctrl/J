@@ -111,6 +111,21 @@ Criar um reino é difícil e leva tempo:
 
 A menina que os guardas do reino tirano levaram na abertura está viva. No segundo dia, um **mineiro fugido** conta onde ela está: nas **Minas do Rei**, perto da capital do reino tirano (a missão aparece no rastreador e na bússola). Lá dentro há guardas, besteiros e o **Capataz das Minas**, que guarda a chave das correntes. Derrote o capataz, solte a menina e fuja com ela; os guardas vêm atrás. Leve-a até uma cidade fora do reino tirano (ou até a sua vila) e escolha: **adotar** (ela vira sua filha, se você tiver casa) ou deixá-la aos cuidados do templo.
 
+## Música e desempenho (0.40)
+
+- **Músicas compostas** para o jogo, tocadas pelo próprio sintetizador (sem arquivos de áudio):
+  - *Crônicas de Eldoria* (menu)
+  - *Campos de Valdoria* (campo de dia)
+  - *Sob as Estrelas* (noite)
+  - *Taverna do Javali Dourado* (cidades)
+  - *Ventos do Mar das Brumas* (mar)
+  - *Cripta Esquecida* (masmorras)
+  - *Batalha nas Colinas* (combate)
+  - *A Fúria do Dragão* (chefes)
+- Cada música tem acordes, baixo e (nas lutas) bateria. A cada volta ela muda um pouco: uma oitava acima, outro timbre, ou uma volta só com o acompanhamento.
+- As partituras estão em `js/musica.js` em notação ABC, fáceis de editar ou de trocar por outras.
+- **Mais rápido**: as sombras do sol (que eram mais da metade do tempo de cada quadro) agora ficam guardadas e só são refeitas quando a câmera anda ou o sol se move. Andando de dia, o desenho do quadro ficou quase 2× mais rápido.
+
 ## Correções e visual novo (0.39)
 
 - **Telas que travavam**: toda conversa e todo menu têm agora um **✖** sempre à vista no canto para fechar. Antes, em celulares de tela baixa, o botão Sair do balcão das lojas ficava fora da tela depois de voltar da loja. Nas telas pequenas, as opções das conversas ficam em duas colunas.
