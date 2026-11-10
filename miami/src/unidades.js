@@ -40,6 +40,7 @@ export function criarUnidade(tipo, x, z, ang = 0, opts = {}) {
 
 export function removerUnidade(u) {
   u.vivo = false;
+  if (u.sombra) { G.cena.remove(u.sombra); u.sombra = null; }
   if (u.m) G.cena.remove(u.m.grupo);
   if (u.anel) { G.cena.remove(u.anel); u.anel = null; }
   const i = G.selecao.indexOf(u);
@@ -1020,6 +1021,27 @@ export function posicionarModelo(u, dt) {
     g.rotation.copy(_euler);
   } else g.rotation.set(0, u.ang, 0);
   if (u.m.torre) u.m.torre.rotation.y = u.torreAng;
+  if (u.m.chamas) {
+    const voando = u.estadoJato === 'voando' || u.estadoJato === 'voltando';
+    const k = voando ? 0.8 + Math.random() * 0.4 : 0;
+    for (const c of u.m.chamas) { c.visible = voando; c.scale.set(1, 1, k); }
+  }
+  // sombra no chão para aeronaves em voo (a sombra real do sol só cobre perto da câmera)
+  if (u.classe === 'aereo' || u.classe === 'jato') {
+    if (!u.sombra) {
+      const g = new THREE.CircleGeometry(1, 16).rotateX(-Math.PI / 2);
+      u.sombra = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false }));
+      u.sombra.renderOrder = 2;
+      G.cena.add(u.sombra);
+    }
+    const ch = chaoEm(u.x, u.z);
+    const alt = u.y - ch;
+    const d = G.dirSol || { x: -0.5, y: 0.8, z: 0.4 };
+    u.sombra.visible = alt > 2 && !u.dentro && !(u.classe === 'jato' && u.estadoJato !== 'voando' && u.estadoJato !== 'voltando');
+    u.sombra.position.set(u.x - d.x / d.y * alt, ch + 0.3, u.z - d.z / d.y * alt);
+    u.sombra.scale.set(u.d.raio * 0.7, 1, u.d.raio * 1.0);
+    u.sombra.rotation.y = u.ang;
+  }
   const girando = u.classe === 'aereo' && !(u.pousado && u.y === chaoEm(u.x, u.z) && !u.ordem && u.velAtual < 0.1 && u.parado > 3);
   if (u.classe === 'aereo') u.parado = u.pousado ? (u.parado || 0) + dt : 0;
   const vr = girando ? 28 : 0;

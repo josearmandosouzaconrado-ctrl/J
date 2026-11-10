@@ -36,17 +36,29 @@ async function iniciar() {
   renderer.setPixelRatio(q === 0 ? Math.min(1, devicePixelRatio) * 0.75 : q === 1 ? Math.min(1.5, devicePixelRatio) : Math.min(2, devicePixelRatio));
   renderer.setSize(innerWidth, innerHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  // sombras do sol (desligadas na qualidade baixa)
+  renderer.shadowMap.enabled = q >= 1;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   $('#jogo').appendChild(renderer.domElement);
   const cena = new THREE.Scene();
   cena.background = CEU_DIA.clone();
   cena.fog = new THREE.Fog(CEU_DIA.clone(), 2500, 11000);
   const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 1, 15000);
   G.cena = cena; G.camera = camera; G.renderer = renderer;
-  const hemi = new THREE.HemisphereLight(0xdfefff, 0x6b6450, 1.6);
+  const hemi = new THREE.HemisphereLight(0xcfe3ff, 0x5d5446, 1.1);
   cena.add(hemi);
-  const sol = new THREE.DirectionalLight(0xfff2dd, 2.2);
+  const sol = new THREE.DirectionalLight(0xfff0d8, 3.2);
   sol.position.set(-0.5, 1, 0.35);
+  sol.castShadow = q >= 1;
+  sol.shadow.mapSize.set(q >= 2 ? 4096 : 2048, q >= 2 ? 4096 : 2048);
+  sol.shadow.bias = -0.0004;
+  sol.shadow.normalBias = 0.6;
+  sol.shadow.camera.near = 10; sol.shadow.camera.far = 6000;
   cena.add(sol);
+  cena.add(sol.target);
+  G.sol = sol;
 
   status('Lendo prédios e ruas (dados de satélite)...');
   await new Promise((r) => setTimeout(r, 20));
@@ -116,17 +128,15 @@ async function iniciar() {
     c.copy(CEU_NOITE).lerp(CEU_DIA, (luz - 0.28) / 0.72);
     if (tarde > 0) c.lerp(CEU_TARDE, Math.max(0, tarde) * 0.55);
     cena.fog.color.copy(c);
-    sol.intensity = 2.3 * luz;
-    hemi.intensity = 0.55 + 1.1 * luz;
+    sol.intensity = 3.2 * Math.max(0.12, luz - 0.1) + (luz < 0.5 ? 0.25 : 0);
+    hemi.intensity = 0.35 + 0.8 * luz;
+    // sol baixo de manhã e à tarde (sombras longas); à noite a "luz" vem da lua
     const ang = ((h - 6) / 12) * Math.PI;
-    sol.position.set(Math.cos(ang) * -0.8, Math.max(0.15, Math.sin(ang)), 0.4);
-    sol.color.setHex(tarde > 0.3 ? 0xffc890 : luz < 0.5 ? 0x9fb4ff : 0xfff2dd);
-    const u = G.agua.material.uniforms;
-    u.tempo.value += dt; u.luz.value = 0.35 + 0.65 * luz; u.corNevoa.value.copy(c);
-    u.nevoaPerto.value = cena.fog.near; u.nevoaLonge.value = cena.fog.far;
-    const uc = G.chao.material.uniforms;
-    uc.luz.value = luz; uc.corLuz.value.copy(sol.color).lerp(new THREE.Color(1, 1, 1), 0.6); uc.corNevoa.value.copy(c);
-    uc.nevoaPerto.value = cena.fog.near; uc.nevoaLonge.value = cena.fog.far;
+    const dia = h >= 6 && h <= 18.5;
+    const elev = dia ? 0.35 + 0.65 * Math.max(0, Math.sin(ang)) : 0.9;
+    G.dirSol = { x: dia ? -Math.cos(ang) * 0.9 : 0.4, y: elev, z: 0.45 };
+    sol.color.setHex(tarde > 0.3 ? 0xffb874 : luz < 0.5 ? 0x8fa6ff : 0xfff0d8);
+    G.agua.userData.tempo.value += dt;
     // janelas acesas à noite
     const noite = Math.max(0, Math.min(1, (0.85 - luz) / 0.5));
     for (const k in MAT_PREDIOS) MAT_PREDIOS[k].emissiveIntensity = noite * 0.9;
@@ -147,6 +157,18 @@ async function iniciar() {
     const t1 = performance.now();
     G.perfSim = (G.perfSim || 0) * 0.95 + (t1 - t0) * 0.05;
     camRTS.aplicar(dt);
+    // a sombra acompanha a área vista pela câmera
+    if (G.dirSol) {
+      const S = Math.min(2200, Math.max(70, camRTS.dist * 1.25));
+      const sc = sol.shadow.camera;
+      if (Math.abs(sc.right - S) > S * 0.1) { sc.left = -S; sc.right = S; sc.top = S; sc.bottom = -S; sc.updateProjectionMatrix(); }
+      // trava na grade de texels para a sombra não tremer
+      const tx = (2 * S) / sol.shadow.mapSize.x;
+      const ax = Math.round(camRTS.alvo.x / tx) * tx, az = Math.round(camRTS.alvo.z / tx) * tx;
+      const d = G.dirSol, L = Math.hypot(d.x, d.y, d.z);
+      sol.target.position.set(ax, 0, az);
+      sol.position.set(ax + d.x / L * 3000, d.y / L * 3000, az + d.z / L * 3000);
+    }
     // árvores e carros somem no zoom muito afastado (não dá para ver e pesa no celular)
     if (G.decor) { const vis = camRTS.dist < 2200; for (const d of G.decor) d.visible = vis; }
     // distância de névoa acompanha o zoom

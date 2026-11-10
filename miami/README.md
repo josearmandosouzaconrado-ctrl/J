@@ -8,7 +8,7 @@ para conter a infecção e **resgatar os civis**.
 ## Baixar
 
 - **APK (Android 7+):** [`MiamiSurtoZumbi.apk`](../MiamiSurtoZumbi.apk) na raiz do repositório.
-  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.2.0/MiamiSurtoZumbi.apk
+  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.3.0/MiamiSurtoZumbi.apk
 - No navegador: abra `miami/www/index.html` por um servidor web (ex.: `python3 -m http.server` dentro de `miami/www`).
 
 O Android pede para permitir "instalar apps desconhecidos", porque o APK não vem da Play Store.
@@ -23,6 +23,12 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
 - Litoral, pontes (Port Blvd, MacArthur e Venetian Causeway), ruas, parques e praias também vêm do mapa.
 - O chão é desenhado pelo jogo (asfalto, calçadas, estacionamentos, gramados, areia), sem fotos de satélite:
   os mapas de satélite servem só para saber onde ficam as ruas, os prédios e o litoral.
+- Sombras do sol (prédios, árvores, veículos e soldados; aeronaves têm sombra no chão), luz de fim de tarde,
+  mar verde-azulado com espuma nas ondas e arrebentação na costa.
+- Casas com telhado de telha de duas águas, prédios de tijolo, faixas de pedestre nas esquinas, vagas pintadas
+  nos estacionamentos e meio-fio.
+- Porta-aviões com o número 68, pista angulada, catapultas, cabos de parada e aviões no convés; jatos com chama
+  do pós-combustor.
 - Fachadas desenhadas em três estilos (torres de vidro, prédios de concreto, art déco em tons pastel), telhados com
   mureta e equipamentos, e janelas que acendem à noite.
 - Palmeiras com cocos e árvores de copa larga em parques e calçadas, faixa amarela no meio das ruas,

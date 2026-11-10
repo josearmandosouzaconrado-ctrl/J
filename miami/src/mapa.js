@@ -194,6 +194,59 @@ function texTelhado() {
   return t;
 }
 
+function texTelha() {
+  // telha cerâmica: fileiras com sombra embaixo de cada fiada
+  const N = 128, c = document.createElement('canvas');
+  c.width = c.height = N;
+  const g = c.getContext('2d');
+  const r = semente(31);
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, N, N);
+  for (let y = 0; y < N; y += 16) {
+    for (let x = (y / 16) % 2 ? -8 : 0; x < N; x += 16) {
+      const v = 210 + r() * 45 | 0;
+      g.fillStyle = `rgb(${v},${v},${v})`;
+      g.beginPath(); g.ellipse(x + 8, y + 9, 8, 9, 0, 0, Math.PI); g.fill();
+      g.fillRect(x, y, 16, 9);
+    }
+    g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(0, y + 14, N, 2);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+function texTijolo() {
+  // parede de tijolo com janelas de moldura branca (4 x 4 como as outras fachadas)
+  const N = 256, c = document.createElement('canvas'), e = document.createElement('canvas');
+  c.width = c.height = e.width = e.height = N;
+  const g = c.getContext('2d'), ge = e.getContext('2d');
+  const r = semente(41);
+  ge.fillStyle = '#000'; ge.fillRect(0, 0, N, N);
+  g.fillStyle = '#c9c4bc'; g.fillRect(0, 0, N, N);
+  for (let y = 0; y < N; y += 6) {
+    for (let x = (y / 6) % 2 ? -6 : 0; x < N; x += 12) {
+      const v = 0.85 + r() * 0.3;
+      g.fillStyle = `rgb(${255 * v | 0},${230 * v | 0},${220 * v | 0})`;
+      g.fillRect(x + 1, y + 1, 10, 4);
+    }
+  }
+  const B = N / REP;
+  for (let j = 0; j < REP; j++) for (let i = 0; i < REP; i++) {
+    const x = i * B, y = j * B;
+    g.fillStyle = '#efece6'; g.fillRect(x + 12, y + B * 0.18, B - 24, B * 0.6);
+    g.fillStyle = '#2e3a44'; g.fillRect(x + 15, y + B * 0.21, B - 30, B * 0.54);
+    g.fillStyle = 'rgba(150,180,205,0.5)'; g.fillRect(x + 15, y + B * 0.21, (B - 30) * 0.45, B * 0.54);
+    g.fillStyle = '#efece6'; g.fillRect(x + B / 2 - 1, y + B * 0.21, 2, B * 0.54); g.fillRect(x + 15, y + B * 0.47, B - 30, 2);
+    g.fillStyle = '#e4ded4'; g.fillRect(x + 10, y + B * 0.78, B - 20, 4);
+    if (r() < 0.4) { ge.fillStyle = `rgb(255,${200 + r() * 40 | 0},${120 + r() * 50 | 0})`; ge.fillRect(x + 15, y + B * 0.21, B - 30, B * 0.54); }
+  }
+  const t = new THREE.CanvasTexture(c), te = new THREE.CanvasTexture(e);
+  for (const x of [t, te]) { x.wrapS = x.wrapT = THREE.RepeatWrapping; x.anisotropy = 8; x.colorSpace = THREE.SRGBColorSpace; }
+  return { t, te };
+}
+
+const TIJOLOS = [0xd88a6c, 0xe39a7a, 0xcf8266, 0xeab08e, 0xf0e2c8, 0xc77a62];
+const TELHAS = [0xb5502e, 0xa8462a, 0xc0603a, 0x9c4a30, 0x6a6f74, 0x4f5a62];
 const PASTEIS = [0xf7c7cc, 0xbfe8dc, 0xf7e7a6, 0xbfdcf2, 0xf6f2ea, 0xf9d7b2, 0xdccbf0, 0xffffff, 0xc9f0e6, 0xffd0dc];
 const VIDROS = [0xe6f0f7, 0xd2e4ef, 0xd9ebe8, 0xe9e9f2, 0xf2f2f2, 0xc8dbe8, 0xdfe9df];
 const CONCRETO = [0xf0ebe2, 0xe3ddd2, 0xf7f4ee, 0xd8d1c5, 0xece4d8, 0xe9e0cf];
@@ -206,6 +259,8 @@ export function construirPredios(cena) {
     MAT_PREDIOS[e] = new THREE.MeshLambertMaterial({ vertexColors: true, map: t, emissiveMap: te, emissive: 0xffffff, emissiveIntensity: 0 });
   }
   MAT_PREDIOS.telhado = new THREE.MeshLambertMaterial({ vertexColors: true, map: texTelhado() });
+  MAT_PREDIOS.telha = new THREE.MeshLambertMaterial({ vertexColors: true, map: texTelha() });
+  { const { t, te } = texTijolo(); MAT_PREDIOS.tijolo = new THREE.MeshLambertMaterial({ vertexColors: true, map: t, emissiveMap: te, emissive: 0xffffff, emissiveIntensity: 0 }); }
   const TAM = 1200;
   const grupos = new Map();
   const pega = (k) => { let ch = grupos.get(k); if (!ch) { ch = { pos: [], nor: [], col: [], uv: [] }; grupos.set(k, ch); } return ch; };
@@ -230,12 +285,29 @@ export function construirPredios(cena) {
     const base = Math.floor(p.cx / TAM) + ',' + Math.floor(p.cz / TAM);
     const n = p.pts.length / 2, h = p.h, pts = p.pts;
     const sem = (p.id * 2654435761) >>> 0;
-    const estilo = h > 45 ? 'vidro' : h > 14 ? 'concreto' : 'deco';
-    const lista = estilo === 'vidro' ? VIDROS : estilo === 'concreto' ? CONCRETO : PASTEIS;
+    // casa: base quase retangular e baixa -> telhado de telha de duas águas
+    let casa = null;
+    if (h < 11 && n >= 4 && n <= 6 && p.area < 900) {
+      const xs = [], zs = [];
+      // eixo principal = maior lado
+      let mi = 0, ml = 0;
+      for (let i = 0; i < n; i++) { const j = (i + 1) % n, l = Math.hypot(pts[j * 2] - pts[i * 2], pts[j * 2 + 1] - pts[i * 2 + 1]); if (l > ml) { ml = l; mi = i; } }
+      const j0 = (mi + 1) % n;
+      const ux = (pts[j0 * 2] - pts[mi * 2]) / ml, uz = (pts[j0 * 2 + 1] - pts[mi * 2 + 1]) / ml;
+      let a0 = 1e9, a1 = -1e9, b0 = 1e9, b1 = -1e9;
+      for (let i = 0; i < n; i++) {
+        const dx = pts[i * 2] - p.cx, dz = pts[i * 2 + 1] - p.cz, a = dx * ux + dz * uz, b = -dx * uz + dz * ux;
+        a0 = Math.min(a0, a); a1 = Math.max(a1, a); b0 = Math.min(b0, b); b1 = Math.max(b1, b);
+      }
+      const retang = (a1 - a0) * (b1 - b0);
+      if (p.area / retang > 0.82 && b1 - b0 > 4) casa = { ux, uz, a0, a1, b0, b1 };
+    }
+    const estilo = h > 45 ? 'vidro' : h > 14 ? (sem % 3 === 0 && h < 30 ? 'tijolo' : 'concreto') : (casa && sem % 2 === 0 ? 'tijolo' : 'deco');
+    const lista = estilo === 'vidro' ? VIDROS : estilo === 'concreto' ? CONCRETO : estilo === 'tijolo' ? TIJOLOS : PASTEIS;
     cor.setHex(lista[sem % lista.length]);
     p.cor = cor.getHex();
     const W = pega(base + ',' + estilo), R = pega(base + ',telhado');
-    const parapeito = h > 6 ? 1.1 : 0;
+    const parapeito = h > 6 && !casa ? 1.1 : 0;
     let along = (sem % 7) * BAIA;
     for (let i = 0; i < n; i++) {
       const j = (i + 1) % n;
@@ -256,6 +328,39 @@ export function construirPredios(cena) {
         quad(R, ax, az, bx, bz, h, h + parapeito, nx, nz, u0 * 3, u1 * 3, cor.r * c2, cor.g * c2, cor.b * c2, 8);
         quad(R, bx, bz, ax, az, h, h + parapeito, -nx, -nz, u0 * 3, u1 * 3, cor.r * 0.7, cor.g * 0.7, cor.b * 0.7, 8);
       }
+    }
+    if (casa) {
+      // telhado de duas águas com beiral, cumeeira ao longo do eixo maior
+      const T2 = pega(base + ',telha');
+      const { ux, uz } = casa, bei = 0.5;
+      const a0 = casa.a0 - bei, a1 = casa.a1 + bei, b0 = casa.b0 - bei, b1 = casa.b1 + bei;
+      const alt = Math.min(4, (b1 - b0) * 0.38), bm = (b0 + b1) / 2;
+      const P = (a, b, y) => [p.cx + a * ux - b * uz, y, p.cz + a * uz + b * ux];
+      const tc = new THREE.Color(TELHAS[(sem >> 4) % TELHAS.length]);
+      const tri = (A, Bv, Cv, cr, uvs) => {
+        // normal do triângulo
+        const e1 = [Bv[0] - A[0], Bv[1] - A[1], Bv[2] - A[2]], e2 = [Cv[0] - A[0], Cv[1] - A[1], Cv[2] - A[2]];
+        let nx = e1[1] * e2[2] - e1[2] * e2[1], ny = e1[2] * e2[0] - e1[0] * e2[2], nz = e1[0] * e2[1] - e1[1] * e2[0];
+        if (ny < 0) { const t = Bv; Bv = Cv; Cv = t; nx = -nx; ny = -ny; nz = -nz; const u = uvs[1]; uvs[1] = uvs[2]; uvs[2] = u; }
+        const L = Math.hypot(nx, ny, nz) || 1;
+        for (const [v, uv] of [[A, uvs[0]], [Bv, uvs[1]], [Cv, uvs[2]]]) { T2.pos.push(...v); T2.nor.push(nx / L, ny / L, nz / L); T2.col.push(cr[0], cr[1], cr[2]); T2.uv.push(uv[0], uv[1]); }
+      };
+      const lado = [tc.r, tc.g, tc.b];
+      const ka = 1 / 2.2, kb = Math.hypot(alt, (b1 - b0) / 2) / 2.2;
+      for (const [bb, s2] of [[b0, 1], [b1, -1]]) {
+        const A = P(a0, bb, h), Bv = P(a1, bb, h), C2 = P(a1, bm, h + alt), D = P(a0, bm, h + alt);
+        tri(A, Bv, C2, lado, [[0, 0], [(a1 - a0) * ka, 0], [(a1 - a0) * ka, kb]]);
+        tri(A, C2, D, lado, [[0, 0], [(a1 - a0) * ka, kb], [0, kb]]);
+      }
+      // oitões (paredes triangulares nas pontas)
+      for (const aa of [casa.a0, casa.a1]) {
+        const A = P(aa, casa.b0, h), Bv = P(aa, casa.b1, h), C2 = P(aa, bm, h + alt * 0.95);
+        const sx = aa === casa.a0 ? -1 : 1;
+        const nx = ux * sx, nz = uz * sx;
+        for (const v of [A, Bv, C2]) { W.pos.push(...v); W.nor.push(nx, 0, nz); W.col.push(cor.r, cor.g, cor.b); W.uv.push(0.02, 0.02); }
+        for (const v of [A, C2, Bv]) { W.pos.push(...v); W.nor.push(nx, 0, nz); W.col.push(cor.r, cor.g, cor.b); W.uv.push(0.02, 0.02); }
+      }
+      continue;
     }
     // telhado
     const cont = [];
@@ -296,6 +401,7 @@ export function construirPredios(cena) {
     const m = new THREE.Mesh(g, MAT_PREDIOS[est]);
     m.matrixAutoUpdate = false;
     m.updateMatrix();
+    m.castShadow = true; m.receiveShadow = true;
     m.name = 'predios';
     cena.add(m);
     malhas.push(m);
@@ -324,85 +430,163 @@ export function canvasTerreno(escala = 1) {
   return c;
 }
 
+// marcas da rua calculadas da grade: faixas de pedestre nos cruzamentos
+function gerarMarcas() {
+  const N = GW * GH;
+  const rua = new Uint8Array(N);
+  for (let i = 0; i < N; i++) rua[i] = ehRua(grade[i]) && predioId[i] < 0 ? 1 : 0;
+  const runH = new Uint16Array(N), runV = new Uint16Array(N);
+  for (let y = 0; y < GH; y++) {
+    let x = 0;
+    while (x < GW) {
+      if (!rua[y * GW + x]) { x++; continue; }
+      let e = x; while (e < GW && rua[y * GW + e]) e++;
+      for (let k = x; k < e; k++) runH[y * GW + k] = e - x;
+      x = e;
+    }
+  }
+  for (let x = 0; x < GW; x++) {
+    let y = 0;
+    while (y < GH) {
+      if (!rua[y * GW + x]) { y++; continue; }
+      let e = y; while (e < GH && rua[e * GW + x]) e++;
+      for (let k = y; k < e; k++) runV[k * GW + x] = e - y;
+      y = e;
+    }
+  }
+  const L = 8;
+  const junc = (k) => runH[k] >= L && runV[k] >= L;
+  const m = new Uint8Array(N * 4);
+  for (let y = 3; y < GH - 3; y++) {
+    for (let x = 3; x < GW - 3; x++) {
+      const k = y * GW + x;
+      if (!rua[k] || junc(k)) continue;
+      // braço norte-sul encostado no cruzamento: listras variam em x
+      let tipo = -1;
+      if (runV[k] >= L && runH[k] < L && runH[k] >= 3 && (junc(k - GW) || junc(k + GW))) tipo = 0;
+      else if (runH[k] >= L && runV[k] < L && runV[k] >= 3 && (junc(k - 1) || junc(k + 1))) tipo = 1;
+      if (tipo < 0) continue;
+      // só em ruas da cidade (com prédios por perto)
+      let perto = false;
+      for (let dy = -6; dy <= 6 && !perto; dy += 3) for (let dx = -6; dx <= 6; dx += 3) { const q = k + dy * GW + dx; if (q >= 0 && q < N && predioId[q] >= 0) { perto = true; break; } }
+      if (perto) m[k * 4 + tipo] = 255;
+    }
+  }
+  // linha central reta: só em trechos longos e retos de células "centro", longe dos cruzamentos
+  const cen = (k) => grade[k] === T.CENTRO;
+  for (let y = 2; y < GH - 2; y++) {
+    for (let x = 2; x < GW - 2; x++) {
+      const k = y * GW + x;
+      if (!cen(k) || junc(k) || m[k * 4] || m[k * 4 + 1]) continue;
+      let h = 0, v = 0, h0 = 0, v0 = 0;
+      for (let d = -3; d <= 3; d++) {
+        if (cen(k + d) || cen(k + d - GW) || cen(k + d + GW)) h++;
+        if (cen(k + d * GW) || cen(k + d * GW - 1) || cen(k + d * GW + 1)) v++;
+        if (cen(k + d)) h0++;
+        if (cen(k + d * GW)) v0++;
+      }
+      // uma linha só, mesmo quando a faixa do mapa ocupa duas fileiras
+      if (h >= 6 && v0 <= 3 && h0 >= v0 && !m[(k - GW) * 4 + 2]) m[k * 4 + 2] = 255;
+      else if (v >= 6 && h0 <= 3 && v0 > h0 && !m[(k - 1) * 4 + 3]) m[k * 4 + 3] = 255;
+    }
+  }
+  return m;
+}
+
 export function construirChao(cena) {
-  // máscaras por tipo de terreno: R rua/ponte, G grama, B areia, A prédio (sombra de contato)
+  // máscaras por tipo de terreno: R rua/ponte, G grama, B areia (ou linha central na rua), A prédio
   const m = new Uint8Array(GW * GH * 4);
   for (let i = 0; i < GW * GH; i++) {
     const t = grade[i], o = i * 4;
     m[o] = t === T.RUA || t === T.PONTE || t === T.CENTRO ? 255 : 0;
     m[o + 1] = t === T.PARQUE ? 255 : 0;
-    m[o + 2] = t === T.AREIA || t === T.CENTRO ? 255 : 0;  // na rua, B marca a linha central
+    m[o + 2] = t === T.AREIA || t === T.CENTRO ? 255 : 0;
     m[o + 3] = predioId[i] >= 0 ? 255 : 0;
   }
   const tex = new THREE.DataTexture(m, GW, GH, THREE.RGBAFormat, THREE.UnsignedByteType);
   tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearFilter;
   tex.needsUpdate = true;
-  const mat = new THREE.ShaderMaterial({
-    uniforms: {
-      mapa: { value: tex }, tam: { value: new THREE.Vector2(LARG, ALT) }, luz: { value: 1 }, corLuz: { value: new THREE.Color(1, 1, 1) },
-      corNevoa: { value: new THREE.Color(0xa9c8de) }, nevoaPerto: { value: 2000 }, nevoaLonge: { value: 9000 },
-    },
-    vertexShader: `varying vec3 vW; varying float vProf;
-      void main(){ vec4 w = modelMatrix * vec4(position,1.0); vW = w.xyz; vec4 mv = viewMatrix * w; vProf = -mv.z; gl_Position = projectionMatrix * mv; }`,
-    fragmentShader: `
-      uniform sampler2D mapa; uniform vec2 tam; uniform float luz; uniform vec3 corLuz;
-      uniform vec3 corNevoa; uniform float nevoaPerto; uniform float nevoaLonge;
-      varying vec3 vW; varying float vProf;
+  const tm = new THREE.DataTexture(gerarMarcas(), GW, GH, THREE.RGBAFormat, THREE.UnsignedByteType);
+  tm.magFilter = THREE.NearestFilter; tm.minFilter = THREE.NearestFilter;
+  tm.needsUpdate = true;
+  // material com luz e sombra do three.js; a cor de cada ponto é calculada no shader
+  const mat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.mapa = { value: tex };
+    sh.uniforms.marcas = { value: tm };
+    sh.uniforms.tam = { value: new THREE.Vector2(LARG, ALT) };
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vW;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', `#include <common>
+      uniform sampler2D mapa; uniform sampler2D marcas; uniform vec2 tam; varying vec3 vW;
       float h1(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
       float ru(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f*f*(3.0-2.0*f);
         return mix(mix(h1(i), h1(i+vec2(1,0)), u.x), mix(h1(i+vec2(0,1)), h1(i+vec2(1,1)), u.x), u.y); }
-      float fbm(vec2 p){ return ru(p)*0.5 + ru(p*2.07)*0.3 + ru(p*4.13)*0.2; }
-      void main(){
+      float fbm(vec2 p){ return ru(p)*0.5 + ru(p*2.07)*0.3 + ru(p*4.13)*0.2; }`)
+      .replace('#include <map_fragment>', `
+      {
         vec2 uv = vW.xz / tam;
         vec4 m = texture2D(mapa, uv);
+        vec4 mk = texture2D(marcas, uv);
+        float vProf = length(vViewPosition);
         float det = 1.0 - smoothstep(250.0, 1400.0, vProf);
         vec2 p = vW.xz;
         float n1 = fbm(p * 0.18), n2 = ru(p * 3.1) * det, n3 = fbm(p * 0.012);
         float rua = smoothstep(0.42, 0.58, m.r), grama = smoothstep(0.35, 0.6, m.g), areia = smoothstep(0.35, 0.6, m.b) * (1.0 - smoothstep(0.2, 0.5, m.r));
-        // calçada de placas de concreto
+        // calçada de placas de concreto com meio-fio
         vec2 q = abs(fract(p / 2.4) - 0.5);
         float junta = smoothstep(0.46, 0.5, max(q.x, q.y)) * det;
-        vec3 calc = vec3(0.68, 0.66, 0.62) * (0.9 + 0.1 * n1 + 0.06 * n2) - junta * 0.07;
-        // asfalto com faixa branca na borda da pista
-        vec3 asf = vec3(0.20, 0.205, 0.215) * (0.85 + 0.25 * n1 + 0.12 * n2);
-        float faixa = (smoothstep(0.60, 0.63, m.r) - smoothstep(0.66, 0.70, m.r)) * det;
-        asf = mix(asf, vec3(0.86, 0.85, 0.80), faixa * 0.75);
-        // faixa amarela dupla no meio da rua: linhas finas na borda da região central
-        float fb = fwidth(m.b) + 0.002;
-        float lin = 1.0 - smoothstep(0.03, 0.03 + fb * 1.5, abs(m.b - 0.5));
-        float centro = lin * smoothstep(0.85, 0.97, m.r) * det;
-        asf = mix(asf, vec3(0.95, 0.76, 0.18), centro * 0.9);
-        // marcas de desgaste e manchas de óleo
+        vec3 calc = vec3(0.70, 0.68, 0.64) * (0.9 + 0.1 * n1 + 0.06 * n2) - junta * 0.07;
+        float meioFio = (smoothstep(0.30, 0.36, m.r) - smoothstep(0.40, 0.46, m.r)) * det;
+        calc = mix(calc, vec3(0.86, 0.85, 0.82), meioFio * 0.9);
+        // asfalto
+        vec3 asf = vec3(0.25, 0.255, 0.265) * (0.82 + 0.25 * n1 + 0.14 * n2);
         asf *= 1.0 - smoothstep(0.62, 0.75, ru(p * 0.6)) * 0.12 * det;
-        vec3 gr = mix(vec3(0.22, 0.38, 0.14), vec3(0.36, 0.52, 0.20), n1) * (0.85 + 0.3 * n2);
-        vec3 ar = vec3(0.92, 0.85, 0.67) * (0.93 + 0.08 * n1 + 0.05 * n2);
-        // terreno urbano variado: estacionamentos e gramados entre os prédios
+        float faixa = (smoothstep(0.60, 0.63, m.r) - smoothstep(0.66, 0.70, m.r)) * det;
+        asf = mix(asf, vec3(0.86, 0.85, 0.80), faixa * 0.7);
+        // faixa amarela dupla, reta, no centro da célula
+        float cz = abs(abs(fract(p.y / ${CEL.toFixed(4)}) - 0.5) * ${CEL.toFixed(4)} - 0.16);
+        float cx = abs(abs(fract(p.x / ${CEL.toFixed(4)}) - 0.5) * ${CEL.toFixed(4)} - 0.16);
+        float amar = mk.b * (1.0 - smoothstep(0.06, 0.1, cz)) + mk.a * (1.0 - smoothstep(0.06, 0.1, cx));
+        asf = mix(asf, vec3(0.95, 0.76, 0.18), amar * det * 0.9);
+        // faixa de pedestre (zebra) nos cruzamentos
+        float zx = step(0.5, fract(p.x / 1.1)), zz = step(0.5, fract(p.y / 1.1));
+        float zebra = (mk.r * zx + mk.g * zz) * det;
+        asf = mix(asf, vec3(0.9, 0.9, 0.87), zebra * 0.85);
+        vec3 gr = mix(vec3(0.26, 0.36, 0.15), vec3(0.42, 0.50, 0.24), n1) * (0.85 + 0.3 * n2);
+        vec3 ar = vec3(0.90, 0.80, 0.60) * (0.93 + 0.08 * n1 + 0.05 * n2);
+        // estacionamentos com vagas pintadas e gramados entre os prédios
         float lote = fbm(p * 0.021 + 7.0), jard = fbm(p * 0.03 - 3.0);
-        vec3 c = mix(calc, vec3(0.38, 0.385, 0.39) * (0.9 + 0.2 * n2), smoothstep(0.58, 0.68, lote) * 0.85);
+        float ehLote = smoothstep(0.58, 0.68, lote);
+        vec3 estac = vec3(0.30, 0.305, 0.31) * (0.9 + 0.2 * n2);
+        float vz = fract(p.y / 15.0);
+        float vaga = step(fract(p.x / 2.7), 0.05) * (step(0.12, vz) * step(vz, 0.44) + step(0.56, vz) * step(vz, 0.88)) * det;
+        estac = mix(estac, vec3(0.88), vaga * 0.8);
+        vec3 c = mix(calc, estac, ehLote * 0.9);
         c = mix(c, gr * 0.95, smoothstep(0.6, 0.7, jard) * 0.85);
         c = mix(c, gr, grama);
         c = mix(c, ar, areia);
         c = mix(c, asf, rua);
         c *= 0.9 + 0.18 * n3;
-        // sombra de contato junto aos prédios
-        c *= 1.0 - smoothstep(0.05, 0.6, m.a) * 0.32;
-        c *= (0.14 + 0.8 * luz) * corLuz;
-        float f = smoothstep(nevoaPerto, nevoaLonge, vProf);
-        gl_FragColor = vec4(mix(c, corNevoa, f), 1.0);
-        #include <colorspace_fragment>
-      }`,
-  });
-  const geo = new THREE.PlaneGeometry(LARG, ALT);
+        c *= 1.0 - smoothstep(0.05, 0.6, m.a) * 0.3;
+        diffuseColor.rgb = c;
+      }`);
+  };
+  const geo = new THREE.PlaneGeometry(LARG, ALT, 48, 28);
   geo.rotateX(-Math.PI / 2);
   geo.translate(LARG / 2, 0, ALT / 2);
   const chao = new THREE.Mesh(geo, mat);
   chao.name = 'chao';
+  chao.receiveShadow = true;
   cena.add(chao);
-  const fundo = new THREE.Mesh(new THREE.PlaneGeometry(80000, 80000).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x1d5a7a }));
-  fundo.position.set(LARG / 2, -0.6, ALT / 2);
+  const fundo = new THREE.Mesh(new THREE.PlaneGeometry(80000, 80000).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x0f3a3a }));
+  fundo.position.set(LARG / 2, -4, ALT / 2);
   cena.add(fundo);
   return chao;
 }
+
 // ---------------- água animada ----------------
 export function construirAgua(cena) {
   const m = new Uint8Array(GW * GH);
@@ -410,45 +594,57 @@ export function construirAgua(cena) {
   const mask = new THREE.DataTexture(m, GW, GH, THREE.RedFormat, THREE.UnsignedByteType);
   mask.magFilter = THREE.LinearFilter; mask.minFilter = THREE.LinearFilter;
   mask.needsUpdate = true;
-  const mat = new THREE.ShaderMaterial({
-    transparent: true,
-    depthWrite: false,
-    uniforms: {
-      tempo: { value: 0 }, mascara: { value: mask }, tam: { value: new THREE.Vector2(LARG, ALT) },
-      alfa: { value: 1 }, luz: { value: 1 },
-      corNevoa: { value: new THREE.Color(0xa9c8de) }, nevoaPerto: { value: 2000 }, nevoaLonge: { value: 9000 },
-    },
-    vertexShader: `
-      varying vec3 vW; varying float vProf;
-      void main(){ vec4 w = modelMatrix * vec4(position,1.0); vW = w.xyz; vec4 mv = viewMatrix * w; vProf = -mv.z; gl_Position = projectionMatrix * mv; }`,
-    fragmentShader: `
-      uniform float tempo; uniform sampler2D mascara; uniform vec2 tam; uniform float alfa; uniform float luz;
-      uniform vec3 corNevoa; uniform float nevoaPerto; uniform float nevoaLonge;
-      varying vec3 vW; varying float vProf;
-      void main(){
+  const tempo = { value: 0 };
+  const mat = new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, depthWrite: false, shininess: 90, specular: 0x556666, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.mascara = { value: mask };
+    sh.uniforms.tam = { value: new THREE.Vector2(LARG, ALT) };
+    sh.uniforms.tempo = tempo;
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vW;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', `#include <common>
+      uniform sampler2D mascara; uniform vec2 tam; uniform float tempo; varying vec3 vW;
+      float h1a(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
+      float rua2(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f*f*(3.0-2.0*f);
+        return mix(mix(h1a(i), h1a(i+vec2(1,0)), u.x), mix(h1a(i+vec2(0,1)), h1a(i+vec2(1,1)), u.x), u.y); }`)
+      .replace('#include <map_fragment>', `
+      {
         vec2 uv = vW.xz / tam;
-        float m = 1.0;
-        if (uv.x > 0.0 && uv.y > 0.0 && uv.x < 1.0 && uv.y < 1.0) m = texture2D(mascara, uv).r;
-        if (m < 0.45) discard;
-        float o = sin(vW.x*0.045 + tempo*0.9) * sin(vW.z*0.06 - tempo*1.1) + 0.5*sin((vW.x+vW.z)*0.11 + tempo*1.7);
-        vec3 raso = vec3(0.16,0.52,0.62), fundo = vec3(0.07,0.30,0.45);
-        float costa = smoothstep(0.45, 0.95, m);
-        vec3 c = mix(raso, fundo, costa) + o*0.035;
-        c += vec3(0.9) * pow(max(0.0, o), 6.0) * 0.12;
-        c *= luz;
-        float f = smoothstep(nevoaPerto, nevoaLonge, vProf);
-        gl_FragColor = vec4(mix(c, corNevoa, f), alfa * (0.86 + 0.14*costa));
-      }`,
-  });
-  const geo = new THREE.PlaneGeometry(LARG + 30000, ALT + 30000);
+        float mm = 1.0;
+        if (uv.x > 0.0 && uv.y > 0.0 && uv.x < 1.0 && uv.y < 1.0) mm = texture2D(mascara, uv).r;
+        if (mm < 0.45) discard;
+        float prof = length(vViewPosition);
+        float det = 1.0 - smoothstep(600.0, 3000.0, prof);
+        vec2 p = vW.xz;
+        float fundo = smoothstep(0.45, 0.98, mm);
+        vec3 raso = vec3(0.16, 0.38, 0.36), alto = vec3(0.06, 0.20, 0.21);
+        vec3 c = mix(raso, alto, fundo);
+        float o = rua2(p * 0.03 + vec2(tempo * 0.05, tempo * 0.03));
+        c *= 0.88 + 0.24 * o;
+        // espuma nas cristas: traços alongados que andam com o vento
+        vec2 q = vec2(p.x * 0.022 + p.y * 0.008, p.y * 0.06 - p.x * 0.012) + vec2(tempo * 0.04, tempo * 0.1);
+        float cr = rua2(q) * 0.65 + rua2(q * 2.3) * 0.35;
+        float espuma = smoothstep(0.70, 0.74, cr) * (1.0 - smoothstep(0.74, 0.80, cr));
+        espuma *= smoothstep(0.35, 0.65, rua2(p * 0.004 + tempo * 0.01)) * det;
+        // arrebentação junto à costa
+        float costa = (1.0 - smoothstep(0.5, 0.75, mm)) * (0.6 + 0.4 * sin(tempo * 1.4 + p.x * 0.05 + p.y * 0.03));
+        c = mix(c, vec3(0.85, 0.9, 0.88), clamp(espuma * 0.85 + costa * 0.7, 0.0, 1.0));
+        diffuseColor.rgb = c;
+        diffuseColor.a = 0.9 + 0.1 * fundo;
+      }`);
+  };
+  const geo = new THREE.PlaneGeometry(LARG + 30000, ALT + 30000, 64, 48);
   geo.rotateX(-Math.PI / 2);
   const agua = new THREE.Mesh(geo, mat);
-  agua.position.set(LARG / 2, 0.15, ALT / 2);
+  agua.position.set(LARG / 2, 0.3, ALT / 2);
   agua.renderOrder = 1;
+  agua.receiveShadow = true;
+  agua.userData.tempo = tempo;
   cena.add(agua);
   return agua;
 }
-
 
 // ---------------- árvores ----------------
 function corVert(g, f) {
@@ -585,7 +781,7 @@ export function construirPalmeiras(cena, qtd = 2600) {
     }
   }
   ip.count = ipf.count = a; ia.count = iac.count = b;
-  for (const x of [ip, ipf, ia, iac]) { x.computeBoundingSphere(); cena.add(x); }
+  for (const x of [ip, ipf, ia, iac]) { x.computeBoundingSphere(); x.castShadow = true; cena.add(x); }
   return [ip, ipf, ia, iac];
 }
 
@@ -638,6 +834,7 @@ export function construirCarros(cena, qtd = 1600, evitar) {
   }
   im.count = n; carros.n = n; carros.malha = im;
   im.computeBoundingSphere();
+  im.castShadow = true; im.receiveShadow = true;
   cena.add(im);
   return im;
 }

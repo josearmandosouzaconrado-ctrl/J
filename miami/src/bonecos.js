@@ -131,7 +131,7 @@ class Conjunto {
       const im = new THREE.InstancedMesh(geo, mat, max);
       im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(max * 3), 3);
-      im.count = 0; im.frustumCulled = false;
+      im.count = 0; im.frustumCulled = false; im.castShadow = true;
       cena.add(im);
       this.m[k] = im; this.n[k] = 0;
     }

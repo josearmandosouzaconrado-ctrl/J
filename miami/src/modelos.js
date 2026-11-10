@@ -517,25 +517,63 @@ const NAVAL = {
   },
   portaavioes() {
     const c = new Mont();
-    c.simetrica([[16, -150], [19, -120], [20, 90], [12, 140], [0, 160]], 18, CINZA_N, -10);
-    // convoo inclinado
-    c.planta([[-38, -160], [36, -160], [37, -20], [24, 160], [-24, 160], [-26, 40], [-40, -60]], 1.0, 0x4b4f53, 8.0);
-    c.box(1.2, 0.05, 300, 0xdedede, 0, 9.03, 0);
-    c.box(1.0, 0.05, 220, 0xe0c040, -10, 9.04, -45, 0, -0.16, 0);
-    for (let i = -6; i <= 6; i++) c.box(0.5, 0.05, 6, BRANCO, 0, 9.04, i * 22);
-    // ilha
-    c.box(11, 18, 30, CINZA_N, 30, 18, -30);
-    c.box(9, 6, 18, CINZA_N2, 30, 30, -30);
-    c.box(9.2, 1.5, 0.2, VIDRO, 30, 27, -14.9);
-    c.box(1.5, 14, 1.5, CINZA_N2, 30, 40, -34);
-    c.box(7, 0.6, 0.6, CINZA_N2, 30, 45, -34);
-    c.box(3.6, 0.3, 3.6, 0xffffff, 30, 33.3, -30);
-    // aviões estacionados no convés
+    // casco com proa afilada e alargamento sob o convés
+    c.simetrica([[15, -150], [18, -120], [19, 90], [11, 140], [0, 162]], 18, CINZA_N, -10);
+    c.simetrica([[33, -158], [34, -40], [32, 60], [22, 140], [12, 158]], 2.5, CINZA_N2, 5.5);
+    // convoo
+    c.planta([[-38, -160], [36, -160], [37, -20], [24, 160], [-24, 160], [-26, 40], [-40, -60]], 1.0, 0x45484b, 8.0);
+    // linhas do convés: eixo da pista angulada, bordas tracejadas, catapultas e cabos de parada
+    const DECK = 9.03, AMAR = 0xe6c23a, BR = 0xf0f0ea, VERM2 = 0xc0392b;
+    const ang = -0.16, cx0 = -10, cz0 = -45, ca = Math.cos(ang), sa = Math.sin(ang);
+    const pa = (a, b) => [cx0 + b * ca + a * sa, cz0 - b * sa + a * ca];
+    for (let k = -100; k < 100; k += 8) { const [x, z] = pa(k, 0); c.box(0.6, 0.04, 4.5, BR, x, DECK + 0.01, z, 0, ang, 0); }
+    for (const b of [-14, 14]) for (let k = -100; k < 100; k += 6) { const [x, z] = pa(k, b); c.box(0.4, 0.04, 3, BR, x, DECK, z, 0, ang, 0); }
+    for (let k = 0; k < 4; k++) { const [x, z] = pa(-70 + k * 9, 0); c.box(26, 0.05, 0.25, 0x222222, x, DECK + 0.02, z, 0, ang, 0); }
+    for (const x of [-6, 6, -28, -18]) c.box(0.5, 0.05, 80, 0x2b2b2b, x, DECK + 0.01, x > -10 ? 110 : 30);
+    for (const x of [-6, 6]) c.box(0.3, 0.05, 80, AMAR, x + 1.2, DECK + 0.02, 110);
+    c.box(0.5, 0.04, 300, AMAR, 32, DECK, 0);                   // faixa de segurança da borda
+    c.box(0.5, 0.04, 300, VERM2, -36, DECK, -10, 0, 0.03, 0);
+    // elevadores de aeronaves
+    for (const [x, z] of [[36, -80], [36, 30], [-40, -30]]) c.box(14, 0.6, 16, 0x3e4144, x, 8.6, z);
+    // número 68 pintado no convés (na proa) — segmentos
+    const SEG = { 6: 'afedcg', 8: 'abcdefg' };
+    const seg = (x, z, w, h, l) => {
+      const p = { a: [0, h, w, 0.9], b: [w / 2, h / 2, 0.9, h / 2], c: [w / 2, -h / 2, 0.9, h / 2], d: [0, -h, w, 0.9], e: [-w / 2, -h / 2, 0.9, h / 2], f: [-w / 2, h / 2, 0.9, h / 2], g: [0, 0, w, 0.9] }[l];
+      c.box(p[2], 0.05, p[3], BR, x + p[0], DECK + 0.02, z + p[1]);
+    };
+    for (const [d, dx] of [[6, -6], [8, 6]]) for (const l of SEG[d]) seg(dx, 128, 6, 5, l);
+    // ilha (superestrutura) com degraus, janelas, número no costado e mastros
+    c.box(11, 16, 30, CINZA_N, 30, 17, -30);
+    c.box(10, 6, 22, CINZA_N2, 30, 27.5, -28);
+    c.box(8.5, 5, 14, CINZA_N, 30, 33, -26);
+    c.box(9.2, 1.4, 0.2, VIDRO, 30, 33.5, -18.95);
+    for (const sx of [24.4, 35.6]) c.box(0.2, 1.2, 12, VIDRO, sx, 33.5, -26);
+    for (let i = 0; i < 3; i++) c.box(10.6, 0.15, 30.4, CINZA_N2, 30, 12 + i * 5, -30);
+    for (const l of SEG[6]) { const p = { a: [0, 4, 4, 0.8], b: [2, 2, 0.8, 4], c: [2, -2, 0.8, 4], d: [0, -4, 4, 0.8], e: [-2, -2, 0.8, 4], f: [-2, 2, 0.8, 4], g: [0, 0, 4, 0.8] }[l]; c.box(0.2, p[3], p[2], BR, 24.4, 22 + p[1], -36 + p[0]); }
+    for (const l of SEG[8]) { const p = { a: [0, 4, 4, 0.8], b: [2, 2, 0.8, 4], c: [2, -2, 0.8, 4], d: [0, -4, 4, 0.8], e: [-2, -2, 0.8, 4], f: [-2, 2, 0.8, 4], g: [0, 0, 4, 0.8] }[l]; c.box(0.2, p[3], p[2], BR, 24.4, 22 + p[1], -30 + p[0]); }
+    // mastro treliçado e radares
+    for (const [ox, oz] of [[-1.5, -1.5], [1.5, -1.5], [-1.5, 1.5], [1.5, 1.5]]) c.box(0.35, 14, 0.35, CINZA_N2, 30 + ox, 42, -30 + oz);
+    for (let i = 0; i < 4; i++) c.box(3.6, 0.25, 3.6, CINZA_N2, 30, 36 + i * 3.5, -30);
+    c.box(8, 0.5, 0.6, CINZA_N2, 30, 47, -30);
+    c.box(5, 2.2, 0.3, 0xcfd3d6, 30, 45, -24, 0, 0.3, 0);
+    c.esf(1.6, BRANCO, 33, 38.5, -40);
+    c.esf(1.3, BRANCO, 27, 38, -40);
+    c.cil(0.2, 0.2, 6, 6, METAL, 30, 52, -30);
+    // botes salva-vidas, guindaste e veículos de convés
+    for (let i = 0; i < 5; i++) c.cil(0.7, 0.7, 2.5, 8, 0xdddddd, 34.5, 6, -120 + i * 12, Math.PI / 2);
+    c.box(3, 1.2, 4, 0xe6c23a, 26, 9.6, -55);
+    c.box(2.5, 1.6, 3.5, 0xdddddd, 20, 9.8, 10);
+    c.box(2, 1.0, 3, 0xe6c23a, -20, 9.5, 70);
+    // canhões CIWS e lançadores
+    for (const [x, z] of [[33, 150], [-30, -150], [33, -150]]) { c.cil(1.2, 1.4, 2, 10, BRANCO, x, 10, z); c.cil(0.2, 0.2, 2.4, 6, METAL, x, 11, z + 1.4, Math.PI / 2); }
+    // aviões estacionados (silhuetas com cabine e deriva)
     const meia = [[0.9, -7], [5, -3], [5, -2], [1.4, 2.5], [0, 7.5]];
     const jato = meia.concat(meia.slice().reverse().map(([x, z]) => [-x, z]));
-    for (let i = 0; i < 7; i++) {
-      const dx = -26 + (i % 2) * 12, dz = -120 + i * 34;
-      c.planta(jato.map(([x, z]) => [x + dx, z + dz]), 1.0, CINZA_F, 9.0);
+    for (let i = 0; i < 9; i++) {
+      const dx = -30 + (i % 3) * 8, dz = -140 + Math.floor(i / 3) * 18;
+      c.planta(jato.map(([x, z]) => [x * 0.8 + dx, z * 0.8 + dz]), 0.7, CINZA_F, 9.0);
+      c.box(0.9, 0.5, 2.2, 0x383f45, dx, 10.0, dz + 2.5);
+      c.box(0.15, 1.6, 1.6, CINZA_F, dx, 10.4, dz - 4.5);
     }
     return { corpo: c.build() };
   },
@@ -659,6 +697,23 @@ export function criarModelo(nome) {
     h.rotation.x = Math.PI / 2;
     grupo.add(h); r.helice = h;
   }
+  if (def.motorZ !== undefined) {
+    // chama do pós-combustor: cones aditivos que pulsam
+    const g = new THREE.ConeGeometry(0.55, 4.2, 10, 1, true);
+    g.rotateX(-Math.PI / 2); g.translate(0, 0, -2.1);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xffb070, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false });
+    const g2 = new THREE.ConeGeometry(0.35, 2.6, 10, 1, true);
+    g2.rotateX(-Math.PI / 2); g2.translate(0, 0, -1.3);
+    const mat2 = new THREE.MeshBasicMaterial({ color: 0x9fc8ff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+    r.chamas = [];
+    const xs = nome === 'f18' ? [-0.65, 0.65] : [0];
+    for (const x of xs) {
+      const a = new THREE.Mesh(g, mat), b = new THREE.Mesh(g2, mat2);
+      a.position.set(x, def.motorY, def.motorZ); b.position.set(x, def.motorY, def.motorZ);
+      grupo.add(a); grupo.add(b);
+      r.chamas.push(a, b);
+    }
+  }
   if (def.nacele) {
     r.naceles = [];
     for (const s of [-1, 1]) {
@@ -673,6 +728,7 @@ export function criarModelo(nome) {
       r.naceles.push({ piv, ro });
     }
   }
+  grupo.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return r;
 }
 
