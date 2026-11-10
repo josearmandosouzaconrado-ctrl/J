@@ -750,7 +750,7 @@ function lugarArvore() {
   return null;
 }
 
-export function construirPalmeiras(cena, qtd = 2600) {
+export function construirPalmeiras(cena, qtd = 2600, evitar = null) {
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
   const matF = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   const P = geoPalmeira(), A = geoArvore();
@@ -762,7 +762,7 @@ export function construirPalmeiras(cena, qtd = 2600) {
   while ((a < nP || b < nA) && tent < qtd * 6) {
     tent++;
     const l = lugarArvore();
-    if (!l) continue;
+    if (!l || (evitar && evitar(l.x, l.z))) continue;
     if (l.tipo === 0 && a < nP) {
       const k = 0.8 + Math.random() * 0.5;
       e.set(0, Math.random() * 6.28, 0); q.setFromEuler(e);

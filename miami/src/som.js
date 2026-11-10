@@ -156,6 +156,22 @@ export function somTiro(arma, vol) {
       rajada(vol * 0.6, 0.06, 0.9, 500, 1.4, 'bandpass', 0.6, 0, ruido, 2600);   // assobio subindo
       tom(vol * 0.4, 0.4, 90, 40);
       break;
+    case 'gau8': {
+      // "BRRRT": serra grave de 65 Hz com ruído, 1,7 s
+      if (!limitar('gau', 900)) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 66;
+      const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 900 * brilho + 200;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol * 0.9, t + 0.05);
+      g.gain.setValueAtTime(vol * 0.9, t + 1.6); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.9);
+      o.connect(f); f.connect(g); g.connect(mestre);
+      const e = ctx.createGain(); e.gain.value = 0.6; g.connect(e); e.connect(eco);
+      o.start(t); o.stop(t + 2);
+      rajada(vol * 0.5, 0.01, 1.7, 500, 0.8, 'bandpass', 0.6);
+      rajada(vol * 0.4, 0.1, 2.2, 250, 0.6, 'lowpass', 1.2, 1.7, marrom);
+      break;
+    }
     case 'bomba':
       if (!limitar('bmb', 150)) return;
       tom(vol * 0.18, 1.2, 1400, 500, 'sine', 0, 0.3);                           // assobio da queda

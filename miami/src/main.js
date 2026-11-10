@@ -208,7 +208,7 @@ async function iniciar() {
     for (const u of G.unidades) {
       if (!u.vivo || u.dentro) continue;
       const d = Math.hypot(u.x - camRTS.alvo.x, u.z - camRTS.alvo.z) + camRTS.dist * 0.5;
-      if (u.classe === 'jato' && (u.estadoJato === 'voando' || u.estadoJato === 'voltando')) jv = Math.max(jv, 1 - d / 2600);
+      if (u.classe === 'jato' && u.estadoJato !== 'pronto' && u.estadoJato !== 'rearmando') jv = Math.max(jv, (1 - d / 2600) * (u.estadoJato === 'pousando' ? 0.5 : 1));
       else if (u.classe === 'veic') { const v = (1 - d / 350) * (u.d.raio >= 3.4 ? 1 : 0.55); if (v > mv) { mv = v; rot = Math.min(1, u.velAtual / u.d.vel); } }
     }
     somJato(G.pausado ? 0 : Math.max(0, jv));

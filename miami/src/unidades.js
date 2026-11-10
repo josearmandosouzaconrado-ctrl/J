@@ -118,22 +118,25 @@ export function ordenarMover(unids, x, z) {
 }
 
 function ordenarJato(j, x, z) {
-  if (j.estadoJato === 'rearmando') { alerta(`${j.d.nome} está sendo rearmado no porta-aviões`, j.x, j.z); return; }
+  if (j.estadoJato === 'rearmando') { alerta(`${j.d.nome} está sendo rearmado`, j.x, j.z); return; }
+  if (j.estadoJato === 'pousando') { alerta(`${j.d.nome} está pousando`, j.x, j.z); return; }
   j.ordem = { tipo: 'ataque', x, z };
   if (j.estadoJato === 'pronto') {
-    j.estadoJato = 'voando';
-    j.x = G.porta.x + Math.sin(G.porta.ang) * 120; j.z = G.porta.z + Math.cos(G.porta.ang) * 120;
-    j.ang = Math.atan2(x - j.x, z - j.z);
-    j.alt = 12; j.velAtual = j.d.vel * 0.6;
+    // vai para a catapulta / cabeceira da pista e decola
+    const p = baseDo(j), gb = geoBase(p);
+    const q = pontoBase(p, gb.dx, gb.d0);
+    j.x = q.x; j.z = q.z; j.y = (p.deck ?? 9.2) + 0.2; j.ang = p.ang;
+    j.velAtual = ehPorta(p) ? 15 : 0;
+    j.estadoJato = 'decolando'; j.lancou = false; j.saidaPt = null;
     if (j.m) j.m.grupo.visible = true;
-  } else j.estadoJato = 'voando';
+  } else if (j.estadoJato !== 'decolando') j.estadoJato = 'voando';
   j.passe = 0;
 }
 
 // bombardeio de área: faixa de (x0,z0) até (x1,z1) com largura w; cada passada despeja a carga ao longo dela
 export function ordenarAreaJatos(jatos, x0, z0, x1, z1, w) {
   jatos.forEach((j, i) => {
-    if (j.estadoJato === 'rearmando') { alerta(`${j.d.nome} está sendo rearmado no porta-aviões`, j.x, j.z); return; }
+    if (j.estadoJato === 'rearmando' || j.estadoJato === 'pousando') { alerta(`${j.d.nome} está pousando/rearmando`, j.x, j.z); return; }
     ordenarJato(j, (x0 + x1) / 2, (z0 + z1) / 2);
     // jatos em sequência: o segundo faz a faixa no sentido contrário
     const inv = i % 2 === 1;
@@ -145,7 +148,7 @@ function jatoArea(u, o, dt) {
   const d = u.d;
   const dx = o.bx - o.ax, dz = o.bz - o.az, L = Math.max(1, Math.hypot(dx, dz)), ux = dx / L, uz = dz / L;
   const px = -uz * o.deslocamento, pz = ux * o.deslocamento;
-  let tx, tz, alt = d.arma === 'bomba' ? 130 : 80;
+  let tx, tz, alt = d.arma === 'canhao' ? 45 : d.arma === 'bomba' ? 130 : 80;
   if (o.fase === 'aprox') {
     tx = o.ax - ux * 900 + px; tz = o.az - uz * 900 + pz;
     alt = d.altCruz;
@@ -157,19 +160,23 @@ function jatoArea(u, o, dt) {
     tx = o.bx + ux * 500 + px; tz = o.bz + uz * 500 + pz;
     // posição ao longo da faixa
     const t = (u.x - o.ax) * ux + (u.z - o.az) * uz;
-    const n = d.arma === 'bomba' ? 6 : 10;
+    const n = d.arma === 'canhao' ? 40 : d.arma === 'bomba' ? (d.bombas ? 8 : 6) : 10;
     const esp = L / n;
     // a bomba cai um pouco à frente: compensa
-    const queda = d.arma === 'bomba' ? u.velAtual * 0.6 * Math.sqrt(2 * u.y / 9.8) * 0.5 : 120;
+    const queda = d.arma === 'canhao' ? 170 : d.arma === 'bomba' ? u.velAtual * 0.6 * Math.sqrt(2 * u.y / 9.8) * 0.5 : 120;
     while (o.soltas < n && t + queda >= o.soltas * esp + esp / 2) {
       const at = Math.min(L, o.soltas * esp + esp / 2);
       const lat = rand(-o.w / 2, o.w / 2);
       const bx = o.ax + ux * at - uz * lat + px * 0.3, bz = o.az + uz * at + ux * lat + pz * 0.3;
-      if (d.arma === 'bomba') lancarProjetil(u.x, u.y, u.z, bx, bz, { arma: 'bomba', dano: d.dano, splash: d.splash, precisao: 1 }, u);
+      if (d.arma === 'canhao') {
+        G.efeitos.tracante(u.x + Math.sin(u.ang) * 9, u.y - 0.4, u.z + Math.cos(u.ang) * 9, bx, 0.5, bz, [1, 0.55, 0.2]);
+        explodir(bx, 0.3, bz, d.splash, d.dano, u, true);
+        if (o.soltas === 0) somTiro('gau8', volEm(u.x, u.z));
+      } else if (d.arma === 'bomba') lancarProjetil(u.x, u.y, u.z, bx, bz, { arma: 'bomba', dano: d.dano, splash: d.splash, precisao: 1 }, u);
       else lancarProjetil(u.x, u.y - 1, u.z, bx, bz, { arma: 'foguete', dano: d.dano, splash: d.splash, precisao: 1, missil: true }, u);
       o.soltas++;
       if (o.soltas === 1) { ruido(o.ax, o.az, 700); }
-      somTiro(d.arma === 'bomba' ? 'bomba' : 'foguete', volEm(u.x, u.z));
+      if (d.arma !== 'canhao') somTiro(d.arma === 'bomba' ? 'bomba' : 'foguete', volEm(u.x, u.z));
     }
     if (t > L + 450) {
       u.municao--;
@@ -806,76 +813,159 @@ function atualizarAereo(u, dt) {
   });
 }
 
+// ponto no referencial da base aérea (porta-aviões ou pista): lx lateral, lz ao longo do eixo
+function pontoBase(p, lx, lz) {
+  const c = Math.cos(p.ang), s = Math.sin(p.ang);
+  return { x: p.x + lx * c + lz * s, z: p.z - lx * s + lz * c };
+}
+function baseDo(u) { const b = u.base; return b && b.vivo ? b : G.porta; }
+function ehPorta(p) { return p.tipo === 'portaavioes'; }
+// geometria da pista em cada tipo de base: decolagem, toque e vagas
+function geoBase(p) {
+  return ehPorta(p)
+    ? { dx: 6, d0: 20, d1: 160, td: -110, frear: 30, vaga: (k) => [-24 + (k % 2) * 10, 40 + k * 22] }
+    : { dx: 0, d0: -140, d1: 80, td: -130, frear: 11, vaga: (k) => [-40 + (k % 2) * 10, 25 + k * 18] };
+}
+
 function atualizarJato(u, dt) {
-  const d = u.d, p = G.porta;
+  const d = u.d, p = baseDo(u);
+  if (!p) return;
+  const gb = geoBase(p), deck = (p.deck ?? 9.2) + 0.2;
+  const ax = Math.sin(p.ang), az = Math.cos(p.ang);
+  u.vy = 0;
   if (u.estadoJato === 'pronto' || u.estadoJato === 'rearmando') {
-    // estacionado no convés
-    const k = u.vagaConves ?? 0;
-    const lx = -24 + (k % 2) * 10, lz = 40 + k * 22;
-    const c = Math.cos(p.ang), s = Math.sin(p.ang);
-    u.x = p.x + lx * c + lz * s; u.z = p.z - lx * s + lz * c; u.y = (p.deck ?? 9.2) + 0.2; u.ang = p.ang + Math.PI * 0.75;
-    u.velAtual = 0;
+    const [lx, lz] = gb.vaga(u.vagaConves ?? 0);
+    const q = pontoBase(p, lx, lz);
+    u.x = q.x; u.z = q.z; u.y = deck; u.ang = p.ang + Math.PI * 0.75;
+    u.velAtual = 0; u.banco = 0;
     if (u.estadoJato === 'rearmando') {
       u.rearme -= dt;
-      if (u.rearme <= 0) { u.estadoJato = 'pronto'; u.municao = d.municao; u.hp = u.hpMax; alerta(`${d.nome} rearmado e pronto no porta-aviões`, u.x, u.z); }
+      if (u.rearme <= 0) { u.estadoJato = 'pronto'; u.municao = d.municao; u.hp = u.hpMax; alerta(`${d.nome} rearmado e pronto`, u.x, u.z); }
     }
+    return;
+  }
+  if (u.estadoJato === 'decolando') {
+    // corrida pela catapulta / pista, depois sobe
+    const vMax = d.vel * 0.42;
+    u.velAtual = Math.min(vMax, u.velAtual + (ehPorta(p) ? 28 : 16) * dt);
+    u.ang = p.ang;
+    u.x += ax * u.velAtual * dt; u.z += az * u.velAtual * dt;
+    const lz = (u.x - p.x) * ax + (u.z - p.z) * az;
+    if (lz > gb.d1) { u.y += 14 * dt; u.vy = 14; } else u.y = deck;
+    if (u.y > deck + 25) u.estadoJato = 'voando';
+    if (Math.random() < dt * 40) G.efeitos.particula(u.x - ax * 9, u.y + 0.5, u.z - az * 9, rand(-2, 2), 1, rand(-2, 2), 2, 0.8, [0.85, 0.85, 0.85], [0.7, 0.7, 0.7], 0.4, 0, 3);
+    return;
+  }
+  if (u.estadoJato === 'pousando') {
+    // toque e frenagem (cabo de parada no porta-aviões, freio na pista)
+    u.velAtual = Math.max(0, u.velAtual - gb.frear * dt);
+    u.ang = p.ang; u.y = deck; u.banco = 0;
+    u.x += ax * u.velAtual * dt; u.z += az * u.velAtual * dt;
+    if (u.velAtual < 3) { u.estadoJato = 'rearmando'; u.rearme = 18; u.ordem = null; }
     return;
   }
   // em voo
   const o = u.ordem;
-  let tx, tz, alvoAlt = d.altCruz;
-  if (u.estadoJato === 'voltando' || !o) {
-    tx = p.x - Math.sin(p.ang) * 200; tz = p.z - Math.cos(p.ang) * 200;
-    u.estadoJato = 'voltando';
-    if (dist(u.x, u.z, p.x, p.z) < 320) alvoAlt = 40;
-    if (dist(u.x, u.z, tx, tz) < 120 || dist(u.x, u.z, p.x, p.z) < 140) {
-      u.estadoJato = 'rearmando'; u.rearme = 18; u.ordem = null;
+  let tx, tz, alvoAlt = d.altCruz, vAlvo = d.vel, giro = 0.9;
+  if (u.estadoJato === 'aproximando') {
+    // planeio alinhado com a pista até o ponto de toque
+    const t = pontoBase(p, gb.dx * 0, gb.td);
+    const dd = dist(u.x, u.z, t.x, t.z);
+    tx = t.x; tz = t.z;
+    alvoAlt = deck + Math.min(90, dd * 0.07);
+    vAlvo = Math.max(65, d.vel * 0.32);
+    giro = 1.2;
+    const lz = (u.x - p.x) * ax + (u.z - p.z) * az;
+    if (dd < 30 || (lz > gb.td && Math.abs((u.x - p.x) * az - (u.z - p.z) * ax) < 25)) {
+      u.estadoJato = 'pousando'; u.y = deck;
+      G.efeitos.poeira(u.x, u.z, 3);
+      somEsmagar(volEm(u.x, u.z) * 0.6);
       return;
     }
+    if (dd > 2500) u.estadoJato = 'voltando';
+  } else if (u.estadoJato === 'voltando' || !o) {
+    // vai até o início da aproximação, atrás da base
+    u.estadoJato = 'voltando';
+    const a = pontoBase(p, 0, gb.td - 1300);
+    tx = a.x; tz = a.z;
+    if (dist(u.x, u.z, a.x, a.z) < 700) alvoAlt = deck + 100;
+    if (dist(u.x, u.z, a.x, a.z) < 180) u.estadoJato = 'aproximando';
   } else if (o.tipo === 'area') {
     const r = jatoArea(u, o, dt);
     tx = r.tx; tz = r.tz; alvoAlt = r.alt;
   } else {
     tx = o.x; tz = o.z;
     const dd = dist(u.x, u.z, tx, tz);
-    if (dd < 600) alvoAlt = d.arma === 'bomba' ? 120 : 70;
-    // lança quando está alinhado e perto
+    const canhao = d.arma === 'canhao';
+    // depois de cada passada, segue em frente e só então volta alinhado para outra
+    if (u.lancou && !u.saidaPt) u.saidaPt = { x: u.x + Math.sin(u.ang) * 1400, z: u.z + Math.cos(u.ang) * 1400 };
+    if (dd < 900) alvoAlt = canhao ? 45 : d.arma === 'bomba' ? 120 : 70;
+    if (canhao) vAlvo = d.vel * 0.85;
     const angA = Math.atan2(tx - u.x, tz - u.z);
-    if (dd < (d.arma === 'bomba' ? 330 : 380) && Math.abs(angDif(u.ang, angA)) < 0.25 && !u.lancou) {
+    const lancaEm = canhao ? 330 : d.arma === 'bomba' ? 330 : 380;
+    if (dd < lancaEm && Math.abs(angDif(u.ang, angA)) < 0.25 && !u.lancou) {
       const alvo = acharAlvo({ x: tx, z: tz }, 160, d.splash);
       if (!alvo) {
-        // nenhum zumbi no ponto: passa sem atirar (evita acertar civis)
         u.lancou = true; u.passe = (u.passe || 0) + 1;
         if (u.passe >= 3) { u.estadoJato = 'voltando'; alerta(`${d.nome}: nenhum alvo no local, voltando`, u.x, u.z); }
-      } else if (d.arma === 'bomba') {
-        for (let b = 0; b < 2; b++) lancarProjetil(u.x, u.y, u.z, alvo.x + rand(-6, 6) + b * Math.sin(u.ang) * 14, alvo.z + rand(-6, 6) + b * Math.cos(u.ang) * 14, { arma: 'bomba', dano: d.dano, splash: d.splash, precisao: 1 }, u);
       } else {
-        for (let b = 0; b < d.rajada; b++) {
-          const ax = alvo.x + rand(-12, 12), az = alvo.z + rand(-12, 12);
-          lancarProjetil(u.x + rand(-1, 1), u.y - 1, u.z + rand(-1, 1), ax, az, { arma: 'foguete', dano: d.dano, splash: d.splash, precisao: 1, missil: true }, u);
+        if (canhao) { u.rajadaT = 1.7; somTiro('gau8', volEm(u.x, u.z)); }
+        else if (d.arma === 'bomba') {
+          const nb = d.bombas || 2;
+          for (let b = 0; b < nb; b++) lancarProjetil(u.x, u.y, u.z, alvo.x + rand(-6, 6) + (b - (nb - 1) / 2) * Math.sin(u.ang) * 14, alvo.z + rand(-6, 6) + (b - (nb - 1) / 2) * Math.cos(u.ang) * 14, { arma: 'bomba', dano: d.dano, splash: d.splash, precisao: 1 }, u);
+          somTiro('bomba', volEm(u.x, u.z));
+        } else {
+          for (let b = 0; b < d.rajada; b++) {
+            const ax2 = alvo.x + rand(-12, 12), az2 = alvo.z + rand(-12, 12);
+            lancarProjetil(u.x + rand(-1, 1), u.y - 1, u.z + rand(-1, 1), ax2, az2, { arma: 'foguete', dano: d.dano, splash: d.splash, precisao: 1, missil: true }, u);
+          }
+          somTiro('foguete', volEm(u.x, u.z));
         }
-      }
-      if (alvo) {
-        somTiro('foguete', volEm(u.x, u.z));
         u.municao--;
         u.lancou = true;
         ruido(tx, tz, 600);
       }
     }
-    if (u.lancou && dd > 700) {
-      u.lancou = false;
-      if (u.municao <= 0) { u.estadoJato = 'voltando'; alerta(`${d.nome} sem munição, voltando ao porta-aviões`, u.x, u.z); }
+    if (u.lancou && u.saidaPt) {
+      if (u.municao <= 0 && !(u.rajadaT > 0)) { u.estadoJato = 'voltando'; u.lancou = false; u.saidaPt = null; alerta(`${d.nome} sem munição, voltando para a base`, u.x, u.z); }
+      else if (dist(u.x, u.z, u.saidaPt.x, u.saidaPt.z) < 250) { u.lancou = false; u.saidaPt = null; }
+      else { tx = u.saidaPt.x; tz = u.saidaPt.z; }
+    }
+  }
+  // rajada do canhão GAU-8: impactos em linha à frente do avião
+  if (u.rajadaT > 0) {
+    u.rajadaT -= dt;
+    if (!u.lancou) u.rajadaT = 0;
+    u.cdGau = (u.cdGau || 0) - dt;
+    while (u.cdGau <= 0) {
+      u.cdGau += 0.04;
+      const fr = 120 + rand(-15, 15);
+      const ix = u.x + Math.sin(u.ang) * fr + rand(-5, 5), iz = u.z + Math.cos(u.ang) * fr + rand(-5, 5);
+      G.efeitos.tracante(u.x + Math.sin(u.ang) * 9, u.y - 0.4, u.z + Math.cos(u.ang) * 9, ix, 0.5, iz, [1, 0.55, 0.2]);
+      explodir(ix, 0.3, iz, d.splash, d.dano, u, true);
     }
   }
   const angA = Math.atan2(tx - u.x, tz - u.z);
   const antes = u.ang;
-  u.ang = girarPara(u.ang, angA, 0.9 * dt);
-  u.banco = clamp(angDif(antes, u.ang) / dt * 0.8, -1.1, 1.1);
-  u.velAtual += (d.vel - u.velAtual) * Math.min(1, dt * 0.8);
+  u.ang = girarPara(u.ang, angA, giro * dt);
+  u.banco += (clamp(angDif(antes, u.ang) / dt * 0.9, -1.2, 1.2) - (u.banco || 0)) * Math.min(1, dt * 4);
+  u.velAtual += (vAlvo - u.velAtual) * Math.min(1, dt * 0.8);
   u.x += Math.sin(u.ang) * u.velAtual * dt;
   u.z += Math.cos(u.ang) * u.velAtual * dt;
+  u.vy = clamp((alvoAlt - u.y) * 0.8, -40, 40);
   u.y += clamp(alvoAlt - u.y, -40 * dt, 40 * dt);
-  if (Math.random() < dt * 30) G.efeitos.particula(u.x - Math.sin(u.ang) * 9, u.y + 0.9, u.z - Math.cos(u.ang) * 9, 0, 0, 0, 1.2, 0.5, [0.8, 0.8, 0.8], [0.6, 0.6, 0.6], 0.25, 0, 2);
+  if (u.y < chaoEm(u.x, u.z) + 15 && u.estadoJato !== 'aproximando') u.y = chaoEm(u.x, u.z) + 15;
+  // fumaça do motor e vórtices nas pontas das asas em curvas fechadas
+  const ef = G.efeitos;
+  if (Math.random() < dt * 25) ef.particula(u.x - Math.sin(u.ang) * 9, u.y + 0.9, u.z - Math.cos(u.ang) * 9, 0, 0, 0, 1.2, 0.5, [0.8, 0.8, 0.8], [0.6, 0.6, 0.6], 0.22, 0, 2);
+  if (Math.abs(u.banco) > 0.5 && u.velAtual > 120) {
+    const sp = u.m && u.m.def.pontas || 6;
+    const c = Math.cos(u.ang), s = Math.sin(u.ang);
+    for (const lado of [-1, 1]) {
+      const lx = lado * sp, ly = 1.2 + lado * Math.sin(-u.banco) * sp * 0.3;
+      ef.particula(u.x + c * lx - s * 3, u.y + ly, u.z - s * lx - c * 3, 0, 0, 0, 0.5, 0.7, [1, 1, 1], [0.9, 0.9, 0.9], 0.55, 0, 0.4);
+    }
+  }
 }
 
 function controleDireto(u, dt) {
@@ -1023,7 +1113,7 @@ export function posicionarModelo(u, dt) {
   const g = u.m.grupo;
   g.position.set(u.x, u.y, u.z);
   if (u.classe === 'aereo' || u.classe === 'jato') {
-    const incl = u.classe === 'jato' ? 0.05 : clamp(u.velAtual / u.d.vel, -1, 1) * 0.18;
+    const incl = u.classe === 'jato' ? -clamp(Math.atan2(u.vy || 0, Math.max(30, u.velAtual)), -0.5, 0.5) : clamp(u.velAtual / u.d.vel, -1, 1) * 0.18;
     _euler.set(incl, u.ang, u.classe === 'jato' ? -(u.banco || 0) : 0, 'YXZ');
     g.rotation.copy(_euler);
   } else if (u.classe === 'naval' && u.d.raio < 20) {
@@ -1031,8 +1121,12 @@ export function posicionarModelo(u, dt) {
     g.rotation.copy(_euler);
   } else g.rotation.set(0, u.ang, 0);
   if (u.m.torre) u.m.torre.rotation.y = u.torreAng;
+  if (u.m.trem) {
+    const e = u.estadoJato, deck = (baseDo(u)?.deck ?? 9.2);
+    u.m.trem.visible = e === 'pronto' || e === 'rearmando' || e === 'pousando' || (e === 'decolando' && u.y < deck + 12) || (e === 'aproximando' && u.y < deck + 60);
+  }
   if (u.m.chamas) {
-    const voando = u.estadoJato === 'voando' || u.estadoJato === 'voltando';
+    const voando = u.estadoJato === 'voando' || u.estadoJato === 'voltando' || u.estadoJato === 'decolando';
     const k = voando ? 0.8 + Math.random() * 0.4 : 0;
     for (const c of u.m.chamas) { c.visible = voando; c.scale.set(1, 1, k); }
   }
@@ -1047,7 +1141,7 @@ export function posicionarModelo(u, dt) {
     const ch = chaoEm(u.x, u.z);
     const alt = u.y - ch;
     const d = G.dirSol || { x: -0.5, y: 0.8, z: 0.4 };
-    u.sombra.visible = alt > 2 && !u.dentro && !(u.classe === 'jato' && u.estadoJato !== 'voando' && u.estadoJato !== 'voltando');
+    u.sombra.visible = alt > 2 && !u.dentro && !(u.classe === 'jato' && (u.estadoJato === 'pronto' || u.estadoJato === 'rearmando'));
     u.sombra.position.set(u.x - d.x / d.y * alt, ch + 0.3, u.z - d.z / d.y * alt);
     u.sombra.scale.set(u.d.raio * 0.7, 1, u.d.raio * 1.0);
     u.sombra.rotation.y = u.ang;

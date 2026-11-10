@@ -24,8 +24,10 @@ export const TIPOS = {
   apache: { nome: 'AH-64 Apache', sub: 'Canhão 30mm + mísseis Hellfire', icone: '🚁', classe: 'aereo', modelo: 'apache', hp: 1000, vel: 80, altCruz: 55, alcance: 280, dano: 45, splash: 3, cadencia: 0.13, precisao: 0.55, arma: '30mm', sec: { alcance: 650, dano: 420, splash: 11, cadencia: 7, precisao: 0.95, arma: 'hellfire', missil: true }, custo: 1150, tempo: 22, de: 'heliporto', raio: 8 },
   reaper: { nome: 'Drone MQ-9 Reaper', sub: 'Vigia em círculos e lança Hellfire', icone: '🛩️', classe: 'aereo', modelo: 'reaper', hp: 450, vel: 70, altCruz: 260, orbita: 240, alcance: 750, dano: 420, splash: 11, cadencia: 6.5, precisao: 0.95, arma: 'hellfire', missil: true, custo: 700, tempo: 15, de: 'heliporto', raio: 10 },
   // ---------------- porta-aviões ----------------
-  f35: { nome: 'F-35C Lightning II', sub: 'Bombas guiadas GBU • ataque aéreo', icone: '✈️', classe: 'jato', modelo: 'f35', hp: 900, vel: 250, altCruz: 160, dano: 650, splash: 20, municao: 4, arma: 'bomba', custo: 1500, tempo: 22, de: 'porta', raio: 9 },
-  f18: { nome: 'F/A-18E Super Hornet', sub: 'Foguetes e canhão • ataque rasante', icone: '✈️', classe: 'jato', modelo: 'f18', hp: 900, vel: 260, altCruz: 150, dano: 180, splash: 9, municao: 3, rajada: 6, arma: 'foguete', custo: 1250, tempo: 20, de: 'porta', raio: 9 },
+  f35: { nome: 'F-35C Lightning II', sub: 'Caça furtivo • bombas guiadas GBU-31', icone: '✈️', classe: 'jato', modelo: 'f35', hp: 900, vel: 250, altCruz: 160, dano: 650, splash: 20, municao: 4, arma: 'bomba', custo: 1500, tempo: 22, de: 'porta', raio: 9 },
+  f18: { nome: 'F/A-18E Super Hornet', sub: 'Foguetes e bombas • ataque rasante', icone: '✈️', classe: 'jato', modelo: 'f18', hp: 900, vel: 260, altCruz: 150, dano: 180, splash: 9, municao: 3, rajada: 6, arma: 'foguete', custo: 1250, tempo: 20, de: 'porta', raio: 9 },
+  a10: { nome: 'A-10 Thunderbolt II', sub: 'Canhão GAU-8 de 30mm • metralha a faixa toda', icone: '🛩️', classe: 'jato', modelo: 'a10', hp: 1600, vel: 150, altCruz: 90, dano: 70, splash: 4, municao: 5, arma: 'canhao', custo: 1400, tempo: 22, de: 'pista', raio: 10 },
+  f22: { nome: 'F-22 Raptor', sub: 'Mais rápido • 8 bombas pequenas SDB', icone: '✈️', classe: 'jato', modelo: 'f22', hp: 1000, vel: 300, altCruz: 200, dano: 380, splash: 13, municao: 4, bombas: 4, arma: 'bomba', custo: 1700, tempo: 24, de: 'pista', raio: 9 },
   osprey: { nome: 'MV-22 Osprey', sub: 'Rotores basculantes • leva 24', icone: '🛫', classe: 'aereo', modelo: 'osprey', hp: 1000, vel: 120, altCruz: 60, carga: 24, cargaTipos: ['inf', 'civil'], custo: 1200, tempo: 22, de: 'porta', raio: 9 },
   // ---------------- marinha (docas) ----------------
   lancha: { nome: 'Lancha Mark VI', sub: 'Patrulha • leva 8', icone: '🚤', classe: 'naval', modelo: 'lancha', nav: 1, hp: 800, vel: 28, alcance: 130, dano: 24, cadencia: 0.16, precisao: 0.45, arma: '50cal', carga: 8, cargaTipos: ['inf', 'civil'], custo: 320, tempo: 12, de: 'docas', raio: 8 },
@@ -54,8 +56,9 @@ export const PRODUCAO = {
   heliporto: ['blackhawk', 'chinook', 'apache', 'reaper'],
   docas: ['lancha', 'lcac', 'destroier'],
   porta: ['f35', 'f18', 'osprey'],
+  pista: ['f22', 'a10', 'f35', 'f18'],
 };
-export const NOMES_PROD = { quartel: '🪖 Quartel', patio: '🚙 Pátio', heliporto: '🚁 Heliporto', docas: '⚓ Docas', porta: '🛳️ Porta-aviões' };
+export const NOMES_PROD = { quartel: '🪖 Quartel', patio: '🚙 Pátio', heliporto: '🚁 Heliporto', docas: '⚓ Docas', porta: '🛳️ Porta-aviões', pista: '🛫 Pista de pouso' };
 // estruturas que o jogador pode construir em qualquer lugar do mapa
 export const CONSTRUIR = {
   fob: { nome: 'Posto Avançado (FOB)', sub: 'Zona segura para civis + QG de campo', icone: '⛺', custo: 900, tempo: 25, raio: 30 },
@@ -67,4 +70,5 @@ export const CONSTRUIR = {
   torre: { nome: 'Torre de Vigia', sub: 'Metralhadora .50 automática', icone: '🗼', custo: 300, tempo: 10, raio: 6 },
   muro: { nome: 'Barreira', sub: 'Gabiões contra os zumbis', icone: '🧱', custo: 60, tempo: 4, raio: 6 },
   patriot: { nome: 'Bateria Patriot', sub: 'Defesa antiaérea', icone: '🛰️', custo: 500, tempo: 15, raio: 8 },
+  pista: { nome: 'Pista de Pouso', sub: 'Base aérea: F-22 e A-10 (precisa de muito espaço)', icone: '🛫', custo: 2500, tempo: 50, raio: 60, grande: true },
 };

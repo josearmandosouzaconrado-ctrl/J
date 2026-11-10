@@ -189,7 +189,7 @@ export class UI {
         html += `<div class="sub">Carga: ${u.cargaUsada}/${u.d.carga} • ${sol} militares, ${civ} civis</div>`;
       }
       if (u.predio) html += `<div class="sub">No telhado (${u.predio.guarnicao.length}/${u.predio.cap}) • estrutura ${Math.round(u.predio.integridade)}</div>`;
-      if (u.classe === 'jato') html += `<div class="sub">${{ pronto: 'Pronto no convés', voando: 'Em missão', voltando: 'Voltando', rearmando: 'Rearmando...' }[u.estadoJato]} • munição ${u.municao}/${u.d.municao}</div>`;
+      if (u.classe === 'jato') html += `<div class="sub">${{ pronto: 'Pronto para decolar', decolando: 'Decolando', voando: 'Em missão', voltando: 'Voltando para a base', aproximando: 'Aproximação para pouso', pousando: 'Pousando', rearmando: 'Rearmando...' }[u.estadoJato]} • munição ${u.municao}/${u.d.municao}</div>`;
     }
     $('#sel-info').innerHTML = html;
     const bts = $('#sel-bts');
@@ -229,7 +229,8 @@ export class UI {
     const abas = $('#p-abas');
     abas.innerHTML = '';
     for (const k of ['construir', ...Object.keys(PRODUCAO)]) {
-      if (!COSTA && k === 'docas') continue;
+      if (!COSTA && (k === 'docas' || k === 'porta')) continue;
+      if (COSTA && k === 'pista' && !G.unidades.some((u) => u.vivo && u.tipoEstr === 'pista')) continue;
       const b = el('button', 'aba' + (k === this.abaProd ? ' ativo' : ''), k === 'construir' ? '🔨 Construir' : k === 'porta' && !COSTA ? '✈️ Aeródromo' : NOMES_PROD[k]);
       b.addEventListener('click', (e) => { e.stopPropagation(); this.abaProd = k; this.abrirProducao(); });
       abas.appendChild(b);
@@ -260,7 +261,7 @@ export class UI {
       const d = TIPOS[t];
       const c = el('div', 'carta', `<div class="ic">${d.icone}</div><div class="tx"><b>${d.nome}</b><small>${d.sub}</small><span>$${d.custo} • ${d.tempo}s</span></div>`);
       c.dataset.custo = d.custo;
-      c.addEventListener('click', (e) => { e.stopPropagation(); iniciarSom(); if (enfileirar(t)) this.atualizarProducao(); });
+      c.addEventListener('click', (e) => { e.stopPropagation(); iniciarSom(); if (enfileirar(t, this.abaProd)) this.atualizarProducao(); });
       lista.appendChild(c);
     }
     this.atualizarProducao();
@@ -510,7 +511,7 @@ export const AJUDA = `
 <p><b>Ordens</b> (com unidades selecionadas): toque no chão para mover • num zumbi para atacar • num <b>prédio</b> para pôr os soldados no telhado (atiram de cima com mais alcance) • num prédio com <b>SOS</b> para resgatar os civis presos (helicópteros pegam pelo telhado) • num <b>veículo, helicóptero ou barco</b> para embarcar as tropas • com aeronaves selecionadas, toque no porta-aviões para pousar no convés.</p>
 <p><b>Civis</b> seguem soldados e veículos que chegam perto e entram sozinhos em transportes. Leve-os para a zona segura: ao chegar lá, são resgatados (+$40 cada). Civis que acenam viram você ao longe.</p>
 <p><b>Produção:</b> 🏭 Produzir abre o Quartel (infantaria), o Pátio (Humvee, Stryker, Bradley, Abrams, Paladin, HIMARS, ambulância), o Heliporto (Black Hawk, Chinook, Apache, drone Reaper), as Docas (lancha, hovercraft LCAC, destróier) e o porta-aviões (F-35, F/A-18, Osprey).</p>
-<p><b>Jatos:</b> selecione os jatos (toque num jato ou no botão ✈️) e <b>arraste o dedo no mapa</b> para marcar a área de bombardeio: eles decolam do porta-aviões, fazem passadas soltando bombas ao longo da faixa e voltam para rearmar. Um toque simples ataca um ponto.</p>
+<p><b>✈️ Jatos:</b> F-35C e F/A-18E saem do porta-aviões pela catapulta; F-22 Raptor e A-10 Warthog precisam de uma <b>Pista de Pouso</b> (🔨 Construir; na Cidade do México ela já existe). Eles decolam, atacam, voltam alinhados com a pista e pousam para rearmar. O A-10 metralha com o canhão de 30 mm ao longo da faixa.  selecione os jatos (toque num jato ou no botão ✈️) e <b>arraste o dedo no mapa</b> para marcar a área de bombardeio: eles decolam do porta-aviões, fazem passadas soltando bombas ao longo da faixa e voltam para rearmar. Um toque simples ataca um ponto.</p>
 <p><b>Prédios:</b> metade dos soldados fica nas janelas (quebram o vidro e atiram para fora) e metade no telhado.</p>
 <p><b>🚓 Polícia SWAT:</b> quando o vírus aparece, equipes da SWAT de Miami saem das delegacias sozinhas num blindado BearCat, combatem os zumbis e levam civis para a zona segura. Você não controla a polícia.</p>
 <p><b>🎮 Controlar:</b> com uma unidade selecionada, assuma o controle em 3ª pessoa com o joystick; ela atira sozinha nos zumbis.</p>

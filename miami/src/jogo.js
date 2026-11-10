@@ -75,7 +75,13 @@ export function construirVisual() {
   for (const p of naoBase) p.removido = true;   // não desenha os blocos (os modelos da base aparecem no lugar)
   G.malhasPredios = construirPredios(G.cena);
   for (const p of naoBase) p.removido = false;
-  G.decor = construirPalmeiras(G.cena, 2600);
+  // sem árvores em cima da pista de pouso (cidades sem mar)
+  const bb = lugares.base, ex = G.baseEixo;
+  const pc = COSTA ? null : { x: bb.x + ex.pp.x * -330, z: bb.z + ex.pp.z * -330 };
+  G.decor = construirPalmeiras(G.cena, 2600, pc ? (x, z) => {
+    const dx = x - pc.x, dz = z - pc.z, a = ex.ang, l = dx * Math.sin(a) + dz * Math.cos(a), t = dx * Math.cos(a) - dz * Math.sin(a);
+    return Math.abs(l) < 180 && t > -110 && t < 40;
+  } : null);
   const b = lugares.base;
   G.decor.push(construirCarros(G.cena, 3200, (x, z) => dist(x, z, b.x, b.z) < 450));
   for (const p of predios) if (!p.base) { p.integMax = 150 + Math.min(900, p.area * 0.4); p.integridade = p.integMax; }
@@ -95,7 +101,7 @@ export function criarEstrutura(tipo, x, z, ang) {
 
 // estrutura da produção: a escolhida no painel, senão a mais perto da câmera
 export function fonteDe(tipoFonte) {
-  if (tipoFonte === 'porta') return G.porta;
+  if (tipoFonte === 'porta') return COSTA ? G.porta : fonteDe('pista');
   if (G.fonteSel && G.fonteSel.vivo && G.fonteSel.tipoEstr === tipoFonte && !(G.fonteSel.construindo > 0)) return G.fonteSel;
   let melhor = null, md = Infinity;
   const c = G.camAlvo || { x: 0, z: 0 };
@@ -132,6 +138,7 @@ export function construir(tipo, x, z) {
   u.hp = u.hpMax * 0.2;
   u.m.grupo.scale.y = 0.15;
   if (saidaAgua) u.saidaAgua = saidaAgua;
+  if (tipo === 'pista') { u.deck = 0.3; u.fila = []; }
   if (tipo === 'quartel' || tipo === 'patio') u.saida = lugarLivre({ x: x + Math.sin(ang) * 40, z: z + Math.cos(ang) * 40 });
   alerta(`🏗️ Construindo ${d.nome}...`, x, z, 'info');
   somUI('ok');
@@ -212,8 +219,9 @@ export function iniciarPartida(dif) {
   const ap = criarUnidade('apache', hp.x, hp.z, G.baseEixo.ang);
   ap.pousado = true;
   // jatos no convés
-  const j1 = criarUnidade('f35', pa.x, pa.z, 0); j1.vagaConves = 0;
-  const j2 = criarUnidade('f18', pa.x, pa.z, 0); j2.vagaConves = 1;
+  const j1 = criarUnidade('f35', pa.x, pa.z, 0); j1.vagaConves = 0; j1.base = G.porta;
+  const j2 = criarUnidade('f18', pa.x, pa.z, 0); j2.vagaConves = 1; j2.base = G.porta;
+  if (!COSTA) { const j3 = criarUnidade('a10', pa.x, pa.z, 0); j3.vagaConves = 2; j3.base = G.porta; }
   // civis
   espalharCivis(cfg.civis);
   // prédios com civis presos (SOS)
@@ -267,14 +275,15 @@ function espalharCivis(n) {
 }
 
 // ---------------- produção ----------------
-export function enfileirar(tipo) {
+export function enfileirar(tipo, aba) {
   const d = TIPOS[tipo];
-  const fonte = fonteDe(d.de);
+  const fonte = fonteDe(aba || d.de);
+  if (!fonte && (aba || d.de) === 'pista') { alerta(G.unidades.some((u) => u.vivo && u.tipoEstr === 'pista') ? 'A pista de pouso ainda está em construção' : 'Construa uma Pista de Pouso (🔨 Construir) para usar F-22 e A-10', null, null, 'ruim'); somUI('erro'); return false; }
   if (!fonte || !fonte.vivo) { alerta('Estrutura destruída: não dá para produzir', 0, 0, 'ruim'); somUI('erro'); return false; }
   if (G.dinheiro < d.custo) { alerta('Dinheiro insuficiente', null, null, 'ruim'); somUI('erro'); return false; }
   if (fonte.fila.length >= 8) { alerta('Fila cheia', null, null); somUI('erro'); return false; }
-  if (d.classe === 'jato' && G.unidades.filter((u) => u.classe === 'jato').length + fonte.fila.filter((f) => TIPOS[f.tipo].classe === 'jato').length >= 6) {
-    alerta('O convés comporta no máximo 6 jatos', null, null); somUI('erro'); return false;
+  if (d.classe === 'jato' && G.unidades.filter((u) => u.classe === 'jato' && u.vivo && (u.base || G.porta) === fonte).length + fonte.fila.filter((f) => TIPOS[f.tipo].classe === 'jato').length >= 6) {
+    alerta('Esta base comporta no máximo 6 jatos', null, null); somUI('erro'); return false;
   }
   G.dinheiro -= d.custo;
   fonte.fila.push({ tipo, t: d.tempo, total: d.tempo });
@@ -292,11 +301,12 @@ export function cancelar(fonteNome, i) {
 function produzir(tipo, fonte) {
   const d = TIPOS[tipo];
   let u;
-  if (d.de === 'porta') {
-    const p = G.porta;
+  if (fonte && (fonte === G.porta || fonte.tipoEstr === 'pista')) {
+    const p = fonte;
     if (d.classe === 'jato') {
       u = criarUnidade(tipo, p.x, p.z, 0);
-      const usadas = new Set(G.unidades.filter((x) => x.classe === 'jato' && x !== u).map((x) => x.vagaConves));
+      u.base = p;
+      const usadas = new Set(G.unidades.filter((x) => x.classe === 'jato' && x !== u && x.vivo && (x.base || G.porta) === p).map((x) => x.vagaConves));
       let v = 0; while (usadas.has(v)) v++;
       u.vagaConves = v;
     } else {

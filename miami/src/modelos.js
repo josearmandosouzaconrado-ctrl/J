@@ -384,10 +384,39 @@ function rotorCauda(r) {
   return m.build();
 }
 
+// deriva (leme vertical) com perfil [z, y], espessura, posição e inclinação lateral
+function deriva(c, pts, esp, cor, x, y, incl) {
+  const sh = new THREE.Shape();
+  sh.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) sh.lineTo(pts[i][0], pts[i][1]);
+  sh.closePath();
+  const g = new THREE.ExtrudeGeometry(sh, { depth: esp, bevelEnabled: false });
+  g.translate(0, 0, -esp / 2);
+  g.rotateY(-Math.PI / 2);
+  g.rotateZ(-incl);
+  g.translate(x, y, 0);
+  c.add(g, cor);
+}
+
+// trem de pouso (bequilha + dois principais), mostrado só no chão/convés
+function trem(zN, zP, xP, r, extra = 0) {
+  const c = new Mont();
+  const M = 0x8a8f94, P = 0x161616;
+  c.cil(0.06, 0.06, 1.0 + extra * 0.1, 6, M, 0, 0.55, zN);
+  c.roda(r * 0.8, 0.2, P, 0.16, r * 0.8, zN); c.roda(r * 0.8, 0.2, P, -0.16, r * 0.8, zN);
+  c.box(0.05, 0.6, 0.9, M, 0.4, 0.7, zN - 0.2);
+  for (const s of [-1, 1]) {
+    c.cil(0.08, 0.08, 1.1, 6, M, s * xP, 0.65, zP, 0, 0, s * 0.12);
+    c.roda(r, 0.32, P, s * (xP + 0.1), r, zP);
+    c.box(0.05, 0.7, 1.2, M, s * (xP - 0.35), 0.8, zP);
+  }
+  return c.build(false);
+}
+
 const AERO = {
   blackhawk() {
     const c = new Mont();
-    const C = 0x5f684e, C2 = 0x4f5742;
+    const C = 0x7f8a68, C2 = 0x6e7859;
     // fuselagem arredondada: nariz, cabine larga e cone de cauda
     c.fuso([[-9.6, 0.18], [-7.5, 0.32], [-5, 0.55], [-2.6, 0.95], [-1.6, 1.12], [2.6, 1.15], [4.2, 1.05], [5.4, 0.8], [6.3, 0.45], [6.7, 0.1]], C, 0, 1.75, 0, 1.0, 1.05);
     c.bloco(2.2, 0.5, 4.6, C2, 0, 0.82, 0.8, 0, 0, 0, 0.2);                   // fundo achatado
@@ -421,7 +450,7 @@ const AERO = {
   },
   chinook() {
     const c = new Mont();
-    const C = 0x646b50, C2 = 0x535a43;
+    const C = 0x858d6c, C2 = 0x737b5c;
     // fuselagem longa de seção quase retangular
     c.fuso([[-7.6, 1.2], [-7.0, 1.75], [-5, 1.85], [5, 1.85], [6.6, 1.7], [7.6, 1.25], [8.2, 0.6]], C, 0, 2.3, 0, 1.0, 1.12, 8);
     c.fuso([[6.4, 1.3], [7.4, 1.05], [8.0, 0.55]], VIDRO, 0, 2.75, 0, 1.0, 0.75, 8);
@@ -442,7 +471,7 @@ const AERO = {
   },
   apache() {
     const c = new Mont();
-    const C = 0x5d654b, C2 = 0x4d5440;
+    const C = 0x7c8664, C2 = 0x6b7455;
     // fuselagem estreita com cabine em tandem
     c.fuso([[-9.4, 0.15], [-7, 0.28], [-4, 0.45], [-1.8, 0.75], [1.2, 0.85], [3.4, 0.7], [4.8, 0.45], [5.4, 0.15]], C, 0, 1.75, 0, 0.75, 1.2);
     c.fuso([[0.6, 0.4], [1.6, 0.55], [3.0, 0.52], [4.4, 0.35], [4.9, 0.1]], VIDRO, 0, 2.45, 0, 0.95, 0.85);
@@ -486,37 +515,114 @@ const AERO = {
     return { corpo: c.build(), helice: rotor(3, 1.4, 0x333333, 0.25), heliceZ: -5.7, heliceY: 0.45, heliceEixo: 'z' };
   },
   f35() {
+    // F-35C Lightning II (versão naval: asa maior, gancho de parada)
     const c = new Mont();
-    const COR = CINZA_J;
-    c.simetrica([[0.9, -7.6], [2.5, -7.6], [2.9, -5.6], [5.35, -3.2], [5.35, -1.8], [1.6, 2.8], [1.0, 5.5], [0.45, 7.2], [0.0, 8.0]], 0.9, COR, 0.4);
-    c.fuso([[-7.0, 0.7], [-3, 0.9], [2, 0.85], [5.5, 0.6], [7.5, 0.25], [8.3, 0.05]], 0x50565c, 0, 1.2, 0, 1.3, 0.8);
-    c.esf(0.55, 0x9a7a3a, 0, 1.75, 3.9, 1, 0.75, 2.6);
+    const C = 0xa9b1b8, C2 = 0x98a0a8, ESC = 0x3a3f44;
+    // fuselagem larga e achatada com quinas (chines)
+    c.fuso([[-7.4, 0.55], [-6.2, 0.9], [-3.5, 1.15], [0, 1.2], [2.6, 1.05], [4.6, 0.75], [6.6, 0.4], [8.0, 0.08]], C, 0, 1.25, 0, 1.45, 0.62, 16);
+    c.simetrica([[1.1, -6.8], [1.7, -3.0], [1.6, 2.6], [0.9, 5.5], [0.2, 7.6]], 0.18, C2, 1.05);       // quina lateral
+    c.fuso([[0.5, 0.42], [1.5, 0.6], [3.4, 0.62], [5.0, 0.42], [5.7, 0.05]], 0xb58d3a, 0, 1.78, 0, 0.9, 0.7, 14); // canopy dourado
+    c.box(0.06, 0.12, 0.08, ESC, 0, 2.18, 3.0);                                                         // arco do canopy
+    // entradas de ar laterais (em diamante)
     for (const s of [-1, 1]) {
-      c.planta([[s * 1.4, -7.0], [s * 1.8, -6.0], [s * 1.9, -4.6], [s * 1.5, -4.6]], 0.12, COR, 1.2);
-      c.box(0.1, 2.0, 2.0, COR, s * 1.55, 2.1, -5.6, 0, 0, s * 0.42);
-      c.box(0.9, 0.7, 1.6, 0x41464b, s * 1.25, 1.0, 1.8);
+      c.planta([[s * 0.9, 1.0], [s * 1.75, 1.6], [s * 1.75, -1.4], [s * 0.9, -1.4]], 0.7, C, 0.8);
+      c.box(0.7, 0.62, 0.06, ESC, s * 1.35, 1.15, 1.58);
     }
-    c.cil(0.55, 0.65, 0.8, 10, 0x2b2b2b, 0, 0.95, -7.9, Math.PI / 2);
-    return { corpo: c.build(), motorZ: -8.3, motorY: 0.95 };
+    // asa grande da versão C, empenagem e derivas inclinadas
+    c.simetrica([[1.3, -5.2], [6.55, -3.0], [6.55, -1.85], [3.0, 0.4], [1.5, 2.2]], 0.2, C, 1.12);
+    c.simetrica([[1.2, -7.6], [3.9, -7.3], [3.9, -6.4], [1.4, -4.8]], 0.12, C, 1.2);
+    for (const s of [-1, 1]) deriva(c, [[-7.5, 0], [-6.0, 2.3], [-5.0, 2.3], [-4.3, 0]], 0.1, C, s * 1.35, 1.55, s * 0.42);
+    // bocal do motor
+    c.cil(0.6, 0.66, 0.9, 14, 0x3a3836, 0, 1.2, -7.55, Math.PI / 2);
+    c.cil(0.48, 0.48, 0.92, 14, 0x161616, 0, 1.2, -7.56, Math.PI / 2);
+    // luzes de navegação
+    c.box(0.12, 0.08, 0.2, 0xd02020, -6.5, 1.25, -2.3); c.box(0.12, 0.08, 0.2, 0x20c040, 6.5, 1.25, -2.3);
+    c.box(0.06, 0.06, 0.6, ESC, 0, 0.6, -7.0, -0.3);                                                    // gancho
+    return { corpo: c.build(), trem: trem(4.2, -0.6, 1.5, 0.3), motorZ: -8.0, motorY: 1.2, chamaR: 0.5, pontas: 6.5 };
   },
   f18() {
+    // F/A-18E Super Hornet: LEX grandes, derivas inclinadas, dois motores, mísseis na ponta da asa
     const c = new Mont();
-    const COR = CINZA_F;
-    c.simetrica([[1.5, -8.6], [3.6, -8.6], [3.6, -6.8], [6.8, -3.8], [6.8, -2.6], [1.5, 1.0], [1.4, 5.0], [0.6, 7.8], [0.0, 9.0]], 0.9, COR, 0.4);
-    c.fuso([[-8.4, 0.75], [-4, 0.95], [3, 0.8], [6.5, 0.5], [8.6, 0.2], [9.2, 0.03]], 0x86909a, 0, 1.2, 0, 1.25, 0.85);
-    c.esf(0.55, 0x384650, 0, 1.85, 4.5, 1, 0.75, 2.4);
+    const C = 0xc4cbd2, C2 = 0xb3bac2, ESC = 0x3a3f44;
+    c.fuso([[-8.6, 0.65], [-7.4, 0.9], [-4, 1.05], [0.5, 0.95], [3.5, 0.75], [6.5, 0.5], [8.6, 0.25], [9.3, 0.02]], C, 0, 1.3, 0, 1.4, 0.75, 16);
+    c.fuso([[3.0, 0.38], [4.0, 0.52], [5.6, 0.5], [6.6, 0.3], [7.0, 0.04]], 0x38464f, 0, 1.92, 0, 0.9, 0.75, 14);
+    // LEX (extensão do bordo de ataque) até perto do canopy
+    c.simetrica([[1.0, -1.0], [2.6, -0.6], [1.6, 2.5], [0.8, 5.2]], 0.12, C2, 1.3);
+    // entradas de ar retangulares sob a LEX
+    for (const s of [-1, 1]) { c.bloco(0.95, 0.85, 3.4, C, s * 1.25, 0.95, 0.4, 0, 0, 0, 0.12); c.box(0.8, 0.7, 0.06, ESC, s * 1.25, 0.95, 2.12); }
+    // asa trapezoidal com mísseis AIM-9 nas pontas
+    c.simetrica([[1.6, -4.4], [6.8, -2.8], [6.8, -1.9], [2.2, 1.0]], 0.2, C, 1.15);
     for (const s of [-1, 1]) {
-      c.box(0.12, 2.4, 2.4, COR, s * 1.4, 2.4, -5.4, 0, 0, s * 0.35);
-      c.cil(0.08, 0.08, 3.2, 6, BRANCO, s * 6.8, 0.6, -2.8, Math.PI / 2);
-      c.fuso([[-1.4, 0.05], [-1, 0.18], [1.1, 0.18], [1.4, 0.04]], 0x6b6b45, s * 3.8, 0.0, -2.4);
+      c.fuso([[-1.4, 0.03], [-1.2, 0.07], [1.2, 0.07], [1.6, 0.01]], 0xe8e8e0, s * 6.95, 1.15, -2.4, 1, 1, 8);
+      c.box(0.04, 0.5, 0.4, 0xe8e8e0, s * 6.95, 1.15, -3.6);
+      // pilones: tanque e bombas
+      c.box(0.08, 0.4, 1.2, C2, s * 2.9, 0.85, -1.5);
+      c.fuso([[-1.8, 0.05], [-1.4, 0.24], [1.0, 0.24], [1.6, 0.04]], 0x6d6b4a, s * 2.9, 0.48, -1.4, 1, 1, 10);
+      c.box(0.08, 0.4, 1.0, C2, s * 4.6, 0.9, -2.0);
+      c.fuso([[-1.2, 0.05], [-0.8, 0.17], [0.9, 0.17], [1.3, 0.03]], 0x6d6b4a, s * 4.6, 0.6, -2.0, 1, 1, 10);
     }
-    c.cil(0.5, 0.55, 0.8, 10, 0x2b2b2b, 0.65, 0.95, -8.9, Math.PI / 2);
-    c.cil(0.5, 0.55, 0.8, 10, 0x2b2b2b, -0.65, 0.95, -8.9, Math.PI / 2);
-    return { corpo: c.build(), motorZ: -9.3, motorY: 0.95 };
+    c.fuso([[-2.6, 0.05], [-2.0, 0.35], [1.8, 0.35], [2.6, 0.05]], C2, 0, 0.45, -1.0, 1, 1, 12);          // tanque central
+    c.simetrica([[1.2, -9.3], [3.7, -8.8], [3.7, -8.0], [1.4, -6.3]], 0.12, C, 1.25);
+    for (const s of [-1, 1]) deriva(c, [[-8.5, 0], [-6.6, 2.6], [-5.5, 2.6], [-4.6, 0]], 0.12, C, s * 1.45, 1.75, s * 0.35);
+    for (const x of [-0.62, 0.62]) {
+      c.cil(0.5, 0.55, 0.9, 12, 0x3a3836, x, 1.2, -8.95, Math.PI / 2);
+      c.cil(0.4, 0.4, 0.92, 12, 0x161616, x, 1.2, -8.96, Math.PI / 2);
+    }
+    c.box(0.6, 0.04, 0.6, 0x1a1a1a, 0, 1.55, 0.2);       // números/insígnia
+    c.box(0.12, 0.08, 0.2, 0xd02020, -6.9, 1.2, -1.2); c.box(0.12, 0.08, 0.2, 0x20c040, 6.9, 1.2, -1.2);
+    return { corpo: c.build(), trem: trem(5.0, -1.0, 1.6, 0.35), motorZ: -9.4, motorY: 1.2, chamaR: 0.45, motores: [-0.62, 0.62], pontas: 6.9 };
+  },
+  a10() {
+    // A-10 Thunderbolt II "Warthog": asa reta, motores no alto da fuselagem, canhão GAU-8 no nariz
+    const c = new Mont();
+    const C = 0xa3acb2, C2 = 0x939ca2, ESC = 0x3a3f44;
+    c.fuso([[-8.0, 0.25], [-6.5, 0.55], [-3.0, 0.9], [1.5, 1.0], [4.0, 0.95], [6.2, 0.75], [7.6, 0.45], [8.1, 0.12]], C, 0, 1.6, 0, 1.0, 1.05, 14);
+    c.fuso([[4.4, 0.45], [5.2, 0.6], [6.4, 0.55], [7.0, 0.3]], 0x30404a, 0, 2.3, 0, 0.9, 0.85, 12);
+    c.cil(0.08, 0.1, 1.6, 8, 0x222222, 0, 1.25, 8.6, Math.PI / 2);   // canhão GAU-8
+    c.cil(0.2, 0.2, 0.25, 8, ESC, 0, 1.25, 8.2, Math.PI / 2);
+    // asa reta, larga, com pontas curvas para baixo
+    c.simetrica([[0.9, -0.9], [7.3, -0.4], [8.6, -0.3], [8.6, 0.9], [7.3, 1.2], [0.9, 2.3]], 0.3, C, 1.0);
+    for (const s of [-1, 1]) {
+      c.box(1.1, 0.3, 1.3, C2, s * 9.1, 0.85, 0.4, 0, 0, s * -0.35);
+      // motores TF34 em casulos altos
+      c.fuso([[-2.0, 0.42], [-1.6, 0.62], [1.2, 0.65], [1.6, 0.55]], C2, s * 1.55, 2.75, -3.0, 1, 1, 14);
+      c.cil(0.5, 0.5, 0.06, 14, ESC, s * 1.55, 2.75, -1.42, Math.PI / 2);
+      c.box(0.3, 0.6, 1.4, C, s * 1.0, 2.35, -3.0);
+      // pilones com foguetes, bombas e mísseis Maverick
+      for (const [x, cor, r] of [[2.4, 0x6d6b4a, 0.2], [3.6, 0x6d6b4a, 0.2], [4.8, 0xdddddd, 0.15], [6.0, 0x3a3f45, 0.25]]) {
+        c.box(0.08, 0.3, 0.9, C2, s * x, 0.75, 0.6);
+        c.fuso([[-1.2, 0.03], [-0.9, r], [0.9, r], [1.3, 0.02]], cor, s * x, 0.5, 0.6, 1, 1, 8);
+      }
+    }
+    // cauda: estabilizador com duas derivas nas pontas
+    c.simetrica([[0.5, -8.0], [3.6, -7.7], [3.6, -6.7], [0.5, -6.4]], 0.15, C, 1.8);
+    for (const s of [-1, 1]) deriva(c, [[-8.2, -1.0], [-7.9, 2.3], [-6.7, 2.3], [-6.4, -1.0]], 0.15, C, s * 3.6, 1.9, 0);
+    c.box(0.12, 0.08, 0.2, 0xd02020, -8.9, 0.95, 0.4); c.box(0.12, 0.08, 0.2, 0x20c040, 8.9, 0.95, 0.4);
+    return { corpo: c.build(), trem: trem(1.2, 0.4, 2.2, 0.38, 5.0), pontas: 8.8, semChama: true };
+  },
+  f22() {
+    // F-22 Raptor: asa em diamante, derivas bem inclinadas, entradas de ar angulosas, bocal 2D
+    const c = new Mont();
+    const C = 0xbac1c8, C2 = 0xa9b0b8, ESC = 0x3a3f44;
+    c.fuso([[-7.8, 0.6], [-6.0, 0.95], [-2.5, 1.2], [1.0, 1.15], [4.0, 0.8], [6.6, 0.45], [8.6, 0.12], [9.4, 0.02]], C, 0, 1.3, 0, 1.6, 0.6, 16);
+    c.fuso([[3.8, 0.42], [4.9, 0.58], [6.6, 0.55], [7.6, 0.3], [8.0, 0.04]], 0xb58d3a, 0, 1.78, 0, 0.9, 0.72, 14);
+    for (const s of [-1, 1]) {
+      c.planta([[s * 1.0, 4.0], [s * 2.15, 2.6], [s * 2.15, -2.0], [s * 1.0, -2.0]], 0.85, C2, 0.75);
+      c.box(0.95, 0.75, 0.06, ESC, s * 1.6, 1.15, 2.58, 0, s * 0.5, 0);
+    }
+    c.simetrica([[1.6, -5.6], [6.8, -2.6], [6.8, -1.6], [2.2, 2.4]], 0.2, C, 1.12);
+    c.simetrica([[1.6, -8.0], [4.4, -7.0], [4.4, -6.1], [1.8, -5.0]], 0.12, C, 1.15);
+    for (const s of [-1, 1]) deriva(c, [[-7.4, 0], [-5.4, 2.6], [-4.2, 2.6], [-3.4, 0]], 0.1, C, s * 1.75, 1.55, s * 0.5);
+    for (const x of [-0.75, 0.75]) {
+      c.box(1.2, 0.55, 1.0, 0x3a3836, x, 1.2, -7.9);
+      c.box(1.0, 0.36, 1.02, 0x161616, x, 1.2, -7.92);
+    }
+    c.box(0.12, 0.08, 0.2, 0xd02020, -6.8, 1.2, -2.1); c.box(0.12, 0.08, 0.2, 0x20c040, 6.8, 1.2, -2.1);
+    return { corpo: c.build(), trem: trem(4.8, -0.8, 1.6, 0.32), motorZ: -8.4, motorY: 1.2, chamaR: 0.42, motores: [-0.75, 0.75], pontas: 6.8 };
   },
   osprey() {
     const c = new Mont();
-    const C = 0x6c7378, C2 = 0x5c6368;
+    const C = 0x9aa1a6, C2 = 0x899095;
     c.fuso([[-9, 0.35], [-7, 0.9], [-5, 1.3], [5, 1.35], [6.6, 1.15], [7.8, 0.75], [8.6, 0.2]], C, 0, 2.0, 0, 1.0, 1.1, 10);
     c.fuso([[6.0, 1.0], [7.2, 0.85], [8.1, 0.4]], VIDRO, 0, 2.35, 0, 1.02, 0.85, 10);
     for (const sx of [-1, 1]) c.bloco(0.8, 0.8, 4.5, C2, sx * 1.35, 1.0, 0.5, 0, 0, 0, 0.3);
@@ -887,22 +993,29 @@ export function criarModelo(nome) {
     h.rotation.x = Math.PI / 2;
     grupo.add(h); r.helice = h;
   }
-  if (def.motorZ !== undefined) {
-    // chama do pós-combustor: cones aditivos que pulsam
-    const g = new THREE.ConeGeometry(0.55, 4.2, 10, 1, true);
-    g.rotateX(-Math.PI / 2); g.translate(0, 0, -2.1);
-    const mat = new THREE.MeshBasicMaterial({ color: 0xffb070, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false });
-    const g2 = new THREE.ConeGeometry(0.35, 2.6, 10, 1, true);
-    g2.rotateX(-Math.PI / 2); g2.translate(0, 0, -1.3);
+  if (def.motorZ !== undefined && !def.semChama) {
+    // chama do pós-combustor: cones aditivos com anéis (diamantes de choque)
+    const R = def.chamaR || 0.5;
+    const g = new THREE.ConeGeometry(R, R * 8, 12, 1, true);
+    g.rotateX(-Math.PI / 2); g.translate(0, 0, -R * 4);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xff9a50, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false });
+    const g2 = new THREE.ConeGeometry(R * 0.7, R * 5, 12, 1, true);
+    g2.rotateX(-Math.PI / 2); g2.translate(0, 0, -R * 2.5);
     const mat2 = new THREE.MeshBasicMaterial({ color: 0x9fc8ff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false });
+    const g3 = new THREE.TorusGeometry(R * 0.45, R * 0.12, 6, 12);
+    const mat3 = new THREE.MeshBasicMaterial({ color: 0xffe0b0, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false });
     r.chamas = [];
-    const xs = nome === 'f18' ? [-0.65, 0.65] : [0];
-    for (const x of xs) {
+    for (const x of def.motores || [0]) {
       const a = new THREE.Mesh(g, mat), b = new THREE.Mesh(g2, mat2);
       a.position.set(x, def.motorY, def.motorZ); b.position.set(x, def.motorY, def.motorZ);
       grupo.add(a); grupo.add(b);
       r.chamas.push(a, b);
+      for (let k = 1; k <= 3; k++) { const t = new THREE.Mesh(g3, mat3); t.position.set(x, def.motorY, def.motorZ - k * R * 1.6); grupo.add(t); r.chamas.push(t); }
     }
+  }
+  if (def.trem) {
+    r.trem = new THREE.Mesh(def.trem, MAT);
+    grupo.add(r.trem);
   }
   if (def.nacele) {
     r.naceles = [];

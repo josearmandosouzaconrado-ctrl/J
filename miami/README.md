@@ -10,7 +10,7 @@ para conter a infecção e **resgatar os civis**.
 ## Baixar
 
 - **APK (Android 7+):** [`MiamiSurtoZumbi.apk`](../MiamiSurtoZumbi.apk) na raiz do repositório.
-  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.4.0/MiamiSurtoZumbi.apk
+  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.5.0/MiamiSurtoZumbi.apk
 - No navegador: abra `miami/www/index.html` por um servidor web (ex.: `python3 -m http.server` dentro de `miami/www`).
 
 O Android pede para permitir "instalar apps desconhecidos", porque o APK não vem da Play Store.
@@ -48,6 +48,7 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
 | 🚁 Heliporto | UH-60 Black Hawk, CH-47 Chinook, AH-64 Apache, drone MQ-9 Reaper |
 | ⚓ Docas | Lancha Mark VI, hovercraft LCAC (anfíbio), destróier classe Arleigh Burke |
 | 🛳️ Porta-aviões | F-35C Lightning II, F/A-18E Super Hornet, MV-22 Osprey |
+| 🛫 Pista de pouso (construída) | F-22 Raptor (bombas pequenas SDB), A-10 Thunderbolt II (canhão GAU-8 de 30 mm) |
 
 - **Soldados entram** em veículos, helicópteros, barcos e no Osprey; o Chinook e o LCAC levam veículos.
 - **Prédios:** soldados sobem no telhado de qualquer prédio e atiram de cima com mais alcance. Os zumbis
@@ -55,7 +56,9 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
 - **Resgate:** civis seguem as tropas e embarcam sozinhos nos transportes. Prédios com **SOS** têm civis
   presos: as tropas os tiram pela porta e os helicópteros pelo telhado. Leve-os à **Zona Segura** da base
   ou ao porta-aviões.
-- **Jatos:** arraste o dedo no mapa para marcar a área de bombardeio; eles decolam do porta-aviões, fazem
+- **Jatos** decolam pela catapulta do porta-aviões ou pela pista, com trem de pouso, pós-combustor e vórtices nas
+  pontas das asas; voltam, fazem a aproximação alinhada, pousam e rearmam.
+- **Bombardeio:** arraste o dedo no mapa para marcar a área de bombardeio; eles decolam do porta-aviões, fazem
   passadas soltando bombas ao longo da faixa e voltam para rearmar.
 - **Soldados nas janelas:** parte da tropa fica nas janelas dos prédios (quebra o vidro e atira para fora) e
   parte no telhado.
