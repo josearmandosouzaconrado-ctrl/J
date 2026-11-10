@@ -63,7 +63,7 @@ class Interior {
         }
         else {
           const res = Game.residentsOf(this.b);
-          res.forEach((rs, i) => { if (Game.player && Game.player.spouse === rs.id && Game.player.spouseHome) return; this.spot(rs.child ? 'child' : 'resident', 2 + (i * 2) % (W - 4), Math.floor(H / 2) + 1, { res: rs }); });
+          res.forEach((rs, i) => { if (Game.player && ((Game.player.spouse === rs.id && Game.player.spouseHome) || (typeof Harem !== 'undefined' && Harem.membro(rs.id)))) return; this.spot(rs.child ? 'child' : 'resident', 2 + (i * 2) % (W - 4), Math.floor(H / 2) + 1, { res: rs }); });
         }
         break;
       }
@@ -343,7 +343,7 @@ class Interior {
     // moradores andando pela casa
     const free = []; for (let y = 2; y < H - 2; y++) for (let x = 1; x < W - 1; x++) if (this.free(x, y)) free.push([x, y]);
     r.shuffle(free);
-    res.forEach((rs, i) => { if (Game.player && Game.player.spouse === rs.id && Game.player.spouseHome) return; const [x, y] = free[i % Math.max(1, free.length)] || [dx, H - 3]; this.spot(rs.child ? 'child' : 'resident', x, y, { res: rs }); });
+    res.forEach((rs, i) => { if (Game.player && ((Game.player.spouse === rs.id && Game.player.spouseHome) || (typeof Harem !== 'undefined' && Harem.membro(rs.id)))) return; const [x, y] = free[i % Math.max(1, free.length)] || [dx, H - 3]; this.spot(rs.child ? 'child' : 'resident', x, y, { res: rs }); });
   }
   tileAt(tx, ty) { return this.inb(tx, ty) ? this.tiles[ty * this.w + tx] : this.wallT; }
   objAt(tx, ty) { return this.inb(tx, ty) ? this.objs[ty * this.w + tx] : 0; }

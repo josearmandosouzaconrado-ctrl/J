@@ -111,6 +111,22 @@ Criar um reino é difícil e leva tempo:
 
 A menina que os guardas do reino tirano levaram na abertura está viva. No segundo dia, um **mineiro fugido** conta onde ela está: nas **Minas do Rei**, perto da capital do reino tirano (a missão aparece no rastreador e na bússola). Lá dentro há guardas, besteiros e o **Capataz das Minas**, que guarda a chave das correntes. Derrote o capataz, solte a menina e fuja com ela; os guardas vêm atrás. Leve-a até uma cidade fora do reino tirano (ou até a sua vila) e escolha: **adotar** (ela vira sua filha, se você tiver casa) ou deixá-la aos cuidados do templo.
 
+## Harém (0.41)
+
+Depois de casar, dá para ter um **harém** de até **6 esposas (ou esposos)**, contando a primeira.
+
+- A **esposa principal** (a primeira com quem você casou) pode ter até **10 filhos** com você.
+- Com cada uma das outras dá para ter **1 filho**.
+- **Para convidar alguém:**
+  - converse, flerte e peça em namoro (agora dá para fazer isso mesmo casado);
+  - tenha um **Amuleto da Aurora** e 80 de afeto;
+  - tenha uma casa;
+  - a esposa principal precisa aceitar (o afeto dela tem de ser 60 ou mais).
+- Cada convite deixa a principal um pouco enciumada (−10 de afeto).
+- Todas moram na sua casa (ou no palácio) junto com os filhos. Com cada uma dá para conversar, ganhar presentes ("Como foi seu dia?"), ter o filho ou deixar o harém.
+- A aba **Família** mostra o harém e quantos filhos você tem com cada uma. O bebê nasce com a raça da mãe ou do pai.
+- Só pessoas adultas: crianças e os seus próprios filhos nunca entram.
+
 ## Música e desempenho (0.40)
 
 - **Músicas compostas** para o jogo, tocadas pelo próprio sintetizador (sem arquivos de áudio):
