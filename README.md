@@ -111,6 +111,21 @@ Criar um reino é difícil e leva tempo:
 
 A menina que os guardas do reino tirano levaram na abertura está viva. No segundo dia, um **mineiro fugido** conta onde ela está: nas **Minas do Rei**, perto da capital do reino tirano (a missão aparece no rastreador e na bússola). Lá dentro há guardas, besteiros e o **Capataz das Minas**, que guarda a chave das correntes. Derrote o capataz, solte a menina e fuja com ela; os guardas vêm atrás. Leve-a até uma cidade fora do reino tirano (ou até a sua vila) e escolha: **adotar** (ela vira sua filha, se você tiver casa) ou deixá-la aos cuidados do templo.
 
+## O Palácio Real de verdade (0.42)
+
+- **Por fora** é um palácio de filme, enorme: 34 × 14 quadrados, quase 3× o castelo antigo, maior que a tela do celular. Tem:
+  - escadaria e uma praça de pedra com lampiões na frente;
+  - corpo central de três andares com colunas, sacada real e frontão com o brasão;
+  - cúpula dourada;
+  - alas laterais e quatro torres redondas com bandeiras do reino;
+  - janelas que se acendem à noite e neve nos telhados no inverno.
+  Quem já tinha palácio ganha o novo num lugar com espaço em volta da cidade.
+- **Por dentro** são **3 andares** ligados por escadas, com o nome de cada cômodo escrito no chão:
+  - **Térreo:** Hall de Entrada (sem as camas na porta), Salão do Trono, Cozinha, Salão de Banquetes, Arsenal, Capela, Sala do Conselho e Escadaria.
+  - **1º andar (Ala Real):** o **Quarto Real**, bem grande, com a sua cama e uma para cada esposa do harém, lareira, piano e fonte; Quarto dos Meninos, Quarto das Meninas, Quarto das Crianças, Berçário e Sala de Estar Real.
+  - **2º andar (Torres):** Biblioteca Real, Sala do Tesouro, Quartos de Hóspedes e o Terraço.
+- A família mora no 1º andar: as esposas no Quarto Real e os filhos nos quartos das crianças.
+
 ## Harém (0.41)
 
 Depois de casar, dá para ter um **harém** de até **6 esposas (ou esposos)**, contando a primeira.
