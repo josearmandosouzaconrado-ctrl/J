@@ -111,6 +111,24 @@ Criar um reino é difícil e leva tempo:
 
 A menina que os guardas do reino tirano levaram na abertura está viva. No segundo dia, um **mineiro fugido** conta onde ela está: nas **Minas do Rei**, perto da capital do reino tirano (a missão aparece no rastreador e na bússola). Lá dentro há guardas, besteiros e o **Capataz das Minas**, que guarda a chave das correntes. Derrote o capataz, solte a menina e fuja com ela; os guardas vêm atrás. Leve-a até uma cidade fora do reino tirano (ou até a sua vila) e escolha: **adotar** (ela vira sua filha, se você tiver casa) ou deixá-la aos cuidados do templo.
 
+## Correções e visual novo (0.39)
+
+- **Telas que travavam**: toda conversa e todo menu têm agora um **✖** sempre à vista no canto para fechar. Antes, em celulares de tela baixa, o botão Sair do balcão das lojas ficava fora da tela depois de voltar da loja. Nas telas pequenas, as opções das conversas ficam em duas colunas.
+- **Lojas**: o Voltar da loja da caravana e do mercado negro volta para o lugar certo e não trava mais.
+- **Caravanas e missão de escolta**:
+  - A caravana calcula o caminho inteiro pelas estradas até o destino e não fica mais andando em círculos nem presa atrás de rios e montanhas. Só sai uma caravana para um destino que tenha caminho.
+  - Ela não fica mais parada para sempre por causa de um bicho longe; para só quando há inimigo de verdade vindo para cima.
+  - Ao entrar num prédio, ela espera você do lado de fora. Salvar e carregar no meio da escolta também funciona.
+  - Se você se afastar demais, ela espera e avisa. Se você for embora de vez, a escolta é perdida.
+  - A escolta aparece no rastreador de missões e na bússola (aponta para a caravana se você estiver longe, e para o destino quando estiver perto).
+  - Dá para desistir da escolta falando com o mercador, e são no máximo 3 emboscadas por viagem.
+- **Visual mais bonito** (desliga no Modo leve):
+  - água com brilhos correndo e espuma na beira;
+  - sombras de nuvens passando pelo chão;
+  - árvores balançando com o vento, mais forte nas tempestades;
+  - borboletas de dia e bandos de pássaros com a sombra no chão;
+  - de noite, janelas acesas nas casas e um halo quente em volta de lampiões e tochas.
+
 ## Modo ADM: era moderna (1ª e 2ª Guerra)
 
 Só no **APK ADM** (o APK normal nem leva esse código). No painel ADM, aba **⚙ Eras**, ligue **1ª Guerra (1914)** ou **2ª Guerra (1940)**:

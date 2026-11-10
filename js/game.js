@@ -1286,7 +1286,7 @@ const Game = {
         for (const [tx, ty, o, v] of L.objList(cx, cy)) {
           if (tx < tx0 || tx > tx1 || ty < ty0 || ty > ty1) continue;
           const s = Estacoes.objeto(o, v, OBJ_ANIM[o] ? anim : 0, tx, ty); if (!s) continue;
-          D.push({ y: ty * 16 + 15, img: s.c, x: tx * 16 + 8 - (s.w >> 1), yy: ty * 16 + 16 - s.h + s.oy });
+          D.push({ y: ty * 16 + 15, img: s.c, x: tx * 16 + 8 - (s.w >> 1), yy: ty * 16 + 16 - s.h + s.oy, o, tx, ty });
         }
       }
     } else for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {

@@ -48,10 +48,13 @@ const UI = {
     el.innerHTML = html;
     this.root.appendChild(el);
     this.current = { name, el, onBack: opts.onBack };
+    // um ✖ sempre à vista no canto: nunca se fica preso numa tela
+    if (Game.started && !UI.SEM_X[name] && !el.querySelector('.dlg-x')) { const x = document.createElement('button'); x.className = 'scr-x'; x.textContent = '✖'; x.setAttribute('aria-label', 'Fechar'); x.onclick = e => { e.stopPropagation(); if (this.current && this.current.el === el) { const antes = this.current; this.back(); if (this.current === antes) this.close(); } }; el.appendChild(x); }
     if (Game.started) Game.paused = true;
     Input.clear();
     return el;
   },
+  SEM_X: { menu: 1, sucessao: 1, name: 1, victory: 1, title: 1, death: 1, loading: 1, create: 1, story: 1, levelup: 1, confirm: 1, dialog: 1, cine: 1, abertura: 1 },
   closeAll(keepPause) {
     this.root.innerHTML = '';
     this.current = null;
@@ -266,9 +269,9 @@ const UI = {
   dialog(name, look, html, options) {
     const f = this.reg();
     const el = this.show('dialog', `<div class="dialog">
-      <div class="dlg-head">${look ? this.portrait(look) : ''}<div class="dlg-name">${esc(name)}</div></div>
+      <div class="dlg-head">${look ? this.portrait(look) : ''}<div class="dlg-name">${esc(name)}</div><button class="dlg-x" aria-label="Fechar" ${f(() => { const o = options[options.length - 1]; if (o && o.fn && /^\s*(◀|←|↩)?\s*(Voltar|Sair|Fechar|Agora não|Não|Deixa|Nada|Adeus|Até)/i.test(String(o.label).replace(/<[^>]+>/g, ''))) o.fn(); else this.close(); })}>✖</button></div>
       <div class="dlg-text">${html}</div>
-      <div class="dlg-opts">${options.map(o => `<button class="dbtn ${o.cls || ''}" ${f(() => { if (o.fn) o.fn(); else this.close(); })}>${o.label}</button>`).join('')}</div>
+      <div class="dlg-opts ${options.length > 4 ? 'muitas' : ''}">${options.map(o => `<button class="dbtn ${o.cls || ''}" ${f(() => { if (o.fn) o.fn(); else this.close(); })}>${o.label}</button>`).join('')}</div>
     </div>`, { cls: 'bottom' });
     this.bind(el, f);
     return el;
@@ -559,6 +562,8 @@ const UI = {
     const P = Game.player;
     const stock = Shops.stock(b, kind);
     let tab = 'buy', sel = null;
+    // de onde a loja foi aberta: uma barraca ou caravana fecha; um prédio de verdade volta para o balcão
+    const sair = () => { if (typeof b.voltar === 'function') return b.voltar(); if (b.role === 'stall' || !b.settlement || !b.settlement.buildings || !b.settlement.buildings.includes(b)) return this.close(); try { this.building(b); } catch (e) { this.close(); } if (!this.current) this.close(); };
     const render = () => {
       const f = this.reg();
       const list = tab === 'buy' ? stock : P.inv.filter(it => !P.isEquipped(it) && ITEMS[it.id].type !== 'quest');
@@ -576,7 +581,7 @@ const UI = {
         <div class="ptitle">${esc(b.name)} <span class="gold right">${fmt(P.gold)} ouro</span></div>
         <div class="tabs"><button class="tab ${tab === 'buy' ? 'on' : ''}" ${f(() => { tab = 'buy'; sel = null; render(); })}>Comprar</button><button class="tab ${tab === 'sell' ? 'on' : ''}" ${f(() => { tab = 'sell'; sel = null; render(); })}>Vender</button></div>
         <div class="shop-body"><div class="ilist">${rows}</div><div class="dpane">${detail}</div></div>
-        <button class="mbtn small" ${f(() => b.role === 'stall' ? this.close() : this.building(b))}>Voltar</button></div>`, { onBack: () => b.role === 'stall' ? this.close() : this.building(b) });
+        <button class="mbtn small" ${f(sair)}>Voltar</button></div>`, { onBack: sair });
       this.bind(el, f);
     };
     render();
@@ -664,6 +669,7 @@ const UI = {
 
   // ---------- Menu principal ----------
   openMenu(tab) {
+    if (tab === 'map') return this.openMap();
     this.menuTab = tab || this.menuTab || 'inv';
     const P = Game.player;
     if (P.pendingLevels > 0 && !tab) { this.levelUp(); return; }

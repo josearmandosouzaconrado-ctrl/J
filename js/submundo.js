@@ -328,8 +328,8 @@ const Mercado = {
     const b = Game.level.b, volta = () => this.falar(a);
     switch (a.sub) {
       case 'escravista': return this.escravos(a);
-      case 'armeiro': UI.close(); return UI.shop(b, 'negro_armas');
-      case 'boticario': UI.close(); return UI.shop(b, 'negro_venenos');
+      case 'armeiro': UI.close(); return UI.shop(Object.assign(Object.create(b), { voltar: () => UI.close() }), 'negro_armas');
+      case 'boticario': UI.close(); return UI.shop(Object.assign(Object.create(b), { voltar: () => UI.close() }), 'negro_venenos');
       case 'falsario': {
         const E = Eventos.state(), pd = 400 + (E.procurado || 0) * 250;
         return UI.dialog(a.name, a.look, 'Papéis, selos, assinaturas... Eu falsifico qualquer coisa.', [

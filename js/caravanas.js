@@ -12,9 +12,17 @@ const Caravanas = {
   // ---------- nascer ----------
   tick(dt) {
     const G = Game, P = G.player, W = G.world; if (!P || !W || !G.level) return;
-    if (!G.level.isWorld) { if (this.C) this.C = null; return; }
-    const C = this.C;
-    if (C && !G.actors.includes(C.mercador)) this.C = null;   // trocou de mapa: a caravana ficou para trás
+    // dentro de um prédio ou masmorra: a caravana que você escolta espera lá fora
+    if (!G.level.isWorld) { if (this.C && (!this.C.escolta || this.C.dono !== P)) this.C = null; return; }
+    if (this.C && this.C.dono !== P) this.C = null;             // outro jogo (novo ou carregado)
+    let C = this.C;
+    if (!C && P.escolta && W.settlements) this.retomar();      // jogo carregado no meio de uma escolta
+    C = this.C;
+    if (C && !G.actors.includes(C.mercador)) {
+      if (C.escolta && !C.mercador.dead) this.recolocar(C);     // você voltou ao mundo: ela está onde ficou
+      else if (C.escolta) { this.falhou(C, 'O mercador morreu...'); return; }
+      else this.C = null;                                       // trocou de mapa: a caravana ficou para trás
+    }
     if (this.C) { this.mover(this.C, dt); return; }
     this.tT = (this.tT || 0) - dt; if (this.tT > 0) return; this.tT = 3;
     const ptx = Math.floor(P.x / 16), pty = Math.floor(P.y / 16);
@@ -23,10 +31,24 @@ const Caravanas = {
     for (let k = 0; k < 24; k++) {
       const a = Math.random() * Math.PI * 2, r = 16 + Math.random() * 10, tx = Math.round(ptx + Math.cos(a) * r), ty = Math.round(pty + Math.sin(a) * r);
       if (!ESTRADA_T(W.tileAt(tx, ty)) || W.solidAt(tx, ty) || W.settlementAt(tx, ty)) continue;
-      const dest = this.destino(tx, ty, 40); if (!dest) return;
-      this.criar(tx, ty, dest, {});
+      const dr = this.destinoComRota(tx, ty, 40); if (!dr) return;
+      this.criar(tx, ty, dr.dest, { caminho: dr.caminho });
       return;
     }
+  },
+  // a escolta volta ao mundo (depois de entrar num prédio ou de carregar o jogo)
+  recolocar(C) {
+    const G = Game;
+    C.mercador.x = C.x; C.mercador.y = C.y - 9; if (!G.actors.includes(C.mercador)) G.actors.push(C.mercador);
+    for (const g of C.guardas) if (!g.dead && !G.actors.includes(g)) { g.x = C.x + (Math.random() - 0.5) * 40; g.y = C.y + (Math.random() - 0.5) * 30; G.findFree(g); g.home = { x: g.x, y: g.y }; G.actors.push(g); }
+    C.alvoT = null; C.caminho = undefined;
+  },
+  retomar() {
+    const P = Game.player, E = P.escolta, W = Game.world; P.escolta = null;
+    const dest = E && W.settlements.find(s => s.id === E.dest); if (!dest) return;
+    if (dist(E.x, E.y, P.x, P.y) > 1500) return Game.toast('A caravana que você escoltava seguiu viagem sem você.', '#ffb080');
+    const C = this.criar(Math.floor(E.x / 16), Math.floor(E.y / 16), dest, { escolta: true, guilda: E.guilda, premio: E.premio });
+    C.carga = E.carga; Game.toast(`A caravana de ${C.carga} espera por você: leve-a até ${dest.name}.`, '#ffd080');
   },
   destino(tx, ty, min) {
     const W = Game.world, c = contAt(tx, ty);
@@ -34,6 +56,15 @@ const Caravanas = {
     if (!ok.length) return null;
     ok.sort((a, b) => dist(a.mid.x, a.mid.y, tx, ty) - dist(b.mid.x, b.mid.y, tx, ty));
     return ok[Math.floor(Math.random() * Math.min(4, ok.length))];
+  },
+  // um destino que tenha caminho por terra a partir daqui (devolve também o caminho pronto)
+  destinoComRota(tx, ty, min) {
+    const W = Game.world, c = contAt(tx, ty);
+    const ok = W.settlements.filter(s => !s.pirata && !s.region.neutral && !s.isolatedLayout && contAt(s.mid.x, s.mid.y) === c && dist(s.mid.x, s.mid.y, tx, ty) > min && dist(s.mid.x, s.mid.y, tx, ty) < 240);
+    ok.sort((a, b) => dist(a.mid.x, a.mid.y, tx, ty) - dist(b.mid.x, b.mid.y, tx, ty));
+    const cand = ok.slice(0, 5); for (let i = cand.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [cand[i], cand[j]] = [cand[j], cand[i]]; }
+    for (const dest of cand.slice(0, 3)) { let r = null; try { r = this.rota({ x: tx * 16 + 8, y: ty * 16 + 8, dest }); } catch (e) { r = null; } if (r && r.length > 8) return { dest, caminho: r }; }
+    return null;
   },
   criar(tx, ty, dest, o) {
     const G = Game, P = G.player, rng = new RNG(Math.floor(Math.random() * 1e9));
@@ -48,7 +79,8 @@ const Caravanas = {
     for (let i = 0; i < n; i++) C.guardas.push(this.guarda(C, this.look(i), 'Escolta da Caravana', lvl));
     // na missão da guilda, outros membros vão junto
     if (o.guilda) for (let i = 0; i < 2; i++) { const nm = rng.pick(NOMES_ESCOLTA); C.guardas.push(this.guarda(C, Object.assign({}, ENEMIES.bandido.look, { hood: undefined, body: rng.pick(['#3a5a8a', '#8a3a3a', '#3a7a4a']), cape: rng.pick(['#2a2a4a', '#4a2a1a']), weapon: rng.pick(['sword', 'axe', 'spear']), wc: '#c0c0c8', helm: rng.chance(0.5) ? '#9098a0' : undefined }), `${nm} (${GUILDS[o.guilda] ? GUILDS[o.guilda].name.split(' ').slice(-1)[0] : 'guilda'})`, lvl)); }
-    this.C = C;
+    if (o.caminho) { C.caminho = o.caminho; C.ci = 0; }
+    C.dono = P; this.C = C;
     return C;
   },
   guarda(C, look, name, lvl) {
@@ -62,7 +94,40 @@ const Caravanas = {
     for (let i = T_.length - 1; i >= 0; i--) { const q = T_[i], s = dist(px, py, q.x, q.y); if (acc + s >= d) { const k = (d - acc) / Math.max(1e-3, s); return { x: px + (q.x - px) * k, y: py + (q.y - py) * k }; } acc += s; px = q.x; py = q.y; }
     return { x: px, y: py };
   },
+  // o caminho inteiro até o destino, preferindo as estradas (calculado uma vez)
+  rota(C) {
+    const W = Game.world, sx = Math.floor(C.x / 16), sy = Math.floor(C.y / 16), gx = C.dest.mid.x, gy = C.dest.mid.y;
+    const m = 48, x0 = Math.min(sx, gx) - m, y0 = Math.min(sy, gy) - m, w = Math.abs(sx - gx) + m * 2 + 1, h = Math.abs(sy - gy) + m * 2 + 1;
+    if (w * h > 400000) return null;
+    const g = new Float32Array(w * h).fill(Infinity), de = new Int32Array(w * h).fill(-1), custo = new Float32Array(w * h);   // custo: 0 = não visto, -1 = bloqueado
+    const cst = i => { let c = custo[i]; if (c) return c; const x = x0 + i % w, y = y0 + ((i / w) | 0), t = W.tileAt(x, y); c = W.solidAt(x, y) || TWATER[t] ? -1 : ESTRADA_T(t) ? 1 : W.settlementAt(x, y) ? 1.3 : 3.2; custo[i] = c; return c; };
+    const heap = [], hf = [], push = (i, f) => { let k = heap.length; heap.push(i); hf.push(f); while (k > 0) { const p_ = (k - 1) >> 1; if (hf[p_] <= f) break; heap[k] = heap[p_]; hf[k] = hf[p_]; k = p_; } heap[k] = i; hf[k] = f; };
+    const pop = () => { const top = heap[0], li = heap.pop(), lf = hf.pop(), n = heap.length; if (n) { let k = 0; for (;;) { let c = k * 2 + 1; if (c >= n) break; if (c + 1 < n && hf[c + 1] < hf[c]) c++; if (hf[c] >= lf) break; heap[k] = heap[c]; hf[k] = hf[c]; k = c; } heap[k] = li; hf[k] = lf; } return top; };
+    const si = (sy - y0) * w + (sx - x0); g[si] = 0; push(si, 0);
+    let fim = -1, n = 0;
+    while (heap.length && n++ < 160000) {
+      const i = pop(), x = i % w, y = (i / w) | 0;
+      if (Math.abs(x0 + x - gx) + Math.abs(y0 + y - gy) < 7) { fim = i; break; }
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        if (!dx && !dy) continue; const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+        const j = ny * w + nx, c = cst(j); if (c < 0) continue;
+        if (dx && dy && (cst(y * w + nx) < 0 || cst(ny * w + x) < 0)) continue;      // não corta quina
+        const ng = g[i] + c * (dx && dy ? 1.41 : 1);
+        if (ng < g[j]) { g[j] = ng; de[j] = i; push(j, ng + Math.hypot(x0 + nx - gx, y0 + ny - gy)); }
+      }
+    }
+    if (fim < 0) return null;
+    const out = []; for (let i = fim; i >= 0 && i !== si; i = de[i]) out.push({ x: (x0 + i % w) * 16 + 8, y: (y0 + ((i / w) | 0)) * 16 + 8 });
+    return out.reverse();
+  },
   proximo(C) {
+    if (C.caminho === undefined) { try { C.caminho = this.rota(C) || null; } catch (e) { C.caminho = null; } C.ci = 0; }
+    if (C.caminho) {
+      // segue o caminho; se saiu dele (empurrada, recolocada), volta para o ponto mais perto
+      while (C.ci < C.caminho.length && dist(C.x, C.y, C.caminho[C.ci].x, C.caminho[C.ci].y) < 4) C.ci++;
+      const q = C.caminho[C.ci]; if (q && dist(C.x, C.y, q.x, q.y) < 60) return q;
+      if (q) { C.caminho = undefined; return { x: C.x, y: C.y }; }
+    }
     const W = Game.world, tx = Math.floor(C.x / 16), ty = Math.floor(C.y / 16), dx0 = C.dest.mid.x, dy0 = C.dest.mid.y;
     let best = null, bs = Infinity;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
@@ -77,17 +142,39 @@ const Caravanas = {
     if (C.visit.size > 400) C.visit.clear();
     return best;
   },
-  inimigos(C) { for (const a of Game.actors) if (a.team === 'enemy' && !a.dead && !a.passive && dist(a.x, a.y, C.x, C.y) < 190) return true; return false; },
+  // só para por inimigo de verdade: colado na caravana, ou vindo para cima de alguém dela (ou de você)
+  inimigos(C) {
+    const P = Game.player;
+    for (const a of Game.actors) {
+      if (a.team !== 'enemy' || a.dead || a.passive || a.hidden) continue;
+      const d = dist(a.x, a.y, C.x, C.y); if (d > 190) continue;
+      if (d < 70) return true;
+      const t = a.target;
+      if (t && !t.dead && (t === P || t.caravana === C) && d < 190 && (a.provoked || a.windup > 0 || d < 130)) return true;
+    }
+    return false;
+  },
   mover(C, dt) {
     const G = Game, P = G.player;
     if (dist(C.x, C.y, P.x, P.y) > 1300 && !C.escolta) return this.sumir(C);
     const vivos = C.guardas.filter(g => !g.dead);
-    C.parado = this.inimigos(C) || C.assaltada;
+    // nunca fica parada para sempre: depois de um tempo sem ninguém colado nela, segue viagem
+    C.ignoraT = Math.max(0, (C.ignoraT || 0) - dt);
+    let perigo = C.ignoraT > 0 ? false : this.inimigos(C);
+    if (perigo) { C.paradoT = (C.paradoT || 0) + dt; if (C.paradoT > 14) { let colado = false; for (const a of G.actors) if (a.team === 'enemy' && !a.dead && dist(a.x, a.y, C.x, C.y) < 60) { colado = true; break; } if (!colado) { perigo = false; C.ignoraT = 12; C.paradoT = 0; } } } else C.paradoT = 0;
+    C.parado = perigo || C.assaltada;
+    if (C.escolta) {
+      // você precisa ficar perto dela
+      const dp = dist(C.x, C.y, P.x, P.y);
+      if (dp > 1500) return this.falhou(C, 'Você deixou a caravana para trás...');
+      if (dp > 520) { C.longeT = (C.longeT || 0) - dt; if (C.longeT <= 0) { C.longeT = 14; Game.toast('🐎 A caravana está ficando para trás: volte para perto dela!', '#ffb080'); } C.espera = dp > 700; } else { C.longeT = 0; C.espera = false; }
+      P.escolta = { x: Math.round(C.x), y: Math.round(C.y), dest: C.dest.id, carga: C.carga, premio: C.premio, guilda: C.guilda };
+    }
     if (C.assaltada) {
       if (!vivos.length && !C.saque) this.saquear(C);
     } else if (C.escolta && !vivos.length && C.parado) return this.falhou(C);
     if (C.chegou) { C.fimT -= dt; if (C.fimT <= 0) this.sumir(C); return; }
-    if (!C.parado) {
+    if (!C.parado && !C.espera) {
       if (!C.alvoT || dist(C.x, C.y, C.alvoT.x, C.alvoT.y) < 3) C.alvoT = this.proximo(C);
       if (C.alvoT) {
         const a = Math.atan2(C.alvoT.y - C.y, C.alvoT.x - C.x), v = 30 * dt;
@@ -95,8 +182,8 @@ const Caravanas = {
         const u = C.trail[C.trail.length - 1]; if (dist(u.x, u.y, C.x, C.y) > 4) { C.trail.push({ x: C.x, y: C.y }); if (C.trail.length > 60) C.trail.shift(); }
       }
       // emboscada na missão de escolta
-      if (C.escolta) { C.embT -= dt; if (C.embT <= 0) { C.embT = 30 + Math.random() * 25; if (Math.random() < 0.55) this.emboscada(C); } }
-      if (dist(C.x / 16, C.y / 16, C.dest.mid.x, C.dest.mid.y) < 9) this.chegada(C);
+      if (C.escolta) { C.embT -= dt; if (C.embT <= 0) { C.embT = 30 + Math.random() * 25; if ((C.embN || 0) < 3 && Math.random() < 0.55) { C.embN = (C.embN || 0) + 1; this.emboscada(C); } } }
+      if (dist(C.x / 16, C.y / 16, C.dest.mid.x, C.dest.mid.y) < 9 || (C.caminho && C.ci >= C.caminho.length)) this.chegada(C);
     }
     // cada um no seu lugar da fila
     const slots = [0, 46, 74, 92, 108, 122];
@@ -124,13 +211,15 @@ const Caravanas = {
     if (C.guilda && P.guilds[C.guilda]) P.guilds[C.guilda].rep = (P.guilds[C.guilda].rep || 0) + 12;
     Game.centerMsg('ESCOLTA CONCLUÍDA!', `A caravana chegou a ${C.dest.name} • +${g} de ouro`);
     Game.chron(`Escoltei uma caravana de ${C.carga} até ${C.dest.name}.`);
-    C.escolta = false;
+    C.escolta = false; P.escolta = null;
   },
-  falhou(C) {
-    Game.centerMsg('A CARAVANA CAIU', 'Os salteadores levaram a carga...'); Game.chron(`Falhei em proteger a caravana de ${C.carga}.`);
+  falhou(C, motivo) {
+    Game.player.escolta = null;
+    Game.centerMsg(motivo ? 'ESCOLTA PERDIDA' : 'A CARAVANA CAIU', motivo || 'Os salteadores levaram a carga...'); Game.chron(`Falhei em proteger a caravana de ${C.carga}.`);
     C.escolta = false; C.mercador.caravana = null; this.sumir(C, true);
   },
   sumir(C, ficaMercador) {
+    if (!C) return;
     const set = new Set(C.guardas.filter(g => !g.dead)); if (!ficaMercador) set.add(C.mercador);
     Game.actors = Game.actors.filter(a => !set.has(a));
     if (this.C === C) this.C = null;
@@ -138,7 +227,7 @@ const Caravanas = {
   // ---------- assaltar ----------
   assaltar(C) {
     const P = Game.player;
-    C.assaltada = true; C.escolta = false; C.fugiu = true;
+    C.assaltada = true; C.escolta = false; C.fugiu = true; P.escolta = null;
     for (const g of C.guardas) { g.team = 'enemy'; g.provoked = P; g.target = P; g.aggro = 400; g.name = 'Escolta furiosa'; }
     const m = C.mercador, a = Math.atan2(m.y - P.y, m.x - P.x); m.home = { x: m.x + Math.cos(a) * 400, y: m.y + Math.sin(a) * 400 };
     Vida.honra(-6, 'assaltei uma caravana'); const E = Eventos.state(); E.procurado = (E.procurado || 0) + 1;
@@ -162,8 +251,9 @@ const Caravanas = {
     if (!C || C.assaltada) return UI.dialog(a.name, a.look, 'Socorro! Alguém nos ajude!', [{ label: 'Sair' }]);
     const premio = 220 + P.level * 22;
     const o = [];
-    o.push({ label: '🛒 Ver as mercadorias', fn: () => { UI.close(); UI.shop({ name: 'Caravana', settlement: C.dest, tx: 7, ty: Math.floor(C.y / 16), role: 'general' }, 'stall'); } });
-    if (!C.escolta && !C.chegou) o.push({ label: `🛡 Escoltar até ${C.dest.name} (${premio} ouro)`, cls: 'gold', fn: () => { C.escolta = true; C.premio = premio; UI.close(); Game.toast(`Escolte a caravana até ${C.dest.name}. Cuidado com emboscadas!`, '#ffd080'); } });
+    o.push({ label: '🛒 Ver as mercadorias', fn: () => { UI.close(); UI.shop({ name: 'Caravana', settlement: C.dest, tx: 7, ty: Math.floor(C.y / 16), role: 'general', voltar: () => { UI.close(); if (C.mercador && !C.mercador.dead && Caravanas.C === C) Caravanas.falar(C.mercador); } }, 'stall'); } });
+    if (!C.escolta && !C.chegou) o.push({ label: `🛡 Escoltar até ${C.dest.name} (${premio} ouro)`, cls: 'gold', fn: () => { C.escolta = true; C.premio = premio; UI.close(); Game.track = 'escolta'; Game.toast(`Escolte a caravana até ${C.dest.name}. Fique perto dela e cuidado com emboscadas!`, '#ffd080'); } });
+    if (C.escolta && !C.chegou) o.push({ label: '✋ Desistir da escolta', fn: () => UI.confirm('Desistir da escolta? Você não recebe o pagamento.', () => { UI.close(); C.escolta = false; Game.player.escolta = null; Game.toast('Você desistiu da escolta.', '#ffb080'); }) });
     const B = P.bandidos, missao = B && B.missao && B.missao.tipo === 'caravana';
     o.push({ label: missao ? '🗡 Assaltar a caravana! (missão dos Corvos)' : '🗡 Assaltar a caravana', cls: 'danger', fn: () => UI.confirm('Assaltar a caravana? A escolta vai lutar e você será procurado(a).', () => { UI.close(); this.assaltar(C); }) });
     o.push({ label: 'Boa viagem' });
@@ -173,19 +263,23 @@ const Caravanas = {
   missaoGuilda(b) {
     const P = Game.player, s = b.settlement, gid = b.guild;
     if (this.C && this.C.escolta) return Game.toast('Você já está escoltando uma caravana.', '#ff8080');
-    const dest = this.destino(s.mid.x, s.mid.y, 45); if (!dest) return Game.toast('Nenhuma caravana sai daqui hoje.', '#ffb080');
     const W = Game.world;
     let ini = null;
     for (const g of s.gates) { for (let r = 2; r < 12 && !ini; r++) { const x = g.x + (g.dir === 'w' ? -r : g.dir === 'e' ? r : 0), y = g.y + (g.dir === 'n' ? -r : g.dir === 's' ? r : 0); if (!W.solidAt(x, y) && !W.settlementAt(x, y)) ini = { x, y }; } if (ini) break; }
     if (!ini) ini = { x: s.mid.x, y: s.y0 + s.h + 2 };
-    const premio = 320 + P.level * 30;
+    const dr = this.destinoComRota(ini.x, ini.y, 45); if (!dr) return Game.toast('Nenhuma caravana sai daqui hoje: as estradas estão fechadas.', '#ffb080');
+    const dest = dr.dest, premio = 320 + P.level * 30;
     UI.close();
-    this.C = null;
-    const C = this.criar(ini.x, ini.y, dest, { escolta: true, guilda: gid, premio });
+    if (this.C) this.sumir(this.C);
+    const C = this.criar(ini.x, ini.y, dest, { escolta: true, guilda: gid, premio, caminho: dr.caminho });
     P.x = C.x - 30; P.y = C.y + 10; Game.findFree(P); UI.fade();
     Game.centerMsg('MISSÃO DE ESCOLTA', `Leve a caravana de ${C.carga} até ${dest.name} • ${premio} de ouro`);
-    Game.track = null;
+    Game.track = 'escolta';
   },
+  // a missão no rastreador e na bússola
+  quest() { return this._q || (this._q = { escolta: true, id: 'escolta', get title() { const C = Caravanas.C; return C ? `🐎 Escolta até ${C.dest.name}` : '🐎 Escolta'; } }); },
+  alvo() { const C = this.C, P = Game.player; if (!C) return null; if (dist(C.x, C.y, P.x, P.y) > 220) return { x: Math.floor(C.x / 16), y: Math.floor(C.y / 16) }; return { x: C.dest.mid.x, y: C.dest.mid.y }; },
+  progresso() { const C = this.C, P = Game.player; if (!C) return ''; const d = Math.round(dist(C.x / 16, C.y / 16, C.dest.mid.x, C.dest.mid.y)), v = C.guardas.filter(g => !g.dead).length; return dist(C.x, C.y, P.x, P.y) > 220 ? 'Volte para perto da caravana!' : `Fique perto da caravana • faltam ${d} passos • escolta: ${v}/${C.guardas.length}`; },
   // ---------- desenho ----------
   drawables(D, camX, camY, vw, vh) {
     const C = this.C; if (!C || !C.cart) return;
@@ -283,5 +377,13 @@ const Mercantes = {
     if (b && Array.isArray(opts)) { Caravanas._guilda = null; opts = opts.slice(); opts.splice(Math.max(0, opts.length - 1), 0, { label: '🐎 Missão: escoltar uma caravana (com outros membros)', cls: 'gold', fn: () => Caravanas.missaoGuilda(b) }); }
     return d0.call(this, name, look, html, opts, ...r);
   };
+  // salvar e carregar no meio da escolta
+  const tj0 = Player.prototype.toJSON; Player.prototype.toJSON = function () { const o = tj0.call(this); if (this.escolta) o.escolta = this.escolta; return o; };
+  const fj0 = Player.fromJSON; Player.fromJSON = function (o) { const p = fj0.apply(this, arguments); if (o && o.escolta) p.escolta = o.escolta; return p; };
+  // o rastreador de missões mostra a escolta
+  const tq0 = Game.trackedQuest;
+  Game.trackedQuest = function () { const C = Caravanas.C; if (C && C.escolta && (this.track === 'escolta' || !tq0.call(this))) return Caravanas.quest(); return tq0.call(this); };
+  const tp0 = Quests.targetPos; Quests.targetPos = function (q) { if (q && q.escolta) return Caravanas.alvo(); return tp0.apply(this, arguments); };
+  const pt0 = Quests.progressText; Quests.progressText = function (q) { if (q && q.escolta) return Caravanas.progresso(); return pt0.apply(this, arguments); };
   const m0 = War.drawMap; War.drawMap = function (ctx, toS, z) { m0.call(this, ctx, toS, z); Caravanas.drawMap(ctx, toS); };
 })();
