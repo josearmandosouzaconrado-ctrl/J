@@ -8,7 +8,8 @@ export const MPP = META.mpp;                 // metros por pixel (z17)
 export const CEL = META.cel * MPP;           // tamanho da célula da grade (m)
 export const GW = META.gw, GH = META.gh;
 export const LARG = GW * CEL, ALT = GH * CEL; // tamanho do mapa em metros
-export const T = { AGUA: 0, CHAO: 1, RUA: 2, PARQUE: 3, AREIA: 4, PREDIO: 5, PONTE: 6, CENTRO: 7 };
+export const T = { AGUA: 0, CHAO: 1, RUA: 2, PARQUE: 3, AREIA: 4, PREDIO: 5, PONTE: 6, CENTRO: 7, FLORESTA: 8, CAMPO: 9 };
+export const RURAL = !!META.rural;
 export const ehRua = (t) => t === 2 || t === 7;
 // qualidade gráfica (0 baixa, 1 média, 2 alta), definida antes de construir o mundo
 export let QUAL = 1;
@@ -419,7 +420,7 @@ export function construirPredios(cena) {
 }
 
 // ---------------- chão desenhado (asfalto, calçada, grama, areia) ----------------
-const CORES_T = [[44, 104, 140], [205, 200, 188], [86, 88, 94], [96, 146, 70], [232, 214, 164], [170, 168, 160], [110, 110, 114], [86, 88, 94]];
+const CORES_T = [[44, 104, 140], [205, 200, 188], [86, 88, 94], [96, 146, 70], [232, 214, 164], [170, 168, 160], [110, 110, 114], [86, 88, 94], [52, 82, 38], [176, 168, 112]];
 export function canvasTerreno(escala = 1) {
   const c = document.createElement('canvas');
   c.width = Math.ceil(GW / escala); c.height = Math.ceil(GH / escala);
@@ -515,6 +516,10 @@ export function construirChao(cena) {
   const tex = new THREE.DataTexture(m, GW, GH, THREE.RGBAFormat, THREE.UnsignedByteType);
   tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearFilter;
   tex.needsUpdate = true;
+  const t2d = new Uint8Array(GW * GH * 4);
+  for (let i = 0; i < GW * GH; i++) { t2d[i * 4] = grade[i] === T.FLORESTA ? 255 : 0; t2d[i * 4 + 1] = grade[i] === T.CAMPO ? 255 : 0; }
+  const t2 = new THREE.DataTexture(t2d, GW, GH, THREE.RGBAFormat, THREE.UnsignedByteType);
+  t2.magFilter = THREE.LinearFilter; t2.minFilter = THREE.LinearFilter; t2.needsUpdate = true;
   const tm = new THREE.DataTexture(gerarMarcas(), GW, GH, THREE.RGBAFormat, THREE.UnsignedByteType);
   tm.magFilter = THREE.NearestFilter; tm.minFilter = THREE.NearestFilter;
   tm.needsUpdate = true;
@@ -523,13 +528,14 @@ export function construirChao(cena) {
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.mapa = { value: tex };
     sh.uniforms.marcas = { value: tm };
+    sh.uniforms.terreno2 = { value: t2 };
     sh.uniforms.tam = { value: new THREE.Vector2(LARG, ALT) };
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vW;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
-      uniform sampler2D mapa; uniform sampler2D marcas; uniform vec2 tam; varying vec3 vW;
+      uniform sampler2D mapa; uniform sampler2D marcas; uniform sampler2D terreno2; uniform vec2 tam; varying vec3 vW;
       ${QUAL === 0 ? `float ru(vec2 p){ return 0.5; }
       float fbm(vec2 p){ return 0.5; }` : `float h1(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
       float ru(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f*f*(3.0-2.0*f);
@@ -540,6 +546,7 @@ export function construirChao(cena) {
         vec2 uv = vW.xz / tam;
         vec4 m = texture2D(mapa, uv);
         vec4 mk = texture2D(marcas, uv);
+        vec4 tr2 = texture2D(terreno2, uv);
         float vProf = length(vViewPosition);
         float det = 1.0 - smoothstep(250.0, 1400.0, vProf);
         vec2 p = vW.xz;
@@ -574,9 +581,29 @@ export function construirChao(cena) {
         float vz = fract(p.y / 15.0);
         float vaga = step(fract(p.x / 2.7), 0.05) * (step(0.12, vz) * step(vz, 0.44) + step(0.56, vz) * step(vz, 0.88)) * det;
         estac = mix(estac, vec3(0.88), vaga * 0.8);
+        ${RURAL ? `// interior: gramado no lugar da calçada (a calçada fica só junto da rua) e sem estacionamentos aleatórios
+        vec3 gramado = mix(vec3(0.34, 0.44, 0.2), vec3(0.42, 0.5, 0.24), n1) * (0.88 + 0.22 * n2);
+        calc = mix(gramado, calc, smoothstep(0.06, 0.3, m.r));
+        ehLote = 0.0;` : ''}
         vec3 c = mix(calc, estac, ehLote * 0.9);
         c = mix(c, gr * 0.95, smoothstep(0.6, 0.7, jard) * 0.85);
+        ${RURAL ? `// no interior os parques são o pântano dos Everglades: capim-serra amarelado com poças
+        vec3 serra = mix(vec3(0.5, 0.48, 0.27), vec3(0.4, 0.45, 0.22), n1) * (0.88 + 0.25 * n2);
+        float poca = smoothstep(0.66, 0.7, fbm(p * 0.012 + 3.7)) * grama;
+        gr = mix(serra, vec3(0.14, 0.26, 0.24) * (0.9 + 0.2 * n2), poca);` : ''}
         c = mix(c, gr, grama);
+        // mata/floresta (chão escuro coberto de folhas) e fazendas (fileiras de plantação)
+        float flor = smoothstep(0.35, 0.6, tr2.r), camp = smoothstep(0.35, 0.6, tr2.g);
+        // copa fechada vista de cima: tufos verdes com sombra escura entre eles
+        float copaN = fbm(p * 0.33) * 0.6 + fbm(p * 0.09 + 1.3) * 0.4;
+        vec3 chaoMata = mix(vec3(0.05, 0.085, 0.035), vec3(0.17, 0.27, 0.09), smoothstep(0.38, 0.62, copaN)) * (0.85 + 0.35 * n2);
+        vec2 lote2 = floor(p / 160.0);
+        float hl = fract(sin(dot(lote2, vec2(12.9898, 78.233))) * 43758.5453);
+        float eixo = hl > 0.5 ? p.x : p.y;
+        float fileira = 0.5 + 0.5 * sin(eixo * 2.2);
+        vec3 lavoura = hl > 0.8 ? vec3(0.5, 0.43, 0.3) * (0.92 + 0.12 * n1) : mix(vec3(0.44, 0.37, 0.24), vec3(0.32, 0.47, 0.18) * (0.8 + 0.4 * hl), smoothstep(0.35, 0.65, fileira) * det + (1.0 - det) * 0.5);
+        c = mix(c, chaoMata, flor);
+        c = mix(c, lavoura, camp);
         c = mix(c, ar, areia);
         c = mix(c, asf, rua);
         c *= 0.9 + 0.18 * n3;
@@ -591,7 +618,7 @@ export function construirChao(cena) {
   chao.name = 'chao';
   chao.receiveShadow = true;
   cena.add(chao);
-  const fundo = new THREE.Mesh(new THREE.PlaneGeometry(80000, 80000).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: COSTA ? 0x0f3a3a : 0x8d8a80 }));
+  const fundo = new THREE.Mesh(new THREE.PlaneGeometry(80000, 80000).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: COSTA ? 0x0f3a3a : RURAL ? 0x3d4d2a : 0x8d8a80 }));
   fundo.position.set(LARG / 2, -4, ALT / 2);
   cena.add(fundo);
   return chao;
@@ -739,6 +766,20 @@ function geoArvore() {
   return { tronco: mergeGeometries(tr), copa: mergeGeometries(co) };
 }
 
+// pinheiro da Flórida (slash pine): tronco alto e fino, copa em tufos só no alto
+function geoPinheiro() {
+  const tr = [], co = [];
+  const t = new THREE.CylinderGeometry(0.16, 0.3, 13, 5, 1, true).toNonIndexed(); t.translate(0, 6.5, 0);
+  tr.push(corVert(t, () => [0.45, 0.33, 0.24]));
+  const tufos = QUAL >= 1 ? [[0, 13.6, 0, 1.6], [1.0, 12.6, 0.4, 1.2], [-0.9, 12.9, -0.5, 1.25], [0.3, 11.6, -1.0, 1.1], [-0.4, 14.5, 0.3, 1.1]] : [[0, 13.4, 0, 2.0], [0.4, 12.0, 0.3, 1.4]];
+  for (const [x, y, z, r] of tufos) {
+    const g = new THREE.IcosahedronGeometry(r, 0).toNonIndexed();
+    g.scale(1.25, 0.6, 1.25); g.translate(x, y, z);
+    co.push(corVert(g, (yy, i) => { const v = 0.7 + ((i * 7919) % 17) / 100; return [0.24 * v, 0.38 * v, 0.17 * v]; }));
+  }
+  return { tronco: mergeGeometries(tr), copa: mergeGeometries(co) };
+}
+
 // pontos para árvores: parques, praias e calçadas ao lado das ruas
 function lugarArvore() {
   for (let tent = 0; tent < 60; tent++) {
@@ -746,6 +787,9 @@ function lugarArvore() {
     const ce = cel(x, z);
     if (ce < 0 || predioId[ce] >= 0) continue;
     const t = grade[ce];
+    if (t === T.FLORESTA && Math.random() < 0.9) return { x, z, tipo: Math.random() < 0.55 ? 2 : 1 };
+    if (t === T.CAMPO) { if (Math.random() < 0.004) return { x, z, tipo: 1 }; continue; }
+    if (t === T.PARQUE && RURAL) { if (Math.random() < 0.55) return { x, z, tipo: Math.random() < 0.6 ? 2 : 1 }; continue; }
     if (t === T.PARQUE && Math.random() < 0.6) return { x, z, tipo: Math.random() < 0.5 ? 0 : 1 };
     if (t === T.AREIA && Math.random() < 0.35) return { x, z, tipo: 0 };
     if (t === T.CHAO) {
@@ -793,21 +837,33 @@ function blocos(cena, geo, mat, itens, sombra, tipo) {
 export function construirPalmeiras(cena, qtd = 2600, evitar = null) {
   const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
   const matF = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
-  const P = geoPalmeira(), A = geoArvore();
+  const P = geoPalmeira(), A = geoArvore(), PI = geoPinheiro();
   if (QUAL === 0) qtd = Math.round(qtd * 0.7);
-  const nP = Math.round(qtd * 0.65), nA = qtd - nP;
-  const palmas = [], copas = [];
+  const nP = Math.round(qtd * (RURAL ? 0.12 : 0.65)), nPi = RURAL ? Math.round(qtd * 0.48) : 0, nA = qtd - nP - nPi;
+  const palmas = [], copas = [], pinhos = [];
   let tent = 0;
-  while ((palmas.length < nP || copas.length < nA) && tent < qtd * 6) {
+  while ((palmas.length < nP || copas.length < nA || pinhos.length < nPi) && tent < qtd * 6) {
     tent++;
     const l = lugarArvore();
     if (!l || (evitar && evitar(l.x, l.z))) continue;
     if (l.tipo === 0 && palmas.length < nP) {
       const k = 0.8 + Math.random() * 0.5;
       palmas.push({ x: l.x, z: l.z, ang: Math.random() * 6.28, sx: k, sy: k * (0.9 + Math.random() * 0.3), sz: k, hsl: [0.24 + Math.random() * 0.08, 0.5, 0.75 + Math.random() * 0.4] });
-    } else if (l.tipo === 1 && copas.length < nA) {
-      const k = 0.75 + Math.random() * 0.6;
-      copas.push({ x: l.x, z: l.z, ang: Math.random() * 6.28, sx: k, sy: k, sz: k, hsl: [0.22 + Math.random() * 0.1, 0.45, 0.8 + Math.random() * 0.35] });
+    } else if ((l.tipo === 2 && pinhos.length < nPi) || (l.tipo === 1 && copas.length < nA)) {
+      // no interior as árvores nascem em ilhas de mata (tufos densos com clareiras entre eles)
+      const n = RURAL ? 4 + ((Math.random() * 7) | 0) : 1;
+      for (let k2 = 0; k2 < n; k2++) {
+        const x = k2 ? l.x + (Math.random() - 0.5) * 30 : l.x, z = k2 ? l.z + (Math.random() - 0.5) * 30 : l.z;
+        if (k2) { const ce = cel(x, z); if (ce < 0 || predioId[ce] >= 0 || (grade[ce] !== T.FLORESTA && grade[ce] !== T.PARQUE)) continue; }
+        const tipo = k2 && Math.random() < 0.3 ? 3 - l.tipo : l.tipo;
+        if (tipo === 2 && pinhos.length < nPi) {
+          const k = 0.8 + Math.random() * 0.55;
+          pinhos.push({ x, z, ang: Math.random() * 6.28, sx: k, sy: k * (0.85 + Math.random() * 0.35), sz: k, hsl: [0.25 + Math.random() * 0.06, 0.4, 0.62 + Math.random() * 0.3] });
+        } else if (tipo === 1 && copas.length < nA) {
+          const k = 0.75 + Math.random() * 0.6;
+          copas.push({ x, z, ang: Math.random() * 6.28, sx: k, sy: k, sz: k, hsl: [0.22 + Math.random() * 0.1, 0.45, 0.8 + Math.random() * 0.35] });
+        }
+      }
     }
   }
   const sombra = QUAL >= 2;
@@ -817,6 +873,8 @@ export function construirPalmeiras(cena, qtd = 2600, evitar = null) {
     ...blocos(cena, P.folhas, matF, palmas, sombra, 'arvore'),
     ...blocos(cena, A.tronco, mat, troncosA, sombra, 'arvore'),
     ...blocos(cena, A.copa, mat, copas, sombra, 'arvore'),
+    ...(pinhos.length ? blocos(cena, PI.tronco, mat, pinhos.map((p) => ({ ...p, hsl: null, cor: 0xffffff })), sombra, 'arvore') : []),
+    ...(pinhos.length ? blocos(cena, PI.copa, mat, pinhos, sombra, 'arvore') : []),
   ];
 }
 

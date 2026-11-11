@@ -90,6 +90,7 @@
     <button class="bt" data-cidade="miami">🌴 Miami, EUA</button>
     <button class="bt" data-cidade="sf">🌉 São Francisco, EUA</button>
     <button class="bt" data-cidade="mexico">🇲🇽 Cidade do México</button>
+    <button class="bt" data-cidade="florida">🌾 Interior da Flórida</button>
   </div>
   <div class="linha">
     <button class="bt" data-dif="facil">😌 Fácil</button>
@@ -113,7 +114,7 @@
   (function () {
     var c = (location.search.match(/[?&]cidade=(\w+)/) || [])[1];
     try { c = c || localStorage.getItem('miami-cidade'); } catch (e) {}
-    if (['miami', 'sf', 'mexico'].indexOf(c) < 0) c = 'miami';
+    if (['miami', 'sf', 'mexico', 'florida'].indexOf(c) < 0) c = 'miami';
     window.CIDADE_ESCOLHIDA = c;
     document.write('<script src="mapas/' + c + '.js"><\/script>');
   })();

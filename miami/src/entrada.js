@@ -317,6 +317,11 @@ function toque(sx, sy, camRTS, duplo, ultimo) {
   }
   const sel = G.selecao.filter((u) => u.vivo && !u.dentro);
   G.selecao = sel;
+  if (!sel.length && G.saidas && G.saidas.length) {
+    const ch0 = camRTS.chao(sx, sy);
+    const sd = ch0 && G.saidas.find((q) => Math.hypot(q.x - ch0.x, q.z - ch0.z) < Math.max(25, camRTS.dist * 0.06));
+    if (sd) { G.ui.viajar(sd); return; }
+  }
   if (G.modoCorda) {
     G.modoCorda = false;
     const hel = sel.filter((u) => u.classe === 'aereo' && u.passageiros.some((p) => !p.agente));

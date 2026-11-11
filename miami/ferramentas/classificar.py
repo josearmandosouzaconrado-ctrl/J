@@ -32,7 +32,18 @@ wm = cv2.morphologyEx(wm, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
 ponte = (gray & (r >= 232)) | (cls == 2)
 cls[(wm == 1) & (cls != 5) & (cls != 6) & ~ponte] = 0
 cls[(wm == 0) & (cls == 0)] = 1
+# mapas rurais (interior): fazendas são áreas brancas largas (as ruas são linhas finas) e há mata (verde claro)
+if len(sys.argv) > 3 and sys.argv[3] == 'rural':
+    branco = ((r >= 254) & (g >= 254) & (b >= 252)).astype(np.uint8)
+    campo = cv2.morphologyEx(branco, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (13, 13))).astype(bool)
+    mata = (g - r >= 3) & (g - b >= 10) & (cls != 0) & (cls != 3) & (cls != 5) & (cls != 6)
+    cls[mata & ~campo] = 8
+    cls[campo & (cls == 2)] = 9
+    # prédios neste zoom são cinza neutro (~222): manchas, não linhas finas como o contorno das ruas
+    cinza = ((abs(r - g) <= 2) & (abs(g - b) <= 3) & (r >= 205) & (r <= 228)).astype(np.uint8)
+    pred = cv2.morphologyEx(cinza, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8)).astype(bool)
+    cls[pred & (cls != 0)] = 5
 np.save(out + '.npy', cls)
-pal = np.array([[40, 110, 170], [235, 232, 220], [120, 120, 125], [110, 170, 90], [235, 215, 160], [200, 80, 60], [220, 40, 160]], np.uint8)
+pal = np.array([[40, 110, 170], [235, 232, 220], [120, 120, 125], [110, 170, 90], [235, 215, 160], [200, 80, 60], [220, 40, 160], [0, 0, 0], [40, 90, 40], [200, 190, 120]], np.uint8)
 Image.fromarray(pal[cls]).save(out + '.png')
-print('ok', W, H, np.bincount(cls.ravel(), minlength=7))
+print('ok', W, H, np.bincount(cls.ravel(), minlength=10))

@@ -1,6 +1,6 @@
 # 🧟 Miami: Surto Zumbi
 
-**Cidades:** Miami 🌴, São Francisco 🌉 e Cidade do México 🇲🇽 — cada uma em escala real, escolhida no menu inicial.
+**Regiões:** Miami 🌴, Interior da Flórida 🌾 (Homestead, fazendas e Everglades), São Francisco 🌉 e Cidade do México 🇲🇽 — cada uma em escala real, escolhida no menu inicial.
 
 Jogo de **estratégia em tempo real 3D** para celular (Android) na **Miami de verdade, em tamanho real (1:1)**.
 Um surto zumbi começa aos poucos no centro da cidade e se espalha pelas mordidas. Você comanda o Exército,
@@ -10,7 +10,7 @@ para conter a infecção e **resgatar os civis**.
 ## Baixar
 
 - **APK (Android 7+):** [`MiamiSurtoZumbi.apk`](../MiamiSurtoZumbi.apk) na raiz do repositório.
-  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.8.0/MiamiSurtoZumbi.apk
+  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.9.0/MiamiSurtoZumbi.apk
 - No navegador: abra `miami/www/index.html` por um servidor web (ex.: `python3 -m http.server` dentro de `miami/www`).
 
 O Android pede para permitir "instalar apps desconhecidos", porque o APK não vem da Play Store.
@@ -45,7 +45,7 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
 |---|---|
 | 🪖 Quartel | Soldado (M4A1), Metralhador (M249), Atirador de elite (M110/Barrett), Médico de combate |
 | 🚙 Pátio de veículos | Humvee M1151, Ambulância M997, Stryker M1126, Bradley M2A3, Tanque M1A2 Abrams, Obuseiro M109A7 Paladin, HIMARS M142 |
-| 🚁 Heliporto | UH-60 Black Hawk, CH-47 Chinook, AH-64 Apache, drone MQ-9 Reaper |
+| 🚁 Heliporto | MH-6 Little Bird (soldados sentados nos bancos externos), UH-60 Black Hawk, CH-47 Chinook, AH-64 Apache, drone MQ-9 Reaper |
 | ⚓ Docas | Lancha Mark VI, hovercraft LCAC (anfíbio), destróier classe Arleigh Burke |
 | 🛳️ Porta-aviões | F-35C Lightning II, F/A-18E Super Hornet, MV-22 Osprey |
 | 🛫 Pista de pouso (construída) | F-22 Raptor (bombas pequenas SDB), A-10 Thunderbolt II (canhão GAU-8 de 30 mm) |
@@ -62,6 +62,9 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
   passadas soltando bombas ao longo da faixa e voltam para rearmar.
 - **Soldados nas janelas:** parte da tropa fica nas janelas dos prédios (quebra o vidro e atira para fora) e
   parte no telhado.
+- **🌾 Interior da Flórida:** mapa real (zoom 16, ~23 × 10 km) de Homestead, Florida City, fazendas de Redland,
+  canais com pontes e a borda dos Everglades, com a base na Homestead Air Reserve Base. Placas nas rodovias que
+  saem de Miami (US-41, US-1, SR-836) levam ao interior e vice-versa.
 - **🪢 Descida em corda (fast-rope):** Black Hawk, Chinook e Osprey param no ar e os soldados descem de corda,
   no chão ou direto num telhado.
 - **♾️ Modo Sandbox:** dinheiro infinito, produção rápida, sem derrota, com botões para criar hordas, pausar o
@@ -113,7 +116,8 @@ sem ela o Android não deixa atualizar o app por cima da versão instalada (é p
 cd miami/ferramentas
 python3 baixar_tiles.py World_Topo_Map 17 25.752 -80.210 25.800 -80.118 topo17.png
 python3 classificar.py topo17.png classes          # água, chão, ruas, parques, areia, prédios
-python3 gerar_mapa.py miami classes.npy ../www/mapas/miami.js   # sf e mexico: veja cidades.py
+python3 gerar_mapa.py miami classes.npy ../www/mapas/miami.js   # sf, mexico e florida: veja cidades.py
+# interior da Flórida: baixar_tiles.py ... 16 ... e classificar.py topo16.png classes rural
 python3 gerar_icone.py ..                          # ícone do app
 ```
 

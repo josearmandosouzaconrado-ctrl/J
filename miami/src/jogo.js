@@ -79,7 +79,7 @@ export function construirVisual() {
   // sem árvores em cima da pista de pouso (cidades sem mar)
   const bb = lugares.base, ex = G.baseEixo;
   const pc = COSTA ? null : { x: bb.x + ex.pp.x * -330, z: bb.z + ex.pp.z * -330 };
-  G.decor = construirPalmeiras(G.cena, 2600, pc ? (x, z) => {
+  G.decor = construirPalmeiras(G.cena, META.rural ? 32000 : 2600, pc ? (x, z) => {
     const dx = x - pc.x, dz = z - pc.z, a = ex.ang, l = dx * Math.sin(a) + dz * Math.cos(a), t = dx * Math.cos(a) - dz * Math.sin(a);
     return Math.abs(l) < 180 && t > -110 && t < 40;
   } : null);
@@ -151,7 +151,25 @@ function lugarLivre(p, modo = 0) {
   return pontoLivreProximo(modo, p.x, p.z) || p;
 }
 
+// placas nas saídas das rodovias que levam a outra região
+function criarSaidas() {
+  G.saidas = [];
+  for (const [nome, px, pz, dest] of META.saidas || []) {
+    let x = px * META.mpp, z = pz * META.mpp;
+    const p = pontoLivreProximo(0, x, z);
+    if (p) { x = p.x; z = p.z; }
+    const m = criarModelo('placa');
+    // a placa fica de frente para o centro do mapa
+    const ang = Math.atan2(LARG / 2 - x, ALT / 2 - z);
+    m.grupo.position.set(x + Math.sin(ang + Math.PI / 2) * 6, 0, z + Math.cos(ang + Math.PI / 2) * 6);
+    m.grupo.rotation.y = ang;
+    G.cena.add(m.grupo);
+    G.saidas.push({ nome, x, z, dest, m });
+  }
+}
+
 export function iniciarPartida(dif) {
+  criarSaidas();
   const cfg = DIF[dif] || DIF.normal;
   G.dificuldade = dif; G.cfgDif = cfg;
   G.dinheiro = cfg.dinheiro; G.meta = cfg.meta; G.sandbox = !!cfg.sandbox; G.surtoParado = false;

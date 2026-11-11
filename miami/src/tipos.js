@@ -22,6 +22,7 @@ export const TIPOS = {
   blackhawk: { nome: 'UH-60 Black Hawk', sub: 'Metralhadoras M134 • leva 11', icone: '🚁', classe: 'aereo', modelo: 'blackhawk', hp: 850, vel: 75, altCruz: 40, alcance: 95, dano: 10, cadencia: 0.07, precisao: 0.35, arma: 'm134', carga: 11, cargaTipos: ['inf', 'civil'], custo: 750, tempo: 16, de: 'heliporto', raio: 8 },
   chinook: { nome: 'CH-47 Chinook', sub: 'Leva 33 ou um Humvee', icone: '🚁', classe: 'aereo', modelo: 'chinook', hp: 1200, vel: 68, altCruz: 45, alcance: 80, dano: 11, cadencia: 0.16, precisao: 0.35, arma: 'm240', carga: 33, cargaTipos: ['inf', 'civil', 'leve'], custo: 950, tempo: 20, de: 'heliporto', raio: 10 },
   apache: { nome: 'AH-64 Apache', sub: 'Canhão 30mm + mísseis Hellfire', icone: '🚁', classe: 'aereo', modelo: 'apache', hp: 1000, vel: 80, altCruz: 55, alcance: 280, dano: 45, splash: 3, cadencia: 0.13, precisao: 0.55, arma: '30mm', sec: { alcance: 650, dano: 420, splash: 11, cadencia: 7, precisao: 0.95, arma: 'hellfire', missil: true }, custo: 1150, tempo: 22, de: 'heliporto', raio: 8 },
+  littlebird: { nome: 'MH-6 Little Bird', sub: 'Leva 6 soldados nos bancos externos • rápido e pequeno', icone: '🚁', classe: 'aereo', modelo: 'littlebird', hp: 500, vel: 88, altCruz: 35, alcance: 75, dano: 12, cadencia: 0.16, precisao: 0.42, arma: 'fuzil', carga: 6, cargaTipos: ['inf'], custo: 450, tempo: 10, de: 'heliporto', raio: 5 },
   reaper: { nome: 'Drone MQ-9 Reaper', sub: 'Vigia em círculos e lança Hellfire', icone: '🛩️', classe: 'aereo', modelo: 'reaper', hp: 450, vel: 70, altCruz: 260, orbita: 240, alcance: 750, dano: 420, splash: 11, cadencia: 6.5, precisao: 0.95, arma: 'hellfire', missil: true, custo: 700, tempo: 15, de: 'heliporto', raio: 10 },
   // ---------------- porta-aviões ----------------
   f35: { nome: 'F-35C Lightning II', sub: 'Caça furtivo • bombas guiadas GBU-31', icone: '✈️', classe: 'jato', modelo: 'f35', hp: 900, vel: 250, altCruz: 160, dano: 650, splash: 20, municao: 4, arma: 'bomba', custo: 1500, tempo: 22, de: 'porta', raio: 9 },
@@ -53,7 +54,7 @@ export const ESTRUTURAS = {
 export const PRODUCAO = {
   quartel: ['fuzileiro', 'metralhador', 'sniper', 'medico'],
   patio: ['humvee', 'ambulancia', 'stryker', 'bradley', 'abrams', 'paladin', 'himars'],
-  heliporto: ['blackhawk', 'chinook', 'apache', 'reaper'],
+  heliporto: ['littlebird', 'blackhawk', 'chinook', 'apache', 'reaper'],
   docas: ['lancha', 'lcac', 'destroier'],
   porta: ['f35', 'f18', 'osprey'],
   pista: ['f22', 'a10', 'f35', 'f18'],

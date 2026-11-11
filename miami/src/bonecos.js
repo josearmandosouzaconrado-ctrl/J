@@ -302,8 +302,8 @@ export class Bonecos {
     const corBota = mil ? BOTA_MIL : estilo === 2 || estilo === 5 ? PRETO : BOTA_CIV;
     for (const s of [1, -1]) {
       const f = s === 1 ? sw : -sw;
-      const coxa = -f * 0.55 * andando;                         // negativo = perna para frente
-      const joelho = Math.max(0, (s === 1 ? cw : -cw)) * 0.9 * andando + (pose === 1 ? 0.15 : 0.05);
+      const coxa = pose === 5 ? -1.45 + f * 0.08 : -f * 0.55 * andando;   // negativo = perna para frente
+      const joelho = pose === 5 ? 1.35 + f * 0.1 : Math.max(0, (s === 1 ? cw : -cw)) * 0.9 * andando + (pose === 1 ? 0.15 : 0.05);
       const hxp = s * 0.1;
       S.parte('coxa', x, y, z, cy, sy, hxp, hy, 0, coxa, 0, esc, roupaPerna);
       // joelho

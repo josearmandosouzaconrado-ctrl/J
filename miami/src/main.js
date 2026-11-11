@@ -227,6 +227,16 @@ async function iniciar() {
         if (u.policia) bon.add(u.x, u.y, u.z, u.ang, u.fase, pose, SWAT_ROUPA, SWAT_CALCA, PELE_SOLD, 2, 1, null, vn);
         else bon.add(u.x, u.y, u.z, u.ang, u.fase, pose, u.tipo === 'sniper' ? SNIPER : CAMO, CAMO2, PELE_SOLD, 1, 1, null, vn);
       }
+      for (const u of G.unidades) {
+        if (!u.vivo || u.dentro || !u.m || !u.m.def.bancos || !u.passageiros.length || !visivel(u.x, u.z)) continue;
+        const c = Math.cos(u.ang), s = Math.sin(u.ang);
+        u.passageiros.forEach((p, i) => {
+          if (p.agente || i >= 6) return;
+          const lado = i % 2 ? -1 : 1, lz = 0.85 - Math.floor(i / 2) * 0.6, lx = lado * 1.02;
+          const x = u.x + c * lx + s * lz, z = u.z - s * lx + c * lz;
+          bon.add(x, u.y + 0.97 - 0.93, z, u.ang + lado * Math.PI / 2, 0, 5, p.tipo === 'sniper' ? SNIPER : CAMO, CAMO2, PELE_SOLD, 1, 1, null, 0);
+        });
+      }
       desenharAgentes(bon, visivel);
     }
     G.longe = camRTS.dist >= 900;

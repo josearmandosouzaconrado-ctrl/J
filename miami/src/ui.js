@@ -114,6 +114,17 @@ export class UI {
     for (const id of ['#topo', '#lateral', '#selecao', '#producao', '#info', '#alertas']) $(id).addEventListener('pointerdown', (e) => e.stopPropagation());
   }
 
+  viajar(sd) {
+    const nomes = { miami: 'Miami', florida: 'o Interior da Flórida', sf: 'São Francisco', mexico: 'a Cidade do México' };
+    const m = this.modal(`<h2>🛣️ ${sd.nome}</h2><p>Pegar a estrada para <b>${nomes[sd.dest] || sd.dest}</b>? Uma nova operação começa lá (o progresso desta região não é levado).</p>
+      <button class="bt grande" data-a="ir">🚙 Viajar</button><button class="bt" data-a="ficar">Ficar aqui</button>`);
+    m.querySelector('[data-a=ir]').onclick = () => {
+      try { localStorage.setItem('miami-cidade', sd.dest); } catch (e) { /* sem armazenamento */ }
+      location.href = location.pathname + '?cidade=' + sd.dest;
+    };
+    m.querySelector('[data-a=ficar]').onclick = () => m.remove();
+  }
+
   modoSandbox() {
     for (const b of document.querySelectorAll('.sb')) b.classList.toggle('oculto', !G.sandbox);
   }
@@ -324,6 +335,7 @@ export class UI {
     g.fillStyle = '#ffffff';
     for (const a of G.agentes) if (a.vivo && !a.zumbi && !a.dentro && a.estado !== 'morto') g.fillRect(a.x * sx - 0.5, a.z * sz - 0.5, 1.2, 1.2);
     for (const p of predios) if (p.civis > 0) { g.fillStyle = p.sos ? '#ffd23b' : '#5bc0ff'; g.fillRect(p.cx * sx - 1.5, p.cz * sz - 1.5, 3, 3); }
+    for (const sd of G.saidas || []) { g.fillStyle = '#2ecc71'; g.fillRect(sd.x * sx - 2.5, sd.z * sz - 2.5, 5, 5); }
     for (const c of G.acampamentos || []) if (c.ativo) { g.fillStyle = c.policia ? '#3c5cff' : '#ff9a2e'; g.beginPath(); g.arc(c.x * sx, c.z * sz, 3, 0, 6.29); g.fill(); }
     for (const u of G.unidades) {
       if (!u.vivo || u.dentro) continue;
@@ -388,6 +400,15 @@ export class UI {
         g.fillStyle = '#300'; g.fillRect(t.x - 22, y + 6, 44, 3);
         g.fillStyle = f > 0.5 ? '#4f4' : f > 0.2 ? '#fd3' : '#f33'; g.fillRect(t.x - 22, y + 6, 44 * f, 3);
       }
+    }
+    // placas das saídas das rodovias
+    for (const sd of G.saidas || []) {
+      const t = telaDe(sd.x, 9, sd.z, cam);
+      if (!t || t.x < -60 || t.y < -40 || t.x > W + 60 || t.y > H + 40 || this.cam.dist > 2500) continue;
+      g.font = 'bold 11px sans-serif';
+      const w = g.measureText(sd.nome).width + 26;
+      g.fillStyle = 'rgba(25,100,55,0.95)'; rr(g, t.x - w / 2, t.y - 11, w, 20, 5); g.fill();
+      g.fillStyle = '#fff'; g.fillText('🛣️ ' + sd.nome, t.x, t.y);
     }
     // acampamentos de sobreviventes
     for (const c of G.acampamentos || []) {
@@ -517,6 +538,7 @@ function rr(g, x, y, w, h, r) {
 }
 
 export const AJUDA = `
+<p><b>🌾 Interior da Flórida:</b> Homestead, Florida City, as fazendas de Redland e a borda dos Everglades (mata, pântano e canais com pontes), com a sua base na Homestead Air Reserve Base. Em Miami, toque nas placas verdes das rodovias (US-41, US-1, SR-836) nas bordas do mapa para viajar ao interior; lá, as placas da US-1 e da Turnpike levam de volta a Miami.</p>
 <p><b>Cidades:</b> no menu inicial escolha <b>Miami</b>, <b>São Francisco</b> (base naval em Treasure Island, porta-aviões na baía) ou a <b>Cidade do México</b> (base no Bosque de Chapultepec; sem mar, os jatos saem de uma pista de pouso).</p>
 <p><b>🔨 Construir:</b> no painel 🏭 Produzir, aba Construir: escolha posto avançado (FOB), quartel, pátio, heliporto, docas, zona segura, torre ou barreira e toque no mapa. Bases novas produzem unidades perto da frente de batalha, e FOB/zonas seguras recebem civis.</p>
 <p><b>Objetivo:</b> um surto zumbi começou em Miami e se espalha aos poucos. Resgate os civis e leve-os para a <b>Zona Segura</b> da base (no Porto de Miami) ou para o <b>porta-aviões</b>. Se o Quartel-General cair, você perde.</p>

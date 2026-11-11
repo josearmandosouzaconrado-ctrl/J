@@ -11,7 +11,8 @@ from cidades import CIDADES
 CID = sys.argv[1]
 CFG = CIDADES[CID]
 S, W, N, E = CFG['bbox']
-Z = 17
+Z = CFG.get('zoom', 17)
+ESC = 2 ** (Z - 17)   # 1 em z17, 0,5 em z16 (escala dos filtros em pixels)
 CEL = 4
 
 def tx(lon): return (lon + 180) / 360 * 2 ** Z * 256
@@ -35,7 +36,8 @@ rua = (cls == 2).astype(np.uint8)
 n, lab, st, _ = cv2.connectedComponentsWithStats(rua, connectivity=8)
 grandes = np.zeros(n, np.uint8); grandes[1:] = (st[1:, cv2.CC_STAT_AREA] >= 150)
 rua = grandes[lab]
-larga = cv2.dilate(rua, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9)))
+kd = 9 if Z >= 17 else 3
+larga = cv2.dilate(rua, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kd, kd)))
 cls = cls.copy()
 cls[(cls == 2) & (rua == 0)] = 1
 cls[(larga == 1) & (cls == 1)] = 2
@@ -43,9 +45,11 @@ cls[(larga == 1) & (cls == 1)] = 2
 # ---------------- grade de terreno ----------------
 gh, gw = H // CEL, Wd // CEL
 c = cls[:gh * CEL, :gw * CEL].reshape(gh, CEL, gw, CEL).transpose(0, 2, 1, 3).reshape(gh, gw, CEL * CEL)
-cnt = np.stack([(c == k).sum(-1) for k in range(7)], -1)  # gh,gw,7
+cnt = np.stack([(c == k).sum(-1) for k in range(10)], -1)  # gh,gw,10
 cnt[..., 5] += cnt[..., 6]
 grid = np.ones((gh, gw), np.uint8)
+grid[cnt[..., 9] >= 8] = 9          # fazenda
+grid[cnt[..., 8] >= 7] = 8          # floresta/mata
 grid[cnt[..., 3] >= 6] = 3
 grid[cnt[..., 4] >= 6] = 4
 grid[cnt[..., 2] >= 5] = 2
@@ -55,8 +59,8 @@ grid[cnt[..., 0] >= 9] = 0
 ponte = (cnt[..., 0] >= 9) & ((cnt[..., 2] + cnt[..., 1]) >= 2)
 grid[ponte] = 6
 # linha central das ruas (a linha fina original do mapa)
-k7 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
-larga_via = cv2.dilate(cv2.erode(rua, k7), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11)))
+k7 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7) if Z >= 17 else (4, 4))
+larga_via = cv2.dilate(cv2.erode(rua, k7), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11) if Z >= 17 else (6, 6)))
 fina = rua & (1 - larga_via)           # vias expressas (largas no mapa) ficam sem faixa central
 cr = fina[:gh * CEL, :gw * CEL].reshape(gh, CEL, gw, CEL).sum(axis=(1, 3))
 grid[(cr >= 4) & (grid == 2)] = 7
@@ -97,7 +101,7 @@ def zona_altura(x, y, area_m2, h):
 blds = []
 for ct in cont:
     a = cv2.contourArea(ct)
-    if a < 30: continue
+    if a * MPP * MPP < 35: continue
     ap = cv2.approxPolyDP(ct, 1.3, True).reshape(-1, 2)
     if len(ap) < 3: continue
     if len(ap) > 40:
@@ -117,7 +121,8 @@ LUGARES = CFG['lugares']
 lug = {k: [n, round(px(la, lo)[0], 1), round(px(la, lo)[1], 1)] for k, (n, la, lo) in LUGARES.items()}
 
 dele = [[n, round(px(la, lo)[0], 1), round(px(la, lo)[1], 1)] for (n, la, lo) in CFG['delegacias']]
-meta = dict(cidade=CID, nome=CFG['nome'], pais=CFG['pais'], costa=CFG['costa'], baseAng=CFG['base_ang'],
+saidas = [[n, round(px(la, lo)[0], 1), round(px(la, lo)[1], 1), d] for (n, la, lo, d) in CFG.get('saidas', [])]
+meta = dict(cidade=CID, nome=CFG['nome'], pais=CFG['pais'], costa=CFG['costa'], baseAng=CFG['base_ang'], rural=CFG.get('rural', False), saidas=saidas,
             focos=CFG['focos'], delegacias=dele,
             gx0=GX0, gy0=GY0, z=Z, mpp=MPP, cel=CEL, gw=gw, gh=gh, wpx=Wd, hpx=H, lugares=lug,
             bbox=[S, W, N, E])

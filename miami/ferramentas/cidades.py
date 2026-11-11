@@ -40,6 +40,11 @@ CIDADES = {
             'convention': ('Centro de Convenções', 25.7950, -80.1340),
             'venetian': ('Venetian Islands', 25.7900, -80.1600),
         },
+        saidas=[
+            ('US-41 Tamiami Trail → Everglades', 25.7652, -80.2085, 'florida'),
+            ('US-1 Sul → Homestead / Florida City', 25.7535, -80.1990, 'florida'),
+            ('SR-836 → Turnpike → Interior da Flórida', 25.7745, -80.2085, 'florida'),
+        ],
         focos=['bayside', 'brickell', 'ocean', 'kaseya', 'havana', 'southpointe', 'overtown', 'convention', 'lummus', 'freedom', 'venetian', 'fisher', 'star'],
         delegacias=[('Polícia de Miami (Downtown)', 25.7795, -80.1985), ('Polícia de Miami Beach', 25.7808, -80.1325)],
     ),
@@ -104,5 +109,36 @@ CIDADES = {
         },
         focos=['zocalo', 'angel', 'roma', 'bellas', 'zonarosa', 'revolucion', 'condesa', 'torrelat', 'juarez', 'alameda', 'polanco', 'reforma'],
         delegacias=[('Polícia da Cidade do México (SSC)', 19.4300, -99.1490), ('Polícia do Centro Histórico', 19.4310, -99.1380)],
+    ),
+    'florida': dict(
+        nome='Interior da Flórida', pais='EUA', zoom=16, rural=True,
+        bbox=(25.430, -80.600, 25.520, -80.370), costa=False, base_ang=0.72, chance_alto=0.25,
+        zonas=[
+            (25.4800, 25.4970, -80.3950, -80.3700, 8, 10, 6),     # hangares da base aérea
+            (25.4640, 25.4740, -80.4830, -80.4720, 6, 10, 10),    # centro de Homestead
+        ],
+        altura_padrao=(3.5, 2.5, 3, 5),     # casas térreas e galpões de fazenda
+        lugares={
+            'base': ('Homestead Air Reserve Base', 25.4900, -80.3860),
+            'heliporto': ('Heliporto da Base Aérea', 25.4950, -80.3920),
+            'homestead': ('Centro de Homestead', 25.4687, -80.4776),
+            'floridacity': ('Florida City', 25.4479, -80.4792),
+            'outlet': ('Florida Keys Outlet', 25.4470, -80.4740),
+            'speedway': ('Homestead-Miami Speedway', 25.4515, -80.4085),
+            'leisure': ('Leisure City', 25.4950, -80.4300),
+            'naranja': ('Naranja', 25.5160, -80.4230),
+            'coral': ('Coral Castle', 25.5003, -80.4445),
+            'redland': ('Redland (fazendas)', 25.5050, -80.5200),
+            'fruta': ('Robert Is Here (barraca de frutas)', 25.4475, -80.5007),
+            'aeroporto': ('Aeroporto de Homestead', 25.4990, -80.5540),
+            'everglades': ('Borda dos Everglades', 25.4700, -80.5850),
+            'turnpike': ("Florida's Turnpike", 25.4600, -80.4600),
+        },
+        focos=['homestead', 'floridacity', 'leisure', 'redland', 'outlet', 'naranja', 'fruta', 'speedway', 'coral', 'aeroporto', 'everglades', 'turnpike'],
+        delegacias=[('Polícia de Homestead', 25.4725, -80.4777), ('Polícia de Florida City', 25.4485, -80.4795)],
+        saidas=[
+            ('US-1 Norte → Miami', 25.5170, -80.4287, 'miami'),
+            ("Florida's Turnpike → Miami", 25.5170, -80.4036, 'miami'),
+        ],
     ),
 }

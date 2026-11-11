@@ -930,6 +930,56 @@ const AERO = {
     c.box(0.12, 0.1, 0.12, 0xd02020, 0, 4.3, -9.2);
     return { corpo: c.build(), vidro: v.build(false), rotor: rotor(4, 7.3), rotorY: 4.2, rotorZ: 0.1, cauda: rotorCauda(1.4), caudaPos: [0.3, 3.4, -9.4], caudaEixo: 'x', armaZ: 5.2, armaY: 0.9, radar: true };
   },
+  littlebird() {
+    // MH-6M Little Bird: fuselagem em "ovo", rotor de 6 pás, cauda fina com empenagem em H, esquis e bancos externos
+    const c = new Mont(), v = new Mont();
+    const C = 0x2c2f30, C2 = 0x222526, ESC = 0x151718;
+    c.add(loftZ([
+      { z: -1.5, w: 0.5, hT: 0.45, hB: 0.25, y: 1.65 },
+      { z: -0.9, w: 1.2, hT: 0.75, hB: 0.55, y: 1.55, n: 2.2 },
+      { z: 0.0, w: 1.42, hT: 0.85, hB: 0.68, y: 1.5, n: 2.2 },
+      { z: 0.9, w: 1.36, hT: 0.78, hB: 0.66, y: 1.45, n: 2.1 },
+      { z: 1.6, w: 1.0, hT: 0.5, hB: 0.5, y: 1.38 },
+      { z: 1.95, w: 0.35, hT: 0.15, hB: 0.2, y: 1.32 },
+    ], 22), C);
+    // cabine quase toda de vidro (na frente e nas portas)
+    v.add(loftZ([
+      { z: 0.25, w: 1.4, hT: 0.8, hB: 0.15, y: 1.55, n: 2.2 },
+      { z: 1.0, w: 1.3, hT: 0.72, hB: 0.2, y: 1.48, n: 2.1 },
+      { z: 1.65, w: 0.95, hT: 0.45, hB: 0.25, y: 1.4 },
+    ], 18), VIDRO);
+    // cone de cauda fino, empenagem em H e deriva
+    c.add(loftZ([
+      { z: -5.4, w: 0.16, hT: 0.1, hB: 0.1, y: 2.0 },
+      { z: -3.0, w: 0.26, hT: 0.16, hB: 0.16, y: 1.85 },
+      { z: -1.3, w: 0.42, hT: 0.26, hB: 0.24, y: 1.75 },
+    ], 12), C);
+    c.box(1.7, 0.06, 0.45, C, 0, 2.05, -5.0);
+    for (const sx of [-1, 1]) c.box(0.05, 0.6, 0.45, C, sx * 0.85, 2.05, -5.0);
+    c.add(asa({ p: [0, 2.0, -4.8], corda: 0.6, esp: 0.12 }, { p: [0, 2.9, -5.25], corda: 0.4, esp: 0.1 }), C);
+    c.add(asa({ p: [0, 2.0, -4.8], corda: 0.55, esp: 0.12 }, { p: [0, 1.4, -5.1], corda: 0.4, esp: 0.1 }), C);
+    // mastro do rotor e carenagem do motor
+    c.bloco(0.6, 0.35, 1.0, C2, 0, 2.35, -0.3, 0, 0, 0, 0.12);
+    c.cil(0.12, 0.14, 0.35, 8, METAL, 0, 2.6, 0.0);
+    c.cil(0.12, 0.16, 0.4, 8, ESC, 0, 1.9, -1.55, Math.PI / 2);           // escape
+    // esquis com travessas
+    for (const sx of [-1, 1]) {
+      c.cil(0.045, 0.045, 3.0, 6, ESC, sx * 0.95, 0.06, 0.15, Math.PI / 2);
+      c.cil(0.045, 0.045, 0.35, 6, ESC, sx * 0.95, 0.14, 1.75, Math.PI / 2 - 0.5);
+      for (const z of [-0.5, 0.9]) c.cil(0.04, 0.04, 1.05, 6, ESC, sx * 0.72, 0.5, z, 0, 0, sx * 0.45);
+      // bancos externos (pranchas) e alças
+      c.bloco(0.42, 0.06, 1.7, 0x3a3e40, sx * 1.02, 0.92, 0.2, 0, 0, 0, 0.02);
+      c.cil(0.02, 0.02, 1.6, 4, METAL, sx * 0.95, 1.95, 0.2, Math.PI / 2);
+      c.box(0.04, 0.45, 0.04, METAL, sx * 1.2, 0.7, 0.2);
+    }
+    // nariz com FLIR e antena
+    c.esf(0.15, ESC, 0, 1.0, 1.75);
+    v.esf(0.09, VIDRO, 0, 0.98, 1.88);
+    antena(c, 0, 2.3, -1.0, 0.7);
+    numero(c, '54', 0.09, 2.0, -3.6, 0.2, '+x', 0x5a5f62);
+    numero(c, '54', -0.09, 2.0, -3.6, 0.2, '-x', 0x5a5f62);
+    return { corpo: c.build(), vidro: v.build(false), rotor: rotor(6, 4.4, 0x1e1e1e, 0.25), rotorY: 2.85, rotorZ: 0.0, cauda: rotorCauda(0.7), caudaPos: [0.18, 2.1, -5.3], caudaEixo: 'x', bancos: true };
+  },
   reaper() {
     const c = new Mont();
     const C = 0xb3bbc1;
@@ -1358,6 +1408,20 @@ const NAVAL = {
 
 // ---------------- estruturas da base ----------------
 const ESTR = {
+  placa() {
+    // placa verde de rodovia com dois postes, faixas brancas de texto e escudo da rodovia
+    const c = new Mont();
+    for (const sx of [-1, 1]) c.cil(0.12, 0.14, 7.5, 8, 0x8a8f92, sx * 3.4, 3.75, 0);
+    c.box(7.4, 0.25, 0.25, 0x8a8f92, 0, 5.2, -0.15);
+    c.bloco(8.0, 2.6, 0.12, 0x1f6b3a, 0, 6.2, 0.05, 0, 0, 0, 0.12);
+    c.box(7.8, 2.4, 0.02, 0xf2f2f2, 0, 6.2, 0.12);
+    c.box(7.6, 2.2, 0.03, 0x1f6b3a, 0, 6.2, 0.13);
+    for (const [w, y] of [[5.2, 6.75], [4.2, 6.2], [3.0, 5.65]]) c.box(w, 0.28, 0.03, 0xf2f2f2, 0.6, y, 0.15);
+    c.bloco(1.0, 1.1, 0.03, 0xf2f2f2, -3.0, 6.3, 0.15, 0, 0, 0, 0.1);
+    c.bloco(0.8, 0.9, 0.035, 0x1c2f6b, -3.0, 6.3, 0.16, 0, 0, 0, 0.1);
+    c.box(0.5, 0.25, 0.04, 0xf2f2f2, 3.2, 5.25, 0.15);                    // seta
+    return { corpo: c.build() };
+  },
   pista() {
     // pista de pouso militar com pátio de estacionamento e hangares
     const c = new Mont();
