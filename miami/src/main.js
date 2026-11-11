@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { G } from './estado.js';
 import { LARG, ALT, lugares, predios, MAT_PREDIOS, META, COSTA, definirQualidade, atualizarDecoracao, atualizarPredios } from './mapa.js';
 import { Hash } from './util.js';
+import { criarAmbiente } from './modelos.js';
 import { Bonecos, CAMO, CAMO2, PELE_SOLD, SWAT_ROUPA, SWAT_CALCA } from './bonecos.js';
 import { Efeitos } from './efeitos.js';
 import { CameraRTS, configurarEntrada } from './entrada.js';
@@ -76,6 +77,7 @@ async function iniciar() {
   status('Construindo a cidade em 3D...');
   await new Promise((r) => setTimeout(r, 20));
   construirVisual();
+  criarAmbiente(renderer, cena);
   G.bonecos = new Bonecos(cena);
   G.efeitos = new Efeitos(cena);
   G.hashA = new Hash(16, LARG, ALT, 4096);

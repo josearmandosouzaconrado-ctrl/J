@@ -5,6 +5,9 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { QUAL } from './mapa.js';
+import { loftY } from './forma.js';
+// membro arredondado: lista [y, largura, frente, trás]
+const membro = (secs, N = 10) => loftY(secs.map(([y, w, f, t]) => ({ y, w, f, t, n: 2.1 })), N);
 const G_QUAL = () => QUAL;
 
 // ---------- geometria com cores por vértice ----------
@@ -21,7 +24,7 @@ function peca(lista, geo, cor, x, y, z, rx = 0, ry = 0, rz = 0) {
 }
 const B = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 const C = (r1, r2, h, s = 7) => new THREE.CylinderGeometry(r1, r2, h, s);
-const E = (r, sx, sy, sz) => { const g = new THREE.SphereGeometry(r, 9, 7); g.scale(sx, sy, sz); return g; };
+const E = (r, sx, sy, sz) => { const g = new THREE.SphereGeometry(r, 12, 8); g.scale(sx, sy, sz); return g; };
 // tronco afunilado (seção quadrada com cantos chanfrados)
 function blocoAfunilado(wTop, wBot, h, prof) {
   const g = new THREE.CylinderGeometry(wTop * 0.72, wBot * 0.72, h, 8);
@@ -29,7 +32,7 @@ function blocoAfunilado(wTop, wBot, h, prof) {
   g.scale(1, 1, prof);
   return g;
 }
-function juntar(fn) { const l = []; fn(l); const g = mergeGeometries(l); g.computeVertexNormals(); return g; }
+function juntar(fn) { const l = []; fn(l); return mergeGeometries(l); }   // mantém as normais suaves de cada peça
 
 // medidas (metros)
 const QUADRIL_Y = 0.93, COXA = 0.44, CANELA = 0.43, BRACO = 0.29, ANTEBRACO = 0.27, TRONCO = 0.5;
@@ -38,16 +41,31 @@ const QUADRIL_Y = 0.93, COXA = 0.44, CANELA = 0.43, BRACO = 0.29, ANTEBRACO = 0.
 function geometrias() {
   return {
     quadril: juntar((l) => {
-      peca(l, blocoAfunilado(0.33, 0.3, 0.2, 0.62), 1, 0, -0.04, 0);
+      peca(l, loftY([
+        { y: 0.03, w: 0.29, f: 0.105, t: 0.1, n: 2.4 },
+        { y: -0.07, w: 0.315, f: 0.11, t: 0.115, n: 2.4 },
+        { y: -0.15, w: 0.27, f: 0.085, t: 0.1, n: 2.2 },
+        { y: -0.19, w: 0.16, f: 0.05, t: 0.06 },
+      ], 14), 1, 0, 0, 0);
     }),
+    // tronco anatômico: cintura fina, peito largo, ombros caídos, costas retas
     tronco: juntar((l) => {
-      peca(l, blocoAfunilado(0.43, 0.33, TRONCO, 0.58), 1, 0, TRONCO / 2, 0);
-      peca(l, E(0.085, 1, 0.8, 1), 1, 0.2, TRONCO - 0.04, 0);        // ombros arredondados
-      peca(l, E(0.085, 1, 0.8, 1), 1, -0.2, TRONCO - 0.04, 0);
-      peca(l, C(0.05, 0.055, 0.1), 0.93, 0, TRONCO + 0.05, 0);        // pescoço
+      peca(l, loftY([
+        { y: -0.03, w: 0.29, f: 0.105, t: 0.1, n: 2.4 },
+        { y: 0.07, w: 0.275, f: 0.11, t: 0.095, n: 2.4 },
+        { y: 0.19, w: 0.315, f: 0.125, t: 0.1, n: 2.5 },
+        { y: 0.31, w: 0.365, f: 0.137, t: 0.11, n: 2.6 },
+        { y: 0.41, w: 0.395, f: 0.128, t: 0.115, n: 2.8 },
+        { y: 0.47, w: 0.37, f: 0.095, t: 0.105, n: 2.8 },
+        { y: 0.515, w: 0.22, f: 0.07, t: 0.08 },
+        { y: 0.545, w: 0.11, f: 0.05, t: 0.05 },
+      ], 16), 1, 0, 0, 0);
+      peca(l, E(0.072, 1.05, 0.95, 1.05), 1, 0.19, 0.445, 0);           // deltoides
+      peca(l, E(0.072, 1.05, 0.95, 1.05), 1, -0.19, 0.445, 0);
+      peca(l, C(0.048, 0.055, 0.1, 10), 0.93, 0, 0.58, 0.005);           // pescoço
     }),
     cabeca: juntar((l) => {
-      peca(l, E(0.112, 0.92, 1.08, 1.0), 1, 0, 0.12, 0.005);
+      peca(l, new THREE.SphereGeometry(0.112, 14, 10).scale(0.9, 1.08, 1.0), 1, 0, 0.12, 0.005);
       peca(l, E(0.05, 0.9, 0.7, 0.6), 0.97, 0, 0.065, 0.075);         // queixo/mandíbula
       peca(l, B(0.04, 0.05, 0.04), 0.95, 0, 0.12, 0.112);              // nariz
       peca(l, B(0.035, 0.02, 0.012), 0.12, 0.042, 0.15, 0.104);        // olhos
@@ -76,11 +94,17 @@ function geometrias() {
       peca(l, B(0.07, 0.05, 0.03), 0.4, 0, 0.21, -0.14);               // contrapeso
     }),
     colete: juntar((l) => {
-      peca(l, blocoAfunilado(0.47, 0.4, 0.36, 0.72), 1, 0, 0.28, 0);
-      for (const x of [-0.12, 0, 0.12]) peca(l, B(0.1, 0.13, 0.06), 0.8, x, 0.17, 0.15);
-      peca(l, B(0.17, 0.11, 0.05), 0.78, 0.08, 0.33, 0.15);
-      peca(l, B(0.12, 0.09, 0.05), 0.78, -0.13, 0.26, 0.15);
-      peca(l, B(0.36, 0.06, 0.07), 0.6, 0, 0.06, 0.03);                 // cinto tático
+      peca(l, loftY([
+        { y: 0.0, w: 0.33, f: 0.145, t: 0.135, n: 3 },
+        { y: 0.16, w: 0.375, f: 0.16, t: 0.14, n: 3.2 },
+        { y: 0.29, w: 0.405, f: 0.155, t: 0.135, n: 3.2 },
+        { y: 0.35, w: 0.34, f: 0.125, t: 0.125, n: 3 },
+      ], 16), 1, 0, 0, 0);
+      for (const x of [-0.11, 0, 0.11]) peca(l, B(0.095, 0.12, 0.055), 0.8, x, 0.07, 0.17);
+      peca(l, B(0.16, 0.1, 0.045), 0.78, 0.07, 0.2, 0.17);
+      peca(l, B(0.11, 0.08, 0.045), 0.78, -0.12, 0.15, 0.165);
+      for (const x of [-0.13, 0.13]) peca(l, B(0.06, 0.06, 0.26), 0.7, x, 0.355, 0.0);   // alças nos ombros
+      peca(l, B(0.34, 0.055, 0.25), 0.55, 0, -0.07, 0.0);                  // cinto tático
     }),
     mochila: juntar((l) => {
       peca(l, blocoAfunilado(0.3, 0.28, 0.38, 0.55), 1, 0, 0.28, -0.18);
@@ -89,24 +113,22 @@ function geometrias() {
       peca(l, C(0.008, 0.008, 0.35, 4), 0.25, 0.1, 0.62, -0.2);         // antena
     }),
     coxa: juntar((l) => {
-      peca(l, C(0.088, 0.072, COXA, 8), 1, 0, -COXA / 2, 0.005);
-      peca(l, E(0.07, 1, 0.8, 1), 1, 0, -COXA, 0);
-      peca(l, B(0.08, 0.1, 0.05), 0.75, 0.07, -0.2, 0.01);              // bolso lateral
+      peca(l, membro([[0.04, 0.15, 0.08, 0.075], [-0.05, 0.175, 0.098, 0.085], [-0.2, 0.162, 0.09, 0.08], [-0.34, 0.128, 0.07, 0.066], [-0.43, 0.112, 0.062, 0.06], [-0.47, 0.085, 0.045, 0.045]]), 1, 0, 0, 0);
+      peca(l, B(0.05, 0.11, 0.09), 0.75, 0.085, -0.2, 0.0);               // bolso lateral
     }),
     canela: juntar((l) => {
-      peca(l, C(0.068, 0.055, CANELA - 0.06, 8), 1, 0, -(CANELA - 0.06) / 2, 0);
-      peca(l, B(0.1, 0.09, 0.07), 0.8, 0, -0.03, 0.04);                 // joelheira
+      peca(l, membro([[0.03, 0.105, 0.058, 0.058], [-0.1, 0.112, 0.055, 0.072], [-0.24, 0.092, 0.046, 0.052], [-0.37, 0.078, 0.04, 0.042], [-0.4, 0.06, 0.03, 0.03]]), 1, 0, 0, 0);
+      peca(l, E(0.055, 1.1, 1.0, 0.7), 0.75, 0, -0.02, 0.05);              // joelheira
     }),
     bota: juntar((l) => {
       peca(l, B(0.11, 0.1, 0.25), 1, 0, -0.04, 0.05);
       peca(l, B(0.115, 0.03, 0.27), 0.5, 0, -0.085, 0.05);              // sola
     }),
     braco: juntar((l) => {
-      peca(l, C(0.062, 0.052, BRACO, 7), 1, 0, -BRACO / 2, 0);
-      peca(l, E(0.05, 1, 1, 1), 1, 0, -BRACO, 0);
+      peca(l, membro([[0.03, 0.1, 0.05, 0.05], [-0.08, 0.112, 0.06, 0.056], [-0.2, 0.094, 0.048, 0.046], [-0.29, 0.084, 0.042, 0.042], [-0.32, 0.06, 0.03, 0.03]]), 1, 0, 0, 0);
     }),
     antebraco: juntar((l) => {
-      peca(l, C(0.05, 0.04, ANTEBRACO - 0.04, 7), 1, 0, -(ANTEBRACO - 0.04) / 2, 0);
+      peca(l, membro([[0.02, 0.082, 0.04, 0.04], [-0.07, 0.09, 0.046, 0.044], [-0.2, 0.068, 0.034, 0.033], [-0.25, 0.058, 0.03, 0.03]]), 1, 0, 0, 0);
     }),
     mao: juntar((l) => {
       peca(l, B(0.075, 0.095, 0.045), 1, 0, -0.045, 0.01);
@@ -211,7 +233,7 @@ class Conjunto {
   }
 }
 
-const LUVA = [0.25, 0.22, 0.18], PRETO = [0.13, 0.13, 0.14], COLETE_MIL = [0.66, 0.6, 0.45], CAP_MIL = [0.7, 0.64, 0.48];
+const LUVA = [0.25, 0.22, 0.18], PRETO = [0.13, 0.13, 0.14], COLETE_MIL = [0.62, 0.56, 0.42], CAP_MIL = [0.52, 0.48, 0.36];
 const BOTA_MIL = [0.55, 0.45, 0.32], BOTA_CIV = [0.2, 0.18, 0.17];
 const _pr = [0, 0];
 
