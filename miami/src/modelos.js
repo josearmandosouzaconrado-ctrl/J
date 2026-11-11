@@ -147,6 +147,17 @@ export class Mont {
   }
   build(ao = true) {
     const g = mergeGeometries(this.g);
+    if (SUJAR && ao) {
+      // poeira e barro nas partes baixas, manchas aleatórias de uso
+      const p = g.attributes.position, c = g.attributes.color;
+      const PO = [0.62, 0.53, 0.4];
+      for (let i = 0; i < p.count; i++) {
+        const y = p.getY(i), x = p.getX(i), z = p.getZ(i);
+        const mancha = (Math.sin(x * 3.1 + z * 1.7) * Math.sin(z * 2.3 - x * 0.9) + 1) * 0.5;
+        const k = Math.max(0, Math.min(1, (1.25 - y) / 1.1)) * 0.55 + mancha * 0.12;
+        c.setXYZ(i, c.getX(i) + (PO[0] - c.getX(i)) * k, c.getY(i) + (PO[1] - c.getY(i)) * k, c.getZ(i) + (PO[2] - c.getZ(i)) * k);
+      }
+    }
     if (ao) {
       // sombreamento falso: partes de baixo mais escuras, topo mais claro
       const p = g.attributes.position, n = g.attributes.normal, c = g.attributes.color;
@@ -165,9 +176,10 @@ export class Mont {
 }
 
 const cache = {};
+let SUJAR = false;
 
 // ---------------- cores ----------------
-const VERDE = 0x5a6440, VERDE2 = 0x47502f, AREIA = 0xb8a477, AREIA2 = 0x9e8a5e, PRETO = 0x1f2124, PNEU = 0x1c1c1c, VIDRO = 0x1f3442,
+const VERDE = 0x55603f, VERDE2 = 0x434c30, AREIA = 0xc2ab7c, AREIA2 = 0xa38d62, PRETO = 0x1f2124, PNEU = 0x1c1c1c, VIDRO = 0x1f3442,
   CINZA_N = 0x7d868f, CINZA_N2 = 0x5f676f, CINZA_J = 0x5b6168, CINZA_F = 0x9aa3ac, BRANCO = 0xf0f0ea, METAL = 0x34373a, VERM = 0xb3261e,
   FAROL = 0xfff3c4, LANTERNA = 0xc0281e;
 
@@ -198,9 +210,9 @@ const SEGS = { 0: 'abcdef', 1: 'bc', 2: 'abged', 3: 'abgcd', 4: 'fgbc', 5: 'afgc
 // plano: '+x', '-x' (laterais) ou '+y' (em cima). (x,y,z) é o centro do texto, h a altura dos dígitos
 function numero(c, txt, x, y, z, h, plano, cor = 0xf2f2f2) {
   const w = h * 0.58, t = h * 0.14, passo = w * 1.45;
-  const R = plano === '+x' ? [0, 0, -1] : plano === '-x' ? [0, 0, 1] : [-1, 0, 0];
+  const R = plano === '+x' ? [0, 0, -1] : plano === '-x' ? [0, 0, 1] : plano === '+z' ? [1, 0, 0] : plano === '-z' ? [-1, 0, 0] : [-1, 0, 0];
   const U = plano === '+y' ? [0, 0, 1] : [0, 1, 0];
-  const N = plano === '+x' ? [1, 0, 0] : plano === '-x' ? [-1, 0, 0] : [0, 1, 0];
+  const N = plano === '+x' ? [1, 0, 0] : plano === '-x' ? [-1, 0, 0] : plano === '+z' ? [0, 0, 1] : plano === '-z' ? [0, 0, -1] : [0, 1, 0];
   const n = txt.length;
   [...txt].forEach((ch, k) => {
     const u0 = (k - (n - 1) / 2) * passo;
@@ -269,6 +281,42 @@ function juntaModelo(c, geo, x, y, z, ry = 0, esc = 1) {
   c.g.push(g);
 }
 
+// estrela do Exército (sem círculo), pintada em preto fosco
+function estrela(c, x, y, z, r, plano, cor = 0x23241f) {
+  const rot = plano === '+x' ? [0, Math.PI / 2, 0] : plano === '-x' ? [0, -Math.PI / 2, 0] : plano === '+z' ? [0, 0, 0] : plano === '-z' ? [0, Math.PI, 0] : [-Math.PI / 2, 0, 0];
+  const N = plano === '+x' ? [1, 0, 0] : plano === '-x' ? [-1, 0, 0] : plano === '+z' ? [0, 0, 1] : plano === '-z' ? [0, 0, -1] : [0, 1, 0];
+  const st = new THREE.Shape();
+  for (let i = 0; i < 10; i++) { const a = Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.4 : r; if (i === 0) st.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); else st.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+  st.closePath();
+  c.add(new THREE.ShapeGeometry(st), cor, x + N[0] * 0.015, y + N[1] * 0.015, z + N[2] * 0.015, rot[0], rot[1], rot[2]);
+}
+// fileira de parafusos ao longo de Z numa face lateral
+function parafusos(c, x, y, z0, z1, n, lado) {
+  for (let i = 0; i < n; i++) c.cil(0.035, 0.035, 0.04, 6, 0x6a6352, x + lado * 0.02, y, z0 + (z1 - z0) * i / Math.max(1, n - 1), 0, 0, Math.PI / 2);
+}
+// galão de combustível (jerry can)
+function galao(c, x, y, z, ry = 0, cor = 0x4d5236) {
+  c.bloco(0.17, 0.46, 0.34, cor, x, y + 0.23, z, 0, ry, 0, 0.03);
+  c.box(0.06, 0.06, 0.12, cor, x, y + 0.5, z + 0.08);
+}
+// cabo de reboque enrolado sobre o casco (dois trechos com olhais)
+function caboReboque(c, x, y, z0, z1) {
+  const L = Math.abs(z1 - z0), zm = (z0 + z1) / 2;
+  c.cil(0.035, 0.035, L, 6, 0x2a2826, x, y, zm, Math.PI / 2);
+  c.cil(0.035, 0.035, L * 0.96, 6, 0x2a2826, x + 0.09, y, zm, Math.PI / 2);
+  for (const z of [z0, z1]) c.add(new THREE.TorusGeometry(0.1, 0.03, 6, 10), 0x2a2826, x + 0.045, y, z, Math.PI / 2, 0, 0);
+}
+// detalhes comuns dos blindados: estrela nas laterais, número no para-choque, ganchos e luzes de comboio
+function detalhesBlindado(c, { frente, tras, larg, yLat, yPara, num }) {
+  for (const sx of [-1, 1]) {
+    estrela(c, sx * larg / 2, yLat, -0.4, 0.28, sx > 0 ? '+x' : '-x');
+    c.add(new THREE.TorusGeometry(0.11, 0.035, 6, 10), 0x3b3a34, sx * (larg / 2 - 0.25), yPara - 0.12, frente + 0.06, 0, 0, Math.PI / 2);   // gancho
+    c.box(0.18, 0.08, 0.04, 0x3a5a2a, sx * (larg / 2 - 0.2), yPara + 0.22, tras - 0.03);   // luz de comboio (blackout)
+  }
+  numero(c, num, 0, yPara, frente + 0.02, 0.12, '+z', 0x1e1e1a);
+  numero(c, num, 0, yPara, tras - 0.02, 0.12, '-z', 0x1e1e1a);
+}
+
 const VEIC = {
   humvee() {
     const c = new Mont(), v = new Mont();
@@ -304,6 +352,8 @@ const VEIC = {
     c.bloco(1.8, 0.35, 0.7, 0x4b4a3a, 0, 1.68, -1.95, 0, 0, 0, 0.1);
     c.roda(0.38, 0.22, PNEU, 0, 1.62, -2.42);
     rodas(c, [-0.95, 0.95], [-1.5, 1.55], 0.47, 0.4);
+    detalhesBlindado(c, { frente: 2.5, tras: -2.37, larg: 2.2, yLat: 1.2, yPara: 0.78, num: '18' });
+    for (const sx of [-1, 1]) galao(c, sx * 0.75, 1.48, -2.15);
     const t = new Mont();
     t.cil(0.6, 0.62, 0.18, 16, C2, 0, 0, 0);
     t.bloco(1.3, 0.62, 0.07, C, 0, 0.42, 0.45, -0.12, 0, 0, 0.05);
@@ -374,6 +424,9 @@ const VEIC = {
     // mochilas e caixas penduradas nas laterais
     for (const s of [-1, 1]) for (let i = 0; i < 3; i++) c.box(0.3, 0.45, 0.8, 0x4a4a36, s * 1.5, 2.1, -2.4 + i * 1.1);
     rodas(c, [-1.25, 1.25], [-2.55, -1.15, 0.85, 2.25], 0.56, 0.48);
+    for (const sx of [-1, 1]) caboReboque(c, sx * 0.9, 2.58, -3.2, -1.2);
+    c.bloco(1.5, 1.3, 0.08, C2, 0, 1.75, -3.55, 0, 0, 0, 0.03);                 // rampa traseira
+    detalhesBlindado(c, { frente: 3.55, tras: -3.52, larg: 2.72, yLat: 1.9, yPara: 1.25, num: '412' });
     // estação de armas remota (RWS)
     const t = new Mont();
     t.cil(0.45, 0.5, 0.25, 12, C2, 0, 0, 0);
@@ -400,6 +453,10 @@ const VEIC = {
     c.box(1.2, 1.5, 0.1, C2, 0.6, 1.5, -3.35);
     faroisFrente(c, 1.2, 1.4, 3.3); lanternas(c, 1.3, 1.6, -3.32);
     antena(c, -1.3, 2.35, -2.8, 2.8);
+    for (const sx of [-1, 1]) { parafusos(c, sx * 2.06, 1.4, -2.4, 2.4, 10, sx); caboReboque(c, sx * 1.2, 2.42, -3.0, -0.6); galao(c, sx * 1.25, 2.4, -3.05); }
+    c.bloco(1.1, 1.4, 0.08, C2, 0.6, 1.45, -3.33, 0, 0, 0, 0.03);                 // rampa traseira
+    for (let i = 0; i < 4; i++) c.box(0.12, 0.05, 0.05, METAL, 0.6, 1.0 + i * 0.3, -3.39);
+    detalhesBlindado(c, { frente: 3.35, tras: -3.3, larg: 3.05, yLat: 1.6, yPara: 1.0, num: '231' });
     const t = new Mont();
     t.add(loftZ([
       { z: -1.25, w: 2.0, hT: 0.42, hB: 0.42, y: 0.43, n: 6 },
@@ -463,6 +520,52 @@ const VEIC = {
     t.box(0.3, 0.25, 0.04, VIDRO, -0.65, 1.25, 1.03);
     for (const s of [-1, 1]) for (let i = 0; i < 6; i++) t.cil(0.055, 0.055, 0.3, 6, METAL, s * (1.35 + (i % 3) * 0.12), 0.85 + Math.floor(i / 3) * 0.13, 1.25, Math.PI / 2.4);
     antena(t, 1.4, 0.95, -2.2, 2.6); antena(t, -1.4, 0.95, -2.2, 2.0);
+    // ===== casco: saias com parafusos, TUSK, escotilha do motorista, deck do motor, cabos e caixas =====
+    for (const sx of [-1, 1]) {
+      parafusos(c, sx * 2.03, 1.5, -3.6, 3.3, 14, sx);
+      parafusos(c, sx * 2.03, 0.98, -3.6, 3.3, 14, sx);
+      for (let i = 0; i < 5; i++) c.bloco(0.12, 0.5, 1.2, AREIA2, sx * 2.1, 1.2, -2.0 + i * 1.25, 0, 0, 0, 0.03);   // blindagem reativa (TUSK)
+      caboReboque(c, sx * 1.25, 1.88, -3.6, -0.8);
+      c.bloco(0.5, 0.42, 0.35, 0x4a4436, sx * 1.55, 1.3, -4.08, 0, 0, 0, 0.05);                                  // telefone de infantaria / caixa
+      c.box(0.04, 0.55, 0.45, 0x2a2826, sx * 1.75, 0.85, 3.5);                                                   // aba de lama
+      c.box(0.3, 0.25, 0.3, METAL, sx * 1.3, 1.62, 3.35);                                                         // grade do farol
+      galao(c, sx * 1.75, 1.82, -3.25);
+    }
+    // escotilha do motorista com 3 periscópios
+    c.bloco(0.75, 0.08, 0.6, C2, 0, 1.79, 2.7, 0, 0, 0, 0.05);
+    for (let i = -1; i <= 1; i++) c.box(0.16, 0.08, 0.06, VIDRO, i * 0.22, 1.88, 2.98);
+    // deck do motor: grelhas, tampas de combustível, escape traseiro
+    for (let i = 0; i < 6; i++) c.box(1.1, 0.03, 0.09, 0x2f2d27, -0.65, 1.86, -2.2 + i * 0.2);
+    for (let i = 0; i < 6; i++) c.box(1.1, 0.03, 0.09, 0x2f2d27, 0.65, 1.86, -2.2 + i * 0.2);
+    for (const sx of [-1, 1]) c.cil(0.1, 0.1, 0.04, 10, METAL, sx * 1.55, 1.85, 0.8);
+    c.bloco(1.9, 0.5, 0.12, 0x1e1d1a, 0, 1.35, -4.02, 0, 0, 0, 0.03);
+    for (let i = 0; i < 8; i++) c.box(1.8, 0.03, 0.04, 0x3a372f, 0, 1.15 + i * 0.055, -4.09);
+    c.add(new THREE.TorusGeometry(0.12, 0.04, 6, 10), METAL, 0, 0.75, -4.05, 0, 0, Math.PI / 2);                    // engate
+    detalhesBlindado(c, { frente: 4.05, tras: -4.05, larg: 4.25, yLat: 1.35, yPara: 1.05, num: '264' });
+    // ===== torre: CROWS do comandante, CITV, metralhadora do municiador, painéis, cesto com carga =====
+    t.bloco(0.55, 0.42, 0.55, C2, 0.75, 1.55, -0.5, 0, 0, 0, 0.06);                                                 // estação remota CROWS
+    t.bloco(0.22, 0.3, 0.32, 0x2a2d30, 1.07, 1.62, -0.38, 0, 0, 0, 0.03);
+    t.box(0.12, 0.1, 0.02, VIDRO, 1.07, 1.66, -0.21);
+    t.cil(0.03, 0.03, 1.1, 6, METAL, 0.75, 1.62, 0.35, Math.PI / 2);
+    t.bloco(0.42, 0.55, 0.38, C2, -0.3, 1.25, 0.95, 0, 0, 0, 0.06);                                                 // CITV (visor térmico)
+    t.box(0.28, 0.2, 0.03, VIDRO, -0.3, 1.38, 1.15);
+    t.bloco(0.95, 0.5, 0.06, C2, -0.8, 1.3, -0.15, -0.1, 0, 0, 0.02);                                               // escudo da M240
+    for (const sx of [-1, 1]) t.box(0.05, 0.4, 0.5, C2, -0.8 + sx * 0.47, 1.28, -0.35);
+    t.cil(0.025, 0.025, 0.9, 6, METAL, -0.8, 1.3, 0.25, Math.PI / 2);
+    for (const sx of [-1, 1]) t.bloco(0.9, 0.04, 0.6, C2, sx * 0.85, 0.94, -2.0, 0, 0, 0, 0.02);                    // painéis de alívio de explosão
+    t.cil(0.04, 0.04, 0.9, 6, METAL, 1.3, 1.3, -1.6);                                                               // mastro do sensor de vento
+    t.box(0.12, 0.08, 0.3, METAL, 1.3, 1.75, -1.6);
+    for (const sx of [-1, 1]) { t.add(new THREE.TorusGeometry(0.07, 0.025, 6, 8), METAL, sx * 1.4, 0.95, 1.4, Math.PI / 2, 0, 0); estrela(t, sx * 1.76, 0.45, -1.0, 0.24, sx > 0 ? '+x' : '-x'); }
+    // carga no cesto: mochilas, caixas de munição, galões, rolo de rede de camuflagem
+    t.bloco(0.6, 0.4, 0.5, 0x5d5a46, -1.1, 1.15, -3.0, 0, 0, 0, 0.12);
+    t.bloco(0.5, 0.3, 0.35, 0x4d5236, -0.4, 1.1, -3.25, 0, 0, 0, 0.05);
+    t.bloco(0.5, 0.3, 0.35, 0x4d5236, 0.15, 1.1, -3.25, 0, 0, 0, 0.05);
+    t.cil(0.2, 0.2, 1.2, 10, 0x6b6648, 0.9, 1.15, -2.95, 0, 0, Math.PI / 2);
+    for (let i = 0; i < 3; i++) galao(t, -1.5 + i * 0.3, 0.6, -3.55);
+    // canhão: tiras da luva térmica, sensor de referência na boca, mantelete com parafusos
+    for (let i = 0; i < 6; i++) t.cil(0.155, 0.155, 0.04, 12, 0x8c7c55, 0, 0.45, 3.4 + i * 0.75, Math.PI / 2);
+    t.box(0.1, 0.1, 0.2, METAL, 0, 0.62, 8.05);
+    for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) t.cil(0.03, 0.03, 0.03, 6, 0x6a6352, sx * 0.45, 0.25 + i * 0.2, 2.86, Math.PI / 2);
     return { corpo: c.build(), torre: t.build(), torreY: 1.83, torreZ: -0.3, canoZ: 8.3, canoY: 0.45 };
   },
   paladin() {
@@ -481,6 +584,8 @@ const VEIC = {
     // trava de transporte do canhão na frente
     for (const sx of [-1, 1]) c.box(0.1, 0.9, 0.1, METAL, sx * 0.25, 1.95, 3.1, 0.35);
     c.bloco(0.7, 0.18, 0.25, METAL, 0, 2.35, 3.25, 0, 0, 0, 0.05);
+    detalhesBlindado(c, { frente: 3.6, tras: -3.5, larg: 3.0, yLat: 1.25, yPara: 1.0, num: '155' });
+    for (const sx of [-1, 1]) parafusos(c, sx * 2.06, 1.35, -3.0, 2.8, 12, sx);
     const t = new Mont();
     t.add(loftZ([
       { z: -3.2, w: 3.0, hT: 0.85, hB: 0.85, y: 0.85, n: 8 },
@@ -573,6 +678,7 @@ const VEIC = {
     c.bloco(2.2, 0.35, 0.6, C2, 0, 1.6, -3.2, 0, 0, 0, 0.08);
     for (const sx of [-1, 1]) c.box(0.08, 0.5, 4.8, C2, sx * 1.2, 1.15, -1.1);     // para-lamas laterais
     rodas(c, [-1.05, 1.05], [-2.65, -1.3, 2.5], 0.56, 0.48);
+    detalhesBlindado(c, { frente: 3.65, tras: -3.52, larg: 2.45, yLat: 2.1, yPara: 1.0, num: '304' });
     // lançador: base giratória e caixote do módulo de 6 foguetes
     const t = new Mont();
     t.cil(1.0, 1.05, 0.25, 16, C2, 0, 0.12, 0.6);
@@ -656,7 +762,7 @@ function casulo(c, prof, cor, x, y, z, sx = 1, sy = 1, N = 12) {
 const AERO = {
   blackhawk() {
     const c = new Mont(), v = new Mont();
-    const C = 0x6f7a5c, C2 = 0x5f6a4e, ESC = 0x2c2f2a;
+    const C = 0x59614a, C2 = 0x4b523e, ESC = 0x2c2f2a;
     // fuselagem: nariz arredondado, cabine larga de fundo chato, cone de cauda afinando
     c.add(loftZ([
       { z: -10.1, w: 0.22, hT: 0.22, hB: 0.14, y: 2.45 },
@@ -727,7 +833,7 @@ const AERO = {
   },
   chinook() {
     const c = new Mont(), v = new Mont();
-    const C = 0x76805e, C2 = 0x666f50;
+    const C = 0x5d654c, C2 = 0x4f5641;
     c.add(loftZ([
       { z: -7.6, w: 2.6, hT: 1.4, hB: 0.9, y: 2.55, n: 3 },
       { z: -6.6, w: 3.6, hT: 1.8, hB: 1.55, y: 2.35, nT: 3.5, nB: 5 },
@@ -769,7 +875,7 @@ const AERO = {
   },
   apache() {
     const c = new Mont(), v = new Mont();
-    const C = 0x6c7656, C2 = 0x5c6649, ESC = 0x2a2c27;
+    const C = 0x575f48, C2 = 0x4a513d, ESC = 0x2a2c27;
     c.add(loftZ([
       { z: -9.6, w: 0.22, hT: 0.22, hB: 0.18, y: 2.05 },
       { z: -7.0, w: 0.34, hT: 0.3, hB: 0.28, y: 1.98 },
@@ -1404,6 +1510,7 @@ const ESTR = {
   },
 };
 
+for (const k in VEIC) { const f = VEIC[k]; VEIC[k] = () => { SUJAR = true; try { return f(); } finally { SUJAR = false; } }; }
 const TODOS = Object.assign({}, VEIC, AERO, NAVAL, ESTR);
 
 // cria o objeto 3D de um tipo; devolve {grupo, torre, rotor, rotor2, cauda, nacele...}

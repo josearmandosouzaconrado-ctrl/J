@@ -10,7 +10,7 @@ para conter a infecção e **resgatar os civis**.
 ## Baixar
 
 - **APK (Android 7+):** [`MiamiSurtoZumbi.apk`](../MiamiSurtoZumbi.apk) na raiz do repositório.
-  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.7.0/MiamiSurtoZumbi.apk
+  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.8.0/MiamiSurtoZumbi.apk
 - No navegador: abra `miami/www/index.html` por um servidor web (ex.: `python3 -m http.server` dentro de `miami/www`).
 
 O Android pede para permitir "instalar apps desconhecidos", porque o APK não vem da Play Store.
@@ -62,6 +62,10 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
   passadas soltando bombas ao longo da faixa e voltam para rearmar.
 - **Soldados nas janelas:** parte da tropa fica nas janelas dos prédios (quebra o vidro e atira para fora) e
   parte no telhado.
+- **🪢 Descida em corda (fast-rope):** Black Hawk, Chinook e Osprey param no ar e os soldados descem de corda,
+  no chão ou direto num telhado.
+- **♾️ Modo Sandbox:** dinheiro infinito, produção rápida, sem derrota, com botões para criar hordas, pausar o
+  surto e limpar os zumbis.
 - **🔨 Construir bases** em qualquer lugar: posto avançado (FOB), quartel, pátio, heliporto, docas, zona segura,
   torre e barreiras. Cada base produz unidades ali mesmo.
 - **🏕️ Sobreviventes:** civis que ninguém resgata se juntam, acham armas e montam acampamentos com barricadas;

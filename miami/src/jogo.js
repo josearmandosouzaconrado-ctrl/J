@@ -22,6 +22,7 @@ const DIF = {
   facil: { dinheiro: 5000, civis: 600, sos: 22, meta: 150, intervalo: 1.35, renda: 7 },
   normal: { dinheiro: 3500, civis: 750, sos: 26, meta: 250, intervalo: 1.0, renda: 5 },
   dificil: { dinheiro: 2200, civis: 900, sos: 30, meta: 350, intervalo: 0.7, renda: 4 },
+  sandbox: { dinheiro: Infinity, civis: 750, sos: 26, meta: Infinity, intervalo: 1.0, renda: 0, sandbox: true },
 };
 
 export function montarMundo() {
@@ -134,7 +135,7 @@ export function construir(tipo, x, z) {
   }
   G.dinheiro -= d.custo;
   const u = criarEstrutura(tipo, x, z, ang);
-  u.construindo = d.tempo; u.tempoObra = d.tempo;
+  u.construindo = u.tempoObra = G.sandbox ? 2 : d.tempo;
   u.hp = u.hpMax * 0.2;
   u.m.grupo.scale.y = 0.15;
   if (saidaAgua) u.saidaAgua = saidaAgua;
@@ -153,7 +154,7 @@ function lugarLivre(p, modo = 0) {
 export function iniciarPartida(dif) {
   const cfg = DIF[dif] || DIF.normal;
   G.dificuldade = dif; G.cfgDif = cfg;
-  G.dinheiro = cfg.dinheiro; G.meta = cfg.meta;
+  G.dinheiro = cfg.dinheiro; G.meta = cfg.meta; G.sandbox = !!cfg.sandbox; G.surtoParado = false;
   G.tempo = 0; G.dia = 1; G.focos = 0; G.proxFoco = 20; G.infectados = 0;
   G.resgatados = 0; G.civisMortos = 0; G.zumbisMortos = 0; G.perdas = 0;
   G.ruidos = []; G.quadro = 0; G.fim = false;
@@ -286,7 +287,8 @@ export function enfileirar(tipo, aba) {
     alerta('Esta base comporta no máximo 6 jatos', null, null); somUI('erro'); return false;
   }
   G.dinheiro -= d.custo;
-  fonte.fila.push({ tipo, t: d.tempo, total: d.tempo });
+  const tp = G.sandbox ? Math.max(1, d.tempo * 0.15) : d.tempo;
+  fonte.fila.push({ tipo, t: tp, total: tp });
   somUI('clique');
   return true;
 }
@@ -407,11 +409,11 @@ export function atualizarJogo(dt) {
   G.ruidos = G.ruidos.filter((r) => G.tempo - r.t < 3);
   if (G.ruidos.length > 60) G.ruidos.splice(0, G.ruidos.length - 60);
   // focos
-  if (G.tempo >= G.proxFoco) {
+  if (G.tempo >= G.proxFoco && !G.surtoParado) {
     novoFoco();
     G.proxFoco = G.tempo + Math.max(35, 80 - G.focos * 6) * G.cfgDif.intervalo;
   }
-  if (G.dia >= 2) {
+  if (G.dia >= 2 && !G.surtoParado) {
     if (!G.proxHorda) G.proxHorda = G.tempo + 30;
     if (G.tempo >= G.proxHorda) { hordaDeFora(); G.proxHorda = G.tempo + Math.max(70, 160 - G.dia * 20) * G.cfgDif.intervalo; }
   }
@@ -433,7 +435,7 @@ export function atualizarJogo(dt) {
     }
   }
   // fim de jogo
-  if (!G.fim && G.quadro % 30 === 0) {
+  if (!G.fim && !G.sandbox && G.quadro % 30 === 0) {
     const presos = predios.reduce((s, q) => s + (q.base ? 0 : q.civis), 0);
     if (G.resgatados >= G.meta) vitoria(`Você resgatou ${G.resgatados} civis. Miami agradece!`);
     else if (G.focos >= 5 && G.nZumbis === 0 && G.tempo > 300) vitoria('O surto foi contido: não restou nenhum zumbi em Miami!');
@@ -442,5 +444,22 @@ export function atualizarJogo(dt) {
 }
 
 export function vitoria(txt) { G.fim = true; G.pausado = true; G.ui && G.ui.fim(true, txt); }
-export function derrota(txt) { if (G.fim) return; G.fim = true; G.pausado = true; G.ui && G.ui.fim(false, txt); }
+export function derrota(txt) { if (G.sandbox) { alerta('Sandbox: ' + txt + ' (o jogo continua)', null, null, 'ruim'); return; } if (G.fim) return; G.fim = true; G.pausado = true; G.ui && G.ui.fim(false, txt); }
 G.derrota = derrota;
+
+// ferramentas do modo sandbox
+export function hordaSandbox(x, z, n = 40, tipo = 'comum') {
+  let k = 0;
+  for (let i = 0; i < n; i++) {
+    const p = pontoLivreProximo(0, x + rand(-25, 25), z + rand(-25, 25));
+    if (p) { criarZumbi(p.x, p.z, tipo === 'misto' ? (Math.random() < 0.1 ? 'bruto' : Math.random() < 0.3 ? 'corredor' : 'comum') : tipo); k++; }
+  }
+  G.populacao += k; G.infectados += k;
+  alerta(`🧟 ${k} zumbis criados`, x, z, 'surto');
+}
+export function limparZumbis() {
+  let k = 0;
+  for (const a of G.agentes) if (a.zumbi && a.vivo) { a.vivo = false; k++; }
+  alerta(`🧹 ${k} zumbis removidos`, null, null, 'bom');
+}
+G.hordaSandbox = hordaSandbox; G.limparZumbis = limparZumbis;

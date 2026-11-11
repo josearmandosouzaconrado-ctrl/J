@@ -222,7 +222,7 @@ async function iniciar() {
       for (const u of G.unidades) {
         if (u.classe !== 'inf' || !u.vivo || u.dentro) continue;
         if (!visivel(u.x, u.z)) continue;
-        const pose = u.mirando > 0 && u.velAtual < 0.5 ? 2 : 0;
+        const pose = u.rapel ? 4 : u.mirando > 0 && u.velAtual < 0.5 ? 2 : 0;
         const vn = Math.min(1, u.velAtual / 3);
         if (u.policia) bon.add(u.x, u.y, u.z, u.ang, u.fase, pose, SWAT_ROUPA, SWAT_CALCA, PELE_SOLD, 2, 1, null, vn);
         else bon.add(u.x, u.y, u.z, u.ang, u.fase, pose, u.tipo === 'sniper' ? SNIPER : CAMO, CAMO2, PELE_SOLD, 1, 1, null, vn);
@@ -281,6 +281,8 @@ async function iniciar() {
     iniciarSom();
     menu.classList.add('oculto');
     iniciarPartida(dif);
+    ui.modoSandbox();
+    if (G.sandbox) ui.alerta('♾️ Sandbox: dinheiro infinito, produção rápida e sem derrota. Use 🧟 Horda, ☣️ Surto e 🧹 Limpar na barra lateral.', null, null, 'info');
     G.iniciado = true;
     camRTS.irPara(G.estr.qg.x, G.estr.qg.z, 420);
     camRTS.yaw = G.baseEixo.ang + Math.PI;

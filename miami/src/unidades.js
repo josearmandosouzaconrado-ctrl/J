@@ -41,6 +41,7 @@ export function criarUnidade(tipo, x, z, ang = 0, opts = {}) {
 export function removerUnidade(u) {
   u.vivo = false;
   if (u.sombra) { G.cena.remove(u.sombra); u.sombra = null; }
+  if (u.corda) { G.cena.remove(u.corda); u.corda = null; }
   if (u.m) G.cena.remove(u.m.grupo);
   if (u.anel) { G.cena.remove(u.anel); u.anel = null; }
   const i = G.selecao.indexOf(u);
@@ -661,7 +662,34 @@ function separar(u, dt) {
   });
 }
 
+export function soltarCorda(t, p, lado) {
+  t.passageiros.splice(t.passageiros.indexOf(p), 1);
+  t.cargaUsada -= p.d.slots || 1;
+  p.dentro = null;
+  const rx = Math.cos(t.ang), rz = -Math.sin(t.ang);
+  p.x = t.x + rx * lado * 1.3 + Math.sin(t.ang) * 1.2; p.z = t.z + rz * lado * 1.3 + Math.cos(t.ang) * 1.2;
+  p.y = t.y + 1.2; p.ang = t.ang + lado * Math.PI / 2;
+  p.rapel = { chao: chaoEm(p.x, p.z) };
+  p.ordem = null; p.caminho = null; p.velAtual = 0;
+}
+
 function atualizarInfantaria(u, dt) {
+  if (u.rapel) {
+    // deslizando pela corda
+    u.y -= 7.5 * dt; u.velAtual = 0; u.fase += dt * 4;
+    if (u.y <= u.rapel.chao + 0.05) {
+      const ch = u.rapel.chao;
+      u.y = ch; u.rapel = null;
+      if (ch > 1) {
+        // caiu num telhado: ocupa o prédio (janelas/telhado); se estiver cheio, desce pela escada
+        const c0 = cel(u.x, u.z), pr = c0 >= 0 && predioId[c0] >= 0 ? predios[predioId[c0]] : null;
+        if (pr && !entrarNoPredio(u, pr)) { const e = pontoEntrada(pr, u.x, u.z); u.x = e.x; u.z = e.z; u.y = 0; }
+        else if (!pr) u.y = 0;
+      }
+      G.efeitos.poeira(u.x, u.z, 2);
+    }
+    return;
+  }
   if (G.controlando === u) { controleDireto(u, dt); return; }
   if (u.predio) { u.velAtual = 0; return; }
   const alvo = seguirOrdem(u, dt);
@@ -766,6 +794,30 @@ function atualizarAereo(u, dt) {
     } else if (o.tipo === 'atacar') {
       if (!alvoValido(o.alvo)) u.ordem = null;
       else { u.alvo = o.alvo; if (dist(u.x, u.z, o.alvo.x, o.alvo.z) > d.alcance * 0.7) alvo = { x: o.alvo.x, z: o.alvo.z }; }
+    } else if (o.tipo === 'corda') {
+      // voa até o ponto, para no ar ~14 m acima do chão (ou do telhado) e os soldados descem pelas cordas
+      if (!o.pairando && dist(u.x, u.z, o.x, o.z) > 4) {
+        alvo = { x: o.x, z: o.z };
+        u.altAlvo = Math.max(d.altCruz, chaoEm(o.x, o.z) + 22);
+      } else {
+        o.pairando = true;
+        // freia e se mantém em cima do ponto (corrige o vento/inércia)
+        u.velAtual *= Math.max(0, 1 - dt * 6);
+        const kk = Math.min(1, dt * 1.5);
+        u.x += (o.x - u.x) * kk; u.z += (o.z - u.z) * kk;
+        u.altAlvo = Math.max(chaoEm(u.x, u.z), chaoEm(u.x + Math.cos(u.ang) * 1.3, u.z - Math.sin(u.ang) * 1.3), chaoEm(u.x - Math.cos(u.ang) * 1.3, u.z + Math.sin(u.ang) * 1.3)) + 14;
+        if (Math.abs(u.y - u.altAlvo) < 1.5 && u.velAtual < 3 && dist(u.x, u.z, o.x, o.z) < 3) {
+          o.t = (o.t || 0) - dt;
+          if (o.t <= 0) {
+            o.t = 0.75;
+            const p = u.passageiros.find((q) => !q.agente);
+            if (!p) {
+              u.ordem = null; u.altAlvo = d.altCruz;
+              alerta('🪢 Todos os soldados desceram de corda', u.x, u.z, 'bom');
+            } else { o.lado = -(o.lado || 1); soltarCorda(u, p, o.lado); }
+          }
+        }
+      }
     } else if (o.tipo === 'pousarPorta') {
       const p = G.porta;
       alvo = { x: p.x + Math.sin(p.ang) * o.k, z: p.z + Math.cos(p.ang) * o.k };
@@ -990,6 +1042,7 @@ function controleDireto(u, dt) {
 
 function combate(u, dt) {
   const d = u.d;
+  if (u.rapel) return;
   if (!d.arma && !d.sec) return;
   if (u.classe === 'inf' && u.velAtual > 0.5 && G.controlando !== u) return;
   if (u.classe === 'aereo' && u.pousado) return;
@@ -1129,6 +1182,29 @@ export function posicionarModelo(u, dt) {
     const voando = u.estadoJato === 'voando' || u.estadoJato === 'voltando' || u.estadoJato === 'decolando';
     const k = voando ? 0.8 + Math.random() * 0.4 : 0;
     for (const c of u.m.chamas) { c.visible = voando; c.scale.set(1, 1, k); }
+  }
+  if (u.classe === 'aereo') {
+    const pairando = u.ordem && u.ordem.tipo === 'corda' && u.ordem.pairando && u.passageiros.some((q) => !q.agente);
+    if (pairando && !u.corda) {
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(12), 3));
+      u.corda = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color: 0x2a2620 }));
+      u.corda.frustumCulled = false;
+      G.cena.add(u.corda);
+    }
+    if (u.corda) {
+      u.corda.visible = !!pairando;
+      if (pairando) {
+        const a = u.corda.geometry.attributes.position.array, ch = chaoEm(u.x, u.z);
+        const rx = Math.cos(u.ang), rz = -Math.sin(u.ang), fx = Math.sin(u.ang) * 1.2, fz = Math.cos(u.ang) * 1.2;
+        let k = 0;
+        for (const l of [-1, 1]) {
+          const x = u.x + rx * l * 1.3 + fx, z = u.z + rz * l * 1.3 + fz;
+          a[k++] = x; a[k++] = u.y + 2.2; a[k++] = z; a[k++] = x; a[k++] = ch; a[k++] = z;
+        }
+        u.corda.geometry.attributes.position.needsUpdate = true;
+      }
+    }
   }
   // sombra no chão para aeronaves em voo (a sombra real do sol só cobre perto da câmera)
   if (u.classe === 'aereo' || u.classe === 'jato') {

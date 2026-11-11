@@ -1,7 +1,7 @@
 // Câmera de estratégia (arrastar, pinça, girar) e comandos por toque/mouse
 import * as THREE from 'three';
 import { G } from './estado.js';
-import { LARG, ALT, predioEm, predios } from './mapa.js';
+import { LARG, ALT, predioEm, predios, dentroPoligono } from './mapa.js';
 import { clamp, lerp, dist, dist2 } from './util.js';
 import {
   ordenar, ordenarMover, marcarSelecao, cabe, desembarcar, sairDoPredio, chaoEm, ordenarAreaJatos,
@@ -278,6 +278,20 @@ function zumbiNoToque(sx, sy, cam) {
   return melhor;
 }
 
+// ponto bem dentro do telhado (prédios em "L" têm o centro fora do telhado)
+function pontoNoTelhado(pr) {
+  const dentro = (x, z) => dentroPoligono(pr, x, z) && dentroPoligono(pr, x + 3, z) && dentroPoligono(pr, x - 3, z) && dentroPoligono(pr, x, z + 3) && dentroPoligono(pr, x, z - 3);
+  if (dentro(pr.cx, pr.cz)) return { x: pr.cx, z: pr.cz };
+  let melhor = null, md = Infinity;
+  for (let k = 0; k < 300; k++) {
+    const x = pr.x0 + Math.random() * (pr.x1 - pr.x0), z = pr.z0 + Math.random() * (pr.z1 - pr.z0);
+    if (!dentro(x, z)) continue;
+    const d = (x - pr.cx) ** 2 + (z - pr.cz) ** 2;
+    if (d < md) { md = d; melhor = { x, z }; }
+  }
+  return melhor || { x: pr.cx, z: pr.cz };
+}
+
 function predioNoToque(sx, sy, cam) {
   v2.set((sx / innerWidth) * 2 - 1, -(sy / innerHeight) * 2 + 1);
   ray.setFromCamera(v2, cam);
@@ -303,6 +317,19 @@ function toque(sx, sy, camRTS, duplo, ultimo) {
   }
   const sel = G.selecao.filter((u) => u.vivo && !u.dentro);
   G.selecao = sel;
+  if (G.modoCorda) {
+    G.modoCorda = false;
+    const hel = sel.filter((u) => u.classe === 'aereo' && u.passageiros.some((p) => !p.agente));
+    const pr = predioNoToque(sx, sy, cam);
+    const ch = pr ? pontoNoTelhado(pr) : camRTS.chao(sx, sy);
+    if (hel.length && ch) {
+      hel.forEach((u, i) => { u.ordem = { tipo: 'corda', x: ch.x + (i % 2) * 14 - 7 * (hel.length > 1), z: ch.z + Math.floor(i / 2) * 14 }; u.pousado = false; });
+      G.ui.ping(ch.x, ch.z, 'guarnecer');
+      somUI('ok');
+      G.ui.atualizarSelecao();
+      return;
+    }
+  }
   const u = unidadeNoToque(sx, sy, cam);
   // toque numa unidade aliada
   if (u && !u.estr) {

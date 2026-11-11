@@ -49,6 +49,9 @@ export class UI {
         <button class="bt" id="b-base">📍<small>Base</small></button>
         <button class="bt" id="b-porta">🛳️<small>Porta-av.</small></button>
         <button class="bt" id="b-alerta">⚠️<small>Alerta</small></button>
+        <button class="bt sb oculto" id="b-sb-horda">🧟<small>Horda</small></button>
+        <button class="bt sb oculto" id="b-sb-surto">☣️<small>Surto</small></button>
+        <button class="bt sb oculto" id="b-sb-limpar">🧹<small>Limpar</small></button>
       </div>
       <canvas id="mini" width="220" height="128"></canvas>
       <div id="selecao" class="oculto"><div id="sel-info"></div><div id="sel-bts"></div></div>
@@ -77,6 +80,9 @@ export class UI {
     on('#b-jato', () => this.selecionarGrupo((u) => u.classe === 'jato'));
     on('#b-base', () => this.cam.irPara(G.estr.qg.x, G.estr.qg.z, 450));
     on('#b-porta', () => this.cam.irPara(G.porta.x, G.porta.z, 600));
+    on('#b-sb-horda', () => G.hordaSandbox(this.cam.alvo.x, this.cam.alvo.z, 40, 'misto'));
+    on('#b-sb-surto', () => { G.surtoParado = !G.surtoParado; $('#b-sb-surto').classList.toggle('ativo', G.surtoParado); this.alerta(G.surtoParado ? '⏸ Surto pausado: não surgem novos focos nem hordas' : '▶ Surto retomado', null, null, 'info'); });
+    on('#b-sb-limpar', () => G.limparZumbis());
     on('#b-alerta', () => { const a = [...G.alertas].reverse().find((x) => x.x != null); if (a) this.cam.irPara(a.x, a.z, Math.min(this.cam.dist, 350)); });
     on('#b-sair-controle', () => this.controlar(null));
     // minimapa
@@ -106,6 +112,10 @@ export class UI {
     const solta = () => { jid = null; G.joyUI = null; bola.style.transform = ''; };
     joy.addEventListener('pointerup', solta); joy.addEventListener('pointercancel', solta);
     for (const id of ['#topo', '#lateral', '#selecao', '#producao', '#info', '#alertas']) $(id).addEventListener('pointerdown', (e) => e.stopPropagation());
+  }
+
+  modoSandbox() {
+    for (const b of document.querySelectorAll('.sb')) b.classList.toggle('oculto', !G.sandbox);
   }
 
   ajustarCidade() {
@@ -146,7 +156,7 @@ export class UI {
   // ---------------- topo ----------------
   atualizarTopo() {
     $('#t-din').textContent = '💵 $' + fmt(G.dinheiro);
-    $('#t-res').textContent = `✅ ${G.resgatados}/${G.meta}`;
+    $('#t-res').textContent = `✅ ${G.resgatados}/${G.meta === Infinity ? '∞' : G.meta}`;
     const presos = this._presos || 0;
     $('#t-civ').textContent = `🧍 ${G.nCivis || 0}` + (presos ? ` +${presos}🏢` : '');
     $('#t-zum').textContent = `🧟 ${G.nZumbis || 0}`;
@@ -197,6 +207,10 @@ export class UI {
     const bt = (txt, fn, cls = '') => { const b = el('button', 'bt ' + cls, txt); b.addEventListener('click', (e) => { e.stopPropagation(); iniciarSom(); somUI('clique'); fn(); this.atualizarSelecao(); }); bts.appendChild(b); };
     bt('🛑 Parar', () => { for (const u of s) { u.ordem = null; u.caminho = null; u.alvo = null; if (u.classe === 'aereo') u.altAlvo = Math.max(u.y, u.d.altCruz * 0.6); } });
     if (s.some((u) => u.passageiros && u.passageiros.length)) bt('⬇️ Desembarcar', () => { for (const u of s) if (u.passageiros && u.passageiros.length) desembarcar(u); });
+    if (s.some((u) => u.classe === 'aereo' && u.passageiros.some((p) => !p.agente))) bt(G.modoCorda ? '🪢 Toque no destino...' : '🪢 Descer de corda', () => {
+      G.modoCorda = !G.modoCorda;
+      if (G.modoCorda) this.alerta('🪢 Toque no chão ou num telhado: o helicóptero vai até lá e os soldados descem de corda', null, null, 'info');
+    }, G.modoCorda ? 'ativo' : 'destaque');
     if (s.some((u) => u.classe === 'aereo')) bt('🛬 Pousar', () => { for (const u of s) if (u.classe === 'aereo') u.ordem = { tipo: 'pousar' }; });
     if (s.some((u) => u.predio)) bt('🏃 Sair do prédio', () => { for (const u of s) if (u.predio) sairDoPredio(u); });
     if (s.some((u) => u.classe === 'jato')) bt(G.modoArea ? '🎯 Área: LIGADA' : '🎯 Marcar área', () => { G.modoArea = !G.modoArea; }, G.modoArea ? 'ativo' : '');
@@ -515,5 +529,7 @@ export const AJUDA = `
 <p><b>Prédios:</b> metade dos soldados fica nas janelas (quebram o vidro e atiram para fora) e metade no telhado.</p>
 <p><b>🚓 Polícia SWAT:</b> quando o vírus aparece, equipes da SWAT de Miami saem das delegacias sozinhas num blindado BearCat, combatem os zumbis e levam civis para a zona segura. Você não controla a polícia.</p>
 <p><b>🎮 Controlar:</b> com uma unidade selecionada, assuma o controle em 3ª pessoa com o joystick; ela atira sozinha nos zumbis.</p>
+<p><b>🪢 Descer de corda:</b> com um Black Hawk, Chinook ou Osprey levando soldados selecionado, toque em <b>🪢 Descer de corda</b> e depois no chão ou num telhado. O helicóptero vai até lá, fica parado no ar e os soldados descem pelas cordas; num telhado, eles ocupam o prédio.</p>
+<p><b>♾️ Sandbox:</b> no menu inicial, dinheiro infinito, produção e construção rápidas e sem derrota. Na barra lateral: 🧟 Horda (cria zumbis onde a câmera está), ☣️ Surto (pausa os novos focos) e 🧹 Limpar (remove todos os zumbis).</p>
 <p><b>🏕️ Sobreviventes:</b> civis que ninguém resgata se juntam, acham armas e montam acampamentos com barricadas (marcador laranja). Eles se defendem sozinhos. Leve tropas ou um veículo até o acampamento e eles aceitam o resgate. Se a cidade ficar muito infectada, a polícia e a SWAT desistem e viram sobreviventes também (marcador azul).</p>
 <p><b>Dicas:</b> tiros e explosões fazem barulho e atraem zumbis. À noite eles ficam mais rápidos. A partir do dia 2 chegam hordas do continente e aparecem zumbis corredores; no dia 3, brutamontes. Cuidado com o fogo amigo de artilharia perto de civis.</p>`;
