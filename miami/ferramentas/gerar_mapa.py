@@ -1,5 +1,6 @@
 """Transforma classes.npy (saída de classificar.py) nos dados do jogo: www/mapas/<cidade>.js
 Uso: python3 gerar_mapa.py <cidade> classes.npy saida.js   (cidades em cidades.py)
+     python3 gerar_mapa.py <cidade> classes.npy saida.js predios.json   (mapa feito do OpenStreetMap, ver osm_mapa.py)
 
 - grade de terreno (1 célula = 4 px de z17 ≈ 4,3 m), codificada em RLE + base64
 - prédios: polígonos simplificados + altura estimada por bairro, Uint16 + base64
@@ -30,23 +31,25 @@ cls = np.load(sys.argv[2])
 H, Wd = cls.shape
 out = sys.argv[3]
 
+OSM = len(sys.argv) > 4    # classes já finais (ruas na largura real) e prédios em polígonos
 # ---------------- ruas na largura real ----------------
 # no mapa as ruas são linhas finas: tira ruído (letras dos rótulos) e alarga só sobre chão livre
 rua = (cls == 2).astype(np.uint8)
-n, lab, st, _ = cv2.connectedComponentsWithStats(rua, connectivity=8)
+n, lab, st, _ = cv2.connectedComponentsWithStats(rua if not OSM else np.zeros((1, 1), np.uint8), connectivity=8)
 grandes = np.zeros(n, np.uint8); grandes[1:] = (st[1:, cv2.CC_STAT_AREA] >= 150)
-rua = grandes[lab]
+rua = grandes[lab] if not OSM else rua
 kd = 9 if Z >= 17 else 3
 larga = cv2.dilate(rua, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kd, kd)))
 cls = cls.copy()
-cls[(cls == 2) & (rua == 0)] = 1
-cls[(larga == 1) & (cls == 1)] = 2
+if not OSM:
+    cls[(cls == 2) & (rua == 0)] = 1
+    cls[(larga == 1) & (cls == 1)] = 2
 
 # ---------------- grade de terreno ----------------
 gh, gw = H // CEL, Wd // CEL
 c = cls[:gh * CEL, :gw * CEL].reshape(gh, CEL, gw, CEL).transpose(0, 2, 1, 3).reshape(gh, gw, CEL * CEL)
 cnt = np.stack([(c == k).sum(-1) for k in range(10)], -1)  # gh,gw,10
-cnt[..., 5] += cnt[..., 6]
+if not OSM: cnt[..., 5] += cnt[..., 6]
 grid = np.ones((gh, gw), np.uint8)
 grid[cnt[..., 9] >= 8] = 9          # fazenda
 grid[cnt[..., 8] >= 7] = 8          # floresta/mata
@@ -55,15 +58,23 @@ grid[cnt[..., 4] >= 6] = 4
 grid[cnt[..., 2] >= 5] = 2
 grid[cnt[..., 5] >= 7] = 5
 grid[cnt[..., 0] >= 9] = 0
-# ruas sobre a água (pontes) continuam transitáveis
-ponte = (cnt[..., 0] >= 9) & ((cnt[..., 2] + cnt[..., 1]) >= 2)
-grid[ponte] = 6
+if OSM:
+    # o OSM já traz a rua na largura certa, a linha central e as pontes
+    grid[(cnt[..., 2] + cnt[..., 7] + cnt[..., 6]) >= 5] = 2
+    grid[(cnt[..., 5] >= 7)] = 5
+    grid[(cnt[..., 0] >= 9)] = 0
+    grid[(cnt[..., 6] >= 4)] = 6
+    grid[(cnt[..., 7] >= 2) & (grid == 2)] = 7
+else:
+    # ruas sobre a água (pontes) continuam transitáveis
+    ponte = (cnt[..., 0] >= 9) & ((cnt[..., 2] + cnt[..., 1]) >= 2)
+    grid[ponte] = 6
 # linha central das ruas (a linha fina original do mapa)
 k7 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7) if Z >= 17 else (4, 4))
 larga_via = cv2.dilate(cv2.erode(rua, k7), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11) if Z >= 17 else (6, 6)))
 fina = rua & (1 - larga_via)           # vias expressas (largas no mapa) ficam sem faixa central
 cr = fina[:gh * CEL, :gw * CEL].reshape(gh, CEL, gw, CEL).sum(axis=(1, 3))
-grid[(cr >= 4) & (grid == 2)] = 7
+if not OSM: grid[(cr >= 4) & (grid == 2)] = 7
 def rle(a):
     a = a.ravel(); res = bytearray(); i = 0; n = len(a)
     while i < n:
@@ -99,6 +110,11 @@ def zona_altura(x, y, area_m2, h):
     return b0 + rnd * b1 + big * (m0 + rnd * m1)
 
 blds = []
+if OSM:
+    import json
+    for hgt, pts in json.load(open(sys.argv[4])):
+        blds.append((hgt, np.array(pts)))
+    cont = []
 for ct in cont:
     a = cv2.contourArea(ct)
     if a * MPP * MPP < 35: continue
@@ -114,7 +130,7 @@ arr = []
 for hgt, ap in blds:
     arr += [len(ap), int(min(hgt, 300) * 4)]
     for x, y in ap:
-        arr += [int(x) * 2, int(y) * 2]
+        arr += [int(round(min(max(x, 0), Wd) * 2)), int(round(min(max(y, 0), H) * 2))]
 barr = np.array(arr, np.uint16).tobytes()
 
 LUGARES = CFG['lugares']
@@ -122,11 +138,12 @@ lug = {k: [n, round(px(la, lo)[0], 1), round(px(la, lo)[1], 1)] for k, (n, la, l
 
 dele = [[n, round(px(la, lo)[0], 1), round(px(la, lo)[1], 1)] for (n, la, lo) in CFG['delegacias']]
 saidas = [[n, round(px(la, lo)[0], 1), round(px(la, lo)[1], 1), d] for (n, la, lo, d) in CFG.get('saidas', [])]
-meta = dict(cidade=CID, nome=CFG['nome'], pais=CFG['pais'], costa=CFG['costa'], baseAng=CFG['base_ang'], rural=CFG.get('rural', False), saidas=saidas,
+meta = dict(cidade=CID, fonte='osm' if OSM else 'esri', nome=CFG['nome'], pais=CFG['pais'], costa=CFG['costa'], baseAng=CFG['base_ang'], rural=CFG.get('rural', False), saidas=saidas,
             focos=CFG['focos'], delegacias=dele,
             gx0=GX0, gy0=GY0, z=Z, mpp=MPP, cel=CEL, gw=gw, gh=gh, wpx=Wd, hpx=H, lugares=lug,
             bbox=[S, W, N, E])
-js = ('// gerado por ferramentas/gerar_mapa.py a partir do mapa Esri World_Topo_Map (z17): ' + CFG['nome'] + '\n'
+fonte = 'dados do OpenStreetMap (osm_mapa.py)' if OSM else 'mapa Esri World_Topo_Map (z17)'
+js = ('// gerado por ferramentas/gerar_mapa.py a partir de ' + fonte + ': ' + CFG['nome'] + '\n'
       'window.MAPA_DADOS = {META: ' + json.dumps(meta, ensure_ascii=False) + ',\n'
       'GRADE_RLE: "' + base64.b64encode(grle).decode() + '",\n'
       'PREDIOS: "' + base64.b64encode(barr).decode() + '"};\n')

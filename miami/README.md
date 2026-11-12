@@ -1,6 +1,6 @@
 # 🧟 Miami: Surto Zumbi
 
-**Regiões:** Miami 🌴, Interior da Flórida 🌾 (Homestead, fazendas e Everglades), São Francisco 🌉 e Cidade do México 🇲🇽 — cada uma em escala real, escolhida no menu inicial.
+**Regiões:** Miami 🌴, Interior da Flórida 🌾 (Homestead, fazendas e Everglades), São Francisco 🌉, Cidade do México 🇲🇽 e Sete Lagoas 🇧🇷 (MG) — cada uma em escala real, escolhida no menu inicial.
 
 Jogo de **estratégia em tempo real 3D** para celular (Android) na **Miami de verdade, em tamanho real (1:1)**.
 Um surto zumbi começa aos poucos no centro da cidade e se espalha pelas mordidas. Você comanda o Exército,
@@ -10,7 +10,7 @@ para conter a infecção e **resgatar os civis**.
 ## Baixar
 
 - **APK (Android 7+):** [`MiamiSurtoZumbi.apk`](../MiamiSurtoZumbi.apk) na raiz do repositório.
-  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.9.3/MiamiSurtoZumbi.apk
+  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.10.0/MiamiSurtoZumbi.apk
 - No navegador: abra `miami/www/index.html` por um servidor web (ex.: `python3 -m http.server` dentro de `miami/www`).
 
 O Android pede para permitir "instalar apps desconhecidos", porque o APK não vem da Play Store.
@@ -71,6 +71,11 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
 - **🌾 Interior da Flórida:** mapa real (zoom 16, ~23 × 10 km) de Homestead, Florida City, fazendas de Redland,
   canais com pontes e a borda dos Everglades, com a base na Homestead Air Reserve Base. Placas nas rodovias que
   saem de Miami (US-41, US-1, SR-836) levam ao interior e vice-versa.
+- **🇧🇷 Sete Lagoas (MG):** mapa real (~7,4 × 6,6 km) feito com os dados do OpenStreetMap: as lagoas (Paulino, Boa Vista,
+  José Félix, Cercadinho…), as avenidas e ruas na largura certa, praças, a Catedral, a Prefeitura, o Shopping e o
+  Terminal Urbano. Onde o OSM não tem as construções desenhadas, os quarteirões são preenchidos com casas de telha,
+  sobrados e prédios de concreto (mais altos no Centro), com quintais de grama e terra vermelha. A base fica na Vila
+  Militar e, sem mar, os jatos saem de uma pista de pouso.
 - **🪢 Descida em corda (fast-rope):** Black Hawk, Chinook e Osprey param no ar e os soldados descem de corda,
   no chão ou direto num telhado.
 - **♾️ Modo Sandbox:** dinheiro infinito, produção rápida, sem derrota, com botões para criar hordas, pausar o
@@ -116,6 +121,16 @@ sem ela o Android não deixa atualizar o app por cima da versão instalada (é p
 
 ### Dados do mapa
 
+**Sete Lagoas (OpenStreetMap):** exporte a área em https://www.openstreetmap.org/export (link "Overpass API") e rode:
+
+```bash
+cd miami/ferramentas
+python3 osm_mapa.py setelagoas map.osm saida          # terreno, ruas, lagoas e prédios (+ casas geradas)
+python3 gerar_mapa.py setelagoas saida/classes.npy ../www/mapas/setelagoas.js saida/predios.json
+```
+
+**Miami, São Francisco, Cidade do México e Flórida (Esri):**
+
 `src/dados_mapa.js` foi gerado assim (precisa de acesso a `server.arcgisonline.com`):
 
 ```bash
@@ -129,7 +144,9 @@ python3 gerar_icone.py ..                          # ícone do app
 
 ## Créditos
 
-Posição de prédios, ruas e litoral a partir de dados de mapa © Esri e da comunidade de usuários GIS. Motor 3D: [three.js](https://threejs.org) (MIT).
+Posição de prédios, ruas e litoral a partir de dados de mapa © Esri e da comunidade de usuários GIS.
+Mapa de Sete Lagoas: © colaboradores do [OpenStreetMap](https://www.openstreetmap.org/copyright); os dados derivados em
+`www/mapas/setelagoas.js` ficam sob a licença ODbL. Motor 3D: [three.js](https://threejs.org) (MIT).
 Tanque M1 Abrams: modelo "M1 Abrams low poly" do [CGTrader](https://www.cgtrader.com/free-3d-models/military/military-vehicle/m1-abrams-low-poly)
 (download gratuito, licença Royalty Free), convertido e pintado para o jogo com `ferramentas/abrams/exportar.py`;
 o arquivo original não vai para o repositório.

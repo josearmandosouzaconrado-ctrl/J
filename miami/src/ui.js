@@ -66,7 +66,7 @@ export class UI {
       <div id="info" class="oculto"></div>
       <div id="joy" class="oculto"><div id="joy-bola"></div></div>
       <button class="bt oculto" id="b-sair-controle">⏏ Sair do controle</button>
-      <div id="creditos">Dados do mapa © Esri e comunidade GIS</div>
+      <div id="creditos">${META.fonte === 'osm' ? 'Mapa © colaboradores do OpenStreetMap' : 'Dados do mapa © Esri e comunidade GIS'}</div>
     `;
     const on = (id, fn) => $(id).addEventListener('click', (e) => { e.stopPropagation(); iniciarSom(); fn(e); });
     on('#b-pausa', () => { G.pausado = !G.pausado; this.atualizarTopo(); });
@@ -117,7 +117,7 @@ export class UI {
   }
 
   viajar(sd) {
-    const nomes = { miami: 'Miami', florida: 'o Interior da Flórida', sf: 'São Francisco', mexico: 'a Cidade do México' };
+    const nomes = { miami: 'Miami', florida: 'o Interior da Flórida', sf: 'São Francisco', mexico: 'a Cidade do México', setelagoas: 'Sete Lagoas' };
     const m = this.modal(`<h2>🛣️ ${sd.nome}</h2><p>Pegar a estrada para <b>${nomes[sd.dest] || sd.dest}</b>? Uma nova operação começa lá (o progresso desta região não é levado).</p>
       <button class="bt grande" data-a="ir">🚙 Viajar</button><button class="bt" data-a="ficar">Ficar aqui</button>`);
     m.querySelector('[data-a=ir]').onclick = () => {
@@ -543,6 +543,7 @@ function rr(g, x, y, w, h, r) {
 
 export const AJUDA = `
 <p><b>🌾 Interior da Flórida:</b> Homestead, Florida City, as fazendas de Redland e a borda dos Everglades (mata, pântano e canais com pontes), com a sua base na Homestead Air Reserve Base. Em Miami, toque nas placas verdes das rodovias (US-41, US-1, SR-836) nas bordas do mapa para viajar ao interior; lá, as placas da US-1 e da Turnpike levam de volta a Miami.</p>
+<p><b>🇧🇷 Sete Lagoas (MG):</b> mapa real do centro e dos bairros feito com o OpenStreetMap: as lagoas (Paulino, Boa Vista, José Félix…), as avenidas, a Catedral, o Shopping e milhares de casas com telhado de telha. A base fica na Vila Militar; sem mar, os jatos saem de uma pista de pouso.</p>
 <p><b>Cidades:</b> no menu inicial escolha <b>Miami</b>, <b>São Francisco</b> (base naval em Treasure Island, porta-aviões na baía) ou a <b>Cidade do México</b> (base no Bosque de Chapultepec; sem mar, os jatos saem de uma pista de pouso).</p>
 <p><b>🔨 Construir:</b> no painel 🏭 Produzir, aba Construir: escolha posto avançado (FOB), quartel, pátio, heliporto, docas, zona segura, torre ou barreira e toque no mapa. Bases novas produzem unidades perto da frente de batalha, e FOB/zonas seguras recebem civis.</p>
 <p><b>Objetivo:</b> um surto zumbi começou em Miami e se espalha aos poucos. Resgate os civis e leve-os para a <b>Zona Segura</b> da base (no Porto de Miami) ou para o <b>porta-aviões</b>. Se o Quartel-General cair, você perde.</p>

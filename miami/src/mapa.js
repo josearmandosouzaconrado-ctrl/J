@@ -10,6 +10,7 @@ export const GW = META.gw, GH = META.gh;
 export const LARG = GW * CEL, ALT = GH * CEL; // tamanho do mapa em metros
 export const T = { AGUA: 0, CHAO: 1, RUA: 2, PARQUE: 3, AREIA: 4, PREDIO: 5, PONTE: 6, CENTRO: 7, FLORESTA: 8, CAMPO: 9 };
 export const RURAL = !!META.rural;
+export const BRASIL = META.pais === 'Brasil';   // quintais de grama e terra vermelha, árvores de copa
 export const ehRua = (t) => t === 2 || t === 7;
 // qualidade gráfica (0 baixa, 1 média, 2 alta), definida antes de construir o mundo
 export let QUAL = 1;
@@ -585,6 +586,11 @@ export function construirChao(cena) {
         vec3 gramado = mix(vec3(0.34, 0.44, 0.2), vec3(0.42, 0.5, 0.24), n1) * (0.88 + 0.22 * n2);
         calc = mix(gramado, calc, smoothstep(0.06, 0.3, m.r));
         ehLote = 0.0;` : ''}
+        ${BRASIL ? `// Minas Gerais: quintais de grama e terra vermelha; a calçada fica só junto da rua e há poucos estacionamentos
+        vec3 terraV = vec3(0.56, 0.34, 0.21) * (0.88 + 0.16 * n2);
+        vec3 quintal = mix(mix(vec3(0.35, 0.44, 0.2), vec3(0.45, 0.5, 0.25), n1) * (0.88 + 0.2 * n2), terraV, smoothstep(0.42, 0.6, fbm(p * 0.05 + 2.1)));
+        calc = mix(quintal, calc, smoothstep(0.06, 0.3, m.r));
+        ehLote *= 0.25;` : ''}
         vec3 c = mix(calc, estac, ehLote * 0.9);
         c = mix(c, gr * 0.95, smoothstep(0.6, 0.7, jard) * 0.85);
         ${RURAL ? `// no interior os parques são o pântano dos Everglades: capim-serra amarelado com poças
@@ -839,7 +845,7 @@ export function construirPalmeiras(cena, qtd = 2600, evitar = null) {
   const matF = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   const P = geoPalmeira(), A = geoArvore(), PI = geoPinheiro();
   if (QUAL === 0) qtd = Math.round(qtd * 0.7);
-  const nP = Math.round(qtd * (RURAL ? 0.12 : 0.65)), nPi = RURAL ? Math.round(qtd * 0.48) : 0, nA = qtd - nP - nPi;
+  const nP = Math.round(qtd * (RURAL ? 0.12 : BRASIL ? 0.3 : 0.65)), nPi = RURAL ? Math.round(qtd * 0.48) : 0, nA = qtd - nP - nPi;
   const palmas = [], copas = [], pinhos = [];
   let tent = 0;
   while ((palmas.length < nP || copas.length < nA || pinhos.length < nPi) && tent < qtd * 6) {

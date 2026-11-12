@@ -141,4 +141,31 @@ CIDADES = {
             ("Florida's Turnpike → Miami", 25.5170, -80.4036, 'miami'),
         ],
     ),
+    'setelagoas': dict(
+        nome='Sete Lagoas', pais='Brasil', osm=True,
+        bbox=(-19.48885, -44.27289, -19.42913, -44.20251), costa=False, base_ang=3.49,
+        centro=(-19.4640, -44.2460, 650, 1500),   # Centro (Lagoa Paulino, Catedral, Prefeitura)
+        reservas=[(-19.4500, -44.2545, 470)],      # área da base (Vila Militar)
+        zonas=[],
+        lugares={
+            'base': ('Base do Exército - Vila Militar', -19.4500, -44.2545),
+            'heliporto': ('Heliporto da Base', -19.4515, -44.2525),
+            'catedral': ('Catedral de Santo Antônio', -19.4668, -44.2472),
+            'paulino': ('Lagoa Paulino', -19.4615, -44.2455),
+            'shopping': ('Shopping Sete Lagoas', -19.4738, -44.2715),
+            'terminal': ('Terminal Urbano', -19.4603, -44.2413),
+            'hospital': ('Hospital Nossa Senhora das Graças', -19.4654, -44.2397),
+            'boavista': ('Lagoa da Boa Vista', -19.4566, -44.2361),
+            'mercado': ('Mercado Municipal', -19.4645, -44.2477),
+            'prefeitura': ('Prefeitura', -19.4650, -44.2450),
+            'estadio': ('Estádio Joaquim Henrique Nogueira', -19.4783, -44.2222),
+            'unifemm': ('UNIFEMM', -19.4805, -44.2662),
+            'santahelena': ('Hiper Santa Helena', -19.4696, -44.2549),
+            'interlagos': ('Interlagos', -19.4360, -44.2208),
+            'saofrancisco': ('São Francisco', -19.4319, -44.2442),
+            'industrias': ('Bairro Indústrias', -19.4685, -44.2123),
+        },
+        focos=['catedral', 'shopping', 'terminal', 'paulino', 'hospital', 'boavista', 'mercado', 'santahelena', 'estadio', 'unifemm', 'interlagos', 'saofrancisco', 'industrias', 'prefeitura'],
+        delegacias=[('Polícia Militar - Centro', -19.4649, -44.2484), ('Polícia Penal', -19.4807, -44.2677)],
+    ),
 }

@@ -79,7 +79,7 @@ export function construirVisual() {
   // sem árvores em cima da pista de pouso (cidades sem mar)
   const bb = lugares.base, ex = G.baseEixo;
   const pc = COSTA ? null : { x: bb.x + ex.pp.x * -330, z: bb.z + ex.pp.z * -330 };
-  G.decor = construirPalmeiras(G.cena, META.rural ? 32000 : 2600, pc ? (x, z) => {
+  G.decor = construirPalmeiras(G.cena, META.rural ? 32000 : META.pais === 'Brasil' ? 5000 : 2600, pc ? (x, z) => {
     const dx = x - pc.x, dz = z - pc.z, a = ex.ang, l = dx * Math.sin(a) + dz * Math.cos(a), t = dx * Math.cos(a) - dz * Math.sin(a);
     return Math.abs(l) < 180 && t > -110 && t < 40;
   } : null);
