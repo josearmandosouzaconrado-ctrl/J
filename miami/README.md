@@ -9,8 +9,10 @@ para conter a infecção e **resgatar os civis**.
 
 ## Baixar
 
-- **APK (Android 7+):** [`MiamiSurtoZumbi.apk`](../MiamiSurtoZumbi.apk) na raiz do repositório.
-  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.11.0/MiamiSurtoZumbi.apk
+- **APK (Android 7+), sempre a versão mais nova:**
+  https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-ultima/MiamiSurtoZumbi.apk
+  (o GitHub publica sozinho a cada atualização; todas as versões ficam em
+  https://github.com/josearmandosouzaconrado-ctrl/J/releases). Também fica em [`MiamiSurtoZumbi.apk`](../MiamiSurtoZumbi.apk) na raiz.
 - No navegador: abra `miami/www/index.html` por um servidor web (ex.: `python3 -m http.server` dentro de `miami/www`).
 
 O Android pede para permitir "instalar apps desconhecidos", porque o APK não vem da Play Store.

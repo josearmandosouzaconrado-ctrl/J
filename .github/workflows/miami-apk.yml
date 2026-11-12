@@ -1,5 +1,7 @@
 # Publica o APK de "Miami: Surto Zumbi" numa Release do GitHub sempre que ele muda.
-# Link: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v<versão>/MiamiSurtoZumbi.apk
+# Link fixo (sempre a versão mais nova):
+#   https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-ultima/MiamiSurtoZumbi.apk
+# Cada versão também fica na sua Release: .../releases/download/miami-v<versão>/MiamiSurtoZumbi.apk
 name: Publicar APK Miami
 on:
   push:
@@ -20,8 +22,17 @@ jobs:
         run: |
           VER=$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' miami/package.json)
           TAG="miami-v$VER"
-          NOTAS="Miami: Surto Zumbi $VER. Baixe MiamiSurtoZumbi.apk no celular Android e instale (permita instalar de fontes desconhecidas). Precisa de internet só para as imagens de satélite."
+          NOTAS="Miami: Surto Zumbi $VER. Baixe MiamiSurtoZumbi.apk no celular Android e instale (permita instalar de fontes desconhecidas). Funciona sem internet."
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" --target "$GITHUB_SHA" --title "Miami: Surto Zumbi $VER" --notes "$NOTAS" --latest=false
           fi
           gh release upload "$TAG" MiamiSurtoZumbi.apk --clobber
+          # Release fixa com a versão mais nova (o link nunca muda)
+          FIXA="miami-ultima"
+          NOTAS2="Versão mais nova de Miami: Surto Zumbi ($VER). Baixe MiamiSurtoZumbi.apk no celular Android e instale (permita instalar de fontes desconhecidas)."
+          if ! gh release view "$FIXA" >/dev/null 2>&1; then
+            gh release create "$FIXA" --target "$GITHUB_SHA" --title "Miami: Surto Zumbi (versão mais nova: $VER)" --notes "$NOTAS2" --latest=false
+          else
+            gh release edit "$FIXA" --title "Miami: Surto Zumbi (versão mais nova: $VER)" --notes "$NOTAS2"
+          fi
+          gh release upload "$FIXA" MiamiSurtoZumbi.apk --clobber
