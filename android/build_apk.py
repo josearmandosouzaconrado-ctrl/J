@@ -33,8 +33,8 @@ OUT = os.path.join(ROOT, 'CronicasDeEldoria-ADM.apk' if ADM else 'CronicasDeEldo
 PACKAGE = 'com.eldoria.cronicas.adm' if ADM else 'com.eldoria.cronicas'
 APP_NAME = 'Eldoria ADM' if ADM else 'Crônicas de Eldoria'
 UA_TAG = ' EldoriaAPK EldoriaADM' if ADM else ' EldoriaAPK'
-VERSION_CODE = 71
-VERSION_NAME = '0.43.0-beta'
+VERSION_CODE = 72
+VERSION_NAME = '0.44.0-beta'
 SIGN_DIR = 'signing'
 CERT_NOME = 'Cronicas de Eldoria'
 if MIAMI:
