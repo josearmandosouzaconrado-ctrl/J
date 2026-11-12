@@ -10,7 +10,7 @@ import { prepararNavegacao, pontoLivreProximo, livre } from './caminho.js';
 import { TIPOS, ESTRUTURAS, CONSTRUIR } from './tipos.js';
 import { criarModelo } from './modelos.js';
 import {
-  criarUnidade, danoUnidade, naZonaSegura, volEm, vagas, embarcarCivil, embarcar, chaoEm, marcarSelecao,
+  criarUnidade, danoUnidade, naZonaSegura, volEm, vagas, embarcarCivil, embarcar, chaoEm, marcarSelecao, padPorta, padLivre,
 } from './unidades.js';
 import { criarCivil, criarZumbi, soldadoVirouZumbi, tornarZumbi } from './agentes.js';
 import { rand, randi, escolher, dist, dist2 } from './util.js';
@@ -206,7 +206,7 @@ export function iniciarPartida(dif) {
     if (!livre(2, pa.x, pa.z)) pa = pontoLivreProximo(2, pa.x, pa.z) || pa;
     G.porta = criarUnidade('portaavioes', pa.x, pa.z, Math.PI);
     G.porta.fila = [];
-    G.porta.deck = 9.2;
+    G.porta.deck = G.porta.m?.def.deck ?? 9.2;
     const de = pontoLivreProximo(2, pa.x - 250, pa.z + 300) || { x: pa.x, z: pa.z + 400 };
     criarUnidade('destroier', de.x, de.z, Math.PI);
     const lan = G.estr.docas.saidaAgua;
@@ -330,8 +330,8 @@ function produzir(tipo, fonte) {
       let v = 0; while (usadas.has(v)) v++;
       u.vagaConves = v;
     } else {
-      const k = -60 - randi(0, 3) * 25;
-      u = criarUnidade(tipo, p.x + Math.sin(p.ang) * k, p.z + Math.cos(p.ang) * k, p.ang, { alt: p.deck });
+      const q = p === G.porta ? padPorta(p, padLivre(p)) : { x: p.x + Math.sin(p.ang) * (-60 - randi(0, 3) * 25), z: p.z + Math.cos(p.ang) * (-60 - randi(0, 3) * 25) };
+      u = criarUnidade(tipo, q.x, q.z, p.ang, { alt: p.deck });
       u.y = p.deck; u.pousado = true;
     }
   } else if (d.de === 'heliporto') {

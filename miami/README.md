@@ -10,7 +10,7 @@ para conter a infecção e **resgatar os civis**.
 ## Baixar
 
 - **APK (Android 7+):** [`MiamiSurtoZumbi.apk`](../MiamiSurtoZumbi.apk) na raiz do repositório.
-  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.9.2/MiamiSurtoZumbi.apk
+  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.9.3/MiamiSurtoZumbi.apk
 - No navegador: abra `miami/www/index.html` por um servidor web (ex.: `python3 -m http.server` dentro de `miami/www`).
 
 O Android pede para permitir "instalar apps desconhecidos", porque o APK não vem da Play Store.
@@ -29,8 +29,10 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
   mar verde-azulado com espuma nas ondas e arrebentação na costa.
 - Casas com telhado de telha de duas águas, prédios de tijolo, faixas de pedestre nas esquinas, vagas pintadas
   nos estacionamentos e meio-fio.
-- Porta-aviões com o número 68, pista angulada, catapultas, cabos de parada e aviões no convés; jatos com chama
-  do pós-combustor.
+- Porta-aviões **USS Enterprise (CVN-80, classe Ford)** com modelo 3D texturizado em escala real (333 m, convoo a
+  22 m do mar): ilha a boreste, catapultas na proa, pista angulada com cabos de parada, elevadores e guarda-corpos.
+  Os jatos decolam pela catapulta, pousam na pista angulada e estacionam a boreste; helicópteros e Ospreys pousam
+  nas vagas da popa, cada um na sua. Jatos com chama do pós-combustor.
 - Fachadas desenhadas em três estilos (torres de vidro, prédios de concreto, art déco em tons pastel), telhados com
   mureta e equipamentos, e janelas que acendem à noite.
 - Palmeiras com cocos e árvores de copa larga em parques e calçadas, faixa amarela no meio das ruas,
@@ -130,4 +132,6 @@ python3 gerar_icone.py ..                          # ícone do app
 Posição de prédios, ruas e litoral a partir de dados de mapa © Esri e da comunidade de usuários GIS. Motor 3D: [three.js](https://threejs.org) (MIT).
 Tanque M1 Abrams: modelo "M1 Abrams low poly" do [CGTrader](https://www.cgtrader.com/free-3d-models/military/military-vehicle/m1-abrams-low-poly)
 (download gratuito, licença Royalty Free), convertido e pintado para o jogo com `ferramentas/abrams/exportar.py`;
-o arquivo original não vai para o repositório. Os demais modelos 3D, os sons e o código foram feitos para este jogo.
+o arquivo original não vai para o repositório.
+Porta-aviões: modelo "USS Enterprise CVN-80 Aircraft Carrier" (Sketchfab), convertido com `ferramentas/porta/converter.py`
+para `www/modelos/porta.js` (geometria e texturas embutidas). Os demais modelos 3D, os sons e o código foram feitos para este jogo.

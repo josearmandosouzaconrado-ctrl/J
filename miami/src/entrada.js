@@ -4,7 +4,7 @@ import { G } from './estado.js';
 import { LARG, ALT, predioEm, predios, dentroPoligono } from './mapa.js';
 import { clamp, lerp, dist, dist2 } from './util.js';
 import {
-  ordenar, ordenarMover, marcarSelecao, cabe, desembarcar, sairDoPredio, chaoEm, ordenarAreaJatos,
+  ordenar, ordenarMover, marcarSelecao, cabe, desembarcar, sairDoPredio, chaoEm, ordenarAreaJatos, padLivre,
 } from './unidades.js';
 import { somUI, iniciarSom } from './som.js';
 
@@ -349,8 +349,7 @@ function toque(sx, sy, camRTS, duplo, ultimo) {
     }
     // aeronaves selecionadas + toque no porta-aviões = pousar no convés
     if (u.tipo === 'portaavioes' && sel.length && sel.some((s) => s.classe === 'aereo')) {
-      let k = -120;
-      for (const s of sel) if (s.classe === 'aereo') { s.ordem = { tipo: 'pousarPorta', k }; s.altAlvo = s.d.altCruz; k += 30; }
+      for (const s of sel) if (s.classe === 'aereo') { s.ordem = { tipo: 'pousarPorta', pad: padLivre(u, s) }; s.altAlvo = s.d.altCruz; }
       const navios = sel.filter((s) => s.classe === 'naval');
       if (navios.length) ordenarMover(navios, u.x + 120, u.z);
       G.ui.ping(u.x, u.z, 'mover');

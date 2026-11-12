@@ -50,12 +50,32 @@ export function removerUnidade(u) {
 }
 
 // ---------------- utilidades ----------------
+// contorno do convoo do USS Enterprise (coordenadas locais: proa = +Z, boreste/ilha = -X)
+const CONVES = { pts: [15, 166, -17.5, 166, -19, 109, -26, 107, -26, 88, -22, 75, -37.5, 67, -37.5, -148, -22, -150, -21, -166, 17, -166, 39, -157, 42, 60, 22.5, 83, 17.5, 112] };
+// vagas de helicóptero/Osprey no convoo: popa a boreste e a bombordo, longe da pista angulada
+const PADS_PORTA = [[-27, -114], [-27, -136], [30, -150], [30, -126], [30, -102]];
+export function padPorta(p, i) {
+  if (!(p.m && p.m.def.real)) return pontoBase(p, 0, -60 - (i % 4) * 25);
+  // mais aeronaves que vagas: as extras ficam ao lado, um pouco para dentro do convoo
+  const [lx, lz] = PADS_PORTA[i % PADS_PORTA.length], volta = Math.floor(i / PADS_PORTA.length) % 2;
+  return pontoBase(p, lx - Math.sign(lx) * volta * 10, lz);
+}
+// primeira vaga do convoo sem aeronave pousada nem reservada por outra que está a caminho
+export function padLivre(p, eu = null) {
+  for (let i = 0; i < 12; i++) {
+    const q = padPorta(p, i);
+    const ocupada = G.unidades.some((u) => u !== eu && u.vivo && u.classe === 'aereo' && !u.dentro &&
+      ((u.ordem && u.ordem.tipo === 'pousarPorta' && u.ordem.pad === i) || (u.pousado && dist2(u.x, u.z, q.x, q.z) < 64)));
+    if (!ocupada) return i;
+  }
+  return 0;
+}
 export function chaoEm(x, z) {
   const p = G.porta;
   if (p && p.vivo && p.tipo === 'portaavioes') {
     const dx = x - p.x, dz = z - p.z, c = Math.cos(-p.ang), s = Math.sin(-p.ang);
     const lx = dx * c + dz * s, lz = -dx * s + dz * c;
-    if (Math.abs(lx) < 34 && Math.abs(lz) < 158) return 9.2;
+    if (p.m && p.m.def.real ? dentroPoligono(CONVES, lx, lz) : Math.abs(lx) < 34 && Math.abs(lz) < 158) return p.deck ?? 9.2;
   }
   const c = cel(x, z);
   if (c >= 0 && predioId[c] >= 0) return predios[predioId[c]].h;
@@ -821,8 +841,9 @@ function atualizarAereo(u, dt) {
       }
     } else if (o.tipo === 'pousarPorta') {
       const p = G.porta;
-      alvo = { x: p.x + Math.sin(p.ang) * o.k, z: p.z + Math.cos(p.ang) * o.k };
-      if (dist(u.x, u.z, alvo.x, alvo.z) < 4) { u.ordem = { tipo: 'pousar', desembarcar: false }; alvo = null; }
+      alvo = padPorta(p, o.pad ?? 0);
+      // freia sobre a vaga e só então desce (senão passa direto e pousa longe dela)
+      if (dist(u.x, u.z, alvo.x, alvo.z) < 3 && u.velAtual < 6) { u.x = alvo.x; u.z = alvo.z; u.velAtual = 0; u.ordem = { tipo: 'pousar', desembarcar: false }; alvo = null; }
     } else if (o.tipo === 'embarcar') {
       // helicóptero não embarca em nada
       u.ordem = null;
@@ -842,6 +863,7 @@ function atualizarAereo(u, dt) {
     const dd = dist(u.x, u.z, alvo.x, alvo.z);
     const v = (subindo ? d.vel * 0.15 : d.vel) * Math.min(1, dd / 40 + 0.15) * Math.max(0.2, Math.cos(angDif(u.ang, angA)));
     u.velAtual += (v - u.velAtual) * Math.min(1, dt * 1.5);
+    if (o && o.tipo === 'pousarPorta') u.velAtual = Math.min(u.velAtual, dd * 0.9 + 1.5);
     u.x += Math.sin(u.ang) * u.velAtual * dt;
     u.z += Math.cos(u.ang) * u.velAtual * dt;
   } else if (!(G.controlando === u)) {
@@ -875,9 +897,13 @@ function baseDo(u) { const b = u.base; return b && b.vivo ? b : G.porta; }
 function ehPorta(p) { return p.tipo === 'portaavioes'; }
 // geometria da pista em cada tipo de base: decolagem, toque e vagas
 function geoBase(p) {
+  if (ehPorta(p) && p.m && p.m.def.real) {
+    // USS Enterprise: catapulta de proa, pouso na pista angulada (8,6° para bombordo) e vagas a boreste
+    return { dx: 7, d0: 62, d1: 168, td: -100, tx: 3.4, angP: 0.15, frear: 30, vaga: (k) => [-29 + (k % 2) * 12, -62 + (k % 9) * 14] };
+  }
   return ehPorta(p)
-    ? { dx: 6, d0: 20, d1: 160, td: -110, frear: 30, vaga: (k) => [-24 + (k % 2) * 10, 40 + k * 22] }
-    : { dx: 0, d0: -140, d1: 80, td: -130, frear: 11, vaga: (k) => [-40 + (k % 2) * 10, 25 + k * 18] };
+    ? { dx: 6, d0: 20, d1: 160, td: -110, tx: 0, angP: 0, frear: 30, vaga: (k) => [-24 + (k % 2) * 10, 40 + k * 22] }
+    : { dx: 0, d0: -140, d1: 80, td: -130, tx: 0, angP: 0, frear: 11, vaga: (k) => [-40 + (k % 2) * 10, 25 + k * 18] };
 }
 
 function atualizarJato(u, dt) {
@@ -912,8 +938,8 @@ function atualizarJato(u, dt) {
   if (u.estadoJato === 'pousando') {
     // toque e frenagem (cabo de parada no porta-aviões, freio na pista)
     u.velAtual = Math.max(0, u.velAtual - gb.frear * dt);
-    u.ang = p.ang; u.y = deck; u.banco = 0;
-    u.x += ax * u.velAtual * dt; u.z += az * u.velAtual * dt;
+    u.ang = p.ang + gb.angP; u.y = deck; u.banco = 0;
+    u.x += Math.sin(u.ang) * u.velAtual * dt; u.z += Math.cos(u.ang) * u.velAtual * dt;
     if (u.velAtual < 3) { u.estadoJato = 'rearmando'; u.rearme = 18; u.ordem = null; }
     return;
   }
@@ -922,14 +948,16 @@ function atualizarJato(u, dt) {
   let tx, tz, alvoAlt = d.altCruz, vAlvo = d.vel, giro = 0.9;
   if (u.estadoJato === 'aproximando') {
     // planeio alinhado com a pista até o ponto de toque
-    const t = pontoBase(p, gb.dx * 0, gb.td);
+    const t = pontoBase(p, gb.tx, gb.td);
     const dd = dist(u.x, u.z, t.x, t.z);
     tx = t.x; tz = t.z;
     alvoAlt = deck + Math.min(90, dd * 0.07);
     vAlvo = Math.max(65, d.vel * 0.32);
     giro = 1.2;
-    const lz = (u.x - p.x) * ax + (u.z - p.z) * az;
-    if (dd < 30 || (lz > gb.td && Math.abs((u.x - p.x) * az - (u.z - p.z) * ax) < 25)) {
+    // já passou do ponto de toque, alinhado com a pista (angulada no porta-aviões)
+    const lax = Math.sin(p.ang + gb.angP), laz = Math.cos(p.ang + gb.angP);
+    const ll = (u.x - t.x) * lax + (u.z - t.z) * laz, lat = Math.abs((u.x - t.x) * laz - (u.z - t.z) * lax);
+    if (dd < 30 || (ll > 0 && ll < 120 && lat < 25)) {
       u.estadoJato = 'pousando'; u.y = deck;
       G.efeitos.poeira(u.x, u.z, 3);
       somEsmagar(volEm(u.x, u.z) * 0.6);
@@ -939,7 +967,7 @@ function atualizarJato(u, dt) {
   } else if (u.estadoJato === 'voltando' || !o) {
     // vai até o início da aproximação, atrás da base
     u.estadoJato = 'voltando';
-    const a = pontoBase(p, 0, gb.td - 1300);
+    const a = pontoBase(p, gb.tx - Math.sin(gb.angP) * 1300, gb.td - Math.cos(gb.angP) * 1300);
     tx = a.x; tz = a.z;
     if (dist(u.x, u.z, a.x, a.z) < 700) alvoAlt = deck + 100;
     if (dist(u.x, u.z, a.x, a.z) < 180) u.estadoJato = 'aproximando';

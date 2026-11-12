@@ -34,7 +34,7 @@ export const TIPOS = {
   lancha: { nome: 'Lancha Mark VI', sub: 'Patrulha • leva 8', icone: '🚤', classe: 'naval', modelo: 'lancha', nav: 1, hp: 800, vel: 28, alcance: 130, dano: 24, cadencia: 0.16, precisao: 0.45, arma: '50cal', carga: 8, cargaTipos: ['inf', 'civil'], custo: 320, tempo: 12, de: 'docas', raio: 8 },
   lcac: { nome: 'Hovercraft LCAC', sub: 'Anfíbio • leva tropas e veículos', icone: '🛥️', classe: 'naval', modelo: 'lcac', nav: 3, hp: 1400, vel: 26, carga: 30, cargaTipos: ['inf', 'civil', 'leve', 'veic'], custo: 750, tempo: 18, de: 'docas', raio: 12 },
   destroier: { nome: 'Destróier classe Arleigh Burke', sub: 'Canhão naval 5" de longo alcance', icone: '🚢', classe: 'naval', modelo: 'destroier', nav: 2, hp: 7000, vel: 16, alcance: 950, minAlc: 60, dano: 300, splash: 14, cadencia: 2.6, precisao: 0.8, arma: 'naval', arco: true, custo: 2400, tempo: 35, de: 'docas', raio: 30 },
-  portaavioes: { nome: 'Porta-aviões USS Liberty', sub: 'Classe Nimitz • base flutuante', icone: '⚓', classe: 'naval', modelo: 'portaavioes', nav: 2, hp: 30000, vel: 7, carga: 0, custo: 0, de: null, raio: 60, unico: true },
+  portaavioes: { nome: 'Porta-aviões USS Enterprise', sub: 'CVN-80, classe Ford • base flutuante', icone: '⚓', classe: 'naval', modelo: 'portaavioes', nav: 2, hp: 30000, vel: 7, carga: 0, custo: 0, de: null, raio: 60, unico: true },
 };
 
 export const ESTRUTURAS = {

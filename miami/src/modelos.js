@@ -1254,6 +1254,7 @@ const NAVAL = {
     return { corpo: c.build(), torre: t.build(), torreY: 4.3, torreZ: 56, canoZ: 9.2, canoY: 1.2 };
   },
   portaavioes() {
+    if (window.MODELO_PORTA) return portaReal(window.MODELO_PORTA);
     const c = new Mont();
     // casco com proa afilada e alargamento sob o convés
     c.add(casco(320, 40, 8, 10, { sheer: 1 }), CINZA_N);
@@ -1487,12 +1488,40 @@ const ESTR = {
 for (const k in VEIC) { if (k === 'abrams') continue; const f = VEIC[k]; VEIC[k] = () => { SUJAR = true; try { return f(); } finally { SUJAR = false; } }; }
 const TODOS = Object.assign({}, VEIC, AERO, NAVAL, ESTR);
 
+// porta-aviões USS Enterprise (CVN-80) a partir do modelo 3D com textura (www/modelos/porta.js)
+function portaReal(M) {
+  const b64 = (t) => { const b = atob(t), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u.buffer; };
+  const malhas = [];
+  for (const pt of M.partes) {
+    const P = new Int16Array(b64(pt.p)), N = new Int8Array(b64(pt.n)), U = new Int16Array(b64(pt.uv));
+    const pos = new Float32Array(P.length), nor = new Float32Array(N.length), uv = new Float32Array(U.length);
+    for (let i = 0; i < P.length; i++) { pos[i] = P[i] / 100; nor[i] = N[i] / 127; }
+    const ku = pt.uvs / 32767;
+    for (let i = 0; i < U.length; i++) uv[i] = U[i] * ku;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    g.setIndex(new THREE.BufferAttribute(pt.i32 ? new Uint32Array(b64(pt.i)) : new Uint16Array(b64(pt.i)), 1));
+    g.computeBoundingSphere();
+    const tex = new THREE.TextureLoader().load(pt.tex);
+    tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.anisotropy = QUAL === 0 ? 2 : 8;
+    const op = pt.alfa ? { alphaTest: 0.5, side: THREE.DoubleSide } : {};
+    const mat = QUAL === 0
+      ? new THREE.MeshLambertMaterial({ map: tex, ...op })
+      : new THREE.MeshStandardMaterial({ map: tex, roughness: 0.78, metalness: 0.15, envMapIntensity: 0.6, ...op });
+    malhas.push({ geo: g, mat, semSombra: pt.alfa });
+  }
+  return { malhas, deck: M.deck, real: true };
+}
+
 // cria o objeto 3D de um tipo; devolve {grupo, torre, rotor, rotor2, cauda, nacele...}
 export function criarModelo(nome) {
   const def = cache['_d_' + nome] || (cache['_d_' + nome] = TODOS[nome]());
   const grupo = new THREE.Group();
   const r = { grupo, def };
-  grupo.add(new THREE.Mesh(def.corpo, matCorpo()));
+  if (def.corpo) grupo.add(new THREE.Mesh(def.corpo, matCorpo()));
+  for (const m of def.malhas || []) { const o = new THREE.Mesh(m.geo, m.mat); o.userData.semSombra = m.semSombra; grupo.add(o); }
   if (def.vidro) grupo.add(new THREE.Mesh(def.vidro, matVidro()));
   if (def.torre) {
     const t = new THREE.Mesh(def.torre, matCorpo());
@@ -1558,7 +1587,7 @@ export function criarModelo(nome) {
       r.naceles.push({ piv, ro });
     }
   }
-  grupo.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  grupo.traverse((o) => { if (o.isMesh) { o.castShadow = !o.userData.semSombra; o.receiveShadow = true; } });
   return r;
 }
 
