@@ -10,7 +10,7 @@ para conter a infecção e **resgatar os civis**.
 ## Baixar
 
 - **APK (Android 7+):** [`MiamiSurtoZumbi.apk`](../MiamiSurtoZumbi.apk) na raiz do repositório.
-  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.10.0/MiamiSurtoZumbi.apk
+  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.11.0/MiamiSurtoZumbi.apk
 - No navegador: abra `miami/www/index.html` por um servidor web (ex.: `python3 -m http.server` dentro de `miami/www`).
 
 O Android pede para permitir "instalar apps desconhecidos", porque o APK não vem da Play Store.
@@ -47,13 +47,16 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
 |---|---|
 | 🪖 Quartel | Soldado (M4A1), Metralhador (M249), Atirador de elite (M110/Barrett), Médico de combate |
 | 🚙 Pátio de veículos | Humvee M1151, Ambulância M997, Stryker M1126, Bradley M2A3, Tanque M1A2 Abrams, Obuseiro M109A7 Paladin, HIMARS M142 |
-| 🚁 Heliporto | MH-6 Little Bird (soldados sentados nos bancos externos), UH-60 Black Hawk, CH-47 Chinook, AH-64 Apache, drone MQ-9 Reaper |
+| 🚁 Heliporto | MH-6 Little Bird (soldados sentados nos bancos externos), UH-60 Black Hawk, SH-60B Seahawk, CH-47 Chinook, AH-64 Apache, drone MQ-9 Reaper |
 | ⚓ Docas | Lancha Mark VI, hovercraft LCAC (anfíbio), destróier classe Arleigh Burke |
-| 🛳️ Porta-aviões | F-35C Lightning II, F/A-18E Super Hornet, MV-22 Osprey |
+| 🛳️ Porta-aviões | F-35C Lightning II, F/A-18E Super Hornet, MV-22 Osprey, SH-60B Seahawk |
 | 🛫 Pista de pouso (construída) | F-22 Raptor (bombas pequenas SDB), A-10 Thunderbolt II (canhão GAU-8 de 30 mm) |
 
 - **Tanque M1A2 Abrams** com modelo 3D detalhado (metralhadoras, cestos de carga, grades, esteiras de elos), pintado
   no tan do deserto do Exército, com a torre girando. Quando é destruído, a munição explode e a torre é arremessada.
+- **Helicópteros com modelo 3D texturizado:** SH-60B Seahawk da Marinha (cinza, metralhadora M240 na porta e mísseis
+  Hellfire, leva 5) e CH-47 Chinook do Exército (verde-oliva "U.S. ARMY"), com os rotores girando de verdade
+  (o Chinook com os dois rotores em sentidos opostos).
 - **Carcaças:** todo veículo terrestre destruído fica no lugar como carcaça queimada, pegando fogo e soltando fumaça,
   e some depois de alguns minutos.
 - **Soldados entram** em veículos, helicópteros, barcos e no Osprey; o Chinook e o LCAC levam veículos.
@@ -151,4 +154,6 @@ Tanque M1 Abrams: modelo "M1 Abrams low poly" do [CGTrader](https://www.cgtrader
 (download gratuito, licença Royalty Free), convertido e pintado para o jogo com `ferramentas/abrams/exportar.py`;
 o arquivo original não vai para o repositório.
 Porta-aviões: modelo "USS Enterprise CVN-80 Aircraft Carrier" (Sketchfab), convertido com `ferramentas/porta/converter.py`
-para `www/modelos/porta.js` (geometria e texturas embutidas). Os demais modelos 3D, os sons e o código foram feitos para este jogo.
+para `www/modelos/porta.js` (geometria e texturas embutidas).
+Helicópteros: modelos "SH-60B Seahawk Helicopter" e "Boeing CH-47 Chinook Military Transport Aircraft", convertidos com
+`ferramentas/helis/converter.py` para `www/modelos/helis.js`. Os demais modelos 3D, os sons e o código foram feitos para este jogo.

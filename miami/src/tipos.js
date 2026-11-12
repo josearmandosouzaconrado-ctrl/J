@@ -20,6 +20,7 @@ export const TIPOS = {
   bearcat: { nome: 'Blindado SWAT BearCat', sub: 'Polícia de Miami • leva 10', icone: '🚓', classe: 'veic', modelo: 'bearcat', hp: 1300, vel: 25, carga: 10, cargaTipos: ['inf', 'civil'], custo: 0, slots: 10, raio: 3.0, atropela: true, policia: true },
   // ---------------- aeronaves (heliporto) ----------------
   blackhawk: { nome: 'UH-60 Black Hawk', sub: 'Metralhadoras M134 • leva 11', icone: '🚁', classe: 'aereo', modelo: 'blackhawk', hp: 850, vel: 75, altCruz: 40, alcance: 95, dano: 10, cadencia: 0.07, precisao: 0.35, arma: 'm134', carga: 11, cargaTipos: ['inf', 'civil'], custo: 750, tempo: 16, de: 'heliporto', raio: 8 },
+  seahawk: { nome: 'SH-60B Seahawk', sub: 'Marinha • M240 e mísseis Hellfire • leva 5', icone: '🚁', classe: 'aereo', modelo: 'seahawk', hp: 800, vel: 78, altCruz: 40, alcance: 100, dano: 11, cadencia: 0.16, precisao: 0.38, arma: 'm240', sec: { alcance: 520, dano: 320, splash: 9, cadencia: 9, precisao: 0.95, arma: 'hellfire' }, carga: 5, cargaTipos: ['inf', 'civil'], custo: 800, tempo: 16, de: 'heliporto', raio: 8 },
   chinook: { nome: 'CH-47 Chinook', sub: 'Leva 33 ou um Humvee', icone: '🚁', classe: 'aereo', modelo: 'chinook', hp: 1200, vel: 68, altCruz: 45, alcance: 80, dano: 11, cadencia: 0.16, precisao: 0.35, arma: 'm240', carga: 33, cargaTipos: ['inf', 'civil', 'leve'], custo: 950, tempo: 20, de: 'heliporto', raio: 10 },
   apache: { nome: 'AH-64 Apache', sub: 'Canhão 30mm + mísseis Hellfire', icone: '🚁', classe: 'aereo', modelo: 'apache', hp: 1000, vel: 80, altCruz: 55, alcance: 280, dano: 45, splash: 3, cadencia: 0.13, precisao: 0.55, arma: '30mm', sec: { alcance: 650, dano: 420, splash: 11, cadencia: 7, precisao: 0.95, arma: 'hellfire', missil: true }, custo: 1150, tempo: 22, de: 'heliporto', raio: 8 },
   littlebird: { nome: 'MH-6 Little Bird', sub: 'Leva 6 soldados nos bancos externos • rápido e pequeno', icone: '🚁', classe: 'aereo', modelo: 'littlebird', hp: 500, vel: 88, altCruz: 35, alcance: 75, dano: 12, cadencia: 0.16, precisao: 0.42, arma: 'fuzil', carga: 6, cargaTipos: ['inf'], custo: 450, tempo: 10, de: 'heliporto', raio: 5 },
@@ -54,9 +55,9 @@ export const ESTRUTURAS = {
 export const PRODUCAO = {
   quartel: ['fuzileiro', 'metralhador', 'sniper', 'medico'],
   patio: ['humvee', 'ambulancia', 'stryker', 'bradley', 'abrams', 'paladin', 'himars'],
-  heliporto: ['littlebird', 'blackhawk', 'chinook', 'apache', 'reaper'],
+  heliporto: ['littlebird', 'blackhawk', 'seahawk', 'chinook', 'apache', 'reaper'],
   docas: ['lancha', 'lcac', 'destroier'],
-  porta: ['f35', 'f18', 'osprey'],
+  porta: ['f35', 'f18', 'osprey', 'seahawk'],
   pista: ['f22', 'a10', 'f35', 'f18'],
 };
 export const NOMES_PROD = { quartel: '🪖 Quartel', patio: '🚙 Pátio', heliporto: '🚁 Heliporto', docas: '⚓ Docas', porta: '🛳️ Porta-aviões', pista: '🛫 Pista de pouso' };

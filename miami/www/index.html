@@ -109,7 +109,7 @@
     <button class="bt grande" id="m-jogar">▶ JOGAR</button>
     <button class="bt grande" id="m-ajuda">❓ Como jogar</button>
   </div>
-  <div class="creditos-menu">Mapa 1:1 de Downtown, Brickell, PortMiami, Watson Island, Venetian Islands, South Beach e Fisher Island (≈ 9 × 5 km), com 4.800 prédios reais. Posição de prédios, ruas e litoral a partir de dados de mapa © Esri e comunidade de usuários GIS. Mapa de Sete Lagoas: © colaboradores do OpenStreetMap (ODbL). Tanque Abrams: modelo "M1 Abrams low poly" (CGTrader). Porta-aviões: modelo "USS Enterprise CVN-80 Aircraft Carrier" (Sketchfab).</div>
+  <div class="creditos-menu">Mapa 1:1 de Downtown, Brickell, PortMiami, Watson Island, Venetian Islands, South Beach e Fisher Island (≈ 9 × 5 km), com 4.800 prédios reais. Posição de prédios, ruas e litoral a partir de dados de mapa © Esri e comunidade de usuários GIS. Mapa de Sete Lagoas: © colaboradores do OpenStreetMap (ODbL). Tanque Abrams: modelo "M1 Abrams low poly" (CGTrader). Porta-aviões: modelo "USS Enterprise CVN-80 Aircraft Carrier" (Sketchfab). Helicópteros: modelos "SH-60B Seahawk Helicopter" e "Boeing CH-47 Chinook Military Transport Aircraft".</div>
 </div>
 <script>
   // carrega o mapa da cidade escolhida antes do jogo
@@ -119,6 +119,7 @@
     if (['miami', 'sf', 'mexico', 'florida', 'setelagoas'].indexOf(c) < 0) c = 'miami';
     window.CIDADE_ESCOLHIDA = c;
     document.write('<script src="mapas/' + c + '.js"><\/script>');
+    document.write('<script src="modelos/helis.js"><\/script>');
     // modelo 3D do porta-aviões (só nas regiões com mar)
     if (c === 'miami' || c === 'sf') document.write('<script src="modelos/porta.js"><\/script>');
   })();

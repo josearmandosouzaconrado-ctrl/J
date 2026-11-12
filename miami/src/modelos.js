@@ -670,6 +670,10 @@ function casulo(c, prof, cor, x, y, z, sx = 1, sy = 1, N = 12) {
 }
 
 const AERO = {
+  seahawk() {
+    // SH-60B Seahawk da Marinha (modelo 3D texturizado); sem o arquivo, usa o Black Hawk
+    return heliReal('seahawk') || AERO.blackhawk();
+  },
   blackhawk() {
     const c = new Mont(), v = new Mont();
     const C = 0x59614a, C2 = 0x4b523e, ESC = 0x2c2f2a;
@@ -742,6 +746,9 @@ const AERO = {
     return { corpo: c.build(), vidro: v.build(false), rotor: rotor(4, 8.2), rotorY: 3.95, rotorZ: 0.6, cauda: rotorCauda(1.7), caudaPos: [0.3, 3.9, -9.4], caudaEixo: 'x' };
   },
   chinook() {
+    // modelo 3D texturizado (Boeing CH-47 Chinook); o feito no jogo fica de reserva
+    const real = heliReal('chinook');
+    if (real) return real;
     const c = new Mont(), v = new Mont();
     const C = 0x5d654c, C2 = 0x4f5641;
     c.add(loftZ([
@@ -1515,6 +1522,52 @@ function portaReal(M) {
   return { malhas, deck: M.deck, real: true };
 }
 
+// helicópteros com modelo 3D texturizado (www/modelos/helis.js): corpo, rotores e rotor de cauda separados
+const _texHeli = {};
+function heliReal(nome, extra) {
+  const M = window.MODELOS_HELIS && window.MODELOS_HELIS[nome];
+  if (!M) return null;
+  const b64 = (t) => { const b = atob(t), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u.buffer; };
+  const mats = {};
+  const material = (tex, vidro) => {
+    const k = vidro ? '#vidro' : tex || '#cinza';
+    if (mats[k]) return mats[k];
+    if (vidro) return (mats[k] = QUAL === 0 ? new THREE.MeshLambertMaterial({ color: 0x1c2833 })
+      : new THREE.MeshStandardMaterial({ color: 0x1a2632, roughness: 0.08, metalness: 0.85, envMapIntensity: 1.4, side: THREE.DoubleSide }));
+    let map = null;
+    if (tex) {
+      const kt = nome + '/' + tex;
+      map = _texHeli[kt] || (_texHeli[kt] = new THREE.TextureLoader().load(M.texturas[tex]));
+      map.colorSpace = THREE.SRGBColorSpace; map.wrapS = map.wrapT = THREE.RepeatWrapping; map.anisotropy = QUAL === 0 ? 2 : 4;
+    }
+    const op = { map, color: tex ? 0xffffff : 0x55595d, side: THREE.DoubleSide };
+    // sem o reflexo do céu (qualidade baixa) a pintura cinza fica escura demais: clareia um pouco
+    if (QUAL === 0 && tex) op.color = new THREE.Color(1.3, 1.3, 1.3);
+    return (mats[k] = QUAL === 0 ? new THREE.MeshLambertMaterial(op) : new THREE.MeshStandardMaterial({ ...op, roughness: 0.66, metalness: 0.22, envMapIntensity: 0.7 }));
+  };
+  const def = { ...extra, malhas: [] };
+  for (const pt of M.partes) {
+    const P = new Int16Array(b64(pt.p)), U = new Int16Array(b64(pt.uv));
+    const pos = new Float32Array(P.length), uv = new Float32Array(U.length);
+    for (let i = 0; i < P.length; i++) pos[i] = P[i] / 1000;
+    for (let i = 0; i < U.length; i++) uv[i] = U[i] / 4096;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    g.setIndex(new THREE.BufferAttribute(pt.i32 ? new Uint32Array(b64(pt.i)) : new Uint16Array(b64(pt.i)), 1));
+    g.computeVertexNormals(); g.computeBoundingSphere();
+    const m = { geo: g, mat: material(pt.tex, pt.vidro) };
+    if (pt.peca === 'corpo') def.malhas.push(m);
+    else (def[pt.peca + 'Malhas'] || (def[pt.peca + 'Malhas'] = [])).push(m);
+  }
+  const pv = M.pivos;
+  if (pv.rotor) { def.rotor = true; [def.rotorX, def.rotorY, def.rotorZ] = pv.rotor; }
+  if (pv.rotor2) { def.rotor2 = true; [def.rotor2X, def.rotor2Y, def.rotor2Z] = pv.rotor2; }
+  if (pv.cauda) { def.cauda = true; def.caudaPos = pv.cauda; def.caudaEixo = 'x'; }
+  def.real = true;
+  return def;
+}
+
 // cria o objeto 3D de um tipo; devolve {grupo, torre, rotor, rotor2, cauda, nacele...}
 export function criarModelo(nome) {
   const def = cache['_d_' + nome] || (cache['_d_' + nome] = TODOS[nome]());
@@ -1528,18 +1581,25 @@ export function criarModelo(nome) {
     t.position.set(0, def.torreY, def.torreZ);
     grupo.add(t); r.torre = t;
   }
+  // peça móvel: uma malha (modelos feitos no jogo) ou várias texturizadas (modelos 3D importados)
+  const movel = (geo, malhas) => {
+    if (!malhas) return new THREE.Mesh(geo, MAT_ROTOR);
+    const g = new THREE.Group();
+    for (const m of malhas) g.add(new THREE.Mesh(m.geo, m.mat));
+    return g;
+  };
   if (def.rotor && !def.nacele) {
-    const ro = new THREE.Mesh(def.rotor, MAT_ROTOR);
-    ro.position.set(0, def.rotorY, def.rotorZ);
+    const ro = movel(def.rotor, def.rotorMalhas);
+    ro.position.set(def.rotorX || 0, def.rotorY, def.rotorZ);
     grupo.add(ro); r.rotor = ro;
   }
   if (def.rotor2) {
-    const ro = new THREE.Mesh(def.rotor2, MAT_ROTOR);
-    ro.position.set(0, def.rotor2Y, def.rotor2Z);
+    const ro = movel(def.rotor2, def.rotor2Malhas);
+    ro.position.set(def.rotor2X || 0, def.rotor2Y, def.rotor2Z);
     grupo.add(ro); r.rotor2 = ro;
   }
   if (def.cauda) {
-    const ca = new THREE.Mesh(def.cauda, MAT_ROTOR);
+    const ca = movel(def.cauda, def.caudaMalhas);
     ca.position.set(...def.caudaPos);
     grupo.add(ca); r.cauda = ca;
   }
