@@ -11,6 +11,8 @@ const $ = (s) => document.querySelector(s);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
 const fmt = (n) => Math.floor(n).toLocaleString('pt-BR');
 
+const NITIDEZ = [['auto', 'Automática'], ['1', 'Máxima (tela cheia)'], ['0.85', 'Alta'], ['0.7', 'Média (mais leve)'], ['0.55', 'Baixa (mais leve ainda)']];
+
 export class UI {
   constructor(camRTS) {
     this.cam = camRTS;
@@ -353,7 +355,7 @@ export class UI {
 
   // ---------------- marcadores sobre o 3D ----------------
   desenharOverlay(dt) {
-    const W = innerWidth, H = innerHeight, dpr = (G.cfg.qualidade ?? 1) === 0 ? 1 : Math.min(1.5, devicePixelRatio || 1);
+    const W = innerWidth, H = innerHeight, dpr = Math.min(2, devicePixelRatio || 1);   // textos e barras sempre na resolução da tela
     if (this.ov.width !== Math.round(W * dpr)) { this.ov.width = Math.round(W * dpr); this.ov.height = Math.round(H * dpr); }
     const g = this.ctx;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -482,11 +484,13 @@ export class UI {
       <button class="bt grande" data-a="voltar">▶ Continuar</button>
       <button class="bt" data-a="ajuda">❓ Como jogar</button>
       <label><input type="checkbox" data-a="som" ${G.cfg.som ? 'checked' : ''}> 🔊 Som</label>
+      <label>🔍 Nitidez <select data-a="nit">${NITIDEZ.map(([v, t]) => `<option value="${v}" ${String(G.cfg.nitidez ?? 'auto') === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
       <button class="bt" data-a="nova">🔄 Nova partida</button>`);
     m.querySelector('[data-a=voltar]').onclick = () => { m.remove(); G.pausado = false; this.atualizarTopo(); };
     m.querySelector('[data-a=ajuda]').onclick = () => this.ajuda();
     m.querySelector('[data-a=som]').onchange = (e) => { G.cfg.som = e.target.checked; somLigado(e.target.checked); G.salvarCfg(); };
     m.querySelector('[data-a=nova]').onclick = () => location.reload();
+    m.querySelector('[data-a=nit]').onchange = (e) => { G.cfg.nitidez = e.target.value === 'auto' ? 'auto' : +e.target.value; G.salvarCfg(); G.aplicarNitidez(); };
   }
 
   ajuda() {

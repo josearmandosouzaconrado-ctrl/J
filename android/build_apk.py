@@ -42,8 +42,8 @@ if MIAMI:
     PACKAGE = 'com.miami.surtozumbi'
     APP_NAME = 'Miami: Surto Zumbi'
     UA_TAG = ' MiamiZumbiAPK'
-    VERSION_CODE = 11
-    VERSION_NAME = '1.9.0'
+    VERSION_CODE = 12
+    VERSION_NAME = '1.9.1'
     SIGN_DIR = 'signing_miami'
     CERT_NOME = 'Miami Surto Zumbi'
 ACTIVITY = PACKAGE + '.MainActivity'

@@ -39,11 +39,21 @@ async function iniciar() {
   await new Promise((r) => setTimeout(r, 30));
   const q = G.cfg.qualidade ?? 1;
   definirQualidade(q);
-  const renderer = new THREE.WebGLRenderer({ antialias: q >= 2, powerPreference: 'high-performance', stencil: false });
+  // antisserrilhado ligado sempre: nas GPUs de celular (Mali, Adreno) ele é quase de graça
+  const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', stencil: false });
   // resolução base por qualidade; um ajuste automático reduz mais se o FPS cair
-  const prBase = q === 0 ? Math.min(1, devicePixelRatio) * 0.7 : q === 1 ? Math.min(1.25, devicePixelRatio) : Math.min(2, devicePixelRatio);
-  let escalaRes = 1;
-  renderer.setPixelRatio(prBase);
+  // nitidez: fração da resolução real da tela. "auto" usa um valor por qualidade e ajusta sozinho se ficar lento
+  const dprTela = Math.min(2.5, devicePixelRatio || 1);
+  let prBase = 1, escalaRes = 1;
+  G.aplicarNitidez = () => {
+    const n = G.cfg.nitidez ?? 'auto';
+    const f = n === 'auto' ? (q === 0 ? 0.8 : q === 1 ? 0.95 : 1) : +n;
+    prBase = Math.max(0.75, dprTela * f);
+    escalaRes = 1;
+    renderer.setPixelRatio(prBase);
+    renderer.setSize(innerWidth, innerHeight);
+  };
+  G.aplicarNitidez();
   renderer.setSize(innerWidth, innerHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -169,12 +179,12 @@ async function iniciar() {
     nQuadro++;
     // resolução dinâmica: se ficar lento, reduz; se sobrar, volta a subir
     mediaQuadro = mediaQuadro * 0.95 + Math.min(200, bruto) * 0.05;
-    if (G.iniciado && ++contaRes > 90) {
+    if (G.iniciado && (G.cfg.nitidez ?? 'auto') === 'auto' && ++contaRes > 90) {
       contaRes = 0;
       const meta = q === 0 ? 40 : 24;
       let nova = escalaRes;
-      if (mediaQuadro > meta * 1.25 && escalaRes > 0.55) nova = escalaRes - 0.1;
-      else if (mediaQuadro < meta * 0.75 && escalaRes < 1) nova = Math.min(1, escalaRes + 0.1);
+      if (mediaQuadro > meta * 1.3 && escalaRes > 0.75) nova = Math.round((escalaRes - 0.05) * 100) / 100;
+      else if (mediaQuadro < meta * 0.8 && escalaRes < 1) nova = Math.min(1, escalaRes + 0.05);
       if (nova !== escalaRes) { escalaRes = nova; renderer.setPixelRatio(prBase * escalaRes); }
     }
     // sombras só quando a câmera está perto (de longe nem aparecem)
@@ -273,7 +283,9 @@ async function iniciar() {
     dif = b.dataset.dif;
     menu.querySelectorAll('[data-dif]').forEach((x) => x.classList.toggle('ativo', x === b));
   }));
-  const chkSom = $('#m-som'), selQ = $('#m-qual');
+  const chkSom = $('#m-som'), selQ = $('#m-qual'), selN = $('#m-nit');
+  selN.value = String(G.cfg.nitidez ?? 'auto');
+  selN.onchange = () => { G.cfg.nitidez = selN.value === 'auto' ? 'auto' : +selN.value; G.salvarCfg(); G.aplicarNitidez(); };
   chkSom.checked = G.cfg.som !== false; selQ.value = String(q);
   chkSom.onchange = () => { G.cfg.som = chkSom.checked; somLigado(chkSom.checked); G.salvarCfg(); };
   selQ.onchange = () => { G.cfg.qualidade = +selQ.value; G.salvarCfg(); $('#m-qual-aviso').textContent = 'A qualidade muda ao abrir o jogo de novo.'; };
