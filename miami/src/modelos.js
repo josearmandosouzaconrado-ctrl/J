@@ -148,7 +148,7 @@ export class Mont {
   }
   build(ao = true) {
     const g = mergeGeometries(this.g);
-    if (SUJAR && ao) {
+    if (SUJAR && ao && !this.limpa) {
       // poeira e barro nas partes baixas, manchas aleatórias de uso
       const p = g.attributes.position, c = g.attributes.color;
       const PO = [0.62, 0.53, 0.4];
@@ -674,9 +674,9 @@ const AERO = {
     // SH-60B Seahawk da Marinha (modelo 3D texturizado); sem o arquivo, usa o Black Hawk
     return heliReal('seahawk') || AERO.blackhawk();
   },
-  blackhawk() {
+  blackhawk(cores = {}) {
     const c = new Mont(), v = new Mont();
-    const C = 0x59614a, C2 = 0x4b523e, ESC = 0x2c2f2a;
+    const C = cores.C ?? 0x59614a, C2 = cores.C2 ?? 0x4b523e, ESC = 0x2c2f2a;
     // fuselagem: nariz arredondado, cabine larga de fundo chato, cone de cauda afinando
     c.add(loftZ([
       { z: -10.1, w: 0.22, hT: 0.22, hB: 0.14, y: 2.45 },
@@ -739,8 +739,11 @@ const AERO = {
       c.bloco(0.35, 0.4, 1.3, 0x4f5743, sx * 1.15, 3.0, -1.6, 0, sx * 0.4, 0, 0.1);
       c.box(0.25, 0.08, 0.35, METAL, sx * 1.12, 0.62, 4.0);                  // degrau
       c.box(0.04, 0.03, 0.18, METAL, sx * 1.15, 1.85, 3.2);                  // maçaneta
-      insignia(c, sx * 0.31, 2.2, -6.6, 0.22, sx > 0 ? '+x' : '-x', true);
-      numero(c, '26543', sx * 0.08, 3.5, -8.8, 0.22, sx > 0 ? '+x' : '-x', 0x1e1e1e);
+      if (cores.marca) cores.marca(c, sx);
+      else {
+        insignia(c, sx * 0.31, 2.2, -6.6, 0.22, sx > 0 ? '+x' : '-x', true);
+        numero(c, '26543', sx * 0.08, 3.5, -8.8, 0.22, sx > 0 ? '+x' : '-x', 0x1e1e1e);
+      }
     }
     antena(c, 0.4, 2.75, -2.6, 0.8); antena(c, -0.4, 0.95, 2.0, 0.5);
     return { corpo: c.build(), vidro: v.build(false), rotor: rotor(4, 8.2), rotorY: 3.95, rotorZ: 0.6, cauda: rotorCauda(1.7), caudaPos: [0.3, 3.9, -9.4], caudaEixo: 'x' };
@@ -1492,6 +1495,337 @@ const ESTR = {
   },
 };
 
+
+// ================= Rússia e China =================
+const RU = 0x4b5631, RU2 = 0x3c4527, RU3 = 0x5c6740, CN = 0x58653f, CN2 = 0x48533a, CN3 = 0x6c7a52, ESC2 = 0x2b2d28;
+// estrela vermelha (marca das Forças Armadas russas e do Exército de Libertação Popular)
+function estrelaVerm(c, x, y, z, r, plano) { estrela(c, x, y, z, r, plano, 0xb3261e); }
+function chinaMarca(c, x, y, z, r, plano) {
+  estrela(c, x, y, z, r, plano, 0xc8261c);
+  numero(c, '81', x + (plano === '+x' ? 0.01 : plano === '-x' ? -0.01 : 0), y - r * 0.05, z, r * 0.45, plano, 0xf2d34a);
+}
+// canhão de tanque com evacuador de fumos e camisa térmica
+function canhao(t, comp, r, y, z, cor) {
+  t.cil(r, r * 1.1, comp, 10, cor, 0, y, z + comp / 2, Math.PI / 2);
+  t.cil(r * 1.5, r * 1.5, 0.7, 10, cor, 0, y, z + comp * 0.45, Math.PI / 2);
+  t.cil(r * 1.15, r * 1.15, 0.25, 10, ESC2, 0, y, z + comp + 0.1, Math.PI / 2);
+}
+// esteiras de tanque russo/chinês: 6 rodas grandes, sem rodas de retorno aparentes
+function lagartasLeste(M, comp, alt, x, larg, cor, saia = true) {
+  for (const s of [-1, 1]) {
+    const xx = s * x;
+    M.box(larg, 0.1, comp, PRETO, xx, alt, 0);
+    M.box(larg, 0.1, comp - 1.4, PRETO, xx, 0.06, 0);
+    M.box(larg, alt * 0.8, 0.12, PRETO, xx, alt * 0.5, comp / 2 - 0.35, 0.65);
+    M.box(larg, alt * 0.8, 0.12, PRETO, xx, alt * 0.5, -comp / 2 + 0.35, -0.65);
+    const nr = 6;
+    for (let i = 0; i < nr; i++) M.roda(alt * 0.4, larg * 0.9, 0x34362f, xx, alt * 0.42, -comp / 2 + 1.0 + i * (comp - 2.0) / (nr - 1));
+    M.roda(alt * 0.36, larg * 0.95, 0x30312c, xx, alt * 0.66, comp / 2 - 0.3);
+    M.roda(alt * 0.36, larg * 0.95, 0x30312c, xx, alt * 0.66, -comp / 2 + 0.3);
+    if (saia) M.box(0.08, alt * 0.5, comp - 0.4, cor, s * (x + larg / 2 + 0.05), alt * 0.85, 0);
+  }
+}
+// blindagem reativa (blocos) ao longo das saias
+function blocosERA(c, x, y, z0, z1, n, cor) {
+  for (const s of [-1, 1]) for (let i = 0; i < n; i++) c.box(0.12, 0.42, (z1 - z0) / n - 0.05, cor, s * x, y, z0 + (i + 0.5) * (z1 - z0) / n);
+}
+
+const LESTE_V = {
+  t90() {
+    // T-90M: casco baixo, torre com cunhas de blindagem reativa Relikt, canhão 125 mm, tambores de combustível atrás
+    const c = new Mont(), C = RU, C2 = RU2;
+    c.add(loftZ([
+      { z: -3.45, w: 3.4, hT: 0.55, hB: 0.5, y: 1.05, n: 7 },
+      { z: 2.4, w: 3.45, hT: 0.55, hB: 0.5, y: 1.05, n: 7 },
+      { z: 3.45, w: 3.3, hT: 0.08, hB: 0.48, y: 0.95, n: 5 },
+    ], 22), C);
+    c.box(3.75, 0.08, 6.6, C2, 0, 1.58, 0);
+    lagartasLeste(c, 6.9, 1.1, 1.45, 0.58, C);
+    blocosERA(c, 1.82, 1.05, -2.8, 2.9, 7, C2);
+    // cunha de blindagem reativa no glacis
+    for (let i = 0; i < 6; i++) c.box(0.5, 0.12, 0.7, C2, -1.25 + i * 0.5, 1.2, 3.0, -0.35);
+    // dois tambores de combustível atrás (marca registrada dos tanques russos)
+    for (const sx of [-0.55, 0.55]) c.cil(0.3, 0.3, 1.5, 12, 0x3a4024, sx, 1.45, -3.65, 0, 0, Math.PI / 2);
+    for (const sx of [-1, 1]) { c.box(0.6, 0.35, 1.7, C2, sx * 1.35, 1.75, -1.6); faroisFrente(c, 1.2, 1.25, 3.4); }
+    for (const sx of [-1, 1]) estrelaVerm(c, sx * 1.89, 1.25, -1.0, 0.24, sx > 0 ? '+x' : '-x');
+    const t = new Mont(); t.limpa = true;
+    t.add(loftZ([
+      { z: -1.9, w: 2.4, hT: 0.38, hB: 0.3, y: 0.3, n: 4 },
+      { z: -0.6, w: 2.7, hT: 0.45, hB: 0.32, y: 0.32, n: 4 },
+      { z: 0.9, w: 2.6, hT: 0.42, hB: 0.32, y: 0.32, n: 3.5 },
+      { z: 1.6, w: 1.9, hT: 0.3, hB: 0.3, y: 0.3, n: 3 },
+    ], 22), C);
+    // cunhas Relikt dos dois lados do canhão
+    for (const sx of [-1, 1]) {
+      t.add(loftZ([{ z: 0.6, w: 0.95, hT: 0.32, hB: 0.25, y: 0.42, x: sx * 0.78, n: 6 }, { z: 2.0, w: 0.55, hT: 0.16, hB: 0.18, y: 0.4, x: sx * 0.62, n: 5 }], 10), C2);
+      t.box(0.5, 0.6, 1.4, C2, sx * 1.35, 0.4, -0.9);              // caixas laterais
+    }
+    t.box(2.6, 0.75, 1.0, 0x3a4024, 0, 0.45, -2.3);                 // cesto/bagageiro traseiro
+    canhao(t, 5.2, 0.13, 0.35, 1.6, C2);
+    t.cil(0.38, 0.4, 0.3, 10, C2, 0.65, 0.95, -0.2);                // cúpula do comandante
+    t.box(0.5, 0.35, 0.5, C2, 0.65, 1.25, -0.2);                    // estação de armas remota
+    t.cil(0.03, 0.03, 0.9, 6, METAL, 0.65, 1.3, 0.35, Math.PI / 2);
+    t.box(0.45, 0.4, 0.45, ESC2, -0.6, 0.95, 0.4);                   // mira do atirador
+    antena(t, -0.9, 0.8, -1.6, 2.4);
+    return { corpo: c.build(), torre: t.build(), torreY: 1.6, torreZ: 0.2, canoZ: 6.9, canoY: 0.35 };
+  },
+  type99() {
+    // Type 99A: casco longo, torre com frente em ponta de flecha, canhão 125 mm, caixa do dissuasor a laser
+    const c = new Mont(), C = CN, C2 = CN2;
+    c.add(loftZ([
+      { z: -3.75, w: 3.3, hT: 0.6, hB: 0.5, y: 1.1, n: 7 },
+      { z: 2.6, w: 3.4, hT: 0.6, hB: 0.5, y: 1.1, n: 7 },
+      { z: 3.75, w: 3.2, hT: 0.1, hB: 0.48, y: 1.0, n: 5 },
+    ], 22), C);
+    c.box(3.6, 0.08, 7.2, C2, 0, 1.68, 0);
+    lagartasLeste(c, 7.4, 1.15, 1.42, 0.58, C);
+    for (const s of [-1, 1]) for (let i = 0; i < 6; i++) c.box(0.12, 0.5, 1.05, i % 2 ? CN3 : C, s * 1.78, 1.1, -2.8 + i * 1.15);
+    faroisFrente(c, 1.15, 1.35, 3.7);
+    for (const sx of [-1, 1]) chinaMarca(c, sx * 1.85, 1.15, 0.6, 0.26, sx > 0 ? '+x' : '-x');
+    const t = new Mont(); t.limpa = true;
+    // torre de laterais retas e frente em "ponta de flecha"
+    t.planta([[-1.35, -2.0], [1.35, -2.0], [1.45, 0.4], [0.4, 2.0], [-0.4, 2.0], [-1.45, 0.4]], 0.85, C, -0.05, 0.05);
+    t.planta([[-1.2, -1.9], [1.2, -1.9], [1.3, 0.3], [0.35, 1.8], [-0.35, 1.8], [-1.3, 0.3]], 0.12, C2, 0.8);
+    canhao(t, 5.4, 0.13, 0.4, 1.9, C2);
+    t.box(0.55, 0.42, 0.7, ESC2, -1.0, 1.1, 0.0);                    // caixa do dissuasor a laser
+    t.box(0.5, 0.35, 0.5, C2, 0.7, 1.1, -0.4);
+    t.cil(0.035, 0.035, 1.0, 6, METAL, 0.7, 1.15, 0.3, Math.PI / 2);   // metralhadora 12,7 mm
+    t.box(2.5, 0.55, 0.8, CN2, 0, 0.45, -2.3);
+    for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) t.cil(0.06, 0.06, 0.3, 6, METAL, sx * 1.3, 0.6 + i * 0.1, -1.2, 0.5);   // lançadores de fumaça
+    antena(t, -0.9, 0.9, -1.7, 2.4);
+    return { corpo: c.build(), torre: t.build(), torreY: 1.7, torreZ: 0.1, canoZ: 7.3, canoY: 0.4 };
+  },
+  bmp3() {
+    // BMP-3: casco baixo com glacis longo, aleta anfíbia, torre com canhão 100 mm e 30 mm
+    const c = new Mont(), C = RU, C2 = RU2;
+    c.add(loftZ([
+      { z: -3.6, w: 3.0, hT: 0.65, hB: 0.55, y: 1.2, n: 7 },
+      { z: 0.4, w: 3.1, hT: 0.65, hB: 0.55, y: 1.2, n: 7 },
+      { z: 2.9, w: 3.0, hT: 0.1, hB: 0.5, y: 1.05, n: 5 },
+      { z: 3.6, w: 2.8, hT: 0.02, hB: 0.25, y: 0.85, n: 4 },
+    ], 22), C);
+    lagartasLeste(c, 6.9, 1.0, 1.42, 0.5, C);
+    c.box(3.0, 0.1, 0.5, C2, 0, 1.0, 3.6, 0.4);                      // aleta anfíbia
+    c.box(1.2, 1.0, 0.1, C2, -0.6, 1.2, -3.62);                      // portas traseiras
+    for (const sx of [-1, 1]) { estrelaVerm(c, sx * 1.56, 1.35, -1.2, 0.22, sx > 0 ? '+x' : '-x'); c.box(0.08, 0.06, 2.8, C2, sx * 1.55, 1.8, -1.0); }
+    faroisFrente(c, 1.1, 1.15, 3.55);
+    numero(c, '312', 1.58, 1.4, 0.8, 0.22, '+x', 0xf0f0ea); numero(c, '312', -1.58, 1.4, 0.8, 0.22, '-x', 0xf0f0ea);
+    const t = new Mont(); t.limpa = true;
+    t.add(loftZ([{ z: -1.0, w: 1.9, hT: 0.35, hB: 0.3, y: 0.3, n: 4 }, { z: 0.8, w: 2.0, hT: 0.38, hB: 0.3, y: 0.3, n: 4 }, { z: 1.3, w: 1.3, hT: 0.25, hB: 0.28, y: 0.28 }], 18), C);
+    t.cil(0.14, 0.15, 3.0, 10, C2, 0, 0.35, 2.6, Math.PI / 2);       // 100 mm
+    t.cil(0.05, 0.05, 2.8, 8, METAL, 0.32, 0.32, 2.5, Math.PI / 2);   // 30 mm
+    t.box(0.35, 0.3, 0.4, ESC2, -0.55, 0.75, 0.3);
+    t.cil(0.3, 0.32, 0.2, 10, C2, 0.5, 0.72, -0.4);
+    antena(t, -0.7, 0.6, -0.9, 2.2);
+    return { corpo: c.build(), torre: t.build(), torreY: 1.82, torreZ: 0.6, canoZ: 4.1, canoY: 0.35 };
+  },
+  zbd04() {
+    // ZBD-04A: casco anguloso com blindagem adicional em caixas, torre com 100 mm + 30 mm
+    const c = new Mont(), C = CN, C2 = CN2;
+    c.add(loftZ([
+      { z: -3.4, w: 3.1, hT: 0.7, hB: 0.55, y: 1.25, n: 8 },
+      { z: 1.2, w: 3.15, hT: 0.7, hB: 0.55, y: 1.25, n: 8 },
+      { z: 2.8, w: 3.05, hT: 0.15, hB: 0.5, y: 1.1, n: 6 },
+      { z: 3.4, w: 2.9, hT: 0.02, hB: 0.3, y: 0.9, n: 4 },
+    ], 22), C);
+    lagartasLeste(c, 6.7, 1.0, 1.45, 0.52, C, false);
+    for (const s of [-1, 1]) for (let i = 0; i < 5; i++) c.box(0.16, 0.65, 1.15, i % 2 ? CN3 : C2, s * 1.8, 1.25, -2.6 + i * 1.25);
+    c.box(1.3, 1.1, 0.1, C2, 0, 1.25, -3.42);
+    faroisFrente(c, 1.1, 1.2, 3.35);
+    for (const sx of [-1, 1]) chinaMarca(c, sx * 1.89, 1.3, 0.2, 0.22, sx > 0 ? '+x' : '-x');
+    const t = new Mont(); t.limpa = true;
+    t.planta([[-1.05, -1.1], [1.05, -1.1], [1.1, 0.7], [0.6, 1.3], [-0.6, 1.3], [-1.1, 0.7]], 0.7, C, 0, 0.04);
+    t.cil(0.14, 0.15, 3.0, 10, C2, 0, 0.38, 2.7, Math.PI / 2);
+    t.cil(0.05, 0.05, 2.7, 8, METAL, 0.32, 0.36, 2.55, Math.PI / 2);
+    t.box(0.4, 0.35, 0.45, ESC2, -0.6, 0.85, 0.2);
+    for (const sx of [-1, 1]) t.box(0.3, 0.3, 0.9, C2, sx * 1.15, 0.45, -0.2);   // mísseis HJ-73
+    antena(t, -0.75, 0.7, -0.9, 2.2);
+    return { corpo: c.build(), torre: t.build(), torreY: 1.95, torreZ: 0.4, canoZ: 4.2, canoY: 0.38 };
+  },
+  btr82() {
+    // BTR-82A: 8x8 com casco de barco (proa em cunha), portas laterais entre os eixos, torre com 30 mm
+    const c = new Mont(), C = RU, C2 = RU2;
+    c.add(loftZ([
+      { z: -3.8, w: 2.6, hT: 0.55, hB: 0.6, y: 1.55, n: 6, nB: 3 },
+      { z: 2.0, w: 2.85, hT: 0.6, hB: 0.65, y: 1.55, n: 6, nB: 3 },
+      { z: 3.2, w: 2.5, hT: 0.25, hB: 0.65, y: 1.45, n: 5, nB: 3 },
+      { z: 3.85, w: 1.6, hT: 0.02, hB: 0.3, y: 1.15, n: 4 },
+    ], 22), C);
+    rodas(c, [-1.25, 1.25], [-2.7, -1.35, 1.0, 2.35], 0.6, 0.45);
+    for (const sx of [-1, 1]) {
+      c.box(0.08, 0.9, 1.0, C2, sx * 1.42, 1.55, -0.2);              // porta lateral
+      estrelaVerm(c, sx * 1.44, 1.65, 1.6, 0.22, sx > 0 ? '+x' : '-x');
+      for (let i = 0; i < 3; i++) c.cil(0.08, 0.08, 0.05, 8, VIDRO, sx * 1.33, 1.95, -2.6 + i * 1.6, 0, 0, Math.PI / 2);   // seteiras
+    }
+    numero(c, '243', 1.44, 1.5, -2.0, 0.22, '+x', 0xf0f0ea); numero(c, '243', -1.44, 1.5, -2.0, 0.22, '-x', 0xf0f0ea);
+    faroisFrente(c, 0.6, 1.5, 3.7); antena(c, -1.0, 2.15, -3.0, 2.6);
+    const t = new Mont(); t.limpa = true;
+    t.cil(0.65, 0.75, 0.55, 10, C, 0, 0.27, 0);
+    t.cil(0.06, 0.07, 2.4, 8, METAL, 0.08, 0.35, 1.7, Math.PI / 2);
+    t.cil(0.03, 0.03, 0.9, 6, METAL, -0.25, 0.32, 1.0, Math.PI / 2);
+    t.box(0.3, 0.3, 0.3, ESC2, -0.45, 0.6, 0.2);
+    return { corpo: c.build(), torre: t.build(), torreY: 2.15, torreZ: 1.0, canoZ: 2.9, canoY: 0.35 };
+  },
+  zbl08() {
+    // ZBL-08: 8x8 de laterais retas e frente inclinada, torre de 30 mm
+    const c = new Mont(), C = CN, C2 = CN2;
+    c.add(loftZ([
+      { z: -3.9, w: 2.95, hT: 0.8, hB: 0.7, y: 1.6, n: 8 },
+      { z: 2.3, w: 3.0, hT: 0.8, hB: 0.72, y: 1.6, n: 8 },
+      { z: 3.5, w: 2.9, hT: 0.2, hB: 0.7, y: 1.5, n: 6 },
+      { z: 4.0, w: 2.6, hT: 0.02, hB: 0.35, y: 1.15, n: 4 },
+    ], 22), C);
+    rodas(c, [-1.3, 1.3], [-2.9, -1.5, 1.0, 2.4], 0.6, 0.48);
+    c.box(1.4, 1.3, 0.1, C2, 0, 1.6, -3.92);
+    for (const sx of [-1, 1]) { chinaMarca(c, sx * 1.5, 1.8, -1.5, 0.24, sx > 0 ? '+x' : '-x'); for (let i = 0; i < 4; i++) c.box(0.1, 0.45, 1.3, C2, sx * 1.52, 1.25, -2.8 + i * 1.6); }
+    faroisFrente(c, 0.9, 1.5, 3.9); antena(c, 1.1, 2.4, -3.3, 2.6);
+    const t = new Mont(); t.limpa = true;
+    t.planta([[-0.85, -0.9], [0.85, -0.9], [0.9, 0.5], [0.45, 1.0], [-0.45, 1.0], [-0.9, 0.5]], 0.6, C, 0, 0.04);
+    t.cil(0.06, 0.07, 2.4, 8, METAL, 0, 0.32, 2.1, Math.PI / 2);
+    t.box(0.3, 0.3, 0.35, ESC2, -0.5, 0.75, 0.2);
+    return { corpo: c.build(), torre: t.build(), torreY: 2.4, torreZ: 0.6, canoZ: 3.3, canoY: 0.32 };
+  },
+  tigr() {
+    // GAZ Tigr: jipe blindado russo, capô alto com grade vertical, cabine quadrada de janelas pequenas
+    const c = new Mont(), v = new Mont(), C = RU, C2 = RU2;
+    c.box(2.2, 0.5, 5.3, C2, 0, 0.75, 0);
+    c.add(loftZ([
+      { z: -2.7, w: 2.35, hT: 0.95, hB: 0.3, y: 1.35, n: 6 },
+      { z: 0.6, w: 2.4, hT: 0.95, hB: 0.3, y: 1.35, n: 6 },
+      { z: 0.9, w: 2.35, hT: 0.35, hB: 0.3, y: 1.3, n: 5 },
+      { z: 2.85, w: 2.2, hT: 0.25, hB: 0.3, y: 1.25, n: 5 },
+    ], 20), C);
+    c.box(1.6, 0.5, 0.08, ESC2, 0, 1.15, 2.88);                      // grade vertical
+    for (const sx of [-1, 1]) { v.box(0.04, 0.42, 0.75, VIDRO, sx * 1.2, 1.95, 0.1); v.box(0.04, 0.42, 0.55, VIDRO, sx * 1.2, 1.95, -1.1); estrelaVerm(c, sx * 1.21, 1.5, -1.9, 0.18, sx > 0 ? '+x' : '-x'); }
+    v.box(1.8, 0.45, 0.05, VIDRO, 0, 1.95, 0.66);
+    rodas(c, [-1.0, 1.0], [-1.75, 1.75], 0.55, 0.38);
+    faroisFrente(c, 0.8, 1.3, 2.88);
+    c.box(0.9, 0.12, 0.9, C2, 0, 2.38, -0.5);
+    const t = new Mont(); t.limpa = true;
+    t.box(0.5, 0.35, 0.5, C2, 0, 0.18, 0);
+    t.cil(0.035, 0.035, 1.1, 6, METAL, 0, 0.25, 0.75, Math.PI / 2);
+    return { corpo: c.build(), vidro: v.build(false), torre: t.build(), torreY: 2.44, torreZ: -0.5, canoZ: 1.3, canoY: 0.25 };
+  },
+  mengshi() {
+    // Dongfeng Mengshi: parecido com o Humvee, cabine mais alta e capô com grade larga
+    const c = new Mont(), v = new Mont(), C = CN, C2 = CN2;
+    c.box(2.0, 0.45, 4.6, C2, 0, 0.72, 0);
+    c.add(loftZ([
+      { z: -2.4, w: 2.2, hT: 0.85, hB: 0.32, y: 1.2, n: 7 },
+      { z: 0.5, w: 2.25, hT: 0.88, hB: 0.34, y: 1.2, n: 7 },
+      { z: 0.8, w: 2.22, hT: 0.32, hB: 0.34, y: 1.15, n: 6 },
+      { z: 2.35, w: 2.15, hT: 0.24, hB: 0.32, y: 1.1, n: 6 },
+    ], 20), C);
+    c.box(1.7, 0.4, 0.08, ESC2, 0, 1.05, 2.38);
+    for (const sx of [-1, 1]) { v.box(0.04, 0.45, 0.85, VIDRO, sx * 1.13, 1.75, 0.0); v.box(0.04, 0.45, 0.85, VIDRO, sx * 1.13, 1.75, -1.15); chinaMarca(c, sx * 1.14, 1.3, -1.9, 0.17, sx > 0 ? '+x' : '-x'); }
+    v.box(1.8, 0.45, 0.05, VIDRO, 0, 1.75, 0.56);
+    rodas(c, [-0.95, 0.95], [-1.55, 1.55], 0.52, 0.38);
+    faroisFrente(c, 0.8, 1.15, 2.38);
+    const t = new Mont(); t.limpa = true;
+    t.cil(0.4, 0.45, 0.3, 10, C2, 0, 0.15, 0);
+    t.cil(0.035, 0.035, 1.1, 6, METAL, 0, 0.35, 0.7, Math.PI / 2);
+    t.box(0.5, 0.35, 0.06, C2, 0, 0.45, 0.25);
+    return { corpo: c.build(), vidro: v.build(false), torre: t.build(), torreY: 2.1, torreZ: -0.5, canoZ: 1.25, canoY: 0.35 };
+  },
+};
+
+const LESTE_A = {
+  ka52() {
+    // Ka-52 Alligator: rotores coaxiais (sem rotor de cauda), cabine lado a lado, cauda com duas derivas
+    const c = new Mont(), v = new Mont(), C = 0x4e5a40, C2 = 0x3e4834;
+    c.add(loftZ([
+      { z: -7.4, w: 0.4, hT: 0.3, hB: 0.25, y: 2.0 },
+      { z: -3.5, w: 0.75, hT: 0.55, hB: 0.45, y: 1.9 },
+      { z: -1.2, w: 1.5, hT: 0.95, hB: 0.75, y: 1.85, n: 3 },
+      { z: 1.8, w: 1.6, hT: 0.95, hB: 0.75, y: 1.8, n: 3 },
+      { z: 3.4, w: 1.4, hT: 0.65, hB: 0.65, y: 1.65, n: 2.6 },
+      { z: 4.7, w: 0.7, hT: 0.3, hB: 0.4, y: 1.45 },
+    ], 20), C);
+    v.add(loftZ([{ z: 1.2, w: 1.45, hT: 0.65, hB: 0.05, y: 2.55, n: 3 }, { z: 2.6, w: 1.4, hT: 0.55, hB: 0.05, y: 2.45, n: 2.8 }, { z: 3.7, w: 1.1, hT: 0.3, hB: 0.05, y: 2.2 }], 16), VIDRO);
+    for (const sx of [-1, 1]) {
+      casulo(c, [[-2.4, 0.25], [-1.9, 0.42], [0.4, 0.42], [0.9, 0.28]], C2, sx * 0.95, 2.7, -0.6);
+      c.add(asa({ p: [sx * 0.75, 1.75, 0.6], corda: 1.2, esp: 0.14 }, { p: [sx * 3.0, 1.6, 0.5], corda: 0.9, esp: 0.12 }), C2);
+      casulo(c, [[-0.9, 0.24], [-0.7, 0.32], [0.7, 0.32], [0.9, 0.25]], 0x55593f, sx * 2.0, 1.35, 0.5);
+      casulo(c, [[-0.9, 0.12], [-0.7, 0.16], [0.9, 0.16], [1.1, 0.04]], 0x6b6d58, sx * 2.8, 1.35, 0.5);
+      c.add(asa({ p: [sx * 0.2, 2.1, -7.0], corda: 1.1, esp: 0.1 }, { p: [sx * 1.3, 2.1, -7.2], corda: 0.9, esp: 0.08 }), C);
+      c.add(asa({ p: [sx * 1.3, 1.6, -6.9], corda: 1.0, esp: 0.1 }, { p: [sx * 1.3, 3.2, -7.4], corda: 0.7, esp: 0.08 }), C);   // derivas
+      c.cil(0.05, 0.05, 1.1, 6, METAL, sx * 0.85, 0.65, 2.6, 0, 0, sx * 0.35);
+      c.roda(0.3, 0.2, PNEU, sx * 1.1, 0.3, 2.6);
+      estrelaVerm(c, sx * 0.21, 2.0, -5.5, 0.25, sx > 0 ? '+x' : '-x');
+    }
+    c.cil(0.05, 0.05, 2.0, 6, METAL, 0.8, 1.35, 2.0, Math.PI / 2);      // canhão 30 mm lateral
+    c.esf(0.35, ESC2, 0, 1.2, 4.6);                                      // torreta de sensores
+    c.cil(0.28, 0.32, 1.6, 12, C2, 0, 3.4, 0.4);                         // mastro dos rotores
+    c.roda(0.2, 0.15, PNEU, 0, 0.25, -6.6);
+    return { corpo: c.build(), vidro: v.build(false), rotor: rotor(3, 7.25, 0x2a2a2a, 0.55), rotorY: 4.35, rotorZ: 0.4, rotor2: rotor(3, 7.25, 0x2a2a2a, 0.55), rotor2Y: 3.5, rotor2Z: 0.4, armaZ: 4.6, armaY: 1.2 };
+  },
+  z10() {
+    // Z-10: helicóptero de ataque chinês, fuselagem estreita e angulosa, cabines em tandem, rotor de 5 pás
+    const c = new Mont(), v = new Mont(), C = 0x5d6a52, C2 = 0x4c5844;
+    c.add(loftZ([
+      { z: -8.6, w: 0.25, hT: 0.25, hB: 0.2, y: 2.05 },
+      { z: -4.0, w: 0.55, hT: 0.5, hB: 0.4, y: 1.92, n: 4 },
+      { z: -1.4, w: 0.95, hT: 0.85, hB: 0.6, y: 1.84, n: 5 },
+      { z: 1.6, w: 0.95, hT: 0.85, hB: 0.6, y: 1.8, n: 5 },
+      { z: 3.6, w: 0.75, hT: 0.55, hB: 0.5, y: 1.65, n: 4 },
+      { z: 5.0, w: 0.3, hT: 0.15, hB: 0.25, y: 1.5 },
+    ], 18), C);
+    v.add(loftZ([{ z: 0.3, w: 0.85, hT: 0.65, hB: 0.05, y: 2.55, n: 4 }, { z: 1.8, w: 0.85, hT: 0.55, hB: 0.05, y: 2.5, n: 4 }, { z: 2.4, w: 0.8, hT: 0.4, hB: 0.05, y: 2.35, n: 4 }, { z: 3.8, w: 0.6, hT: 0.35, hB: 0.05, y: 2.15 }], 14), VIDRO);
+    for (const sx of [-1, 1]) {
+      casulo(c, [[-2.6, 0.2], [-2.1, 0.4], [0.3, 0.4], [0.8, 0.26]], C2, sx * 0.8, 2.6, -0.5);
+      c.add(asa({ p: [sx * 0.6, 1.95, 1.0], corda: 1.0, esp: 0.12 }, { p: [sx * 2.6, 1.8, 0.9], corda: 0.75, esp: 0.1 }), C2);
+      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) casulo(c, [[-0.8, 0.02], [-0.6, 0.09], [0.6, 0.09], [0.85, 0.01]], 0x7a7a52, sx * (1.75 + i * 0.24), 1.6 - j * 0.22, 0.8, 1, 1, 8);
+      casulo(c, [[-0.9, 0.22], [-0.7, 0.3], [0.7, 0.3], [0.9, 0.24]], 0x55593f, sx * 2.5, 1.62, 0.6);
+      c.roda(0.28, 0.18, PNEU, sx * 0.95, 0.28, 2.4);
+      c.cil(0.05, 0.05, 1.0, 6, METAL, sx * 0.8, 0.6, 2.4, 0, 0, sx * 0.3);
+      chinaMarca(c, sx * 0.29, 2.0, -5.5, 0.24, sx > 0 ? '+x' : '-x');
+    }
+    c.add(asa({ p: [0, 2.15, -7.9], corda: 1.3, esp: 0.12 }, { p: [0, 3.9, -8.7], corda: 0.9, esp: 0.1 }), C);
+    asas(c, { p: [0.1, 1.95, -7.6], corda: 0.8, esp: 0.1 }, { p: [1.4, 1.95, -7.8], corda: 0.6, esp: 0.08 }, C);
+    c.cil(0.05, 0.05, 1.5, 6, METAL, 0, 1.05, 4.6, Math.PI / 2);          // canhão 23 mm
+    c.esf(0.3, ESC2, 0, 1.25, 5.0);
+    c.cil(0.2, 0.26, 0.8, 8, C2, 0, 3.4, 0.1);
+    c.roda(0.18, 0.12, PNEU, 0, 0.2, -7.8);
+    return { corpo: c.build(), vidro: v.build(false), rotor: rotor(5, 6.5), rotorY: 3.95, rotorZ: 0.1, cauda: rotorCauda(1.2), caudaPos: [0.25, 3.0, -8.7], caudaEixo: 'x', armaZ: 4.9, armaY: 1.05 };
+  },
+  mi8() {
+    // Mi-8AMTSh: fuselagem longa com nariz envidraçado, tanques externos, portas traseiras em concha, rotor de 5 pás
+    const c = new Mont(), v = new Mont(), C = 0x56613f, C2 = 0x454f33;
+    c.add(loftZ([
+      { z: -12.0, w: 0.3, hT: 0.3, hB: 0.2, y: 2.9 },
+      { z: -7.5, w: 0.6, hT: 0.5, hB: 0.4, y: 2.6 },
+      { z: -4.0, w: 2.2, hT: 1.1, hB: 0.95, y: 2.05, n: 3, nB: 5 },
+      { z: 3.0, w: 2.35, hT: 1.15, hB: 0.95, y: 2.0, n: 3, nB: 5 },
+      { z: 5.0, w: 2.1, hT: 1.0, hB: 0.9, y: 1.95, n: 2.8 },
+      { z: 6.4, w: 1.6, hT: 0.7, hB: 0.75, y: 1.8, n: 2.4 },
+      { z: 7.1, w: 0.8, hT: 0.3, hB: 0.4, y: 1.6 },
+    ], 22), C);
+    v.add(loftZ([{ z: 5.3, w: 1.9, hT: 0.85, hB: 0.2, y: 2.1, n: 2.6 }, { z: 6.5, w: 1.45, hT: 0.55, hB: 0.3, y: 1.85, n: 2.4 }, { z: 7.15, w: 0.75, hT: 0.25, hB: 0.3, y: 1.62 }], 16), VIDRO);
+    c.add(loftZ([{ z: -3.0, w: 1.6, hT: 0.65, hB: 0.1, y: 3.15, n: 3 }, { z: 4.2, w: 1.7, hT: 0.65, hB: 0.1, y: 3.15, n: 3 }, { z: 5.2, w: 1.0, hT: 0.3, hB: 0.1, y: 3.1 }], 16), C2);
+    for (const sx of [-1, 1]) {
+      for (let i = 0; i < 5; i++) v.cil(0.22, 0.22, 0.05, 10, VIDRO, sx * 1.18, 2.5, -3.0 + i * 1.3, 0, 0, Math.PI / 2);   // janelas redondas
+      casulo(c, [[-1.4, 0.2], [-1.0, 0.45], [1.2, 0.45], [1.6, 0.2]], C2, sx * 1.45, 1.55, 0.5);   // tanques externos
+      c.add(asa({ p: [sx * 1.2, 2.1, -1.2], corda: 0.9, esp: 0.12 }, { p: [sx * 2.8, 1.9, -1.25], corda: 0.7, esp: 0.1 }), C2);
+      casulo(c, [[-0.9, 0.22], [-0.7, 0.3], [0.7, 0.3], [0.9, 0.24]], 0x55593f, sx * 2.6, 1.6, -1.2);
+      c.cil(0.06, 0.06, 1.0, 6, METAL, sx * 1.3, 0.55, 4.5, 0, 0, sx * 0.4);
+      c.roda(0.35, 0.25, PNEU, sx * 1.6, 0.35, 4.5);
+      c.roda(0.38, 0.28, PNEU, sx * 1.7, 0.38, -1.5);
+      estrelaVerm(c, sx * 0.35, 2.85, -8.0, 0.32, sx > 0 ? '+x' : '-x');
+    }
+    c.box(2.2, 1.6, 0.1, C2, 0, 1.75, -4.05);                          // portas traseiras
+    c.add(asa({ p: [0, 3.0, -11.0], corda: 1.4, esp: 0.12 }, { p: [0, 4.3, -11.8], corda: 0.9, esp: 0.1 }), C);
+    asas(c, { p: [0.1, 2.75, -10.2], corda: 0.8, esp: 0.1 }, { p: [1.6, 2.75, -10.3], corda: 0.6, esp: 0.08 }, C);
+    c.cil(0.26, 0.32, 0.55, 12, C2, 0, 3.95, 0.5);
+    return { corpo: c.build(), vidro: v.build(false), rotor: rotor(5, 10.6, 0x2a2a2a, 0.55), rotorY: 4.35, rotorZ: 0.5, cauda: rotorCauda(1.9), caudaPos: [-0.35, 4.0, -11.9], caudaEixo: 'x' };
+  },
+  z20() {
+    // Z-20: helicóptero médio chinês, da mesma família de forma do Black Hawk, pintado de cinza-esverdeado
+    return AERO.blackhawk({ C: 0x6c7766, C2: 0x5a6555, marca: (c, sx) => chinaMarca(c, sx * 0.31, 2.2, -6.6, 0.26, sx > 0 ? '+x' : '-x') });
+  },
+};
+Object.assign(VEIC, LESTE_V);
+Object.assign(AERO, LESTE_A);
+
 for (const k in VEIC) { if (k === 'abrams') continue; const f = VEIC[k]; VEIC[k] = () => { SUJAR = true; try { return f(); } finally { SUJAR = false; } }; }
 const TODOS = Object.assign({}, VEIC, AERO, NAVAL, ESTR);
 
@@ -1569,7 +1903,10 @@ function heliReal(nome, extra) {
 }
 
 // cria o objeto 3D de um tipo; devolve {grupo, torre, rotor, rotor2, cauda, nacele...}
+// modelos provisórios das unidades russas e chinesas ainda não modeladas
+const PROVISORIO = {};
 export function criarModelo(nome) {
+  if (!TODOS[nome] && PROVISORIO[nome]) nome = PROVISORIO[nome];
   const def = cache['_d_' + nome] || (cache['_d_' + nome] = TODOS[nome]());
   const grupo = new THREE.Group();
   const r = { grupo, def };

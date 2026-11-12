@@ -1,9 +1,11 @@
-// Tipos de unidades das Forças Armadas dos EUA (valores ajustados para o jogo)
+// Tipos de unidades dos EUA, da Rússia e da China (valores ajustados para o jogo)
 // classe: inf (infantaria), veic (veículo), aereo (helicóptero/drone), jato, naval
 // de: onde é produzido (quartel, patio, heliporto, docas, porta)
+// arma antitanque da infantaria (foguete): só dispara contra veículos e helicópteros
+const AT = (arma, alcance = 160) => ({ alcance, dano: 420, splash: 2.5, cadencia: 14, precisao: 0.8, arma, antitanque: true });
 export const TIPOS = {
   // ---------------- infantaria ----------------
-  fuzileiro: { nome: 'Soldado', sub: 'Fuzil M4A1', icone: '🪖', classe: 'inf', hp: 100, vel: 6.5, alcance: 55, dano: 16, cadencia: 0.38, precisao: 0.6, arma: 'fuzil', custo: 60, tempo: 4, de: 'quartel', slots: 1, raio: 0.6 },
+  fuzileiro: { nome: 'Soldado', sub: 'Fuzil M4A1 + lança-foguetes AT4', icone: '🪖', classe: 'inf', hp: 100, vel: 6.5, alcance: 55, dano: 16, cadencia: 0.38, precisao: 0.6, arma: 'fuzil', sec: AT('at4'), custo: 60, tempo: 4, de: 'quartel', slots: 1, raio: 0.6 },
   metralhador: { nome: 'Metralhador', sub: 'M249 SAW', icone: '🔫', classe: 'inf', hp: 120, vel: 6.0, alcance: 62, dano: 10, cadencia: 0.1, precisao: 0.42, arma: 'mg', custo: 100, tempo: 6, de: 'quartel', slots: 1, raio: 0.6 },
   sniper: { nome: 'Atirador de Elite', sub: 'M110 / Barrett M107', icone: '🎯', classe: 'inf', hp: 90, vel: 6.2, alcance: 150, dano: 110, cadencia: 1.7, precisao: 0.92, arma: 'sniper', custo: 140, tempo: 8, de: 'quartel', slots: 1, raio: 0.6 },
   medico: { nome: 'Médico de Combate', sub: 'Cura soldados por perto', icone: '⚕️', classe: 'inf', hp: 100, vel: 6.6, alcance: 40, dano: 9, cadencia: 0.55, precisao: 0.5, arma: 'pistola', cura: 7, custo: 110, tempo: 6, de: 'quartel', slots: 1, raio: 0.6 },
@@ -25,6 +27,28 @@ export const TIPOS = {
   apache: { nome: 'AH-64 Apache', sub: 'Canhão 30mm + mísseis Hellfire', icone: '🚁', classe: 'aereo', modelo: 'apache', hp: 1000, vel: 80, altCruz: 55, alcance: 280, dano: 45, splash: 3, cadencia: 0.13, precisao: 0.55, arma: '30mm', sec: { alcance: 650, dano: 420, splash: 11, cadencia: 7, precisao: 0.95, arma: 'hellfire', missil: true }, custo: 1150, tempo: 22, de: 'heliporto', raio: 8 },
   littlebird: { nome: 'MH-6 Little Bird', sub: 'Leva 6 soldados nos bancos externos • rápido e pequeno', icone: '🚁', classe: 'aereo', modelo: 'littlebird', hp: 500, vel: 88, altCruz: 35, alcance: 75, dano: 12, cadencia: 0.16, precisao: 0.42, arma: 'fuzil', carga: 6, cargaTipos: ['inf'], custo: 450, tempo: 10, de: 'heliporto', raio: 5 },
   reaper: { nome: 'Drone MQ-9 Reaper', sub: 'Vigia em círculos e lança Hellfire', icone: '🛩️', classe: 'aereo', modelo: 'reaper', hp: 450, vel: 70, altCruz: 260, orbita: 240, alcance: 750, dano: 420, splash: 11, cadencia: 6.5, precisao: 0.95, arma: 'hellfire', missil: true, custo: 700, tempo: 15, de: 'heliporto', raio: 10 },
+  // ---------------- Rússia ----------------
+  ru_soldado: { nacao: 'russia', nome: 'Soldado russo', sub: 'Fuzil AK-12 + RPG-7', icone: '🪖', classe: 'inf', hp: 100, vel: 6.4, alcance: 55, dano: 17, cadencia: 0.4, precisao: 0.58, arma: 'fuzil', sec: AT('rpg', 150), custo: 55, tempo: 4, de: 'quartel', slots: 1, raio: 0.6 },
+  ru_metralhador: { nacao: 'russia', nome: 'Metralhador russo', sub: 'Metralhadora PKP Pecheneg', icone: '🔫', classe: 'inf', hp: 120, vel: 5.9, alcance: 64, dano: 11, cadencia: 0.1, precisao: 0.42, arma: 'mg', custo: 95, tempo: 6, de: 'quartel', slots: 1, raio: 0.6 },
+  ru_sniper: { nacao: 'russia', nome: 'Atirador russo', sub: 'Fuzil SVD Dragunov', icone: '🎯', classe: 'inf', hp: 90, vel: 6.2, alcance: 145, dano: 105, cadencia: 1.6, precisao: 0.9, arma: 'sniper', custo: 130, tempo: 8, de: 'quartel', slots: 1, raio: 0.6 },
+  ru_medico: { nacao: 'russia', nome: 'Médico russo', sub: 'Cura soldados por perto', icone: '⚕️', classe: 'inf', hp: 100, vel: 6.6, alcance: 40, dano: 9, cadencia: 0.55, precisao: 0.5, arma: 'pistola', cura: 7, custo: 105, tempo: 6, de: 'quartel', slots: 1, raio: 0.6 },
+  tigr: { nacao: 'russia', nome: 'GAZ Tigr', sub: 'Blindado leve 4x4 • metralhadora • leva 4', icone: '🚙', classe: 'veic', modelo: 'tigr', hp: 600, vel: 27, alcance: 85, dano: 22, cadencia: 0.16, precisao: 0.45, arma: '50cal', carga: 4, cargaTipos: ['inf', 'civil'], custo: 230, tempo: 8, de: 'patio', slots: 4, raio: 2.6, leve: true },
+  btr82: { nacao: 'russia', nome: 'BTR-82A', sub: 'Blindado 8x8 • canhão 30mm • leva 7', icone: '🚐', classe: 'veic', modelo: 'btr82', hp: 1150, vel: 24, alcance: 115, dano: 48, splash: 2.5, cadencia: 0.3, precisao: 0.55, arma: '30mm', carga: 7, cargaTipos: ['inf', 'civil'], custo: 480, tempo: 12, de: 'patio', slots: 9, raio: 3.6 },
+  bmp3: { nacao: 'russia', nome: 'BMP-3', sub: 'Blindado de esteiras • canhões 100mm e 30mm • leva 7', icone: '🛻', classe: 'veic', modelo: 'bmp3', hp: 1500, vel: 20, alcance: 125, dano: 70, splash: 3.5, cadencia: 0.45, precisao: 0.6, arma: '30mm', carga: 7, cargaTipos: ['inf', 'civil'], custo: 680, tempo: 15, de: 'patio', slots: 10, raio: 3.6 },
+  t90: { nacao: 'russia', nome: 'Tanque T-90M', sub: 'Canhão 125mm', icone: '🛡️', classe: 'veic', modelo: 't90', hp: 3000, vel: 20, alcance: 170, dano: 310, splash: 8, cadencia: 4.4, precisao: 0.84, arma: '120mm', sec: { alcance: 90, dano: 12, cadencia: 0.11, precisao: 0.45, arma: 'mg' }, custo: 900, tempo: 20, de: 'patio', slots: 20, raio: 4.6, atropela: true },
+  ka52: { nacao: 'russia', nome: 'Ka-52 Alligator', sub: 'Rotores coaxiais • canhão 30mm + mísseis Vikhr', icone: '🚁', classe: 'aereo', modelo: 'ka52', hp: 1050, vel: 82, altCruz: 55, alcance: 280, dano: 45, splash: 3, cadencia: 0.14, precisao: 0.55, arma: '30mm', sec: { alcance: 650, dano: 420, splash: 11, cadencia: 7, precisao: 0.95, arma: 'hellfire', missil: true }, custo: 1150, tempo: 22, de: 'heliporto', raio: 8 },
+  mi8: { nacao: 'russia', nome: 'Mi-8AMTSh', sub: 'Transporte • foguetes • leva 20', icone: '🚁', classe: 'aereo', modelo: 'mi8', hp: 1000, vel: 70, altCruz: 45, alcance: 90, dano: 11, cadencia: 0.16, precisao: 0.38, arma: 'm240', carga: 20, cargaTipos: ['inf', 'civil'], custo: 850, tempo: 18, de: 'heliporto', raio: 10 },
+  // ---------------- China ----------------
+  cn_soldado: { nacao: 'china', nome: 'Soldado chinês', sub: 'Fuzil QBZ-191 + PF-98', icone: '🪖', classe: 'inf', hp: 100, vel: 6.5, alcance: 56, dano: 16, cadencia: 0.37, precisao: 0.6, arma: 'fuzil', sec: AT('rpg', 155), custo: 55, tempo: 4, de: 'quartel', slots: 1, raio: 0.6 },
+  cn_metralhador: { nacao: 'china', nome: 'Metralhador chinês', sub: 'Metralhadora QJB-201', icone: '🔫', classe: 'inf', hp: 115, vel: 6.0, alcance: 62, dano: 10, cadencia: 0.09, precisao: 0.42, arma: 'mg', custo: 95, tempo: 6, de: 'quartel', slots: 1, raio: 0.6 },
+  cn_sniper: { nacao: 'china', nome: 'Atirador chinês', sub: 'Fuzil QBU-191', icone: '🎯', classe: 'inf', hp: 90, vel: 6.3, alcance: 150, dano: 100, cadencia: 1.5, precisao: 0.9, arma: 'sniper', custo: 130, tempo: 8, de: 'quartel', slots: 1, raio: 0.6 },
+  cn_medico: { nacao: 'china', nome: 'Médico chinês', sub: 'Cura soldados por perto', icone: '⚕️', classe: 'inf', hp: 100, vel: 6.6, alcance: 40, dano: 9, cadencia: 0.55, precisao: 0.5, arma: 'pistola', cura: 7, custo: 105, tempo: 6, de: 'quartel', slots: 1, raio: 0.6 },
+  mengshi: { nacao: 'china', nome: 'Dongfeng Mengshi', sub: 'Blindado leve 4x4 • metralhadora • leva 4', icone: '🚙', classe: 'veic', modelo: 'mengshi', hp: 580, vel: 27, alcance: 85, dano: 22, cadencia: 0.16, precisao: 0.45, arma: '50cal', carga: 4, cargaTipos: ['inf', 'civil'], custo: 230, tempo: 8, de: 'patio', slots: 4, raio: 2.6, leve: true },
+  zbl08: { nacao: 'china', nome: 'ZBL-08', sub: 'Blindado 8x8 • canhão 30mm • leva 7', icone: '🚐', classe: 'veic', modelo: 'zbl08', hp: 1150, vel: 24, alcance: 115, dano: 48, splash: 2.5, cadencia: 0.3, precisao: 0.55, arma: '30mm', carga: 7, cargaTipos: ['inf', 'civil'], custo: 480, tempo: 12, de: 'patio', slots: 9, raio: 3.6 },
+  zbd04: { nacao: 'china', nome: 'ZBD-04A', sub: 'Blindado de esteiras • canhões 100mm e 30mm • leva 7', icone: '🛻', classe: 'veic', modelo: 'zbd04', hp: 1500, vel: 20, alcance: 125, dano: 68, splash: 3.5, cadencia: 0.45, precisao: 0.6, arma: '30mm', carga: 7, cargaTipos: ['inf', 'civil'], custo: 680, tempo: 15, de: 'patio', slots: 10, raio: 3.6 },
+  type99: { nacao: 'china', nome: 'Tanque Type 99A', sub: 'Canhão 125mm', icone: '🛡️', classe: 'veic', modelo: 'type99', hp: 3100, vel: 21, alcance: 170, dano: 315, splash: 8, cadencia: 4.3, precisao: 0.85, arma: '120mm', sec: { alcance: 90, dano: 12, cadencia: 0.11, precisao: 0.45, arma: 'mg' }, custo: 920, tempo: 20, de: 'patio', slots: 20, raio: 4.8, atropela: true },
+  z10: { nacao: 'china', nome: 'Z-10', sub: 'Helicóptero de ataque • canhão 23mm + mísseis HJ-10', icone: '🚁', classe: 'aereo', modelo: 'z10', hp: 950, vel: 84, altCruz: 55, alcance: 270, dano: 40, splash: 3, cadencia: 0.13, precisao: 0.55, arma: '30mm', sec: { alcance: 640, dano: 410, splash: 11, cadencia: 7, precisao: 0.95, arma: 'hellfire', missil: true }, custo: 1100, tempo: 22, de: 'heliporto', raio: 8 },
+  z20: { nacao: 'china', nome: 'Z-20', sub: 'Transporte • metralhadoras • leva 11', icone: '🚁', classe: 'aereo', modelo: 'z20', hp: 850, vel: 76, altCruz: 40, alcance: 95, dano: 10, cadencia: 0.08, precisao: 0.35, arma: 'm134', carga: 11, cargaTipos: ['inf', 'civil'], custo: 760, tempo: 16, de: 'heliporto', raio: 8 },
   // ---------------- porta-aviões ----------------
   f35: { nome: 'F-35C Lightning II', sub: 'Caça furtivo • bombas guiadas GBU-31', icone: '✈️', classe: 'jato', modelo: 'f35', hp: 900, vel: 250, altCruz: 160, dano: 650, splash: 20, municao: 4, arma: 'bomba', custo: 1500, tempo: 22, de: 'porta', raio: 9 },
   f18: { nome: 'F/A-18E Super Hornet', sub: 'Foguetes e bombas • ataque rasante', icone: '✈️', classe: 'jato', modelo: 'f18', hp: 900, vel: 260, altCruz: 150, dano: 180, splash: 9, municao: 3, rajada: 6, arma: 'foguete', custo: 1250, tempo: 20, de: 'porta', raio: 9 },
@@ -37,6 +61,15 @@ export const TIPOS = {
   destroier: { nome: 'Destróier classe Arleigh Burke', sub: 'Canhão naval 5" de longo alcance', icone: '🚢', classe: 'naval', modelo: 'destroier', nav: 2, hp: 7000, vel: 16, alcance: 950, minAlc: 60, dano: 300, splash: 14, cadencia: 2.6, precisao: 0.8, arma: 'naval', arco: true, custo: 2400, tempo: 35, de: 'docas', raio: 30 },
   portaavioes: { nome: 'Porta-aviões USS Enterprise', sub: 'CVN-80, classe Ford • base flutuante', icone: '⚓', classe: 'naval', modelo: 'portaavioes', nav: 2, hp: 30000, vel: 7, carga: 0, custo: 0, de: null, raio: 60, unico: true },
 };
+
+// blindagem (0 = nenhuma, 1 = imune a tiros comuns): quanto do dano de armas leves é barrado
+const BLIND = { humvee: 0.5, tigr: 0.5, mengshi: 0.5, ambulancia: 0.4, bearcat: 0.55, stryker: 0.75, btr82: 0.75, zbl08: 0.75, bradley: 0.85, bmp3: 0.85, zbd04: 0.85,
+  abrams: 0.95, t90: 0.95, type99: 0.95, paladin: 0.85, himars: 0.6 };
+for (const k in TIPOS) {
+  const d = TIPOS[k];
+  if (!d.nacao) d.nacao = 'eua';
+  d.blindagem = BLIND[k] ?? (d.classe === 'inf' ? 0 : d.classe === 'aereo' ? 0.45 : d.classe === 'jato' ? 0.6 : d.classe === 'naval' ? 0.85 : 0.5);
+}
 
 export const ESTRUTURAS = {
   qg: { nome: 'Quartel-General', hp: 6000, raio: 26 },
@@ -60,6 +93,12 @@ export const PRODUCAO = {
   porta: ['f35', 'f18', 'osprey', 'seahawk'],
   pista: ['f22', 'a10', 'f35', 'f18'],
 };
+// o que cada nação produz em cada estrutura
+export const PRODUCAO_N = {
+  eua: PRODUCAO,
+  russia: { quartel: ['ru_soldado', 'ru_metralhador', 'ru_sniper', 'ru_medico'], patio: ['tigr', 'btr82', 'bmp3', 't90'], heliporto: ['ka52', 'mi8'] },
+  china: { quartel: ['cn_soldado', 'cn_metralhador', 'cn_sniper', 'cn_medico'], patio: ['mengshi', 'zbl08', 'zbd04', 'type99'], heliporto: ['z10', 'z20'] },
+};
 export const NOMES_PROD = { quartel: '🪖 Quartel', patio: '🚙 Pátio', heliporto: '🚁 Heliporto', docas: '⚓ Docas', porta: '🛳️ Porta-aviões', pista: '🛫 Pista de pouso' };
 // estruturas que o jogador pode construir em qualquer lugar do mapa
 export const CONSTRUIR = {
@@ -70,7 +109,7 @@ export const CONSTRUIR = {
   docas: { nome: 'Docas', sub: 'Precisa ficar na beira da água', icone: '⚓', custo: 1400, tempo: 40, raio: 34, agua: true },
   zona: { nome: 'Zona Segura', sub: 'Abrigo de civis (resgate)', icone: '🏥', custo: 700, tempo: 20, raio: 32 },
   torre: { nome: 'Torre de Vigia', sub: 'Metralhadora .50 automática', icone: '🗼', custo: 300, tempo: 10, raio: 6 },
-  muro: { nome: 'Barreira', sub: 'Gabiões contra os zumbis', icone: '🧱', custo: 60, tempo: 4, raio: 6 },
+  muro: { nome: 'Barreira', sub: 'Gabiões que seguram o avanço inimigo', icone: '🧱', custo: 60, tempo: 4, raio: 6 },
   patriot: { nome: 'Bateria Patriot', sub: 'Defesa antiaérea', icone: '🛰️', custo: 500, tempo: 15, raio: 8 },
   pista: { nome: 'Pista de Pouso', sub: 'Base aérea: F-22 e A-10 (precisa de muito espaço)', icone: '🛫', custo: 2500, tempo: 50, raio: 60, grande: true },
 };

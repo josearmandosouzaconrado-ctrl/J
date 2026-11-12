@@ -9,6 +9,7 @@ import { acharCaminho, livre, pontoLivreProximo } from './caminho.js';
 import { rand, clamp, angDif, girarPara, dist, dist2 } from './util.js';
 import { somTiro, somExplosao, somUI, somVidro, somEsmagar } from './som.js';
 import { criarCivilSeguindo, danoAgente } from './agentes.js';
+import { hostis, doJogador, inimigoDoJogador, qgDestruido, NACOES } from './guerra.js';
 
 const ARMAS_COR = { fuzil: [1, 0.9, 0.5], mg: [1, 0.8, 0.4], sniper: [1, 1, 0.8], pistola: [1, 0.9, 0.5], '50cal': [1, 0.7, 0.3], '25mm': [1, 0.6, 0.2], '30mm': [1, 0.6, 0.2], m134: [1, 0.45, 0.2], m240: [1, 0.7, 0.3] };
 const RUIDO = { fuzil: 110, pistola: 70, mg: 140, sniper: 160, '50cal': 200, '25mm': 260, '30mm': 260, m134: 220, m240: 160, '120mm': 450, '155mm': 500, naval: 500, foguete: 450, hellfire: 450, bomba: 600 };
@@ -27,6 +28,7 @@ export function criarUnidade(tipo, x, z, ang = 0, opts = {}) {
     passageiros: [], cargaUsada: 0, dentro: null, predio: null, vivo: true, sel: false, fase: rand(0, 6), mirando: 0,
     alt: 0, altAlvo: 0, torreAng: 0, travado: 0, salva: d.salva || 0, recarga: 0, municao: d.municao || 0,
     estadoJato: 'pronto', vx: 0, vz: 0, velAtual: 0, repath: 0, ultimaPos: { x, z }, cura: 0,
+    nacao: opts.nacao || d.nacao || G.nacao,
   };
   if (d.modelo) {
     u.m = criarModelo(d.modelo);
@@ -392,39 +394,56 @@ export function entregarCivis(t) {
 }
 
 // ---------------- combate ----------------
-function alvoValido(a) { return a && a.vivo && a.zumbi && !a.dentro && a.virando <= 0; }
+// alvo válido: unidade ou estrutura viva do time inimigo, fora de prédios/veículos
+function alvoValido(a, u) { return !!(a && a.vivo && !a.dentro && (!u || hostis(u, a))); }
 
-function acharAlvo(u, alcance, splash, minAlc = 0) {
-  const ox = u.x, oz = u.z;
-  if (!splash) {
-    let melhor = null, md = Infinity;
-    const min2 = minAlc * minAlc;
-    const jn = u.janela;
-    G.hashA.busca(ox, oz, alcance, (a, d2) => {
-      if (a.zumbi && a.vivo && !a.dentro && a.virando <= 0 && d2 < md && d2 >= min2) {
-        if (jn && (a.x - ox) * jn.nx + (a.z - oz) * jn.nz < Math.sqrt(d2) * 0.25) return;
-        md = d2; melhor = a;
-      }
+// classes de arma: leves (fuzis e metralhadoras), médias (canhões 20-30 mm) e pesadas (canhão de tanque, mísseis...)
+const PENETRA = { explosao: 0.7, fuzil: 0.04, pistola: 0.02, sniper: 0.15, mg: 0.05, m240: 0.06, m134: 0.07, '50cal': 0.35, '25mm': 0.6, '30mm': 0.62, canhao: 0.85 };
+function penetracao(w) { return PENETRA[w.arma] ?? 1; }
+// dano que passa pela blindagem do alvo
+export function fatorBlindagem(alvo, w) {
+  const b = alvo.estr ? 0.6 : (alvo.d.blindagem || 0);
+  return 1 - b * (1 - penetracao(w));
+}
+// a arma consegue atingir esse alvo? (artilharia e canhão de tanque não acertam aeronave no ar; antitanque não mira em soldado)
+function podeAtingir(w, v) {
+  const noAr = (v.classe === 'aereo' || v.classe === 'jato') && v.y > 6;
+  if (v.classe === 'jato' && noAr) return !!w.antiaereo;
+  if (noAr && (w.arco || w.arma === '120mm' || w.arma === 'bomba' || w.arma === 'naval' || w.arma === '155mm' || w.arma === 'foguete')) return false;
+  if (w.antitanque && v.classe === 'inf') return false;
+  return true;
+}
+// procura o melhor alvo inimigo no alcance: armas leves preferem soldados, pesadas preferem blindados
+function acharAlvo(u, alcance, splash, minAlc = 0, w = u.d || {}) {
+  const ox = u.x, oz = u.z, min2 = minAlc * minAlc;
+  const pen = penetracao(w), jn = u.janela;
+  if (!splash || splash < 8) {
+    let melhor = null, mv = Infinity;
+    G.hashU.busca(ox, oz, alcance, (v, d2) => {
+      if (!v.vivo || v.dentro || !hostis(u, v) || d2 < min2 || !podeAtingir(w, v)) return;
+      if (jn && (v.x - ox) * jn.nx + (v.z - oz) * jn.nz < Math.sqrt(d2) * 0.25) return;
+      const blind = v.estr ? 0.6 : (v.d.blindagem || 0);
+      // custo: distância, mais caro se a arma quase não fere esse alvo
+      let c = d2 * (1 + blind * (1 - pen) * 6);
+      if (pen >= 0.9 && v.classe === 'inf') c *= 2.5;
+      if (v.estr) c *= 1.8;
+      if (c < mv) { mv = c; melhor = v; }
     });
     return melhor;
   }
-  // armas de área: procura o maior grupo de zumbis, evitando civis e tropas
+  // armas de área (artilharia, foguetes, bombas): o maior grupo de inimigos sem tropas amigas perto
   const cand = [];
-  const min2 = minAlc * minAlc;
-  G.hashA.busca(ox, oz, alcance, (a, d2) => {
-    if (a.zumbi && a.vivo && !a.dentro && d2 >= min2) { cand.push(a); if (cand.length > 50) return true; }
+  G.hashU.busca(ox, oz, alcance, (v, d2) => {
+    if (v.vivo && !v.dentro && hostis(u, v) && d2 >= min2 && podeAtingir(w, v)) { cand.push(v); if (cand.length > 60) return true; }
   });
   if (!cand.length) return null;
   let melhor = null, mv = 0;
-  for (let i = 0; i < cand.length; i += cand.length > 25 ? 2 : 1) {
+  for (let i = 0; i < cand.length; i += cand.length > 30 ? 2 : 1) {
     const a = cand[i];
-    let z = 0, c = 0;
-    G.hashA.busca(a.x, a.z, splash, (b) => { if (!b.vivo || b.dentro) return; if (b.zumbi) z++; else c++; });
-    let amigos = 0;
-    G.hashU.busca(a.x, a.z, splash + 4, (v) => { if (v.vivo && !v.dentro && v.classe !== 'aereo' && v.classe !== 'jato') amigos++; });
+    let ini = 0, amigos = 0;
+    G.hashU.busca(a.x, a.z, splash + 4, (v) => { if (!v.vivo || v.dentro || v.classe === 'jato' || (v.classe === 'aereo' && v.y > 8)) return; if (hostis(u, v)) ini += v.classe === 'inf' ? 1 : 3; else amigos++; });
     if (amigos > 0) continue;
-    const valor = z - c * 3;
-    if (valor > mv) { mv = valor; melhor = a; }
+    if (ini > mv) { mv = ini; melhor = a; }
   }
   return melhor;
 }
@@ -456,7 +475,7 @@ function atirar(u, alvo, w) {
     for (let i = 0; i < 14; i++) ef.particula(u.x, u.y + 1.3, u.z, u.janela.nx * rand(1, 3) + rand(-1, 1), rand(0, 2), u.janela.nz * rand(1, 3) + rand(-1, 1), 0.18, 1.2, [0.8, 0.92, 1], [0.6, 0.75, 0.85], 0.9, 9.8, 0);
     somVidro(vol);
   }
-  if (w.missil || w.arma === '120mm' || w.arco || w.arma === 'foguete') {
+  if (w.missil || w.arma === '120mm' || w.arco || w.arma === 'foguete' || w.antitanque) {
     const fx = ax + rand(-1, 1) * (1 - w.precisao) * 12, fz = az + rand(-1, 1) * (1 - w.precisao) * 12;
     lancarProjetil(o.x, o.y, o.z, fx, fz, w, u);
     ef.clarao(o.x, o.y, o.z, w.arma === '120mm' ? 4 : 2.5);
@@ -470,8 +489,8 @@ function atirar(u, alvo, w) {
   ef.clarao(o.x, o.y, o.z, w.arma === 'fuzil' || w.arma === 'pistola' ? 0.9 : 1.5);
   if (acerto) {
     ef.tracante(o.x, o.y, o.z, ax, ay, az, cor);
-    if (w.splash) explodir(ax, 0.5, az, w.splash, w.dano, u, true);
-    else danoAgente(alvo, w.dano, u);
+    if (w.splash) explodir(ax, (alvo.y || 0) + 0.5, az, w.splash, w.dano, u, true);
+    else danoUnidade(alvo, w.dano * fatorBlindagem(alvo, w), u);
   } else {
     ef.tracante(o.x, o.y, o.z, ax + rand(-3, 3), ay + rand(-1, 1), az + rand(-3, 3), cor);
   }
@@ -523,7 +542,16 @@ export function explodir(x, y, z, raio, dano, dono, pequeno) {
   G.hashA.busca(x, z, raio * 1.3, (a, d2) => {
     if (!a.vivo || a.dentro) return;
     const f = d2 < r2 ? 1 - Math.sqrt(d2) / raio * 0.6 : 0.25;
-    danoAgente(a, dano * f, dono);
+    danoAgente(a, dano * f * 0.5, dono);
+  });
+  // unidades e estruturas inimigas de quem atirou (sem fogo amigo); blindagem segura parte da explosão
+  G.hashU.busca(x, z, raio * 1.3 + 6, (v, d2) => {
+    if (!v.vivo || v.dentro || (dono && !hostis(dono, v))) return;
+    if ((v.classe === 'aereo' || v.classe === 'jato') && Math.abs((v.y || 0) - y) > raio + 3) return;
+    const r = raio + (v.estr ? v.d.raio * 0.6 : v.d.raio || 0.6);
+    if (d2 > r * r * 1.69) return;
+    const f = d2 < r * r ? 1 - Math.sqrt(d2) / r * 0.5 : 0.3;
+    danoUnidade(v, dano * f * fatorBlindagem(v, { arma: 'explosao' }) * (v.estr ? 0.6 : 1), dono);
   });
   if (G.tremor !== undefined && raio >= 10) G.tremor = Math.max(G.tremor, Math.min(1, raio / 30) * volEm(x, z));
 }
@@ -555,7 +583,7 @@ function seguirOrdem(u, dt) {
   if (!o) return null;
   if (o.tipo === 'mover') return { x: o.x, z: o.z, fim: () => { u.ordem = null; } };
   if (o.tipo === 'atacar') {
-    if (!alvoValido(o.alvo)) { u.ordem = null; return null; }
+    if (!alvoValido(o.alvo, u)) { u.ordem = null; return null; }
     u.alvo = o.alvo;
     const al = (u.d.alcance || 50) * 0.85;
     if (dist(u.x, u.z, o.alvo.x, o.alvo.z) < al) return null;
@@ -743,8 +771,8 @@ function atualizarTerrestre(u, dt) {
       }
     }
     if (u.d.atropela) {
-      G.hashA.busca(u.x, u.z, u.d.raio + 0.6, (a) => {
-        if (a.vivo && a.zumbi && !a.dentro) danoAgente(a, (a.sub === 'bruto' ? 40 : 200) * dt * u.velAtual / 8, u);
+      G.hashU.busca(u.x, u.z, u.d.raio + 0.6, (v) => {
+        if (v.vivo && !v.dentro && v.classe === 'inf' && hostis(u, v)) danoUnidade(v, 200 * dt * u.velAtual / 8, u);
       });
     }
   }
@@ -813,7 +841,7 @@ function atualizarAereo(u, dt) {
         }
       } else u.altAlvo = Math.max(d.altCruz, p.h + 15);
     } else if (o.tipo === 'atacar') {
-      if (!alvoValido(o.alvo)) u.ordem = null;
+      if (!alvoValido(o.alvo, u)) u.ordem = null;
       else { u.alvo = o.alvo; if (dist(u.x, u.z, o.alvo.x, o.alvo.z) > d.alcance * 0.7) alvo = { x: o.alvo.x, z: o.alvo.z }; }
     } else if (o.tipo === 'corda') {
       // voa até o ponto, para no ar ~14 m acima do chão (ou do telhado) e os soldados descem pelas cordas
@@ -985,7 +1013,7 @@ function atualizarJato(u, dt) {
     const angA = Math.atan2(tx - u.x, tz - u.z);
     const lancaEm = canhao ? 330 : d.arma === 'bomba' ? 330 : 380;
     if (dd < lancaEm && Math.abs(angDif(u.ang, angA)) < 0.25 && !u.lancou) {
-      const alvo = acharAlvo({ x: tx, z: tz }, 160, d.splash);
+      const alvo = acharAlvo({ x: tx, z: tz, nacao: u.nacao }, 160, d.splash, 0, d);
       if (!alvo) {
         u.lancou = true; u.passe = (u.passe || 0) + 1;
         if (u.passe >= 3) { u.estadoJato = 'voltando'; alerta(`${d.nome}: nenhum alvo no local, voltando`, u.x, u.z); }
@@ -1081,13 +1109,13 @@ function combate(u, dt) {
   const bonus = u.predio ? 1.3 : 1;
   if (u.busca <= 0) {
     u.busca = 0.35 + Math.random() * 0.2;
-    if (!(u.ordem && u.ordem.tipo === 'atacar' && alvoValido(u.ordem.alvo))) {
-      if (!alvoValido(u.alvo) || dist(u.x, u.z, u.alvo.x, u.alvo.z) > d.alcance * bonus) u.alvo = acharAlvo(u, d.alcance * bonus, d.splash && d.splash >= 8 ? d.splash : 0, d.minAlc || 0);
+    if (!(u.ordem && u.ordem.tipo === 'atacar' && alvoValido(u.ordem.alvo, u))) {
+      if (!alvoValido(u.alvo, u) || dist(u.x, u.z, u.alvo.x, u.alvo.z) > d.alcance * bonus) u.alvo = acharAlvo(u, d.alcance * bonus, d.splash && d.splash >= 8 ? d.splash : 0, d.minAlc || 0, d);
     }
-    if (d.sec) u.alvo2 = acharAlvo(u, d.sec.alcance, d.sec.splash ? d.sec.splash : 0);
+    if (d.sec) u.alvo2 = acharAlvo(u, d.sec.alcance, d.sec.splash && d.sec.splash >= 8 ? d.sec.splash : 0, 0, d.sec);
   }
   const a = u.alvo;
-  if (alvoValido(a) && d.arma) {
+  if (alvoValido(a, u) && d.arma) {
     const dd = dist(u.x, u.z, a.x, a.z);
     const angA = Math.atan2(a.x - u.x, a.z - u.z);
     if (u.m && u.m.torre) u.torreAng = girarPara(u.torreAng, angDif(u.ang, angA), 3 * dt) ;
@@ -1104,8 +1132,10 @@ function combate(u, dt) {
       u.mirando = 0.6;
     }
   } else if (u.m && u.m.torre) u.torreAng = girarPara(u.torreAng, 0, 0.8 * dt);
-  if (d.sec && alvoValido(u.alvo2) && u.cd2 <= 0) {
-    if (!d.sec.splash || G.hashA.contar(u.alvo2.x, u.alvo2.z, d.sec.splash, (z) => z.zumbi && z.vivo) >= 3 || u.alvo2.sub === 'bruto') {
+  if (d.sec && alvoValido(u.alvo2, u) && u.cd2 <= 0) {
+    // míssil/foguete: vale a pena contra blindados, aeronaves e estruturas, ou contra um grupo de soldados
+    const v2 = u.alvo2;
+    if (d.sec.antitanque || v2.classe !== 'inf' || G.hashU.contar(v2.x, v2.z, d.sec.splash || 3, (z) => z.vivo && hostis(u, z)) >= 3) {
       atirar(u, u.alvo2, d.sec);
       u.cd2 = d.sec.cadencia * rand(0.9, 1.1);
     }
@@ -1135,8 +1165,8 @@ function atualizarEstrutura(u, dt) {
   }
   if (u.d.arma) {
     u.busca -= dt; u.cd -= dt;
-    if (u.busca <= 0) { u.busca = 0.4; u.alvo = acharAlvo(u, u.d.alcance, 0); }
-    if (alvoValido(u.alvo) && u.cd <= 0) { atirar({ ...u, y: 11, m: null, classe: 'estr' }, u.alvo, u.d); u.cd = u.d.cadencia; }
+    if (u.busca <= 0) { u.busca = 0.4; u.alvo = acharAlvo(u, u.d.alcance, 0, 0, u.d); }
+    if (alvoValido(u.alvo, u) && u.cd <= 0) { atirar({ ...u, y: 11, m: null, classe: 'estr' }, u.alvo, u.d); u.cd = u.d.cadencia; }
   }
   if (u.fila && u.fila.length) {
     const f = u.fila[0];
@@ -1146,40 +1176,53 @@ function atualizarEstrutura(u, dt) {
 }
 
 // ---------------- dano em unidades ----------------
-export function danoUnidade(u, dano, porZumbi) {
-  if (!u.vivo) return;
-  if (u.classe === 'inf' && u.predio && u.predio.integridade > 0) return;
+export function danoUnidade(u, dano, fonte) {
+  if (!u.vivo || dano <= 0) return;
+  // soldado dentro de prédio fica protegido pelas paredes
+  if (u.classe === 'inf' && u.predio && u.predio.integridade > 0) dano *= 0.4;
   u.hp -= dano;
+  u.atacadoT = G.tempo;
   if (u.classe === 'inf' && Math.random() < 0.3) G.efeitos.sangue(u.x, u.y + 1.2, u.z, 3);
-  if (u.hp <= 0) matarUnidade(u, porZumbi);
+  if (u.hp <= 0) matarUnidade(u, fonte);
 }
 
-export function matarUnidade(u, porZumbi) {
+export function matarUnidade(u, fonte) {
   if (!u.vivo) return;
-  G.perdas += u.estr || u.policia ? 0 : 1;
+  const meu = doJogador(u);
+  if (meu && !u.estr) G.perdas++;
+  // abate de unidade inimiga pelo time do jogador: conta e dá recompensa
+  if (inimigoDoJogador(u) && fonte && fonte.nacao === G.nacao) {
+    G.abates = (G.abates || 0) + 1;
+    G.dinheiro += Math.round((u.d.custo || 300) * 0.3);
+  }
+  const bandeira = NACOES[u.nacao] ? NACOES[u.nacao].bandeira + ' ' : '';
   if (u.estr) {
     G.efeitos.explosao(u.x, 5, u.z, 18);
     somExplosao(volEm(u.x, u.z));
-    alerta(`💥 ${u.d.nome} foi destruído!`, u.x, u.z, 'ruim');
+    if (meu || inimigoDoJogador(u)) alerta(`💥 ${bandeira}${u.d.nome} ${meu ? 'foi destruído!' : 'destruído'}`, u.x, u.z, meu ? 'ruim' : 'bom');
     removerUnidade(u);
-    if (u.tipoEstr === 'qg') G.derrota && G.derrota('O Quartel-General foi destruído pelos zumbis.');
+    if (u.tipoEstr === 'qg') qgDestruido(u);
     return;
   }
   if (u.predio) u.predio.guarnicao = u.predio.guarnicao.filter((x) => x !== u);
   // passageiros saem (ou morrem com aeronaves)
   for (const p of u.passageiros.slice()) {
     if (u.classe === 'aereo' && u.y > 8 || u.classe === 'naval') {
-      if (p.agente) { p.vivo = false; G.civisMortos++; } else { p.vivo = false; removerUnidade(p); G.perdas++; }
+      if (p.agente) { p.vivo = false; G.civisMortos++; } else { p.vivo = false; removerUnidade(p); if (meu) G.perdas++; }
     }
   }
   if (!(u.classe === 'aereo' && u.y > 8) && u.classe !== 'naval') { u.pousado = true; desembarcar(u); }
   if (u.classe === 'inf') {
-    if (porZumbi) G.virarZumbi(u);
-    alerta(u.policia ? (porZumbi ? '☣️ Um policial da SWAT foi mordido!' : 'Policial da SWAT abatido') : porZumbi ? '☣️ Um soldado foi mordido e virou zumbi!' : 'Soldado abatido', u.x, u.z, 'ruim');
+    if (meu) alerta(`${u.d.nome} abatido`, u.x, u.z, 'ruim');
+    G.mortos = G.mortos || [];
+    G.mortos.push({ x: u.x, y: u.y, z: u.z, ang: u.ang, nacao: u.nacao, sniper: u.tipo.includes('sniper'), t: G.tempo });
+    if (G.mortos.length > 120) G.mortos.shift();
   } else {
     G.efeitos.explosao(u.x, u.y + 1, u.z, u.d.raio * 2.5, ehAgua(u.x, u.z));
     somExplosao(volEm(u.x, u.z));
-    alerta(`💥 ${u.d.nome} destruído`, u.x, u.z, 'ruim');
+    // avisa as suas perdas e os inimigos que as suas tropas destroem (as baixas do aliado não enchem a tela)
+    if (meu) alerta(`💥 ${u.d.nome} destruído`, u.x, u.z, 'ruim');
+    else if (inimigoDoJogador(u) && fonte && fonte.nacao === G.nacao) alerta(`💥 ${bandeira}${u.d.nome} destruído`, u.x, u.z, 'bom');
     if (u.classe === 'veic' && u.m && !ehAgua(u.x, u.z)) criarDestroco(u);
   }
   removerUnidade(u);

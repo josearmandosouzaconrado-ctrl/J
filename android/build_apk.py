@@ -26,7 +26,7 @@ import zlib
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HERE = os.path.join(ROOT, 'android')
 ADM = '--adm' in sys.argv
-# --miami: gera o APK do jogo "Miami: Surto Zumbi" (pasta miami/www)
+# --miami: gera o APK do jogo "Frente de Guerra" (antes "Miami: Surto Zumbi"; pasta miami/www)
 MIAMI = '--miami' in sys.argv
 OUT = os.path.join(ROOT, 'CronicasDeEldoria-ADM.apk' if ADM else 'CronicasDeEldoria.apk')
 
@@ -40,10 +40,10 @@ CERT_NOME = 'Cronicas de Eldoria'
 if MIAMI:
     OUT = os.path.join(ROOT, 'MiamiSurtoZumbi.apk')
     PACKAGE = 'com.miami.surtozumbi'
-    APP_NAME = 'Miami: Surto Zumbi'
+    APP_NAME = 'Frente de Guerra'
     UA_TAG = ' MiamiZumbiAPK'
-    VERSION_CODE = 18
-    VERSION_NAME = '1.13.0'
+    VERSION_CODE = 19
+    VERSION_NAME = '2.0.0'
     SIGN_DIR = 'signing_miami'
     CERT_NOME = 'Miami Surto Zumbi'
 ACTIVITY = PACKAGE + '.MainActivity'

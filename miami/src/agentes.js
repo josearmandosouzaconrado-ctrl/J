@@ -4,6 +4,7 @@ import { andavel, predioEm, predios } from './mapa.js';
 import { rand, escolher, dist, dist2, girarPara, angDif } from './util.js';
 import { CAMISAS, CALCAS, PELES, CABELOS, PELE_ZUMBI, CAMO, CAMO2, hex } from './bonecos.js';
 import { somZumbi, somTiro } from './som.js';
+import { inimigoDoJogador } from './guerra.js';
 
 const ZB = {
   comum: { hp: 70, vel: 4.0, vagar: 0.9, dano: 12, cd: 1.0, perc: 32, esc: 1 },
@@ -144,9 +145,13 @@ function decidirZumbi(a) {
 
 function decidirCivil(a) {
   if (a.campo) { decidirAcampado(a); return; }
-  // perigo
-  let perigo = null, pd = 20 * 20;
-  G.hashA.busca(a.x, a.z, 20, (o, d2) => { if (o.zumbi && o.vivo && o.estado !== 'morto' && d2 < pd) { pd = d2; perigo = o; } });
+  // perigo: tropas inimigas perto, tiros e explosões
+  let perigo = null, pd = 26 * 26;
+  G.hashU.busca(a.x, a.z, 26, (o, d2) => { if (o.vivo && !o.estr && !o.dentro && inimigoDoJogador(o) && d2 < pd) { pd = d2; perigo = o; } });
+  if (!perigo) for (const r of G.ruidos || []) {
+    const lim = Math.min(70, r.r * 0.35), d2 = (r.x - a.x) ** 2 + (r.z - a.z) ** 2;
+    if (d2 < lim * lim && d2 < pd) { pd = Math.max(d2, 64); perigo = r; }
+  }
   if (perigo && (a.estado !== 'seguir' || pd < 64)) {
     a.estado = 'fugir';
     const d = Math.sqrt(pd) || 1;
@@ -160,7 +165,7 @@ function decidirCivil(a) {
   if (a.estado !== 'seguir') {
     let u = null, ud = 16 * 16, longe = false;
     G.hashU.busca(a.x, a.z, 70, (o, d2) => {
-      if (!o.vivo || o.dentro || o.estr) return;
+      if (!o.vivo || o.dentro || o.estr || o.nacao !== G.nacao) return;   // só seguem as tropas do jogador
       if (o.classe === 'inf' || o.classe === 'veic' || (o.classe === 'naval' && o.d.carga) || (o.classe === 'aereo' && o.pousado && o.d.carga)) {
         if (d2 < ud) { ud = d2; u = o; } else longe = true;
       }

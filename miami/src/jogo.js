@@ -1,4 +1,4 @@
-// Montagem do mundo, base militar, porta-aviões, surto zumbi, produção e fim de jogo
+// Montagem do mundo, bases militares, porta-aviões, produção e fim de jogo (guerra: EUA x Rússia e China)
 import * as THREE from 'three';
 import { G, alerta } from './estado.js';
 import {
@@ -7,17 +7,17 @@ import {
   META, COSTA,
 } from './mapa.js';
 import { prepararNavegacao, pontoLivreProximo, livre } from './caminho.js';
-import { TIPOS, ESTRUTURAS, CONSTRUIR } from './tipos.js';
+import { TIPOS, ESTRUTURAS, CONSTRUIR, PRODUCAO_N } from './tipos.js';
 import { criarModelo } from './modelos.js';
 import { construirKit, regularizarPredios } from './kit.js';
 import {
   criarUnidade, danoUnidade, naZonaSegura, volEm, vagas, embarcarCivil, embarcar, chaoEm, marcarSelecao, padPorta, padLivre,
+  ordenarMover, removerUnidade,
 } from './unidades.js';
-import { criarCivil, criarZumbi, soldadoVirouZumbi, tornarZumbi } from './agentes.js';
+import { criarCivil } from './agentes.js';
 import { rand, randi, escolher, dist, dist2 } from './util.js';
 import { somUI } from './som.js';
-import { enviarSwat, atualizarPolicia } from './policia.js';
-import { atualizarSobreviventes } from './sobreviventes.js';
+import { NACOES, escolherLocaisBases, iniciarGuerra, atualizarGuerra, ataqueSandbox, limparInimigos } from './guerra.js';
 
 const DIF = {
   facil: { dinheiro: 5000, civis: 600, sos: 22, meta: 150, intervalo: 1.35, renda: 7 },
@@ -30,10 +30,12 @@ export function montarMundo() {
   // ligações para evitar importações circulares
   G.danoUnidade = danoUnidade; G.naZonaSegura = naZonaSegura; G.volEm = volEm; G.vagas = vagas;
   G.construir = construir;
-  G.embarcarCivil = embarcarCivil; G.criarCivil = criarCivil; G.virarZumbi = soldadoVirouZumbi; G.produzir = produzir;
+  G.embarcarCivil = embarcarCivil; G.criarCivil = criarCivil; G.produzir = produzir;
+  G.ordenarMover = ordenarMover; G.criarUnidade = criarUnidade; G.removerUnidade = removerUnidade;
   G.regularizados = regularizarPredios();   // contornos retos nos mapas da Esri
   const b = lugares.base;
   removerPrediosEm(b.x, b.z, 380);
+  escolherLocaisBases();                    // onde ficam as bases das outras nações
   // eixo da ilha (Dodge Island vai de oeste-noroeste para leste-sudeste)
   const ab = META.baseAng ?? 0.43;
   const ax = { x: Math.cos(ab), z: Math.sin(ab) }, pp = { x: -ax.z, z: ax.x };
@@ -91,26 +93,57 @@ export function construirVisual() {
   for (const p of predios) if (!p.base) { p.integMax = 150 + Math.min(900, p.area * 0.4); p.integridade = p.integMax; }
 }
 
-export function criarEstrutura(tipo, x, z, ang) {
+export function criarEstrutura(tipo, x, z, ang, nacao = G.nacao) {
   const d = ESTRUTURAS[tipo];
   const m = criarModelo(tipo);
+  bandeira(m.grupo, nacao, d.raio);
   m.grupo.position.set(x, 0, z);
   m.grupo.rotation.y = ang;
   G.cena.add(m.grupo);
-  const u = { id: G.idSeq++, estr: true, tipoEstr: tipo, tipo, d, classe: 'estr', x, z, y: 0, ang, hp: d.hp, hpMax: d.hp, vivo: true, m, fila: [], passageiros: [], cargaUsada: 0, busca: rand(0, 1), cd: 0 };
+  const u = { id: G.idSeq++, estr: true, tipoEstr: tipo, tipo, d, classe: 'estr', x, z, y: 0, ang, hp: d.hp, hpMax: d.hp, vivo: true, m, fila: [], passageiros: [], cargaUsada: 0, busca: rand(0, 1), cd: 0, nacao };
   G.unidades.push(u);
-  if (['qg', 'zona', 'fob'].includes(tipo)) (G.abrigos || (G.abrigos = [])).push(u);
+  if (['qg', 'zona', 'fob'].includes(tipo) && nacao === G.nacao) (G.abrigos || (G.abrigos = [])).push(u);
   return u;
+}
+
+// mastro com a bandeira da nação dona da estrutura
+const _tBand = {};
+function texBandeira(n) {
+  if (_tBand[n]) return _tBand[n];
+  const c = document.createElement('canvas'); c.width = 96; c.height = 64;
+  const g = c.getContext('2d');
+  if (n === 'eua') {
+    for (let i = 0; i < 13; i++) { g.fillStyle = i % 2 ? '#ffffff' : '#b22234'; g.fillRect(0, i * 64 / 13, 96, 64 / 13 + 0.5); }
+    g.fillStyle = '#3c3b6e'; g.fillRect(0, 0, 40, 35);
+    g.fillStyle = '#fff'; for (let j = 0; j < 5; j++) for (let i = 0; i < 6; i++) g.fillRect(3 + i * 6.3, 3 + j * 6.5, 2, 2);
+  } else if (n === 'russia') {
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, 96, 22); g.fillStyle = '#0039a6'; g.fillRect(0, 21, 96, 22); g.fillStyle = '#d52b1e'; g.fillRect(0, 42, 96, 22);
+  } else {
+    g.fillStyle = '#de2910'; g.fillRect(0, 0, 96, 64);
+    const est = (x, y, r) => { g.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? r * 0.4 : r; g.lineTo(x + Math.cos(a) * q, y + Math.sin(a) * q); } g.fill(); };
+    g.fillStyle = '#ffde00'; est(16, 16, 10); for (const [x, y] of [[32, 6], [38, 13], [38, 22], [32, 29]]) est(x, y, 3.4);
+  }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return (_tBand[n] = t);
+}
+function bandeira(grupo, nacao, raio) {
+  if (!nacao) return;
+  const h = 14, x = Math.min(raio * 0.7, 20);
+  const mastro = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, h, 6), new THREE.MeshLambertMaterial({ color: 0xd8d8d8 }));
+  mastro.position.set(x, h / 2, 0);
+  const pano = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 2.8), new THREE.MeshLambertMaterial({ map: texBandeira(nacao), side: THREE.DoubleSide }));
+  pano.position.set(x + 2.2, h - 1.6, 0);
+  grupo.add(mastro, pano);
 }
 
 // estrutura da produção: a escolhida no painel, senão a mais perto da câmera
 export function fonteDe(tipoFonte) {
   if (tipoFonte === 'porta') return COSTA ? G.porta : fonteDe('pista');
-  if (G.fonteSel && G.fonteSel.vivo && G.fonteSel.tipoEstr === tipoFonte && !(G.fonteSel.construindo > 0)) return G.fonteSel;
+  if (G.fonteSel && G.fonteSel.vivo && G.fonteSel.tipoEstr === tipoFonte && !(G.fonteSel.construindo > 0) && G.fonteSel.nacao === G.nacao) return G.fonteSel;
   let melhor = null, md = Infinity;
   const c = G.camAlvo || { x: 0, z: 0 };
   for (const u of G.unidades) {
-    if (!u.vivo || !u.estr || u.tipoEstr !== tipoFonte || u.construindo > 0) continue;
+    if (!u.vivo || !u.estr || u.tipoEstr !== tipoFonte || u.construindo > 0 || u.nacao !== G.nacao) continue;
     const d = dist2(u.x, u.z, c.x, c.z);
     if (d < md) { md = d; melhor = u; }
   }
@@ -171,13 +204,17 @@ function criarSaidas() {
   }
 }
 
-export function iniciarPartida(dif) {
+export function iniciarPartida(dif, nacao = 'eua') {
+  G.nacao = NACOES[nacao] ? nacao : 'eua';
+  const EUA = G.nacao === 'eua';
+  lugares.base.nome = `${NACOES[G.nacao].base} - ${META.nome}`;
+  G.nomeCidade = META.nome;
   criarSaidas();
   const cfg = DIF[dif] || DIF.normal;
   G.dificuldade = dif; G.cfgDif = cfg;
-  G.dinheiro = cfg.dinheiro; G.meta = cfg.meta; G.sandbox = !!cfg.sandbox; G.surtoParado = false;
-  G.tempo = 0; G.dia = 1; G.focos = 0; G.proxFoco = 20; G.infectados = 0;
-  G.resgatados = 0; G.civisMortos = 0; G.zumbisMortos = 0; G.perdas = 0;
+  G.dinheiro = cfg.dinheiro; G.meta = cfg.meta; G.sandbox = !!cfg.sandbox; G.pausaIA = false;
+  G.tempo = 0; G.dia = 1;
+  G.resgatados = 0; G.civisMortos = 0; G.perdas = 0; G.abates = 0;
   G.ruidos = []; G.quadro = 0; G.fim = false;
   const ang = G.baseEixo.ang + Math.PI / 2;
   const L = G.layout;
@@ -190,8 +227,8 @@ export function iniciarPartida(dif) {
   G.estr.zona = criarEstrutura('zona', zz.x, zz.z, ang);
   for (const t of L.torres) { const p = lugarLivre(t); if (dist(p.x, p.z, t.x, t.z) < 60) criarEstrutura('torre', p.x, p.z, ang); }
   for (const t of L.patriot) { const p = lugarLivre(t); criarEstrutura('patriot', p.x, p.z, ang + 0.5); }
-  // docas: na beira d'água mais próxima (só em cidades com costa)
-  const docas = COSTA ? acharBeiraMar(G.estr.qg.x, G.estr.qg.z) : null;
+  // docas: na beira d'água mais próxima (só em cidades com costa; por enquanto só os EUA têm marinha)
+  const docas = COSTA && EUA ? acharBeiraMar(G.estr.qg.x, G.estr.qg.z) : null;
   if (docas) {
     G.estr.docas = criarEstrutura('docas', docas.x, docas.z, docas.ang);
     G.estr.docas.saidaAgua = docas.agua;
@@ -202,8 +239,8 @@ export function iniciarPartida(dif) {
     const fr = { x: e.x + G.baseEixo.pp.x * 45, z: e.z + G.baseEixo.pp.z * 45 };
     e.saida = lugarLivre(fr);
   }
-  let pa;
-  if (COSTA) {
+  let pa = null;
+  if (!EUA) { /* Rússia e China: ainda sem marinha e jatos (próxima etapa) */ } else if (COSTA) {
     // porta-aviões e escolta
     pa = lugares.portaavioes;
     if (!livre(2, pa.x, pa.z)) pa = pontoLivreProximo(2, pa.x, pa.z) || pa;
@@ -223,27 +260,34 @@ export function iniciarPartida(dif) {
     G.porta.deck = 0.3; G.porta.aerodromo = true;
     pa = G.porta;
   }
-  // tropas iniciais
+  // tropas iniciais da nação do jogador
+  const P = PRODUCAO_N[G.nacao];
   const qs = G.estr.quartel.saida, ps = G.estr.patio.saida;
-  const tropas = { fuzileiro: 8, metralhador: 2, sniper: 1, medico: 1 };
+  const tropas = [[P.quartel[0], 8], [P.quartel[1], 2], [P.quartel[2], 1], [P.quartel[3], 1]];
   let k = 0;
-  for (const t in tropas) for (let i = 0; i < tropas[t]; i++, k++) {
+  for (const [t, n] of tropas) for (let i = 0; i < n; i++, k++) {
     const p = lugarLivre({ x: qs.x + (k % 4) * 3 - 5, z: qs.z + Math.floor(k / 4) * 3 });
     criarUnidade(t, p.x, p.z, G.baseEixo.ang);
   }
-  for (const [t, n] of [['humvee', 2], ['stryker', 1], ['ambulancia', 1]]) for (let i = 0; i < n; i++, k++) {
+  const veic = EUA ? [['humvee', 2], ['stryker', 1], ['ambulancia', 1]] : [[P.patio[0], 2], [P.patio[1], 2]];
+  for (const [t, n] of veic) for (let i = 0; i < n; i++, k++) {
     const p = lugarLivre({ x: ps.x + (k % 3) * 8 - 8, z: ps.z + (k % 2) * 8 });
     criarUnidade(t, p.x, p.z, G.baseEixo.ang);
   }
   const hp = G.estr.heliporto;
-  const bh = criarUnidade('blackhawk', hp.x + G.baseEixo.ax.x * -30, hp.z + G.baseEixo.ax.z * -30, G.baseEixo.ang);
+  const [hTransp, hAtaque] = EUA ? ['blackhawk', 'apache'] : [P.heliporto[1], P.heliporto[0]];
+  const bh = criarUnidade(hTransp, hp.x + G.baseEixo.ax.x * -30, hp.z + G.baseEixo.ax.z * -30, G.baseEixo.ang);
   bh.pousado = true; bh.y = 0;
-  const ap = criarUnidade('apache', hp.x, hp.z, G.baseEixo.ang);
+  const ap = criarUnidade(hAtaque, hp.x, hp.z, G.baseEixo.ang);
   ap.pousado = true;
-  // jatos no convés
-  const j1 = criarUnidade('f35', pa.x, pa.z, 0); j1.vagaConves = 0; j1.base = G.porta;
-  const j2 = criarUnidade('f18', pa.x, pa.z, 0); j2.vagaConves = 1; j2.base = G.porta;
-  if (!COSTA) { const j3 = criarUnidade('a10', pa.x, pa.z, 0); j3.vagaConves = 2; j3.base = G.porta; }
+  // jatos no convés (EUA)
+  if (pa) {
+    const j1 = criarUnidade('f35', pa.x, pa.z, 0); j1.vagaConves = 0; j1.base = G.porta;
+    const j2 = criarUnidade('f18', pa.x, pa.z, 0); j2.vagaConves = 1; j2.base = G.porta;
+    if (!COSTA) { const j3 = criarUnidade('a10', pa.x, pa.z, 0); j3.vagaConves = 2; j3.base = G.porta; }
+  }
+  // as bases da Rússia, da China e dos EUA controladas pelo computador
+  iniciarGuerra(criarEstrutura, criarUnidade, lugarLivre);
   // civis
   espalharCivis(cfg.civis);
   // prédios com civis presos (SOS)
@@ -327,95 +371,34 @@ function produzir(tipo, fonte) {
   if (fonte && (fonte === G.porta || fonte.tipoEstr === 'pista')) {
     const p = fonte;
     if (d.classe === 'jato') {
-      u = criarUnidade(tipo, p.x, p.z, 0);
+      u = criarUnidade(tipo, p.x, p.z, 0, { nacao: p.nacao });
       u.base = p;
       const usadas = new Set(G.unidades.filter((x) => x.classe === 'jato' && x !== u && x.vivo && (x.base || G.porta) === p).map((x) => x.vagaConves));
       let v = 0; while (usadas.has(v)) v++;
       u.vagaConves = v;
     } else {
       const q = p === G.porta ? padPorta(p, padLivre(p)) : { x: p.x + Math.sin(p.ang) * (-60 - randi(0, 3) * 25), z: p.z + Math.cos(p.ang) * (-60 - randi(0, 3) * 25) };
-      u = criarUnidade(tipo, q.x, q.z, p.ang, { alt: p.deck });
+      u = criarUnidade(tipo, q.x, q.z, p.ang, { alt: p.deck, nacao: p.nacao });
       u.y = p.deck; u.pousado = true;
     }
   } else if (d.de === 'heliporto') {
     const pads = [[-30, 0], [0, 0], [30, 0], [-15, 32], [15, 32]];
     const [px, pz] = escolher(pads);
     const c = Math.cos(fonte.ang), s = Math.sin(fonte.ang);
-    u = criarUnidade(tipo, fonte.x + px * c + pz * s, fonte.z - px * s + pz * c, fonte.ang);
+    u = criarUnidade(tipo, fonte.x + px * c + pz * s, fonte.z - px * s + pz * c, fonte.ang, { nacao: fonte.nacao });
     u.pousado = true;
   } else if (d.de === 'docas') {
     const a = fonte.saidaAgua;
     let p = a;
     if (d.nav === 2) p = pontoLivreProximo(2, a.x, a.z) || a;
-    u = criarUnidade(tipo, p.x + rand(-10, 10), p.z + rand(-10, 10), fonte.ang);
+    u = criarUnidade(tipo, p.x + rand(-10, 10), p.z + rand(-10, 10), fonte.ang, { nacao: fonte.nacao });
   } else {
     const s = fonte.saida || fonte;
     const p = lugarLivre({ x: s.x + rand(-6, 6), z: s.z + rand(-6, 6) });
-    u = criarUnidade(tipo, p.x, p.z, G.baseEixo.ang);
+    u = criarUnidade(tipo, p.x, p.z, fonte.ang ?? G.baseEixo.ang, { nacao: fonte.nacao });
   }
-  alerta(`${d.icone} ${d.nome} pronto!`, u.x, u.z, 'bom');
-  somUI('ok');
+  if (u.nacao === G.nacao) { alerta(`${d.icone} ${d.nome} pronto!`, u.x, u.z, 'bom'); somUI('ok'); }
   return u;
-}
-
-// ---------------- surto ----------------
-const FOCOS_NOMES = META.focos || ['bayside'];
-
-function nomePerto(x, z) {
-  let n = 'Miami', md = Infinity;
-  for (const k in lugares) {
-    if (k === 'base' || k === 'heliporto' || k === 'docas' || k === 'portaavioes') continue;
-    const d = dist2(x, z, lugares[k].x, lugares[k].z);
-    if (d < md) { md = d; n = lugares[k].nome; }
-  }
-  return n;
-}
-
-function novoFoco() {
-  G.focos++;
-  let cx, cz;
-  const civis = G.agentes.filter((a) => a.vivo && !a.zumbi && !a.dentro && a.estado !== 'morto' && dist(a.x, a.z, G.estr.qg.x, G.estr.qg.z) > 700);
-  if (G.focos <= 4 && lugares[FOCOS_NOMES[G.focos - 1]]) { const l = lugares[FOCOS_NOMES[G.focos - 1]]; cx = l.x; cz = l.z; }
-  else if (civis.length) { const a = escolher(civis); cx = a.x; cz = a.z; }
-  else return;
-  const n = Math.min(14, 3 + Math.floor(G.focos * 0.8));
-  // os civis mais próximos são os primeiros infectados
-  const perto = civis.sort((a, b) => dist2(a.x, a.z, cx, cz) - dist2(b.x, b.z, cx, cz)).slice(0, n);
-  let feitos = 0;
-  for (const a of perto) {
-    if (dist(a.x, a.z, cx, cz) > 250) break;
-    tornarZumbi(a, G.dia >= 2 && Math.random() < 0.2 ? 'corredor' : 'comum');
-    G.infectados++;
-    feitos++;
-  }
-  for (; feitos < n; feitos++) {
-    const p = pontoLivreProximo(0, cx + rand(-20, 20), cz + rand(-20, 20));
-    if (p) { criarZumbi(p.x, p.z); G.infectados++; G.populacao++; }
-  }
-  const nome = nomePerto(cx, cz);
-  (G.swatPendente || (G.swatPendente = [])).push({ t: G.tempo + 4, x: cx, z: cz, nome });
-  alerta(G.focos === 1 ? `☣️ Primeiro caso confirmado em ${nome}! O surto começou.` : `☣️ Novo foco de infecção: ${nome}`, cx, cz, 'surto');
-  somUI('alerta');
-}
-
-function hordaDeFora() {
-  // zumbis chegando de fora da cidade por qualquer borda com terra
-  const n = Math.min(30, 6 + G.dia * 4);
-  let cx, cz, t = 0;
-  do {
-    t++;
-    const lado = (Math.random() * 4) | 0, k = Math.random();
-    cx = lado === 0 ? rand(5, 50) : lado === 1 ? LARG - rand(5, 50) : k * LARG;
-    cz = lado === 2 ? rand(5, 50) : lado === 3 ? ALT - rand(5, 50) : k * ALT;
-  } while ((!andavel(cx, cz) || dist(cx, cz, G.estr.qg.x, G.estr.qg.z) < 900) && t < 300);
-  if (t >= 300) return;
-  for (let i = 0; i < n; i++) {
-    const p = pontoLivreProximo(0, cx + rand(-30, 30), cz + rand(-30, 30));
-    if (p) { const z = criarZumbi(p.x, p.z, G.dia >= 3 && Math.random() < 0.06 ? 'bruto' : G.dia >= 2 && Math.random() < 0.2 ? 'corredor' : 'comum'); z.estado = 'ruido'; const f0 = lugares[FOCOS_NOMES[0]]; z.destino = { x: f0.x, z: f0.z }; }
-  }
-  enviarSwat(cx, cz, nomePerto(cx, cz));
-  alerta(`🧟 Horda de ${n} zumbis chegando de fora da cidade (${nomePerto(cx, cz)})`, cx, cz, 'surto');
-  somUI('alerta');
 }
 
 export function atualizarJogo(dt) {
@@ -429,18 +412,7 @@ export function atualizarJogo(dt) {
   // ruídos expiram
   G.ruidos = G.ruidos.filter((r) => G.tempo - r.t < 3);
   if (G.ruidos.length > 60) G.ruidos.splice(0, G.ruidos.length - 60);
-  // focos
-  if (G.tempo >= G.proxFoco && !G.surtoParado) {
-    novoFoco();
-    G.proxFoco = G.tempo + Math.max(35, 80 - G.focos * 6) * G.cfgDif.intervalo;
-  }
-  if (G.dia >= 2 && !G.surtoParado) {
-    if (!G.proxHorda) G.proxHorda = G.tempo + 30;
-    if (G.tempo >= G.proxHorda) { hordaDeFora(); G.proxHorda = G.tempo + Math.max(70, 160 - G.dia * 20) * G.cfgDif.intervalo; }
-  }
-  if (G.swatPendente) for (let i = G.swatPendente.length - 1; i >= 0; i--) { const q = G.swatPendente[i]; if (G.tempo >= q.t) { G.swatPendente.splice(i, 1); enviarSwat(q.x, q.z, q.nome); } }
-  atualizarPolicia(dt);
-  atualizarSobreviventes(dt);
+  atualizarGuerra(dt);
   // porta-aviões produz
   const p = G.porta;
   if (p && p.vivo && p.fila.length) {
@@ -455,32 +427,12 @@ export function atualizarJogo(dt) {
       G.resgateAcum = 0; G._ultResg = G.tempo;
     }
   }
-  // fim de jogo
-  if (!G.fim && !G.sandbox && G.quadro % 30 === 0) {
-    const presos = predios.reduce((s, q) => s + (q.base ? 0 : q.civis), 0);
-    if (G.resgatados >= G.meta) vitoria(`Você resgatou ${G.resgatados} civis. Miami agradece!`);
-    else if (G.focos >= 5 && G.nZumbis === 0 && G.tempo > 300) vitoria('O surto foi contido: não restou nenhum zumbi em Miami!');
-    else if (G.focos >= 2 && G.nCivis === 0 && presos === 0) derrota('Não restaram civis para resgatar.');
-  }
+  // fim de jogo: QG destruído (ver guerra.js); sem civis vivos não há derrota, só a guerra decide
 }
 
-export function vitoria(txt) { G.fim = true; G.pausado = true; G.ui && G.ui.fim(true, txt); }
+export function vitoria(txt) { if (G.fim) return; G.fim = true; G.pausado = true; G.ui && G.ui.fim(true, txt); }
 export function derrota(txt) { if (G.sandbox) { alerta('Sandbox: ' + txt + ' (o jogo continua)', null, null, 'ruim'); return; } if (G.fim) return; G.fim = true; G.pausado = true; G.ui && G.ui.fim(false, txt); }
 G.derrota = derrota;
-
+G.vitoria = vitoria;
 // ferramentas do modo sandbox
-export function hordaSandbox(x, z, n = 40, tipo = 'comum') {
-  let k = 0;
-  for (let i = 0; i < n; i++) {
-    const p = pontoLivreProximo(0, x + rand(-25, 25), z + rand(-25, 25));
-    if (p) { criarZumbi(p.x, p.z, tipo === 'misto' ? (Math.random() < 0.1 ? 'bruto' : Math.random() < 0.3 ? 'corredor' : 'comum') : tipo); k++; }
-  }
-  G.populacao += k; G.infectados += k;
-  alerta(`🧟 ${k} zumbis criados`, x, z, 'surto');
-}
-export function limparZumbis() {
-  let k = 0;
-  for (const a of G.agentes) if (a.zumbi && a.vivo) { a.vivo = false; k++; }
-  alerta(`🧹 ${k} zumbis removidos`, null, null, 'bom');
-}
-G.hordaSandbox = hordaSandbox; G.limparZumbis = limparZumbis;
+G.ataqueSandbox = ataqueSandbox; G.limparInimigos = limparInimigos;

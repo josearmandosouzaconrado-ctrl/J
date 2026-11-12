@@ -1,11 +1,30 @@
-# 🧟 Miami: Surto Zumbi
+# ⚔️ Frente de Guerra
 
-**Regiões:** Miami 🌴, Interior da Flórida 🌾 (Homestead, fazendas e Everglades), São Francisco 🌉, Cidade do México 🇲🇽 e Sete Lagoas 🇧🇷 (MG) — cada uma em escala real, escolhida no menu inicial.
+Jogo de **estratégia em tempo real 3D** para celular (Android) em **cidades de verdade, em tamanho real (1:1)**:
+os **EUA contra a Rússia e a China**, que são aliadas. Antes chamado "Miami: Surto Zumbi".
 
-Jogo de **estratégia em tempo real 3D** para celular (Android) na **Miami de verdade, em tamanho real (1:1)**.
-Um surto zumbi começa aos poucos no centro da cidade e se espalha pelas mordidas. Você comanda o Exército,
-a Marinha e a Força Aérea dos EUA a partir de uma base militar no Porto de Miami e de um porta-aviões no mar
-para conter a infecção e **resgatar os civis**.
+**Regiões:** Miami 🌴, Interior da Flórida 🌾, São Francisco 🌉, Cidade do México 🇲🇽 e Sete Lagoas 🇧🇷 (MG).
+
+## A guerra
+
+- No menu inicial você escolhe o seu lado: 🇺🇸 **EUA**, 🇷🇺 **Rússia** ou 🇨🇳 **China**. As outras nações são
+  comandadas pelo computador: cada uma tem a sua base (com bandeira), produz tropas e manda ondas de ataque.
+  Jogando de Rússia ou China, a outra é sua aliada e luta ao seu lado.
+- **Vitória:** destruir o Quartel-General de cada nação inimiga. **Derrota:** perder o seu QG.
+- **Combate com blindagem:** fuzis e metralhadoras são bons contra soldados e quase não ferem tanques; os soldados
+  levam lança-foguetes (AT4, RPG-7, PF-98) que só disparam contra veículos e helicópteros; canhões de tanque e
+  artilharia não acertam aeronaves no ar; soldados em prédios ficam mais protegidos. Abater inimigos dá dinheiro.
+- **Civis** fogem dos tiros, das explosões e das tropas inimigas, seguem as suas tropas e podem ser evacuados para a
+  Zona Segura (+$40 cada). Soldados abatidos ficam caídos no chão por um tempo.
+
+| Nação | Infantaria | Veículos | Helicópteros |
+|---|---|---|---|
+| 🇺🇸 EUA | Soldado (M4A1 + AT4), metralhador, atirador, médico | Humvee, ambulância, Stryker, Bradley, Abrams, Paladin, HIMARS | Little Bird, Black Hawk, Seahawk, Chinook, Apache, drone Reaper |
+| 🇷🇺 Rússia | Soldado (AK-12 + RPG-7), metralhador (PKP), atirador (SVD), médico | GAZ Tigr, BTR-82A, BMP-3, T-90M | Ka-52 Alligator, Mi-8AMTSh |
+| 🇨🇳 China | Soldado (QBZ-191 + PF-98), metralhador, atirador (QBU-191), médico | Dongfeng Mengshi, ZBL-08, ZBD-04A, Type 99A | Z-10, Z-20 |
+
+Os EUA também têm a Marinha (docas, destróier, porta-aviões USS Enterprise) e os jatos (F-35C, F/A-18E, F-22, A-10).
+Marinha e jatos da Rússia e da China ficam para a próxima etapa.
 
 ## Baixar
 
@@ -43,7 +62,7 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
 - Sons gerados pelo jogo: tiros em camadas com eco entre os prédios, canhões, explosões, rotores de
   helicóptero, ronco dos jatos e motores dos blindados.
 
-## Forças militares
+## Forças militares dos EUA (detalhes)
 
 | Onde | Unidades |
 |---|---|
@@ -72,8 +91,8 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
 - **Carcaças:** todo veículo terrestre destruído fica no lugar como carcaça queimada, pegando fogo e soltando fumaça,
   e some depois de alguns minutos.
 - **Soldados entram** em veículos, helicópteros, barcos e no Osprey; o Chinook e o LCAC levam veículos.
-- **Prédios:** soldados sobem no telhado de qualquer prédio e atiram de cima com mais alcance. Os zumbis
-  forçam a entrada aos poucos (barra de integridade).
+- **Prédios:** soldados sobem no telhado de qualquer prédio e atiram de cima com mais alcance. Lá dentro
+  eles ficam mais protegidos dos tiros.
 - **Resgate:** civis seguem as tropas e embarcam sozinhos nos transportes. Prédios com **SOS** têm civis
   presos: as tropas os tiram pela porta e os helicópteros pelo telhado. Leve-os à **Zona Segura** da base
   ou ao porta-aviões.
@@ -93,31 +112,17 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
   Militar e, sem mar, os jatos saem de uma pista de pouso.
 - **🪢 Descida em corda (fast-rope):** Black Hawk, Chinook e Osprey param no ar e os soldados descem de corda,
   no chão ou direto num telhado.
-- **♾️ Modo Sandbox:** dinheiro infinito, produção rápida, sem derrota, com botões para criar hordas, pausar o
-  surto e limpar os zumbis.
+- **♾️ Modo Sandbox:** dinheiro infinito, produção rápida, sem derrota, com botões para criar um ataque inimigo onde
+  a câmera está, pausar os comandantes do computador e remover as tropas inimigas.
 - **🔨 Construir bases** em qualquer lugar: posto avançado (FOB), quartel, pátio, heliporto, docas, zona segura,
   torre e barreiras. Cada base produz unidades ali mesmo.
-- **🏕️ Sobreviventes:** civis que ninguém resgata se juntam, acham armas e montam acampamentos com barricadas;
-  defendem-se sozinhos e aceitam o resgate quando suas tropas chegam. Com a cidade tomada, a polícia e a SWAT
-  desistem e viram sobreviventes também.
-- **🚓 Polícia SWAT:** quando o vírus aparece, equipes da SWAT saem das delegacias de Miami e de Miami Beach
-  num blindado BearCat. Agem sozinhas: vão aos focos, combatem e levam civis para a zona segura.
 - **🎮 Controlar:** assuma qualquer unidade em 3ª pessoa com o joystick.
-
-## O surto
-
-Começa com poucos casos na Bayside Marketplace. Novos focos aparecem em Brickell, Ocean Drive, Kaseya Center,
-Little Havana... Civis mordidos viram zumbis (soldados também, fardados). Tiros e explosões atraem zumbis;
-à noite eles ficam mais rápidos. No dia 2 chegam hordas do continente e zumbis corredores; no dia 3, brutamontes.
-
-**Vitória:** resgatar a meta de civis (150 / 250 / 350 conforme a dificuldade) ou eliminar todos os zumbis.
-**Derrota:** o Quartel-General ser destruído ou não restar nenhum civil.
 
 ## Controles
 
 - Um dedo: arrastar a câmera • dois dedos: pinça (zoom), girar e inclinar.
 - Toque numa unidade para selecionar; toque duplo pega todas do mesmo tipo; segure e arraste para seleção em caixa.
-- Com unidades selecionadas: toque no chão (mover), num zumbi (atacar), num prédio (subir no telhado / resgatar SOS),
+- Com unidades selecionadas: toque no chão (mover), numa unidade ou estrutura inimiga (atacar), num prédio (subir no telhado / resgatar SOS),
   num transporte (embarcar), no porta-aviões (pousar).
 - PC: arrastar, roda do mouse, botão direito gira, WASD e Q/E, espaço pausa.
 

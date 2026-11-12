@@ -1,6 +1,7 @@
 // Interface: barra do topo, seleção, produção, minimapa, marcadores, menus e controle direto
 import { G } from './estado.js';
-import { TIPOS, PRODUCAO, NOMES_PROD, CONSTRUIR } from './tipos.js';
+import { TIPOS, PRODUCAO_N, NOMES_PROD, CONSTRUIR } from './tipos.js';
+import { NACOES, timeDe } from './guerra.js';
 import { enfileirar, cancelar, fonteDe } from './jogo.js';
 import { predios, canvasTerreno, LARG, ALT, lugares, COSTA, META } from './mapa.js';
 import { telaDe, ligarModoAreaSeJatos } from './entrada.js';
@@ -31,8 +32,9 @@ export class UI {
         <span class="chip" id="t-din">💵 0</span>
         <span class="chip verde" id="t-res">✅ 0/0</span>
         <span class="chip" id="t-civ">🧍 0</span>
-        <span class="chip verm" id="t-zum">🧟 0</span>
-        <span class="chip" id="t-inf">☣️ 0%</span>
+        <span class="chip" id="t-nac">🇺🇸</span>
+        <span class="chip verm" id="t-zum">⚔️ 0</span>
+        <span class="chip" id="t-inf">🎯 0</span>
         <span class="chip" id="t-hora">☀️ Dia 1 08:00</span>
         <span class="esp"></span>
         <button class="bt" id="b-vel">1x</button>
@@ -51,8 +53,8 @@ export class UI {
         <button class="bt" id="b-base">📍<small>Base</small></button>
         <button class="bt" id="b-porta">🛳️<small>Porta-av.</small></button>
         <button class="bt" id="b-alerta">⚠️<small>Alerta</small></button>
-        <button class="bt sb oculto" id="b-sb-horda">🧟<small>Horda</small></button>
-        <button class="bt sb oculto" id="b-sb-surto">☣️<small>Surto</small></button>
+        <button class="bt sb oculto" id="b-sb-horda">⚔️<small>Ataque</small></button>
+        <button class="bt sb oculto" id="b-sb-surto">⏸<small>Inimigo</small></button>
         <button class="bt sb oculto" id="b-sb-limpar">🧹<small>Limpar</small></button>
       </div>
       <canvas id="mini" width="220" height="128"></canvas>
@@ -82,9 +84,9 @@ export class UI {
     on('#b-jato', () => this.selecionarGrupo((u) => u.classe === 'jato'));
     on('#b-base', () => this.cam.irPara(G.estr.qg.x, G.estr.qg.z, 450));
     on('#b-porta', () => this.cam.irPara(G.porta.x, G.porta.z, 600));
-    on('#b-sb-horda', () => G.hordaSandbox(this.cam.alvo.x, this.cam.alvo.z, 40, 'misto'));
-    on('#b-sb-surto', () => { G.surtoParado = !G.surtoParado; $('#b-sb-surto').classList.toggle('ativo', G.surtoParado); this.alerta(G.surtoParado ? '⏸ Surto pausado: não surgem novos focos nem hordas' : '▶ Surto retomado', null, null, 'info'); });
-    on('#b-sb-limpar', () => G.limparZumbis());
+    on('#b-sb-horda', () => G.ataqueSandbox(this.cam.alvo.x, this.cam.alvo.z));
+    on('#b-sb-surto', () => { G.pausaIA = !G.pausaIA; $('#b-sb-surto').classList.toggle('ativo', G.pausaIA); this.alerta(G.pausaIA ? '⏸ Comandantes do computador pausados: não produzem nem atacam' : '▶ Comandantes do computador de volta', null, null, 'info'); });
+    on('#b-sb-limpar', () => G.limparInimigos());
     on('#b-alerta', () => { const a = [...G.alertas].reverse().find((x) => x.x != null); if (a) this.cam.irPara(a.x, a.z, Math.min(this.cam.dist, 350)); });
     on('#b-sair-controle', () => this.controlar(null));
     // minimapa
@@ -151,11 +153,13 @@ export class UI {
     b.classList.toggle('oculto', !G.construindo);
   }
 
+  montarTopo() { this.atualizarTopo(); }
+
   modoCaixa(v) { G.modoCaixa = v; $('#b-caixa').classList.toggle('ativo', v); }
 
   selecionarGrupo(f) {
     G.selecao.slice().forEach((u) => marcarSelecao(u, false));
-    G.selecao = G.unidades.filter((u) => u.vivo && !u.estr && !u.dentro && !u.policia && f(u));
+    G.selecao = G.unidades.filter((u) => u.vivo && !u.estr && !u.dentro && u.nacao === G.nacao && f(u));
     G.selecao.forEach((u) => marcarSelecao(u, true));
     somUI('clique');
     ligarModoAreaSeJatos();
@@ -169,12 +173,14 @@ export class UI {
   // ---------------- topo ----------------
   atualizarTopo() {
     $('#t-din').textContent = '💵 $' + fmt(G.dinheiro);
-    $('#t-res').textContent = `✅ ${G.resgatados}/${G.meta === Infinity ? '∞' : G.meta}`;
+    $('#t-res').textContent = `✅ ${G.resgatados}`;
     const presos = this._presos || 0;
     $('#t-civ').textContent = `🧍 ${G.nCivis || 0}` + (presos ? ` +${presos}🏢` : '');
-    $('#t-zum').textContent = `🧟 ${G.nZumbis || 0}`;
-    const inf = G.populacao ? Math.round(G.infectados / G.populacao * 100) : 0;
-    $('#t-inf').textContent = `☣️ ${inf}%`;
+    $('#t-nac').textContent = (NACOES[G.nacao] || NACOES.eua).bandeira;
+    let ini = 0;
+    for (const u of G.unidades) if (u.vivo && !u.estr && timeDe(u.nacao) !== timeDe(G.nacao)) ini++;
+    $('#t-zum').textContent = `⚔️ ${ini}`;
+    $('#t-inf').textContent = `🎯 ${G.abates || 0}`;
     const h = Math.floor(G.hora || 8), m = Math.floor(((G.hora || 8) % 1) * 60);
     $('#t-hora').textContent = `${G.noite ? '🌙' : '☀️'} Dia ${G.dia || 1} ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     $('#b-pausa').textContent = G.pausado ? '▶' : '⏸';
@@ -251,12 +257,14 @@ export class UI {
   // ---------------- produção ----------------
   abrirProducao(aba) {
     if (aba) this.abaProd = aba;
+    const PRODUCAO = PRODUCAO_N[G.nacao] || PRODUCAO_N.eua;
     if (!PRODUCAO[this.abaProd] && this.abaProd !== 'construir') this.abaProd = 'quartel';
     $('#producao').classList.remove('oculto');
     const abas = $('#p-abas');
     abas.innerHTML = '';
     for (const k of ['construir', ...Object.keys(PRODUCAO)]) {
       if (!COSTA && (k === 'docas' || k === 'porta')) continue;
+      if (k === 'porta' && !G.porta) continue;
       if (COSTA && k === 'pista' && !G.unidades.some((u) => u.vivo && u.tipoEstr === 'pista')) continue;
       const b = el('button', 'aba' + (k === this.abaProd ? ' ativo' : ''), k === 'construir' ? '🔨 Construir' : k === 'porta' && !COSTA ? '✈️ Aeródromo' : NOMES_PROD[k]);
       b.addEventListener('click', (e) => { e.stopPropagation(); this.abaProd = k; this.abrirProducao(); });
@@ -268,6 +276,7 @@ export class UI {
       for (const t in CONSTRUIR) {
         const d = CONSTRUIR[t];
         if (d.agua && !COSTA) continue;
+        if (G.nacao !== 'eua' && (t === 'docas' || t === 'pista' || t === 'patriot')) continue;   // ainda só os EUA
         const c = el('div', 'carta' + (G.construindo === t ? ' sel' : ''), `<div class="ic">${d.icone}</div><div class="tx"><b>${d.nome}</b><small>${d.sub}</small><span>$${d.custo} • ${d.tempo}s</span></div>`);
         c.dataset.custo = d.custo;
         c.addEventListener('click', (e) => {
@@ -332,17 +341,14 @@ export class UI {
     const c = $('#mini'), g = c.getContext('2d');
     const sx = c.width / LARG, sz = c.height / ALT;
     g.drawImage(this.miniFundo, 0, 0, c.width, c.height);
-    g.fillStyle = '#ff3b3b';
-    for (const a of G.agentes) if (a.vivo && a.zumbi && !a.dentro && a.estado !== 'morto') g.fillRect(a.x * sx - 0.5, a.z * sz - 0.5, 1.6, 1.6);
     g.fillStyle = '#ffffff';
     for (const a of G.agentes) if (a.vivo && !a.zumbi && !a.dentro && a.estado !== 'morto') g.fillRect(a.x * sx - 0.5, a.z * sz - 0.5, 1.2, 1.2);
     for (const p of predios) if (p.civis > 0) { g.fillStyle = p.sos ? '#ffd23b' : '#5bc0ff'; g.fillRect(p.cx * sx - 1.5, p.cz * sz - 1.5, 3, 3); }
     for (const sd of G.saidas || []) { g.fillStyle = '#2ecc71'; g.fillRect(sd.x * sx - 2.5, sd.z * sz - 2.5, 5, 5); }
-    for (const c of G.acampamentos || []) if (c.ativo) { g.fillStyle = c.policia ? '#3c5cff' : '#ff9a2e'; g.beginPath(); g.arc(c.x * sx, c.z * sz, 3, 0, 6.29); g.fill(); }
     for (const u of G.unidades) {
       if (!u.vivo || u.dentro) continue;
-      g.fillStyle = u.estr ? '#7ad1ff' : u.policia ? '#ffe14d' : u.sel ? '#7dff8a' : '#3b8bff';
-      const r = u.tipo === 'portaavioes' ? 3.5 : u.estr ? 2.5 : 2;
+      g.fillStyle = corNacao(u, true);
+      const r = u.tipo === 'portaavioes' ? 3.5 : u.estr ? 3 : 2;
       g.fillRect(u.x * sx - r / 2, u.z * sz - r / 2, r, r);
     }
     // área vista
@@ -368,14 +374,14 @@ export class UI {
         if (!a.vivo || a.dentro || a.estado === 'morto') continue;
         const t = telaDe(a.x, 0, a.z, cam);
         if (!t || t.x < 0 || t.y < 0 || t.x > W || t.y > H) continue;
-        g.fillStyle = a.zumbi ? '#ff2a2a' : '#ffffff';
+        g.fillStyle = '#ffffff';
         g.fillRect(t.x - 1.5, t.y - 1.5, 3, 3);
       }
       for (const u of G.unidades) {
         if (!u.vivo || u.dentro || u.estr) continue;
         const t = telaDe(u.x, u.y, u.z, cam);
         if (!t) continue;
-        g.fillStyle = u.policia ? '#ffe14d' : u.sel ? '#5dff6f' : '#3d8bff';
+        g.fillStyle = corNacao(u, false);
         g.strokeStyle = '#001b44';
         g.beginPath(); g.arc(t.x, t.y, u.classe === 'inf' ? 3 : 5, 0, 6.29); g.fill(); g.stroke();
       }
@@ -411,16 +417,6 @@ export class UI {
       const w = g.measureText(sd.nome).width + 26;
       g.fillStyle = 'rgba(25,100,55,0.95)'; rr(g, t.x - w / 2, t.y - 11, w, 20, 5); g.fill();
       g.fillStyle = '#fff'; g.fillText('🛣️ ' + sd.nome, t.x, t.y);
-    }
-    // acampamentos de sobreviventes
-    for (const c of G.acampamentos || []) {
-      if (!c.ativo) continue;
-      const t = telaDe(c.x, 6, c.z, cam);
-      if (!t || t.x < -40 || t.y < -40 || t.x > W + 40 || t.y > H + 40) continue;
-      const arm = c.membros.filter((a) => a.armado).length;
-      g.fillStyle = c.policia ? 'rgba(40,70,200,0.9)' : 'rgba(210,120,30,0.92)'; rr(g, t.x - 44, t.y - 11, 88, 20, 6); g.fill();
-      g.fillStyle = '#fff'; g.font = 'bold 11px sans-serif';
-      g.fillText(`${c.policia ? '🚔' : '🏕️'} ${c.membros.length} (${arm}🔫)`, t.x, t.y);
     }
     // barras de vida
     for (const u of G.unidades) {
@@ -508,12 +504,12 @@ export class UI {
   fim(venceu, txt) {
     const min = Math.floor(G.tempo / 60);
     const m = this.modal(`<h2>${venceu ? '🏆 Vitória!' : '☠️ Derrota'}</h2><p>${txt}</p>
-      <div class="stats">✅ Civis resgatados: <b>${G.resgatados}</b><br>🧟 Zumbis eliminados: <b>${G.zumbisMortos}</b><br>
-      ☣️ Pessoas infectadas: <b>${G.infectados}</b><br>💀 Civis mortos: <b>${G.civisMortos}</b><br>🪖 Unidades perdidas: <b>${G.perdas}</b><br>⏱️ Tempo: <b>${min} min</b> (dia ${G.dia})</div>
+      <div class="stats">🎯 Inimigos abatidos: <b>${G.abates || 0}</b><br>🪖 Unidades perdidas: <b>${G.perdas}</b><br>
+      ✅ Civis evacuados: <b>${G.resgatados}</b><br>💀 Civis mortos: <b>${G.civisMortos}</b><br>⏱️ Tempo: <b>${min} min</b> (dia ${G.dia})</div>
       ${venceu ? '<button class="bt grande" data-a="cont">Continuar jogando</button>' : ''}
       <button class="bt grande" data-a="nova">🔄 Nova partida</button>`);
     const c = m.querySelector('[data-a=cont]');
-    if (c) c.onclick = () => { m.remove(); G.pausado = false; G.meta = 99999; this.atualizarTopo(); };
+    if (c) c.onclick = () => { m.remove(); G.pausado = false; this.atualizarTopo(); };
     m.querySelector('[data-a=nova]').onclick = () => location.reload();
   }
 
@@ -537,26 +533,29 @@ export class UI {
   }
 }
 
+// cor de cada exército no minimapa: o seu em azul (verde se selecionado), aliado em ciano, inimigos na cor da nação
+function corNacao(u, mini) {
+  if (u.nacao === G.nacao) return u.sel ? '#7dff8a' : u.estr && mini ? '#7ad1ff' : '#3d8bff';
+  if (timeDe(u.nacao) === timeDe(G.nacao)) return '#36e0e0';
+  return (NACOES[u.nacao] || NACOES.russia).cor;
+}
 function rr(g, x, y, w, h, r) {
   g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
 }
 
 export const AJUDA = `
-<p><b>🌾 Interior da Flórida:</b> Homestead, Florida City, as fazendas de Redland e a borda dos Everglades (mata, pântano e canais com pontes), com a sua base na Homestead Air Reserve Base. Em Miami, toque nas placas verdes das rodovias (US-41, US-1, SR-836) nas bordas do mapa para viajar ao interior; lá, as placas da US-1 e da Turnpike levam de volta a Miami.</p>
-<p><b>🇧🇷 Sete Lagoas (MG):</b> mapa real do centro e dos bairros feito com o OpenStreetMap: as lagoas (Paulino, Boa Vista, José Félix…), as avenidas, a Catedral, o Shopping e milhares de casas com telhado de telha. A base fica na Vila Militar; sem mar, os jatos saem de uma pista de pouso.</p>
-<p><b>Cidades:</b> no menu inicial escolha <b>Miami</b>, <b>São Francisco</b> (base naval em Treasure Island, porta-aviões na baía) ou a <b>Cidade do México</b> (base no Bosque de Chapultepec; sem mar, os jatos saem de uma pista de pouso).</p>
-<p><b>🔨 Construir:</b> no painel 🏭 Produzir, aba Construir: escolha posto avançado (FOB), quartel, pátio, heliporto, docas, zona segura, torre ou barreira e toque no mapa. Bases novas produzem unidades perto da frente de batalha, e FOB/zonas seguras recebem civis.</p>
-<p><b>Objetivo:</b> um surto zumbi começou em Miami e se espalha aos poucos. Resgate os civis e leve-os para a <b>Zona Segura</b> da base (no Porto de Miami) ou para o <b>porta-aviões</b>. Se o Quartel-General cair, você perde.</p>
-<p><b>Câmera:</b> arraste com um dedo para mover • pinça com dois dedos para zoom • gire os dois dedos para rodar • arraste dois dedos para cima/baixo para inclinar. No PC: arraste, roda do mouse, botão direito gira, WASD e Q/E.</p>
-<p><b>Selecionar:</b> toque numa unidade. Toque duplo seleciona todas do mesmo tipo na tela. Segure o dedo parado e arraste para selecionar em caixa (ou use ⬚ Caixa). ➕ Várias soma unidades à seleção. Os botões 🪖 🚁 ⚓ ✈️ selecionam grupos.</p>
-<p><b>Ordens</b> (com unidades selecionadas): toque no chão para mover • num zumbi para atacar • num <b>prédio</b> para pôr os soldados no telhado (atiram de cima com mais alcance) • num prédio com <b>SOS</b> para resgatar os civis presos (helicópteros pegam pelo telhado) • num <b>veículo, helicóptero ou barco</b> para embarcar as tropas • com aeronaves selecionadas, toque no porta-aviões para pousar no convés.</p>
-<p><b>Civis</b> seguem soldados e veículos que chegam perto e entram sozinhos em transportes. Leve-os para a zona segura: ao chegar lá, são resgatados (+$40 cada). Civis que acenam viram você ao longe.</p>
-<p><b>Produção:</b> 🏭 Produzir abre o Quartel (infantaria), o Pátio (Humvee, Stryker, Bradley, Abrams, Paladin, HIMARS, ambulância), o Heliporto (Black Hawk, Chinook, Apache, drone Reaper), as Docas (lancha, hovercraft LCAC, destróier) e o porta-aviões (F-35, F/A-18, Osprey).</p>
-<p><b>✈️ Jatos:</b> F-35C e F/A-18E saem do porta-aviões pela catapulta; F-22 Raptor e A-10 Warthog precisam de uma <b>Pista de Pouso</b> (🔨 Construir; na Cidade do México ela já existe). Eles decolam, atacam, voltam alinhados com a pista e pousam para rearmar. O A-10 metralha com o canhão de 30 mm ao longo da faixa.  selecione os jatos (toque num jato ou no botão ✈️) e <b>arraste o dedo no mapa</b> para marcar a área de bombardeio: eles decolam do porta-aviões, fazem passadas soltando bombas ao longo da faixa e voltam para rearmar. Um toque simples ataca um ponto.</p>
-<p><b>Prédios:</b> metade dos soldados fica nas janelas (quebram o vidro e atiram para fora) e metade no telhado.</p>
-<p><b>🚓 Polícia SWAT:</b> quando o vírus aparece, equipes da SWAT de Miami saem das delegacias sozinhas num blindado BearCat, combatem os zumbis e levam civis para a zona segura. Você não controla a polícia.</p>
-<p><b>🎮 Controlar:</b> com uma unidade selecionada, assuma o controle em 3ª pessoa com o joystick; ela atira sozinha nos zumbis.</p>
-<p><b>🪢 Descer de corda:</b> com um Black Hawk, Chinook ou Osprey levando soldados selecionado, toque em <b>🪢 Descer de corda</b> e depois no chão ou num telhado. O helicóptero vai até lá, fica parado no ar e os soldados descem pelas cordas; num telhado, eles ocupam o prédio.</p>
-<p><b>♾️ Sandbox:</b> no menu inicial, dinheiro infinito, produção e construção rápidas e sem derrota. Na barra lateral: 🧟 Horda (cria zumbis onde a câmera está), ☣️ Surto (pausa os novos focos) e 🧹 Limpar (remove todos os zumbis).</p>
-<p><b>🏕️ Sobreviventes:</b> civis que ninguém resgata se juntam, acham armas e montam acampamentos com barricadas (marcador laranja). Eles se defendem sozinhos. Leve tropas ou um veículo até o acampamento e eles aceitam o resgate. Se a cidade ficar muito infectada, a polícia e a SWAT desistem e viram sobreviventes também (marcador azul).</p>
-<p><b>Dicas:</b> tiros e explosões fazem barulho e atraem zumbis. À noite eles ficam mais rápidos. A partir do dia 2 chegam hordas do continente e aparecem zumbis corredores; no dia 3, brutamontes. Cuidado com o fogo amigo de artilharia perto de civis.</p>`;
+<p><b>⚔️ A guerra:</b> os EUA contra a Rússia e a China, que são aliadas. No menu inicial escolha o seu lado: 🇺🇸 EUA, 🇷🇺 Rússia ou 🇨🇳 China. As outras nações são comandadas pelo computador: cada uma tem a sua base (com bandeira), produz tropas e manda ondas de ataque. Se você joga de Rússia ou China, a outra é sua aliada e luta ao seu lado.</p>
+<p><b>Objetivo:</b> destrua o <b>Quartel-General</b> de cada nação inimiga. Se o seu QG cair, você perde. Abater inimigos dá dinheiro (🎯 na barra de cima; ⚔️ mostra quantos inimigos ainda estão em campo).</p>
+<p><b>Combate:</b> fuzis e metralhadoras são bons contra soldados e quase não ferem blindados. Contra tanques use os <b>lança-foguetes</b> dos soldados (AT4, RPG-7, PF-98), canhões de blindados, tanques, helicópteros de ataque, artilharia e jatos. Canhões de tanque e artilharia não acertam helicópteros no ar. Soldados dentro de prédios ficam mais protegidos.</p>
+<p><b>Civis:</b> fogem dos tiros, das explosões e das tropas inimigas. Eles seguem as suas tropas e entram nos seus transportes: leve-os para a <b>Zona Segura</b> (+$40 cada). Prédios com <b>SOS</b> têm civis presos.</p>
+<p><b>Câmera:</b> arraste com um dedo para mover • pinça com dois dedos para zoom • gire os dois dedos para rodar • arraste dois dedos para cima/baixo para inclinar. No PC: arraste, roda do mouse, botão direito gira, WASD e Q/E, espaço pausa.</p>
+<p><b>Selecionar:</b> toque numa unidade sua. Toque duplo seleciona todas do mesmo tipo na tela. Segure o dedo parado e arraste para selecionar em caixa (ou use ⬚ Caixa). ➕ Várias soma unidades à seleção.</p>
+<p><b>Ordens</b> (com unidades selecionadas): toque no chão para mover • numa unidade ou estrutura inimiga para atacar • num <b>prédio</b> para pôr os soldados no telhado e nas janelas • num transporte para embarcar.</p>
+<p><b>Produção:</b> 🏭 Produzir abre o Quartel (infantaria), o Pátio (blindados e tanques), o Heliporto e, nos EUA, as Docas e o porta-aviões. Cada nação tem as suas unidades: EUA (Abrams, Bradley, Stryker, Apache, Black Hawk...), Rússia (T-90M, BMP-3, BTR-82A, Tigr, Ka-52, Mi-8) e China (Type 99A, ZBD-04A, ZBL-08, Mengshi, Z-10, Z-20).</p>
+<p><b>✈️ Jatos (EUA):</b> F-35C e F/A-18E saem do porta-aviões; F-22 e A-10 precisam de uma Pista de Pouso. Arraste o dedo no mapa com jatos selecionados para marcar uma área de bombardeio.</p>
+<p><b>🔨 Construir:</b> posto avançado (FOB), quartel, pátio, heliporto, zona segura, torre e barreiras em qualquer lugar.</p>
+<p><b>🪢 Descer de corda:</b> com um helicóptero de transporte levando soldados selecionado, toque em 🪢 e depois no chão ou num telhado.</p>
+<p><b>🎮 Controlar:</b> com uma unidade selecionada, assuma o controle em 3ª pessoa com o joystick; ela atira sozinha nos inimigos.</p>
+<p><b>♾️ Sandbox:</b> dinheiro infinito, produção rápida e sem derrota. Na barra lateral: ⚔️ Ataque (cria um grupo inimigo onde a câmera está), ⏸ Inimigo (pausa os comandantes do computador) e 🧹 Limpar (remove as tropas inimigas).</p>
+<p><b>Cidades:</b> Miami, São Francisco, Cidade do México, Interior da Flórida e Sete Lagoas, todas em escala real.</p>
+`;

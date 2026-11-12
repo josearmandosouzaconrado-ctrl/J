@@ -1,11 +1,12 @@
-// Miami: Surto Zumbi — estratégia em tempo real 3D no mapa real de Miami
+// Frente de Guerra — estratégia em tempo real 3D em cidades reais: EUA contra Rússia e China
 import * as THREE from 'three';
 import { G } from './estado.js';
 import { atualizarKit } from './kit.js';
 import { LARG, ALT, lugares, predios, MAT_PREDIOS, META, COSTA, definirQualidade, atualizarDecoracao, atualizarPredios } from './mapa.js';
 import { Hash } from './util.js';
 import { criarAmbiente } from './modelos.js';
-import { Bonecos, CAMO, CAMO2, PELE_SOLD, SWAT_ROUPA, SWAT_CALCA } from './bonecos.js';
+import { Bonecos, PELE_SOLD } from './bonecos.js';
+import { NACOES } from './guerra.js';
 import { Efeitos } from './efeitos.js';
 import { CameraRTS, configurarEntrada } from './entrada.js';
 import { montarMundo, construirVisual, iniciarPartida, atualizarJogo } from './jogo.js';
@@ -237,8 +238,16 @@ async function iniciar() {
         if (!visivel(u.x, u.z)) continue;
         const pose = u.rapel ? 4 : u.mirando > 0 && u.velAtual < 0.5 ? 2 : 0;
         const vn = Math.min(1, u.velAtual / 3);
-        if (u.policia) bon.add(u.x, u.y, u.z, u.ang, u.fase, pose, SWAT_ROUPA, SWAT_CALCA, PELE_SOLD, 2, 1, null, vn);
-        else bon.add(u.x, u.y, u.z, u.ang, u.fase, pose, u.tipo === 'sniper' ? SNIPER : CAMO, CAMO2, PELE_SOLD, 1, 1, null, vn);
+        const N = NACOES[u.nacao] || NACOES.eua;
+        bon.add(u.x, u.y, u.z, u.ang, u.fase, pose, u.tipo.includes('sniper') ? N.farda.map((c) => c * 0.82) : N.farda, N.calca, PELE_SOLD, 1, 1, null, vn, [N.colete, N.capacete]);
+      }
+      // soldados caídos ficam no chão por um tempo
+      if (G.mortos) for (let i = G.mortos.length - 1; i >= 0; i--) {
+        const m = G.mortos[i];
+        if (G.tempo - m.t > 60) { G.mortos.splice(i, 1); continue; }
+        if (!visivel(m.x, m.z)) continue;
+        const N = NACOES[m.nacao] || NACOES.eua;
+        bon.add(m.x, m.y, m.z, m.ang, 0, 3, N.farda, N.calca, PELE_SOLD, 1, 1, null, 0, [N.colete, N.capacete]);
       }
       for (const u of G.unidades) {
         if (!u.vivo || u.dentro || !u.m || !u.m.def.bancos || !u.passageiros.length || !visivel(u.x, u.z)) continue;
@@ -247,7 +256,8 @@ async function iniciar() {
           if (p.agente || i >= 6) return;
           const lado = i % 2 ? -1 : 1, lz = 0.85 - Math.floor(i / 2) * 0.6, lx = lado * 1.02;
           const x = u.x + c * lx + s * lz, z = u.z - s * lx + c * lz;
-          bon.add(x, u.y + 0.97 - 0.93, z, u.ang + lado * Math.PI / 2, 0, 5, p.tipo === 'sniper' ? SNIPER : CAMO, CAMO2, PELE_SOLD, 1, 1, null, 0);
+          const N = NACOES[p.nacao] || NACOES.eua;
+          bon.add(x, u.y + 0.97 - 0.93, z, u.ang + lado * Math.PI / 2, 0, 5, N.farda, N.calca, PELE_SOLD, 1, 1, null, 0, [N.colete, N.capacete]);
         });
       }
       desenharAgentes(bon, visivel);
@@ -282,6 +292,18 @@ async function iniciar() {
   const menu = $('#menu');
   menu.classList.remove('oculto');
   let dif = 'normal';
+  // nação do jogador (lembrada entre partidas)
+  let nacao = 'eua';
+  try { nacao = localStorage.getItem('guerra-nacao') || 'eua'; } catch (e) { /* sem armazenamento */ }
+  menu.querySelectorAll('[data-nacao]').forEach((b) => {
+    b.classList.toggle('ativo', b.dataset.nacao === nacao);
+    b.addEventListener('click', () => {
+      nacao = b.dataset.nacao;
+      try { localStorage.setItem('guerra-nacao', nacao); } catch (e) { /* sem armazenamento */ }
+      menu.querySelectorAll('[data-nacao]').forEach((x) => x.classList.toggle('ativo', x === b));
+    });
+  });
+  { const m = /[?&]nacao=(\w+)/.exec(location.search); if (m && NACOES[m[1]]) nacao = m[1]; }
   menu.querySelectorAll('[data-dif]').forEach((b) => b.addEventListener('click', () => {
     dif = b.dataset.dif;
     menu.querySelectorAll('[data-dif]').forEach((x) => x.classList.toggle('ativo', x === b));
@@ -305,14 +327,16 @@ async function iniciar() {
   $('#m-jogar').onclick = () => {
     iniciarSom();
     menu.classList.add('oculto');
-    iniciarPartida(dif);
+    iniciarPartida(dif, nacao);
+    ui.montarTopo();
     ui.modoSandbox();
-    if (G.sandbox) ui.alerta('♾️ Sandbox: dinheiro infinito, produção rápida e sem derrota. Use 🧟 Horda, ☣️ Surto e 🧹 Limpar na barra lateral.', null, null, 'info');
+    if (G.sandbox) ui.alerta('♾️ Sandbox: dinheiro infinito, produção rápida e sem derrota. Use ⚔️ Ataque, ⏸ Inimigo e 🧹 Limpar na barra lateral.', null, null, 'info');
     G.iniciado = true;
     camRTS.irPara(G.estr.qg.x, G.estr.qg.z, 420);
     camRTS.yaw = G.baseEixo.ang + Math.PI;
     ui.atualizarTopo();
-    ui.alerta(`📻 ${lugares.base.nome} operante. Relatos de ataques estranhos em ${META.nome}...`, G.estr.qg.x, G.estr.qg.z, 'info');
+    const N = NACOES[G.nacao], ini = Object.keys(NACOES).filter((k) => NACOES[k].time !== N.time).map((k) => NACOES[k].bandeira + ' ' + NACOES[k].nome).join(' e ');
+    ui.alerta(`📻 ${N.bandeira} ${lugares.base.nome} operante. Forças de ${ini} se reúnem em ${META.nome}: defenda a base e destrua os quartéis-generais inimigos.`, G.estr.qg.x, G.estr.qg.z, 'info');
     ui.alerta('Dica: toque em ❓ no menu ⚙️ para ver os controles', null, null, 'info');
   };
   if (/[?&]auto/.test(location.search)) $('#m-jogar').click();

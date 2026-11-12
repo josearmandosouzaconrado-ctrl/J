@@ -7,6 +7,7 @@ import {
   ordenar, ordenarMover, marcarSelecao, cabe, desembarcar, sairDoPredio, chaoEm, ordenarAreaJatos, padLivre,
 } from './unidades.js';
 import { somUI, iniciarSom } from './som.js';
+import { inimigoDoJogador } from './guerra.js';
 
 const ray = new THREE.Raycaster();
 const plano = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -240,7 +241,7 @@ function selecionarCaixa(cx, camRTS, somar) {
   if (!somar) { G.selecao.slice().forEach((u) => marcarSelecao(u, false)); G.selecao = []; }
   const achados = [];
   for (const u of G.unidades) {
-    if (!u.vivo || u.estr || u.dentro || u.tipo === 'portaavioes' || u.policia) continue;
+    if (!u.vivo || u.estr || u.dentro || u.tipo === 'portaavioes' || u.nacao !== G.nacao) continue;
     const t = telaDe(u.x, u.y + 1, u.z, camRTS.cam);
     if (t && t.x >= x0 && t.x <= x1 && t.y >= y0 && t.y <= y1) achados.push(u);
   }
@@ -255,8 +256,8 @@ function selecionarCaixa(cx, camRTS, somar) {
 function unidadeNoToque(sx, sy, cam, filtro) {
   let melhor = null, md = Infinity;
   for (const u of G.unidades) {
-    if (!u.vivo || u.dentro || u.policia) continue;
-    if (filtro && !filtro(u)) continue;
+    if (!u.vivo || u.dentro) continue;
+    if (filtro ? !filtro(u) : u.nacao !== G.nacao) continue;   // sem filtro: só as suas unidades
     const t = telaDe(u.x, u.y + (u.classe === 'inf' ? 1 : (u.d.raio || 2) * 0.4), u.z, cam);
     if (!t) continue;
     // raio na tela proporcional ao tamanho da unidade
@@ -269,12 +270,19 @@ function unidadeNoToque(sx, sy, cam, filtro) {
   return melhor;
 }
 
-function zumbiNoToque(sx, sy, cam) {
+// unidade ou estrutura inimiga no ponto tocado (para a ordem de atacar)
+function inimigoNoToque(sx, sy, cam) {
+  const u = unidadeNoToque(sx, sy, cam, (v) => inimigoDoJogador(v));
+  if (u) return u;
   const ch = G.cam.chao(sx, sy);
   if (!ch) return null;
-  const r = Math.max(6, G.cam.dist * 0.03);
+  const r = Math.max(8, G.cam.dist * 0.03);
   let melhor = null, md = Infinity;
-  G.hashA.busca(ch.x, ch.z, r, (a, d2) => { if (a.zumbi && a.vivo && a.estado !== 'morto' && d2 < md) { md = d2; melhor = a; } });
+  G.hashU.busca(ch.x, ch.z, r + 30, (v, d2) => {
+    if (!v.vivo || v.dentro || !inimigoDoJogador(v)) return;
+    const lim = r + (v.estr ? v.d.raio : 0);
+    if (d2 < lim * lim && d2 < md) { md = d2; melhor = v; }
+  });
   return melhor;
 }
 
@@ -395,7 +403,7 @@ function toque(sx, sy, camRTS, duplo, ultimo) {
     return;
   }
   // comandos
-  const z = zumbiNoToque(sx, sy, cam);
+  const z = inimigoNoToque(sx, sy, cam);
   if (z) {
     const atac = sel.filter((s) => s.d.arma && s.classe !== 'jato');
     ordenar(atac, { tipo: 'atacar', alvo: z });

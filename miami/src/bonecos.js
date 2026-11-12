@@ -274,7 +274,7 @@ export class Bonecos {
 
   // estilo: 0 civil, 1 soldado, 2 SWAT, 3 soldado zumbi, 4 sobrevivente armado, 5 policial sobrevivente
   // pose: 0 andando, 1 zumbi, 2 mirando/atirando, 3 caído, 4 acenando
-  add(x, y, z, ang, fase, pose, camisa, calca, pele, estilo = 0, esc = 1, cabelo = null, vel = 1) {
+  add(x, y, z, ang, fase, pose, camisa, calca, pele, estilo = 0, esc = 1, cabelo = null, vel = 1, equip = null) {
     const mil = estilo === 1 || estilo === 3;
     const S = mil ? this.mil : this.civ;
     const cy = Math.cos(ang), sy = Math.sin(ang);
@@ -322,8 +322,8 @@ export class Bonecos {
     const olhar = pose === 1 ? -0.25 : pose === 2 ? 0.05 : 0;
     S.parte('cabeca', x, y, z, cy, sy, pc0[0], pc0[1], pc0[2], -lean * 0.4 + olhar, 0, esc, pele);
     if (mil || estilo === 2 || estilo === 5) {
-      S.parte('colete', x, y, z, cy, sy, 0, hy + 0.12 * cl, 0.12 * sl, -lean, 0, esc, estilo === 2 || estilo === 5 ? PRETO : estilo === 3 ? [0.45, 0.42, 0.33] : COLETE_MIL);
-      S.parte('capacete', x, y, z, cy, sy, pc0[0], pc0[1], pc0[2], -lean * 0.4 + olhar, 0, esc, estilo === 2 || estilo === 5 ? PRETO : estilo === 3 ? [0.5, 0.47, 0.38] : CAP_MIL);
+      S.parte('colete', x, y, z, cy, sy, 0, hy + 0.12 * cl, 0.12 * sl, -lean, 0, esc, estilo === 2 || estilo === 5 ? PRETO : estilo === 3 ? [0.45, 0.42, 0.33] : equip ? equip[0] : COLETE_MIL);
+      S.parte('capacete', x, y, z, cy, sy, pc0[0], pc0[1], pc0[2], -lean * 0.4 + olhar, 0, esc, estilo === 2 || estilo === 5 ? PRETO : estilo === 3 ? [0.5, 0.47, 0.38] : equip ? equip[1] : CAP_MIL);
       if (mil) S.parte('mochila', x, y, z, cy, sy, 0, hy + 0.12 * cl, 0.12 * sl, -lean, 0, esc, estilo === 3 ? [0.6, 0.58, 0.5] : [0.92, 0.9, 0.85]);
     } else if (cabelo) S.parte('cabelo', x, y, z, cy, sy, pc0[0], pc0[1], pc0[2], -lean * 0.4 + olhar, 0, esc, cabelo);
     // ---- braços ----

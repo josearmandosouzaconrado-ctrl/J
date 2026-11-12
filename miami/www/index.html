@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0d1830">
-<title>Miami: Surto Zumbi</title>
+<title>Frente de Guerra</title>
 <style>
   :root { --fundo: rgba(10, 18, 30, 0.82); --borda: rgba(120, 170, 220, 0.35); --txt: #eef4ff; --verde: #5dff6f; --verm: #ff5050; --amar: #ffd23b; }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
@@ -82,10 +82,15 @@
 <div id="jogo"></div>
 <canvas id="overlay"></canvas>
 <div id="ui"></div>
-<div id="carregando"><div class="titulo">MIAMI: <span>SURTO ZUMBI</span></div><div id="carregando-txt">Carregando...</div></div>
+<div id="carregando"><div class="titulo">FRENTE DE <span>GUERRA</span></div><div id="carregando-txt">Carregando...</div></div>
 <div id="menu" class="oculto">
-  <div class="titulo">MIAMI: <span>SURTO ZUMBI</span></div>
-  <div class="subt" id="m-sub">Estratégia em tempo real 3D na Miami de verdade: ruas, prédios e litoral posicionados a partir de mapas de satélite. Comande o Exército, a Marinha e a Força Aérea dos EUA, segure o surto zumbi e resgate os civis.</div>
+  <div class="titulo">FRENTE DE <span>GUERRA</span></div>
+  <div class="subt" id="m-sub">Estratégia em tempo real 3D em cidades de verdade. Os EUA contra a Rússia e a China, aliadas: escolha o seu lado, destrua as bases inimigas e tire os civis da linha de fogo.</div>
+  <div class="linha" id="m-nacoes">
+    <button class="bt ativo" data-nacao="eua">🇺🇸 EUA</button>
+    <button class="bt" data-nacao="russia">🇷🇺 Rússia</button>
+    <button class="bt" data-nacao="china">🇨🇳 China</button>
+  </div>
   <div class="linha" id="m-cidades">
     <button class="bt" data-cidade="miami">🌴 Miami, EUA</button>
     <button class="bt" data-cidade="sf">🌉 São Francisco, EUA</button>
