@@ -64,6 +64,11 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
   portas e sombra nos cantos. Cada construção retangular do mapa recebe o modelo que cabe nela, virada para a rua;
   fileiras compridas viram casas geminadas. Perto da câmera aparece o modelo detalhado, longe uma versão simples.
   As janelas acendem à noite. Gerado por `ferramentas/predios/kit.py`.
+- **Prédios altos com fachadas feitas no Blender:** apartamentos com varandas, pele de vidro com montantes, art déco
+  de Miami Beach com "sobrancelhas" e tijolo com vergas de pedra, modelados em 3D e fotografados com sombra de
+  verdade (`ferramentas/predios/fachadas.py`), mais a versão com as janelas acesas para a noite.
+- **Contornos retos:** nos mapas lidos da Esri (Miami, SF, México, Flórida) cada prédio vira o retângulo que o
+  representa; prédios em L ou recortados viram até 6 blocos retos com alturas escalonadas.
 - **Carcaças:** todo veículo terrestre destruído fica no lugar como carcaça queimada, pegando fogo e soltando fumaça,
   e some depois de alguns minutos.
 - **Soldados entram** em veículos, helicópteros, barcos e no Osprey; o Chinook e o LCAC levam veículos.

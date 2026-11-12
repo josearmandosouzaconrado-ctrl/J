@@ -126,7 +126,7 @@ export function removerPrediosEm(x, z, r) {
 
 // ---------------- texturas das fachadas (desenhadas, sem fotos) ----------------
 // cada textura cobre 4 janelas x 4 andares; a versão "acesa" vira luz das janelas à noite
-const BAIA = 3.6, ANDAR = 3.4, REP = 4;
+const BAIA = 3.6, ANDAR = 3.6, REP = 4;
 function semente(n) { let s = n >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
 
 function texFachada(estilo) {
@@ -257,16 +257,26 @@ const PASTEIS = [0xf7c7cc, 0xbfe8dc, 0xf7e7a6, 0xbfdcf2, 0xf6f2ea, 0xf9d7b2, 0xd
 const VIDROS = [0xe6f0f7, 0xd2e4ef, 0xd9ebe8, 0xe9e9f2, 0xf2f2f2, 0xc8dbe8, 0xdfe9df];
 const CONCRETO = [0xf0ebe2, 0xe3ddd2, 0xf7f4ee, 0xd8d1c5, 0xece4d8, 0xe9e0cf];
 export const MAT_PREDIOS = {};
+// fachadas fotografadas no Blender (www/modelos/fachadas.js); sem o arquivo, usa as desenhadas aqui
+function texImagem(uri) {
+  const t = new THREE.TextureLoader().load(uri);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+function fachada(estilo, desenhar) {
+  const F = window.FACHADAS && window.FACHADAS[estilo];
+  return F ? { t: texImagem(F.cor), te: texImagem(F.luz) } : desenhar();
+}
 
 export function construirPredios(cena) {
   const estilos = ['vidro', 'concreto', 'deco'];
   for (const e of estilos) {
-    const { t, te } = texFachada(e);
+    const { t, te } = fachada(e, () => texFachada(e));
     MAT_PREDIOS[e] = new THREE.MeshLambertMaterial({ vertexColors: true, map: t, emissiveMap: te, emissive: 0xffffff, emissiveIntensity: 0 });
   }
   MAT_PREDIOS.telhado = new THREE.MeshLambertMaterial({ vertexColors: true, map: texTelhado() });
   MAT_PREDIOS.telha = new THREE.MeshLambertMaterial({ vertexColors: true, map: texTelha() });
-  { const { t, te } = texTijolo(); MAT_PREDIOS.tijolo = new THREE.MeshLambertMaterial({ vertexColors: true, map: t, emissiveMap: te, emissive: 0xffffff, emissiveIntensity: 0 }); }
+  { const { t, te } = fachada('tijolo', texTijolo); MAT_PREDIOS.tijolo = new THREE.MeshLambertMaterial({ vertexColors: true, map: t, emissiveMap: te, emissive: 0xffffff, emissiveIntensity: 0 }); }
   const TAM = 700;
   const grupos = new Map();
   const pega = (k) => { let ch = grupos.get(k); if (!ch) { ch = { pos: [], nor: [], col: [], uv: [] }; grupos.set(k, ch); } return ch; };

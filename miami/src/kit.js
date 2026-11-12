@@ -306,3 +306,90 @@ export function atualizarKit(kit, alvo, distCam, alcance, camera, agora) {
   }
   for (const im of kit.todas) { im.instanceMatrix.needsUpdate = true; im.instanceColor.needsUpdate = true; im.visible = im.count > 0; }
 }
+
+// prédio em L / recortado: rasteriza no eixo do retângulo (células de 4 m) e cobre com retângulos
+// (fileiras de células iguais empilhadas). Cada retângulo vira um bloco reto, com a altura do original.
+function decompor(p, r) {
+  const C = 4, nx = Math.max(1, Math.round(r.la / C)), nz = Math.max(1, Math.round(r.lb / C));
+  if (nx * nz > 4000) return false;
+  const ca = r.la / nx, cb = r.lb / nz, ux = r.ux, uz = r.uz;
+  const a0 = -r.la / 2, b0 = -r.lb / 2;
+  const cel = new Uint8Array(nx * nz);
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+    const a = a0 + (i + 0.5) * ca, b = b0 + (j + 0.5) * cb;
+    cel[j * nx + i] = dentroPol(p, r.cx + a * ux - b * uz, r.cz + a * uz + b * ux) ? 1 : 0;
+  }
+  const rets = [];
+  let abertos = [];   // [i0, i1, j0]
+  for (let j = 0; j <= nz; j++) {
+    const corridas = [];
+    if (j < nz) for (let i = 0; i < nx;) { if (!cel[j * nx + i]) { i++; continue; } let k = i; while (k < nx && cel[j * nx + k]) k++; corridas.push([i, k]); i = k; }
+    const novos = [];
+    for (const o of abertos) {
+      const ig = corridas.findIndex((c) => c[0] === o[0] && c[1] === o[1]);
+      if (ig >= 0) { novos.push(o); corridas.splice(ig, 1); } else rets.push([o[0], o[1], o[2], j]);
+    }
+    for (const c of corridas) novos.push([c[0], c[1], j]);
+    abertos = novos;
+  }
+  // o maior bloco fica com o prédio original (e a altura dele)
+  // sem tiras finas (degraus das bordas inclinadas) e no máximo 6 blocos por prédio
+  const blocos = rets.filter(([i0, i1, j0, j1]) => (i1 - i0) * ca >= 6 && (j1 - j0) * cb >= 6)
+    .sort((x, y) => (y[1] - y[0]) * (y[3] - y[2]) - (x[1] - x[0]) * (x[3] - x[2])).slice(0, 6);
+  if (!blocos.length) return false;
+  for (let k = 0; k < blocos.length; k++) {
+    const [i0, i1, j0, j1] = blocos[k];
+    const A0 = a0 + i0 * ca, A1 = a0 + i1 * ca, B0 = b0 + j0 * cb, B1 = b0 + j1 * cb;
+    const cant = [[A0, B0], [A1, B0], [A1, B1], [A0, B1]].map(([a, b]) => [r.cx + a * ux - b * uz, r.cz + a * uz + b * ux]);
+    // blocos menores do mesmo prédio ficam um pouco mais baixos (escalonamento)
+    const h = k === 0 ? p.h : Math.max(4, p.h * (0.7 + 0.3 * hashId(p.id, 20 + k)));
+    if (k === 0) aplicarRet(p, cant);
+    else {
+      const q = { id: predios.length, h, guarnicao: [], civis: 0, sos: false, integridade: 100, removido: false, cap: 6 };
+      aplicarRet(q, cant);
+      q.cap = Math.max(4, Math.min(24, Math.round(q.area / 50) + Math.floor(h / 10)));
+      predios.push(q);
+    }
+  }
+  return true;
+}
+function dentroPol(p, x, z) {
+  const pts = p.pts, n = pts.length / 2;
+  let d = false;
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const xi = pts[i * 2], zi = pts[i * 2 + 1], xj = pts[j * 2], zj = pts[j * 2 + 1];
+    if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) d = !d;
+  }
+  return d;
+}
+function aplicarRet(p, cant) {
+  let s = 0;
+  for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; s += cant[i][0] * cant[j][1] - cant[j][0] * cant[i][1]; }
+  if (s > 0) cant.reverse();
+  const pts = new Float32Array(8);
+  let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9, cx = 0, cz = 0;
+  cant.forEach(([x, z], i) => { pts[i * 2] = x; pts[i * 2 + 1] = z; cx += x / 4; cz += z / 4; x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); });
+  Object.assign(p, { pts, area: Math.abs(s) / 2, cx, cz, x0, x1, z0, z1, raio: Math.max(x1 - x0, z1 - z0) / 2 });
+}
+
+// Contornos "derretidos" dos mapas lidos da Esri (Miami, SF, México, Flórida): cada prédio vira o retângulo
+// que melhor o representa (mesma área aproximada, alinhado ao lado principal). Prédios em L ou muito
+// recortados (menos de 60% do retângulo) ficam como estão. Os do OpenStreetMap já vêm certos.
+export function regularizarPredios() {
+  if (META.fonte === 'osm') return 0;
+  let n = 0;
+  const total = predios.length;   // os blocos novos (dos prédios decompostos) entram no fim da lista
+  for (let ip = 0; ip < total; ip++) {
+    const p = predios[ip];
+    if (p.base || p.pts.length / 2 < 5) continue;
+    const r = retangulo(p);
+    if (!r) continue;
+    const fill = p.area / r.area;
+    if (fill < 0.6) { if (decompor(p, r)) n++; continue; }
+    const k = Math.max(0.86, Math.min(1, Math.sqrt(fill) * 1.02));
+    const a = r.la / 2 * k, b = r.lb / 2 * k, ux = r.ux, uz = r.uz;
+    aplicarRet(p, [[-a, -b], [a, -b], [a, b], [-a, b]].map(([da, db]) => [r.cx + da * ux - db * uz, r.cz + da * uz + db * ux]));
+    n++;
+  }
+  return n;
+}

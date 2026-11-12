@@ -9,7 +9,7 @@ import {
 import { prepararNavegacao, pontoLivreProximo, livre } from './caminho.js';
 import { TIPOS, ESTRUTURAS, CONSTRUIR } from './tipos.js';
 import { criarModelo } from './modelos.js';
-import { construirKit } from './kit.js';
+import { construirKit, regularizarPredios } from './kit.js';
 import {
   criarUnidade, danoUnidade, naZonaSegura, volEm, vagas, embarcarCivil, embarcar, chaoEm, marcarSelecao, padPorta, padLivre,
 } from './unidades.js';
@@ -31,6 +31,7 @@ export function montarMundo() {
   G.danoUnidade = danoUnidade; G.naZonaSegura = naZonaSegura; G.volEm = volEm; G.vagas = vagas;
   G.construir = construir;
   G.embarcarCivil = embarcarCivil; G.criarCivil = criarCivil; G.virarZumbi = soldadoVirouZumbi; G.produzir = produzir;
+  G.regularizados = regularizarPredios();   // contornos retos nos mapas da Esri
   const b = lugares.base;
   removerPrediosEm(b.x, b.z, 380);
   // eixo da ilha (Dodge Island vai de oeste-noroeste para leste-sudeste)
