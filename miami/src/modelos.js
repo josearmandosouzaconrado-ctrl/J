@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { QUAL } from './mapa.js';
 import { superficie, loftZ, loftY, asa } from './forma.js';
+import { abramsModelo } from './abrams.js';
 
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _s = new THREE.Vector3(), _p = new THREE.Vector3(), _c = new THREE.Color();
 
@@ -474,99 +475,8 @@ const VEIC = {
     return { corpo: c.build(), torre: t.build(), torreY: 2.36, torreZ: 0.1, canoZ: 3.8, canoY: 0.6 };
   },
   abrams() {
-    const c = new Mont();
-    const C = AREIA, C2 = AREIA2;
-    // casco: chapa frontal inclinada e traseira com grade do motor
-    c.add(loftZ([
-      { z: -3.95, w: 2.7, hT: 0.45, hB: 0.5, y: 1.25, n: 7 },
-      { z: -3.7, w: 2.75, hT: 0.52, hB: 0.6, y: 1.22, n: 7 },
-      { z: 2.7, w: 2.75, hT: 0.52, hB: 0.6, y: 1.22, n: 7 },
-      { z: 3.65, w: 2.75, hT: 0.2, hB: 0.6, y: 1.22, n: 6 },
-      { z: 4.05, w: 2.6, hT: 0.05, hB: 0.3, y: 1.0, n: 5 },
-    ], 24), C);
-    lagartas(c, 7.7, 1.3, 1.55, 0.68, true, C2);
-    c.box(3.7, 0.1, 7.7, C2, 0, 1.78, -0.1);
-    for (let i = 0; i < 7; i++) c.box(2.2, 0.03, 0.12, 0x3e3b33, 0, 1.84, -3.1 + i * 0.22);
-    for (const s of [-1, 1]) for (let i = 0; i < 6; i++) c.box(0.06, 0.62, 1.15, C, s * 1.99, 1.25, -3.1 + i * 1.22);
-    faroisFrente(c, 1.3, 1.6, 3.42); lanternas(c, 1.5, 1.55, -3.97);
-    c.box(1.4, 0.4, 0.4, 0x4a4436, 0, 1.6, -4.05);
-    const t = new Mont();
-    // torre angulosa (blindagem composta), cesto traseiro e mantelete
-    // torre baixa e larga em cunha (blindagem composta)
-    t.add(loftZ([
-      { z: -2.65, w: 3.2, hT: 0.42, hB: 0.42, y: 0.45, n: 7 },
-      { z: -1.2, w: 3.5, hT: 0.5, hB: 0.45, y: 0.45, n: 7 },
-      { z: 0.9, w: 3.5, hT: 0.5, hB: 0.45, y: 0.45, n: 7 },
-      { z: 1.9, w: 2.7, hT: 0.45, hB: 0.42, y: 0.43, n: 6 },
-      { z: 2.55, w: 1.3, hT: 0.35, hB: 0.38, y: 0.42, n: 5 },
-    ], 24), C);
-    // cesto (bustle rack) com bolsas
-    t.box(3.4, 0.05, 1.3, METAL, 0, 0.6, -3.0);
-    for (const s of [-1, 1]) t.box(0.05, 0.5, 1.3, METAL, s * 1.7, 0.85, -3.0);
-    t.box(3.4, 0.5, 0.05, METAL, 0, 0.85, -3.65);
-    t.box(3.0, 0.4, 1.1, 0x5b5641, 0, 0.85, -2.95);
-    t.box(1.0, 0.75, 0.6, C2, 0, 0.45, 2.55);
-    // canhão 120mm com luva térmica e extrator de fumos
-    t.cil(0.13, 0.15, 5.6, 10, C, 0, 0.45, 5.4, Math.PI / 2);
-    t.cil(0.21, 0.21, 0.8, 10, C2, 0, 0.45, 4.0, Math.PI / 2);
-    t.cil(0.17, 0.17, 0.25, 10, METAL, 0, 0.45, 8.15, Math.PI / 2);
-    // cúpula do comandante, metralhadoras e mira
-    t.cil(0.38, 0.42, 0.35, 12, C2, 0.75, 1.12, -0.5);
-    t.box(0.18, 0.2, 0.9, METAL, 0.75, 1.42, 0.0);
-    t.cil(0.03, 0.03, 1.0, 5, METAL, 0.75, 1.42, 0.9, Math.PI / 2);
-    t.cil(0.3, 0.3, 0.12, 10, C2, -0.75, 1.02, -0.6);
-    t.box(0.12, 0.15, 0.7, METAL, -0.75, 1.2, -0.2);
-    t.box(0.5, 0.45, 0.45, C2, -0.65, 1.2, 0.8);
-    t.box(0.3, 0.25, 0.04, VIDRO, -0.65, 1.25, 1.03);
-    for (const s of [-1, 1]) for (let i = 0; i < 6; i++) t.cil(0.055, 0.055, 0.3, 6, METAL, s * (1.35 + (i % 3) * 0.12), 0.85 + Math.floor(i / 3) * 0.13, 1.25, Math.PI / 2.4);
-    antena(t, 1.4, 0.95, -2.2, 2.6); antena(t, -1.4, 0.95, -2.2, 2.0);
-    // ===== casco: saias com parafusos, TUSK, escotilha do motorista, deck do motor, cabos e caixas =====
-    for (const sx of [-1, 1]) {
-      parafusos(c, sx * 2.03, 1.5, -3.6, 3.3, 14, sx);
-      parafusos(c, sx * 2.03, 0.98, -3.6, 3.3, 14, sx);
-      for (let i = 0; i < 5; i++) c.bloco(0.12, 0.5, 1.2, AREIA2, sx * 2.1, 1.2, -2.0 + i * 1.25, 0, 0, 0, 0.03);   // blindagem reativa (TUSK)
-      caboReboque(c, sx * 1.25, 1.88, -3.6, -0.8);
-      c.bloco(0.5, 0.42, 0.35, 0x4a4436, sx * 1.55, 1.3, -4.08, 0, 0, 0, 0.05);                                  // telefone de infantaria / caixa
-      c.box(0.04, 0.55, 0.45, 0x2a2826, sx * 1.75, 0.85, 3.5);                                                   // aba de lama
-      c.box(0.3, 0.25, 0.3, METAL, sx * 1.3, 1.62, 3.35);                                                         // grade do farol
-      galao(c, sx * 1.75, 1.82, -3.25);
-    }
-    // escotilha do motorista com 3 periscópios
-    c.bloco(0.75, 0.08, 0.6, C2, 0, 1.79, 2.7, 0, 0, 0, 0.05);
-    for (let i = -1; i <= 1; i++) c.box(0.16, 0.08, 0.06, VIDRO, i * 0.22, 1.88, 2.98);
-    // deck do motor: grelhas, tampas de combustível, escape traseiro
-    for (let i = 0; i < 6; i++) c.box(1.1, 0.03, 0.09, 0x2f2d27, -0.65, 1.86, -2.2 + i * 0.2);
-    for (let i = 0; i < 6; i++) c.box(1.1, 0.03, 0.09, 0x2f2d27, 0.65, 1.86, -2.2 + i * 0.2);
-    for (const sx of [-1, 1]) c.cil(0.1, 0.1, 0.04, 10, METAL, sx * 1.55, 1.85, 0.8);
-    c.bloco(1.9, 0.5, 0.12, 0x1e1d1a, 0, 1.35, -4.02, 0, 0, 0, 0.03);
-    for (let i = 0; i < 8; i++) c.box(1.8, 0.03, 0.04, 0x3a372f, 0, 1.15 + i * 0.055, -4.09);
-    c.add(new THREE.TorusGeometry(0.12, 0.04, 6, 10), METAL, 0, 0.75, -4.05, 0, 0, Math.PI / 2);                    // engate
-    detalhesBlindado(c, { frente: 4.05, tras: -4.05, larg: 4.25, yLat: 1.35, yPara: 1.05, num: '264' });
-    // ===== torre: CROWS do comandante, CITV, metralhadora do municiador, painéis, cesto com carga =====
-    t.bloco(0.55, 0.42, 0.55, C2, 0.75, 1.55, -0.5, 0, 0, 0, 0.06);                                                 // estação remota CROWS
-    t.bloco(0.22, 0.3, 0.32, 0x2a2d30, 1.07, 1.62, -0.38, 0, 0, 0, 0.03);
-    t.box(0.12, 0.1, 0.02, VIDRO, 1.07, 1.66, -0.21);
-    t.cil(0.03, 0.03, 1.1, 6, METAL, 0.75, 1.62, 0.35, Math.PI / 2);
-    t.bloco(0.42, 0.55, 0.38, C2, -0.3, 1.25, 0.95, 0, 0, 0, 0.06);                                                 // CITV (visor térmico)
-    t.box(0.28, 0.2, 0.03, VIDRO, -0.3, 1.38, 1.15);
-    t.bloco(0.95, 0.5, 0.06, C2, -0.8, 1.3, -0.15, -0.1, 0, 0, 0.02);                                               // escudo da M240
-    for (const sx of [-1, 1]) t.box(0.05, 0.4, 0.5, C2, -0.8 + sx * 0.47, 1.28, -0.35);
-    t.cil(0.025, 0.025, 0.9, 6, METAL, -0.8, 1.3, 0.25, Math.PI / 2);
-    for (const sx of [-1, 1]) t.bloco(0.9, 0.04, 0.6, C2, sx * 0.85, 0.94, -2.0, 0, 0, 0, 0.02);                    // painéis de alívio de explosão
-    t.cil(0.04, 0.04, 0.9, 6, METAL, 1.3, 1.3, -1.6);                                                               // mastro do sensor de vento
-    t.box(0.12, 0.08, 0.3, METAL, 1.3, 1.75, -1.6);
-    for (const sx of [-1, 1]) { t.add(new THREE.TorusGeometry(0.07, 0.025, 6, 8), METAL, sx * 1.4, 0.95, 1.4, Math.PI / 2, 0, 0); estrela(t, sx * 1.76, 0.45, -1.0, 0.24, sx > 0 ? '+x' : '-x'); }
-    // carga no cesto: mochilas, caixas de munição, galões, rolo de rede de camuflagem
-    t.bloco(0.6, 0.4, 0.5, 0x5d5a46, -1.1, 1.15, -3.0, 0, 0, 0, 0.12);
-    t.bloco(0.5, 0.3, 0.35, 0x4d5236, -0.4, 1.1, -3.25, 0, 0, 0, 0.05);
-    t.bloco(0.5, 0.3, 0.35, 0x4d5236, 0.15, 1.1, -3.25, 0, 0, 0, 0.05);
-    t.cil(0.2, 0.2, 1.2, 10, 0x6b6648, 0.9, 1.15, -2.95, 0, 0, Math.PI / 2);
-    for (let i = 0; i < 3; i++) galao(t, -1.5 + i * 0.3, 0.6, -3.55);
-    // canhão: tiras da luva térmica, sensor de referência na boca, mantelete com parafusos
-    for (let i = 0; i < 6; i++) t.cil(0.155, 0.155, 0.04, 12, 0x8c7c55, 0, 0.45, 3.4 + i * 0.75, Math.PI / 2);
-    t.box(0.1, 0.1, 0.2, METAL, 0, 0.62, 8.05);
-    for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) t.cil(0.03, 0.03, 0.03, 6, 0x6a6352, sx * 0.45, 0.25 + i * 0.2, 2.86, Math.PI / 2);
-    return { corpo: c.build(), torre: t.build(), torreY: 1.83, torreZ: -0.3, canoZ: 8.3, canoY: 0.45 };
+    // modelo 3D do CGTrader convertido do .blend (ver abrams.js)
+    return abramsModelo();
   },
   paladin() {
     // M109A7 Paladin: casco baixo com lagartas, torre grande e alta, canhão longo com freio de boca
@@ -1574,7 +1484,7 @@ const ESTR = {
   },
 };
 
-for (const k in VEIC) { const f = VEIC[k]; VEIC[k] = () => { SUJAR = true; try { return f(); } finally { SUJAR = false; } }; }
+for (const k in VEIC) { if (k === 'abrams') continue; const f = VEIC[k]; VEIC[k] = () => { SUJAR = true; try { return f(); } finally { SUJAR = false; } }; }
 const TODOS = Object.assign({}, VEIC, AERO, NAVAL, ESTR);
 
 // cria o objeto 3D de um tipo; devolve {grupo, torre, rotor, rotor2, cauda, nacele...}

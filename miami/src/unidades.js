@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import { G, alerta } from './estado.js';
 import { TIPOS, ESTRUTURAS } from './tipos.js';
 import { criarModelo, criarAnel } from './modelos.js';
-import { andavel, predios, dentroPoligono, CEL, cel, predioId, agua as ehAgua, esmagarCarros } from './mapa.js';
+import { queimar, matQueimado } from './abrams.js';
+import { andavel, predios, dentroPoligono, CEL, cel, predioId, agua as ehAgua, esmagarCarros, QUAL } from './mapa.js';
 import { acharCaminho, livre, pontoLivreProximo } from './caminho.js';
 import { rand, clamp, angDif, girarPara, dist, dist2 } from './util.js';
 import { somTiro, somExplosao, somUI, somVidro, somEsmagar } from './som.js';
@@ -1151,8 +1152,80 @@ export function matarUnidade(u, porZumbi) {
     G.efeitos.explosao(u.x, u.y + 1, u.z, u.d.raio * 2.5, ehAgua(u.x, u.z));
     somExplosao(volEm(u.x, u.z));
     alerta(`💥 ${u.d.nome} destruído`, u.x, u.z, 'ruim');
+    if (u.classe === 'veic' && u.m && !ehAgua(u.x, u.z)) criarDestroco(u);
   }
   removerUnidade(u);
+}
+
+// ---------------- carcaças queimadas ----------------
+// o veículo destruído vira uma carcaça preta que pega fogo, solta fumaça e some depois de um tempo.
+// No Abrams a munição explode e a torre é arremessada para cima.
+const DESTROCO_VIDA = 150, MAX_DESTROCOS = 10, _pw = new THREE.Vector3();
+function criarDestroco(u) {
+  if (!G.destrocos) G.destrocos = [];
+  while (G.destrocos.length >= MAX_DESTROCOS) removerDestroco(G.destrocos[0]);
+  const d = u.m.def, grupo = new THREE.Group();
+  grupo.position.set(u.x, u.y, u.z);
+  grupo.rotation.y = u.ang;
+  const casco = new THREE.Mesh(queimar(d.corpo), matQueimado());
+  casco.castShadow = casco.receiveShadow = true;
+  grupo.add(casco);
+  const w = { grupo, t: 0, x: u.x, y: u.y, z: u.z, raio: u.d.raio || 3, torre: null };
+  if (d.torre) {
+    const t = new THREE.Mesh(queimar(d.torre), matQueimado());
+    t.castShadow = t.receiveShadow = true;
+    t.position.set(0, d.torreY, d.torreZ);
+    t.rotation.y = u.torreAng || 0;
+    grupo.add(t);
+    w.torre = t;
+    if (d.destrocoTorre) {
+      // explosão da munição: a torre sobe girando e cai ao lado do casco
+      w.voo = { vy: 11 + Math.random() * 5, vx: rand(-3, 3), vz: rand(-3, 3), gx: rand(-1.2, 1.2), gy: rand(-2, 2), gz: rand(-1.2, 1.2), y0: d.torreY };
+      G.efeitos.explosao(u.x, u.y + 3, u.z, 9);
+    } else {
+      t.rotation.x = rand(-0.12, 0.12); t.rotation.z = rand(-0.12, 0.12);
+    }
+  }
+  grupo.rotation.z = rand(-0.04, 0.04); grupo.rotation.x = rand(-0.04, 0.04);
+  G.cena.add(grupo);
+  G.destrocos.push(w);
+}
+function removerDestroco(w) {
+  G.cena.remove(w.grupo);
+  const i = G.destrocos.indexOf(w);
+  if (i >= 0) G.destrocos.splice(i, 1);
+}
+export function atualizarDestrocos(dt) {
+  if (!G.destrocos || !dt) return;
+  for (const w of G.destrocos.slice()) {
+    w.t += dt;
+    const v = w.voo, t = w.torre;
+    if (v) {
+      v.vy -= 9.8 * dt;
+      t.position.x += v.vx * dt; t.position.y += v.vy * dt; t.position.z += v.vz * dt;
+      t.rotation.x += v.gx * dt; t.rotation.y += v.gy * dt; t.rotation.z += v.gz * dt;
+      if (Math.random() < dt * 30) { t.getWorldPosition(_pw); G.efeitos.fumaca(_pw.x, _pw.y, _pw.z, 1.6, [0.12, 0.11, 0.1]); }
+      // cai sobre o casco (se ainda estiver em cima dele) ou no chão ao lado
+      const sobreCasco = Math.abs(t.position.x) < 1.6 && Math.abs(t.position.z) < 3.6, piso = sobreCasco ? v.y0 * 0.8 : -0.1;
+      if (v.vy < 0 && t.position.y <= piso) {
+        t.position.y = piso;
+        t.rotation.x = clamp(Math.sin(t.rotation.x) * 0.5, -0.45, 0.45); t.rotation.z = clamp(Math.sin(t.rotation.z) * 0.5, -0.45, 0.45);
+        t.getWorldPosition(_pw);
+        G.efeitos.poeira(_pw.x, _pw.z, 6);
+        somExplosao(volEm(_pw.x, _pw.z) * 0.4);
+        w.voo = null;
+      }
+    }
+    // fogo nos primeiros 30 s, depois só fumaça
+    const R = w.raio * 0.45;
+    if (w.t < 30 && Math.random() < dt * (QUAL === 0 ? 6 : 14)) {
+      G.efeitos.particula(w.x + rand(-R, R), w.y + 1.4 + Math.random(), w.z + rand(-R, R), rand(-0.4, 0.4), 2.2 + Math.random() * 2, rand(-0.4, 0.4), 1 + Math.random() * 0.8, 0.45 + Math.random() * 0.3, [1, 0.82, 0.35], [0.85, 0.2, 0.04], 0.9, -1.5, 0.6);
+    }
+    if (w.t < 80 && Math.random() < dt * (w.t < 30 ? 4 : 1.5)) G.efeitos.fumaca(w.x + rand(-R, R), w.y + 2.2, w.z + rand(-R, R), 2.6, [0.09, 0.085, 0.08]);
+    // no fim afunda no chão e some
+    if (w.t > DESTROCO_VIDA - 6) w.grupo.position.y = w.y - (w.t - (DESTROCO_VIDA - 6)) * 0.6;
+    if (w.t > DESTROCO_VIDA) removerDestroco(w);
+  }
 }
 
 // ---------------- modelo 3D ----------------

@@ -8,7 +8,7 @@ import { Bonecos, CAMO, CAMO2, PELE_SOLD, SWAT_ROUPA, SWAT_CALCA } from './bonec
 import { Efeitos } from './efeitos.js';
 import { CameraRTS, configurarEntrada } from './entrada.js';
 import { montarMundo, construirVisual, iniciarPartida, atualizarJogo } from './jogo.js';
-import { atualizarUnidades, atualizarProjeteis, chaoEm, ordenar, ordenarMover, desembarcar } from './unidades.js';
+import { atualizarUnidades, atualizarProjeteis, atualizarDestrocos, matarUnidade, chaoEm, ordenar, ordenarMover, desembarcar } from './unidades.js';
 import { telaDe } from './entrada.js';
 import * as NAV from './caminho.js';
 import * as MAPA from './mapa.js';
@@ -141,6 +141,7 @@ async function iniciar() {
     atualizarUnidades(dt);
     atualizarAgentes(dt);
     atualizarProjeteis(dt);
+    atualizarDestrocos(dt);
   }
   function ciclo(dt) {
     // céu e luz conforme a hora
@@ -314,7 +315,7 @@ async function iniciar() {
   };
   if (/[?&]auto/.test(location.search)) $('#m-jogar').click();
   window.G = G;
-  window.__dbg = { ordenar, ordenarMover, desembarcar, enfileirar, simular, predios, NAV, MAPA, tela: (x, y, z) => telaDe(x, y, z, camera) };
+  window.__dbg = { ordenar, ordenarMover, desembarcar, enfileirar, simular, matarUnidade, predios, NAV, MAPA, tela: (x, y, z) => telaDe(x, y, z, camera) };
 }
 
 iniciar().catch((e) => {

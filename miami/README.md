@@ -10,7 +10,7 @@ para conter a infecção e **resgatar os civis**.
 ## Baixar
 
 - **APK (Android 7+):** [`MiamiSurtoZumbi.apk`](../MiamiSurtoZumbi.apk) na raiz do repositório.
-  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.9.1/MiamiSurtoZumbi.apk
+  Depois que o GitHub Actions publicar: https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/miami-v1.9.2/MiamiSurtoZumbi.apk
 - No navegador: abra `miami/www/index.html` por um servidor web (ex.: `python3 -m http.server` dentro de `miami/www`).
 
 O Android pede para permitir "instalar apps desconhecidos", porque o APK não vem da Play Store.
@@ -50,6 +50,10 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
 | 🛳️ Porta-aviões | F-35C Lightning II, F/A-18E Super Hornet, MV-22 Osprey |
 | 🛫 Pista de pouso (construída) | F-22 Raptor (bombas pequenas SDB), A-10 Thunderbolt II (canhão GAU-8 de 30 mm) |
 
+- **Tanque M1A2 Abrams** com modelo 3D detalhado (metralhadoras, cestos de carga, grades, esteiras de elos), pintado
+  no tan do deserto do Exército, com a torre girando. Quando é destruído, a munição explode e a torre é arremessada.
+- **Carcaças:** todo veículo terrestre destruído fica no lugar como carcaça queimada, pegando fogo e soltando fumaça,
+  e some depois de alguns minutos.
 - **Soldados entram** em veículos, helicópteros, barcos e no Osprey; o Chinook e o LCAC levam veículos.
 - **Prédios:** soldados sobem no telhado de qualquer prédio e atiram de cima com mais alcance. Os zumbis
   forçam a entrada aos poucos (barra de integridade).
@@ -123,4 +127,7 @@ python3 gerar_icone.py ..                          # ícone do app
 
 ## Créditos
 
-Posição de prédios, ruas e litoral a partir de dados de mapa © Esri e da comunidade de usuários GIS. Motor 3D: [three.js](https://threejs.org) (MIT). Modelos 3D, sons e código feitos para este jogo.
+Posição de prédios, ruas e litoral a partir de dados de mapa © Esri e da comunidade de usuários GIS. Motor 3D: [three.js](https://threejs.org) (MIT).
+Tanque M1 Abrams: modelo "M1 Abrams low poly" do [CGTrader](https://www.cgtrader.com/free-3d-models/military/military-vehicle/m1-abrams-low-poly)
+(download gratuito, licença Royalty Free), convertido e pintado para o jogo com `ferramentas/abrams/exportar.py`;
+o arquivo original não vai para o repositório. Os demais modelos 3D, os sons e o código foram feitos para este jogo.
