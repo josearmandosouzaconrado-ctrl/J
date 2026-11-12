@@ -54,13 +54,28 @@ export function escolherLocaisBases() {
     if (!melhor) melhor = { x: LARG - b.x, z: ALT - b.z };
     locais.push(melhor);
   }
-  for (const l of locais) removerPrediosEm(l.x, l.z, 260);
+  // pista de pouso ao lado de cada base (comprimento apontando para a base do jogador), só em terra firme
+  for (const l of locais) {
+    removerPrediosEm(l.x, l.z, 260);
+    l.ang = Math.atan2(b.x - l.x, b.z - l.z);
+    const c = Math.cos(l.ang), s = Math.sin(l.ang);
+    l.pista = null;
+    for (const lado of [-280, 280]) {
+      const P = (u, v) => ({ x: l.x + u * c + v * s, z: l.z - u * s + v * c });
+      let ok = true;
+      for (let v = -170; v <= 170 && ok; v += 34) for (const du of [-22, 0, 22]) { const q = P(lado + du, v); if (!terra(q.x, q.z)) { ok = false; break; } }
+      if (!ok) continue;
+      l.pista = P(lado, 0);
+      for (let v = -170; v <= 170; v += 50) { const q = P(lado, v); removerPrediosEm(q.x, q.z, 40); }
+      break;
+    }
+  }
   G.locaisBases = locais;
   return locais;
 }
 
 // ---------------- início da guerra ----------------
-const ESTR_BASE = [['qg', 0, 0], ['quartel', -110, -50], ['patio', -110, 60], ['heliporto', 120, 0], ['torre', 0, -130], ['torre', 0, 130], ['torre', 160, 110]];
+const ESTR_BASE = [['qg', 0, 0], ['quartel', -110, -50], ['patio', -110, 60], ['heliporto', 120, 0], ['torre', 0, -130], ['torre', 0, 130], ['torre', 160, 110], ['patriot', 70, -95], ['patriot', -40, 150]];
 export function iniciarGuerra(criarEstrutura, criarUnidade, lugarLivre) {
   const ia = Object.keys(NACOES).filter((n) => n !== G.nacao);
   // o inimigo principal fica no local mais longe; o aliado do jogador (ou o 2º inimigo) no outro
@@ -76,7 +91,12 @@ export function iniciarGuerra(criarEstrutura, criarUnidade, lugarLivre) {
     for (const [tipo, u, v] of ESTR_BASE) {
       const p = lugarLivre(L(u, v));
       const e = criarEstrutura(tipo, p.x, p.z, ang, n);
-      if (tipo !== 'torre') estr[tipo] = e;
+      if (tipo !== 'torre' && tipo !== 'patriot') estr[tipo] = e;
+    }
+    if (l.pista) {
+      const e = criarEstrutura('pista', l.pista.x, l.pista.z, ang, n);
+      e.deck = 0.3; e.fila = [];
+      estr.pista = e;
     }
     for (const k of ['quartel', 'patio']) { const e = estr[k]; e.saida = lugarLivre({ x: e.x + Math.sin(ang) * 45, z: e.z + Math.cos(ang) * 45 }); }
     G.bases[n] = { x: l.x, z: l.z, ang, estr, nome: `${NACOES[n].base}` };
@@ -105,6 +125,8 @@ export function atualizarGuerra(dt) {
     ia.dinheiro += (inimiga ? RENDA[G.dificuldade] || 10 : 8) * dt;
     ia.prox -= dt;
     if (ia.prox <= 0) { ia.prox = 2; produzirIA(n, ia, base); }
+    ia.proxJato = (ia.proxJato ?? 60) - dt;
+    if (ia.proxJato <= 0) { ia.proxJato = G.dificuldade === 'dificil' ? 40 : 60; ataqueAereo(n, base); }
     ia.proxOnda -= dt;
     if (ia.proxOnda <= 0) { ataque(n, ia, base); ia.proxOnda = Math.max(70, 150 - ia.onda * 8) * (G.dificuldade === 'facil' ? 1.4 : G.dificuldade === 'dificil' ? 0.75 : 1); }
   }
@@ -141,6 +163,11 @@ function produzirIA(n, ia, base) {
     e.fila.push({ tipo, t: d.tempo * 1.1, total: d.tempo * 1.1 });
     return true;
   };
+  // jatos (a partir da 2ª onda): junta dinheiro para eles antes de gastar com o resto
+  const nJat = meus.filter((u) => u.classe === 'jato').length + (base.estr.pista && base.estr.pista.vivo ? base.estr.pista.fila.length : 0);
+  if (P.pista && base.estr.pista && base.estr.pista.vivo && ia.onda >= 2 && nJat < (G.dificuldade === 'dificil' ? 3 : 2)) {
+    if (!pede('pista', P.pista[Math.random() < 0.5 ? 0 : 1]) && ia.dinheiro < 1700 && nInf > 8) return;
+  }
   // proporção: muita infantaria, alguns blindados e poucos helicópteros (mais pesados a cada onda)
   const r = Math.random();
   const inf = r < 0.6 ? P.quartel[0] : r < 0.82 ? P.quartel[1] : r < 0.93 ? P.quartel[2] : P.quartel[3];
@@ -150,12 +177,31 @@ function produzirIA(n, ia, base) {
   if (ia.onda >= 1 && nAer < 1 + Math.floor(ia.onda / 3) && Math.random() < 0.3) pede('heliporto', P.heliporto[Math.random() < 0.65 ? 0 : 1]);
 }
 
+// jatos parados na pista saem para atacar o grupo inimigo mais perto da base (ou uma estrutura)
+function ataqueAereo(n, base) {
+  for (const j of G.unidades) {
+    if (!j.vivo || j.nacao !== n || j.classe !== 'jato' || j.estadoJato !== 'pronto' || j.municao <= 0) continue;
+    let melhor = null, md = 3800 * 3800;
+    for (const v of G.unidades) {
+      if (!v.vivo || v.dentro || !hostisN(n, v.nacao) || v.classe === 'jato' || (v.classe === 'aereo' && v.y > 8)) continue;
+      const d = dist2(v.x, v.z, base.x, base.z) * (v.estr ? 1.3 : 1);
+      if (d < md) { md = d; melhor = v; }
+    }
+    if (melhor) {
+      G.ordenarMover([j], melhor.x, melhor.z);
+      if (hostisN(n, G.nacao)) alerta(`✈️ Jato inimigo ${NACOES[n].bandeira} ${j.d.nome} decolando para atacar!`, melhor.x, melhor.z, 'surto');
+    }
+  }
+}
+
 // manda as unidades paradas (menos alguns defensores) atacar
 function ataque(n, ia, base) {
   const livres = G.unidades.filter((u) => u.vivo && u.nacao === n && !u.estr && !u.dentro && !u.missao && u.classe !== 'jato' && u.classe !== 'naval' && !(u.d.cura));
   const defesa = Math.min(6, Math.floor(livres.length * 0.25));
   livres.sort((a, b) => dist2(a.x, a.z, base.x, base.z) - dist2(b.x, b.z, base.x, base.z));
-  const vao = livres.slice(defesa);
+  // ondas crescem aos poucos (as unidades que sobram ficam defendendo a base)
+  const max = (G.dificuldade === 'facil' ? 6 : G.dificuldade === 'dificil' ? 12 : 9) + ia.onda * (G.dificuldade === 'dificil' ? 6 : 4);
+  const vao = livres.slice(defesa).slice(-max);
   if (vao.length < 5) return;
   const alvo = alvoPrincipal(n, base);
   if (!alvo) return;

@@ -77,7 +77,7 @@ export class Mont {
     _e.set(rx, ry, rz); _q.setFromEuler(_e);
     _m.compose(_p.set(x, y, z), _q, _s.set(sx, sy, sz));
     g.applyMatrix4(_m);
-    _c.set(cor);
+    _c.set(tingir(cor));
     const n = g.attributes.position.count, col = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) { col[i * 3] = _c.r; col[i * 3 + 1] = _c.g; col[i * 3 + 2] = _c.b; }
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
@@ -228,7 +228,35 @@ function numero(c, txt, x, y, z, h, plano, cor = 0xf2f2f2) {
   });
 }
 // insígnia dos EUA (estrela no círculo com barras). baixa visibilidade = tons de cinza
+// variantes de outras nações: TINTA troca as cores neutras (cinzas) pela pintura da nação; MARCA troca a insígnia
+let TINTA = null, MARCA = null;
+function tingir(cor) {
+  if (!TINTA) return cor;
+  const r = ((cor >> 16) & 255) / 255, g = ((cor >> 8) & 255) / 255, b = (cor & 255) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2;
+  if (mx - mn > 0.12 || l < 0.22 || l > 0.9) return cor;            // cores fortes, pretos e brancos ficam
+  const k = l / 0.62;
+  const t = TINTA;
+  return (Math.min(255, ((t >> 16) & 255) * k) << 16) | (Math.min(255, ((t >> 8) & 255) * k) << 8) | Math.min(255, (t & 255) * k);
+}
+function comPintura(tinta, marca, f) { TINTA = tinta; MARCA = marca; try { return f(); } finally { TINTA = null; MARCA = null; } }
+
 function insignia(c, x, y, z, r, plano, baixaVis = false) {
+  if (MARCA) {
+    // estrela vermelha com borda (Rússia: borda branca e vermelha; China: "八一" amarelo no meio)
+    const rot0 = plano === '+x' ? [0, Math.PI / 2, 0] : plano === '-x' ? [0, -Math.PI / 2, 0] : [-Math.PI / 2, 0, 0];
+    const N0 = plano === '+x' ? [1, 0, 0] : plano === '-x' ? [-1, 0, 0] : [0, 1, 0];
+    const est = (rr, cor, k) => {
+      const st = new THREE.Shape();
+      for (let i = 0; i < 10; i++) { const a = Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? rr * 0.4 : rr; if (i === 0) st.moveTo(Math.cos(a) * q, Math.sin(a) * q); else st.lineTo(Math.cos(a) * q, Math.sin(a) * q); }
+      st.closePath();
+      c.add(new THREE.ShapeGeometry(st), cor, x + N0[0] * k, y + N0[1] * k, z + N0[2] * k, rot0[0], rot0[1], rot0[2]);
+    };
+    est(r * 1.25, 0xf2f2f2, 0.012);
+    est(r * 1.05, 0xc0221a, 0.02);
+    if (MARCA === 'china') c.add(new THREE.CircleGeometry(r * 0.28, 12), 0xf2d34a, x + N0[0] * 0.028, y + N0[1] * 0.028, z + N0[2] * 0.028, rot0[0], rot0[1], rot0[2]);
+    return;
+  }
   const azul = baixaVis ? 0x5d6369 : 0x1c2f6b, branco = baixaVis ? 0x868c92 : 0xf2f2f2, verm = baixaVis ? 0x5d6369 : 0xb22234;
   const rot = plano === '+x' ? [0, Math.PI / 2, 0] : plano === '-x' ? [0, -Math.PI / 2, 0] : [-Math.PI / 2, 0, 0];
   const N = plano === '+x' ? [1, 0, 0] : plano === '-x' ? [-1, 0, 0] : [0, 1, 0];
@@ -1823,6 +1851,13 @@ const LESTE_A = {
     return AERO.blackhawk({ C: 0x6c7766, C2: 0x5a6555, marca: (c, sx) => chinaMarca(c, sx * 0.31, 2.2, -6.6, 0.26, sx > 0 ? '+x' : '-x') });
   },
 };
+// jatos russos e chineses: variantes dos jatos do jogo com a pintura e as marcas da nação
+Object.assign(LESTE_A, {
+  su57() { return comPintura(0x7f93a8, 'russia', () => AERO.f22()); },    // Su-57: cinza-azulado
+  su25() { return comPintura(0x6f7a50, 'russia', () => AERO.a10()); },    // Su-25: verde-oliva
+  j20() { return comPintura(0x4f565e, 'china', () => AERO.f35()); },      // J-20: cinza-escuro
+  j16() { return comPintura(0x8d99a6, 'china', () => AERO.f18()); },      // J-16: cinza-claro
+});
 Object.assign(VEIC, LESTE_V);
 Object.assign(AERO, LESTE_A);
 

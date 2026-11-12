@@ -265,7 +265,7 @@ export class UI {
     for (const k of ['construir', ...Object.keys(PRODUCAO)]) {
       if (!COSTA && (k === 'docas' || k === 'porta')) continue;
       if (k === 'porta' && !G.porta) continue;
-      if (COSTA && k === 'pista' && !G.unidades.some((u) => u.vivo && u.tipoEstr === 'pista')) continue;
+      if (COSTA && k === 'pista' && !G.unidades.some((u) => u.vivo && u.tipoEstr === 'pista' && u.nacao === G.nacao)) continue;
       const b = el('button', 'aba' + (k === this.abaProd ? ' ativo' : ''), k === 'construir' ? '🔨 Construir' : k === 'porta' && !COSTA ? '✈️ Aeródromo' : NOMES_PROD[k]);
       b.addEventListener('click', (e) => { e.stopPropagation(); this.abaProd = k; this.abrirProducao(); });
       abas.appendChild(b);
@@ -276,7 +276,7 @@ export class UI {
       for (const t in CONSTRUIR) {
         const d = CONSTRUIR[t];
         if (d.agua && !COSTA) continue;
-        if (G.nacao !== 'eua' && (t === 'docas' || t === 'pista' || t === 'patriot')) continue;   // ainda só os EUA
+        if (G.nacao !== 'eua' && t === 'docas') continue;   // marinha: por enquanto só os EUA
         const c = el('div', 'carta' + (G.construindo === t ? ' sel' : ''), `<div class="ic">${d.icone}</div><div class="tx"><b>${d.nome}</b><small>${d.sub}</small><span>$${d.custo} • ${d.tempo}s</span></div>`);
         c.dataset.custo = d.custo;
         c.addEventListener('click', (e) => {
@@ -552,7 +552,7 @@ export const AJUDA = `
 <p><b>Selecionar:</b> toque numa unidade sua. Toque duplo seleciona todas do mesmo tipo na tela. Segure o dedo parado e arraste para selecionar em caixa (ou use ⬚ Caixa). ➕ Várias soma unidades à seleção.</p>
 <p><b>Ordens</b> (com unidades selecionadas): toque no chão para mover • numa unidade ou estrutura inimiga para atacar • num <b>prédio</b> para pôr os soldados no telhado e nas janelas • num transporte para embarcar.</p>
 <p><b>Produção:</b> 🏭 Produzir abre o Quartel (infantaria), o Pátio (blindados e tanques), o Heliporto e, nos EUA, as Docas e o porta-aviões. Cada nação tem as suas unidades: EUA (Abrams, Bradley, Stryker, Apache, Black Hawk...), Rússia (T-90M, BMP-3, BTR-82A, Tigr, Ka-52, Mi-8) e China (Type 99A, ZBD-04A, ZBL-08, Mengshi, Z-10, Z-20).</p>
-<p><b>✈️ Jatos (EUA):</b> F-35C e F/A-18E saem do porta-aviões; F-22 e A-10 precisam de uma Pista de Pouso. Arraste o dedo no mapa com jatos selecionados para marcar uma área de bombardeio.</p>
+<p><b>✈️ Jatos:</b> EUA: F-35C e F/A-18E no porta-aviões, F-22 e A-10 na pista. Rússia: Su-57 e Su-25. China: J-20 e J-16 (na <b>Pista de Pouso</b>; nas cidades sem mar ela já vem pronta, na costa construa com 🔨). Arraste o dedo no mapa com jatos selecionados para marcar uma área de bombardeio. O computador também manda jatos atacar as suas tropas: construa <b>🛰️ Baterias antiaéreas</b> (Patriot / S-400 / HQ-9), que derrubam jatos e helicópteros.</p>
 <p><b>🔨 Construir:</b> posto avançado (FOB), quartel, pátio, heliporto, zona segura, torre e barreiras em qualquer lugar.</p>
 <p><b>🪢 Descer de corda:</b> com um helicóptero de transporte levando soldados selecionado, toque em 🪢 e depois no chão ou num telhado.</p>
 <p><b>🎮 Controlar:</b> com uma unidade selecionada, assuma o controle em 3ª pessoa com o joystick; ela atira sozinha nos inimigos.</p>

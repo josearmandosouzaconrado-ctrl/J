@@ -84,12 +84,19 @@ export function construirVisual() {
   // sem árvores em cima da pista de pouso (cidades sem mar)
   const bb = lugares.base, ex = G.baseEixo;
   const pc = COSTA ? null : { x: bb.x + ex.pp.x * -330, z: bb.z + ex.pp.z * -330 };
-  G.decor = construirPalmeiras(G.cena, META.rural ? 32000 : META.pais === 'Brasil' ? 5000 : 2600, pc ? (x, z) => {
+  const pistas = (G.locaisBases || []).filter((l) => l.pista);
+  const naPistaInimiga = (x, z) => pistas.some((l) => {
+    const dx = x - l.pista.x, dz = z - l.pista.z, a = l.ang;
+    return Math.abs(dx * Math.sin(a) + dz * Math.cos(a)) < 180 && Math.abs(dx * Math.cos(a) - dz * Math.sin(a)) < 40;
+  }) || pistas.some((l) => dist(x, z, l.x, l.z) < 230);
+  G.decor = construirPalmeiras(G.cena, META.rural ? 32000 : META.pais === 'Brasil' ? 5000 : 2600, (x, z) => {
+    if (naPistaInimiga(x, z)) return true;
+    if (!pc) return false;
     const dx = x - pc.x, dz = z - pc.z, a = ex.ang, l = dx * Math.sin(a) + dz * Math.cos(a), t = dx * Math.cos(a) - dz * Math.sin(a);
     return Math.abs(l) < 180 && t > -110 && t < 40;
-  } : null);
+  });
   const b = lugares.base;
-  G.decor.push(...construirCarros(G.cena, 3200, (x, z) => dist(x, z, b.x, b.z) < 450));
+  G.decor.push(...construirCarros(G.cena, 3200, (x, z) => dist(x, z, b.x, b.z) < 450 || naPistaInimiga(x, z)));
   for (const p of predios) if (!p.base) { p.integMax = 150 + Math.min(900, p.area * 0.4); p.integridade = p.integMax; }
 }
 
@@ -240,7 +247,7 @@ export function iniciarPartida(dif, nacao = 'eua') {
     e.saida = lugarLivre(fr);
   }
   let pa = null;
-  if (!EUA) { /* Rússia e China: ainda sem marinha e jatos (próxima etapa) */ } else if (COSTA) {
+  if (!EUA && COSTA) { /* Rússia e China na costa: sem marinha por enquanto; a pista de pouso é construída (🔨) */ } else if (COSTA) {
     // porta-aviões e escolta
     pa = lugares.portaavioes;
     if (!livre(2, pa.x, pa.z)) pa = pontoLivreProximo(2, pa.x, pa.z) || pa;
@@ -280,11 +287,10 @@ export function iniciarPartida(dif, nacao = 'eua') {
   bh.pousado = true; bh.y = 0;
   const ap = criarUnidade(hAtaque, hp.x, hp.z, G.baseEixo.ang);
   ap.pousado = true;
-  // jatos no convés (EUA)
+  // jatos no convés / na pista
   if (pa) {
-    const j1 = criarUnidade('f35', pa.x, pa.z, 0); j1.vagaConves = 0; j1.base = G.porta;
-    const j2 = criarUnidade('f18', pa.x, pa.z, 0); j2.vagaConves = 1; j2.base = G.porta;
-    if (!COSTA) { const j3 = criarUnidade('a10', pa.x, pa.z, 0); j3.vagaConves = 2; j3.base = G.porta; }
+    const js = EUA ? ['f35', 'f18'].concat(COSTA ? [] : ['a10']) : P.pista;
+    js.forEach((t, i) => { const j = criarUnidade(t, pa.x, pa.z, 0); j.vagaConves = i; j.base = G.porta; });
   }
   // as bases da Rússia, da China e dos EUA controladas pelo computador
   iniciarGuerra(criarEstrutura, criarUnidade, lugarLivre);

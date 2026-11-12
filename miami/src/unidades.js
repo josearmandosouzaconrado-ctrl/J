@@ -147,7 +147,9 @@ function ordenarJato(j, x, z) {
   j.ordem = { tipo: 'ataque', x, z };
   if (j.estadoJato === 'pronto') {
     // vai para a catapulta / cabeceira da pista e decola
-    const p = baseDo(j), gb = geoBase(p);
+    const p = baseDo(j);
+    if (!p) { alerta(`${j.d.nome} está sem pista de pouso`, j.x, j.z, 'ruim'); return; }
+    const gb = geoBase(p);
     const q = pontoBase(p, gb.dx, gb.d0);
     j.x = q.x; j.z = q.z; j.y = (p.deck ?? 9.2) + 0.2; j.ang = p.ang;
     j.velAtual = ehPorta(p) ? 15 : 0;
@@ -402,7 +404,9 @@ const PENETRA = { explosao: 0.7, fuzil: 0.04, pistola: 0.02, sniper: 0.15, mg: 0
 function penetracao(w) { return PENETRA[w.arma] ?? 1; }
 // dano que passa pela blindagem do alvo
 export function fatorBlindagem(alvo, w) {
-  const b = alvo.estr ? 0.6 : (alvo.d.blindagem || 0);
+  // estruturas: paredes grossas, só caem com fogo pesado e insistente
+  if (alvo.estr) return w.arma === 'explosao' ? 0.5 : Math.max(0.02, penetracao(w) - 0.3) * 0.6;   // metralhadora quase não arranha
+  const b = alvo.d.blindagem || 0;
   return 1 - b * (1 - penetracao(w));
 }
 // a arma consegue atingir esse alvo? (artilharia e canhão de tanque não acertam aeronave no ar; antitanque não mira em soldado)
@@ -411,6 +415,7 @@ function podeAtingir(w, v) {
   if (v.classe === 'jato' && noAr) return !!w.antiaereo;
   if (noAr && (w.arco || w.arma === '120mm' || w.arma === 'bomba' || w.arma === 'naval' || w.arma === '155mm' || w.arma === 'foguete')) return false;
   if (w.antitanque && v.classe === 'inf') return false;
+  if (w.soAereo && !noAr) return false;   // antiaérea só mira aeronaves voando
   return true;
 }
 // procura o melhor alvo inimigo no alcance: armas leves preferem soldados, pesadas preferem blindados
@@ -474,6 +479,20 @@ function atirar(u, alvo, w) {
     u.janela.quebrou = true;
     for (let i = 0; i < 14; i++) ef.particula(u.x, u.y + 1.3, u.z, u.janela.nx * rand(1, 3) + rand(-1, 1), rand(0, 2), u.janela.nz * rand(1, 3) + rand(-1, 1), 0.18, 1.2, [0.8, 0.92, 1], [0.6, 0.75, 0.85], 0.9, 9.8, 0);
     somVidro(vol);
+  }
+  if (w.arma === 'sam') {
+    // míssil antiaéreo: sobe deixando rastro de fumaça e explode no ar junto do alvo
+    const acertou = Math.random() < w.precisao;
+    const tx = ax + (acertou ? 0 : rand(-12, 12)), ty = ay + (acertou ? 0 : rand(-6, 6)), tz = az + (acertou ? 0 : rand(-12, 12));
+    for (let k = 0; k <= 14; k++) {
+      const f = k / 14;
+      ef.particula(o.x + (tx - o.x) * f, o.y + (ty - o.y) * f + Math.sin(f * Math.PI) * 25, o.z + (tz - o.z) * f, rand(-0.5, 0.5), 0.5, rand(-0.5, 0.5), 2.2, 2.2 + f, [0.92, 0.92, 0.9], [0.6, 0.6, 0.6], 0.55, -0.2, 2);
+    }
+    ef.clarao(o.x, o.y, o.z, 3);
+    G.efeitos.explosao(tx, ty, tz, 5);
+    if (acertou) danoUnidade(alvo, w.dano, u);
+    somTiro('hellfire', vol);
+    return;
   }
   if (w.missil || w.arma === '120mm' || w.arco || w.arma === 'foguete' || w.antitanque) {
     const fx = ax + rand(-1, 1) * (1 - w.precisao) * 12, fz = az + rand(-1, 1) * (1 - w.precisao) * 12;
@@ -551,7 +570,7 @@ export function explodir(x, y, z, raio, dano, dono, pequeno) {
     const r = raio + (v.estr ? v.d.raio * 0.6 : v.d.raio || 0.6);
     if (d2 > r * r * 1.69) return;
     const f = d2 < r * r ? 1 - Math.sqrt(d2) / r * 0.5 : 0.3;
-    danoUnidade(v, dano * f * fatorBlindagem(v, { arma: 'explosao' }) * (v.estr ? 0.6 : 1), dono);
+    danoUnidade(v, dano * f * fatorBlindagem(v, { arma: 'explosao' }), dono);
   });
   if (G.tremor !== undefined && raio >= 10) G.tremor = Math.max(G.tremor, Math.min(1, raio / 30) * volEm(x, z));
 }
@@ -1113,6 +1132,12 @@ function combate(u, dt) {
       if (!alvoValido(u.alvo, u) || dist(u.x, u.z, u.alvo.x, u.alvo.z) > d.alcance * bonus) u.alvo = acharAlvo(u, d.alcance * bonus, d.splash && d.splash >= 8 ? d.splash : 0, d.minAlc || 0, d);
     }
     if (d.sec) u.alvo2 = acharAlvo(u, d.sec.alcance, d.sec.splash && d.sec.splash >= 8 ? d.sec.splash : 0, 0, d.sec);
+  }
+  // parada e sem alvo no alcance: avança contra inimigo próximo (defende a área sem precisar de ordem)
+  if (!u.alvo && !u.ordem && u.busca > 0.3 && u.classe !== 'jato' && u.classe !== 'naval' && !u.predio && d.arma && G.controlando !== u) {
+    let perto = null, md = (d.alcance * 2.2) ** 2;
+    G.hashU.busca(u.x, u.z, d.alcance * 2.2, (v, d2) => { if (d2 < md && v.vivo && !v.dentro && hostis(u, v) && podeAtingir(d, v)) { md = d2; perto = v; } });
+    if (perto) u.ordem = { tipo: 'atacar', alvo: perto, auto: true };
   }
   const a = u.alvo;
   if (alvoValido(a, u) && d.arma) {

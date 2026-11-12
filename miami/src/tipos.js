@@ -49,6 +49,11 @@ export const TIPOS = {
   type99: { nacao: 'china', nome: 'Tanque Type 99A', sub: 'Canhão 125mm', icone: '🛡️', classe: 'veic', modelo: 'type99', hp: 3100, vel: 21, alcance: 170, dano: 315, splash: 8, cadencia: 4.3, precisao: 0.85, arma: '120mm', sec: { alcance: 90, dano: 12, cadencia: 0.11, precisao: 0.45, arma: 'mg' }, custo: 920, tempo: 20, de: 'patio', slots: 20, raio: 4.8, atropela: true },
   z10: { nacao: 'china', nome: 'Z-10', sub: 'Helicóptero de ataque • canhão 23mm + mísseis HJ-10', icone: '🚁', classe: 'aereo', modelo: 'z10', hp: 950, vel: 84, altCruz: 55, alcance: 270, dano: 40, splash: 3, cadencia: 0.13, precisao: 0.55, arma: '30mm', sec: { alcance: 640, dano: 410, splash: 11, cadencia: 7, precisao: 0.95, arma: 'hellfire', missil: true }, custo: 1100, tempo: 22, de: 'heliporto', raio: 8 },
   z20: { nacao: 'china', nome: 'Z-20', sub: 'Transporte • metralhadoras • leva 11', icone: '🚁', classe: 'aereo', modelo: 'z20', hp: 850, vel: 76, altCruz: 40, alcance: 95, dano: 10, cadencia: 0.08, precisao: 0.35, arma: 'm134', carga: 11, cargaTipos: ['inf', 'civil'], custo: 760, tempo: 16, de: 'heliporto', raio: 8 },
+  // jatos da Rússia e da China (pista de pouso)
+  su57: { nacao: 'russia', nome: 'Su-57 Felon', sub: 'Caça furtivo • bombas guiadas KAB-500', icone: '✈️', classe: 'jato', modelo: 'su57', hp: 950, vel: 290, altCruz: 190, dano: 400, splash: 14, municao: 4, bombas: 4, arma: 'bomba', custo: 1700, tempo: 24, de: 'pista', raio: 9 },
+  su25: { nacao: 'russia', nome: 'Su-25 Frogfoot', sub: 'Avião de ataque • canhão 30mm e foguetes', icone: '🛩️', classe: 'jato', modelo: 'su25', hp: 1500, vel: 160, altCruz: 90, dano: 65, splash: 4, municao: 5, arma: 'canhao', custo: 1300, tempo: 22, de: 'pista', raio: 9 },
+  j20: { nacao: 'china', nome: 'J-20 Mighty Dragon', sub: 'Caça furtivo • bombas guiadas LS-6', icone: '✈️', classe: 'jato', modelo: 'j20', hp: 950, vel: 280, altCruz: 180, dano: 600, splash: 19, municao: 4, arma: 'bomba', custo: 1600, tempo: 24, de: 'pista', raio: 9 },
+  j16: { nacao: 'china', nome: 'J-16', sub: 'Caça-bombardeiro • foguetes e bombas', icone: '✈️', classe: 'jato', modelo: 'j16', hp: 950, vel: 250, altCruz: 150, dano: 180, splash: 9, municao: 3, rajada: 6, arma: 'foguete', custo: 1250, tempo: 20, de: 'pista', raio: 9 },
   // ---------------- porta-aviões ----------------
   f35: { nome: 'F-35C Lightning II', sub: 'Caça furtivo • bombas guiadas GBU-31', icone: '✈️', classe: 'jato', modelo: 'f35', hp: 900, vel: 250, altCruz: 160, dano: 650, splash: 20, municao: 4, arma: 'bomba', custo: 1500, tempo: 22, de: 'porta', raio: 9 },
   f18: { nome: 'F/A-18E Super Hornet', sub: 'Foguetes e bombas • ataque rasante', icone: '✈️', classe: 'jato', modelo: 'f18', hp: 900, vel: 260, altCruz: 150, dano: 180, splash: 9, municao: 3, rajada: 6, arma: 'foguete', custo: 1250, tempo: 20, de: 'porta', raio: 9 },
@@ -72,7 +77,7 @@ for (const k in TIPOS) {
 }
 
 export const ESTRUTURAS = {
-  qg: { nome: 'Quartel-General', hp: 6000, raio: 26 },
+  qg: { nome: 'Quartel-General', hp: 12000, raio: 26 },
   quartel: { nome: 'Quartel (Infantaria)', hp: 3000, raio: 30 },
   patio: { nome: 'Pátio de Veículos', hp: 3500, raio: 34 },
   heliporto: { nome: 'Heliporto', hp: 2500, raio: 40 },
@@ -82,7 +87,7 @@ export const ESTRUTURAS = {
   muro: { nome: 'Barreira', hp: 900, raio: 5 },
   fob: { nome: 'Posto Avançado (FOB)', hp: 2500, raio: 28 },
   pista: { nome: 'Pista de Pouso', hp: 8000, raio: 60 },
-  patriot: { nome: 'Bateria Patriot', hp: 1500, raio: 6 },
+  patriot: { nome: 'Bateria antiaérea', hp: 1500, raio: 6, alcance: 900, dano: 520, cadencia: 5, precisao: 0.8, arma: 'sam', soAereo: true, antiaereo: true },
 };
 
 export const PRODUCAO = {
@@ -96,8 +101,8 @@ export const PRODUCAO = {
 // o que cada nação produz em cada estrutura
 export const PRODUCAO_N = {
   eua: PRODUCAO,
-  russia: { quartel: ['ru_soldado', 'ru_metralhador', 'ru_sniper', 'ru_medico'], patio: ['tigr', 'btr82', 'bmp3', 't90'], heliporto: ['ka52', 'mi8'] },
-  china: { quartel: ['cn_soldado', 'cn_metralhador', 'cn_sniper', 'cn_medico'], patio: ['mengshi', 'zbl08', 'zbd04', 'type99'], heliporto: ['z10', 'z20'] },
+  russia: { quartel: ['ru_soldado', 'ru_metralhador', 'ru_sniper', 'ru_medico'], patio: ['tigr', 'btr82', 'bmp3', 't90'], heliporto: ['ka52', 'mi8'], pista: ['su57', 'su25'] },
+  china: { quartel: ['cn_soldado', 'cn_metralhador', 'cn_sniper', 'cn_medico'], patio: ['mengshi', 'zbl08', 'zbd04', 'type99'], heliporto: ['z10', 'z20'], pista: ['j20', 'j16'] },
 };
 export const NOMES_PROD = { quartel: '🪖 Quartel', patio: '🚙 Pátio', heliporto: '🚁 Heliporto', docas: '⚓ Docas', porta: '🛳️ Porta-aviões', pista: '🛫 Pista de pouso' };
 // estruturas que o jogador pode construir em qualquer lugar do mapa
@@ -110,6 +115,6 @@ export const CONSTRUIR = {
   zona: { nome: 'Zona Segura', sub: 'Abrigo de civis (resgate)', icone: '🏥', custo: 700, tempo: 20, raio: 32 },
   torre: { nome: 'Torre de Vigia', sub: 'Metralhadora .50 automática', icone: '🗼', custo: 300, tempo: 10, raio: 6 },
   muro: { nome: 'Barreira', sub: 'Gabiões que seguram o avanço inimigo', icone: '🧱', custo: 60, tempo: 4, raio: 6 },
-  patriot: { nome: 'Bateria Patriot', sub: 'Defesa antiaérea', icone: '🛰️', custo: 500, tempo: 15, raio: 8 },
+  patriot: { nome: 'Bateria antiaérea', sub: 'Mísseis contra jatos e helicópteros (Patriot / S-400 / HQ-9)', icone: '🛰️', custo: 600, tempo: 15, raio: 8 },
   pista: { nome: 'Pista de Pouso', sub: 'Base aérea: F-22 e A-10 (precisa de muito espaço)', icone: '🛫', custo: 2500, tempo: 50, raio: 60, grande: true },
 };

@@ -17,14 +17,19 @@ os **EUA contra a Rússia e a China**, que são aliadas. Antes chamado "Miami: S
 - **Civis** fogem dos tiros, das explosões e das tropas inimigas, seguem as suas tropas e podem ser evacuados para a
   Zona Segura (+$40 cada). Soldados abatidos ficam caídos no chão por um tempo.
 
-| Nação | Infantaria | Veículos | Helicópteros |
-|---|---|---|---|
-| 🇺🇸 EUA | Soldado (M4A1 + AT4), metralhador, atirador, médico | Humvee, ambulância, Stryker, Bradley, Abrams, Paladin, HIMARS | Little Bird, Black Hawk, Seahawk, Chinook, Apache, drone Reaper |
-| 🇷🇺 Rússia | Soldado (AK-12 + RPG-7), metralhador (PKP), atirador (SVD), médico | GAZ Tigr, BTR-82A, BMP-3, T-90M | Ka-52 Alligator, Mi-8AMTSh |
-| 🇨🇳 China | Soldado (QBZ-191 + PF-98), metralhador, atirador (QBU-191), médico | Dongfeng Mengshi, ZBL-08, ZBD-04A, Type 99A | Z-10, Z-20 |
+| Nação | Infantaria | Veículos | Helicópteros | Jatos |
+|---|---|---|---|---|
+| 🇺🇸 EUA | Soldado (M4A1 + AT4), metralhador, atirador, médico | Humvee, ambulância, Stryker, Bradley, Abrams, Paladin, HIMARS | Little Bird, Black Hawk, Seahawk, Chinook, Apache, drone Reaper | F-35C, F/A-18E, F-22, A-10 |
+| 🇷🇺 Rússia | Soldado (AK-12 + RPG-7), metralhador (PKP), atirador (SVD), médico | GAZ Tigr, BTR-82A, BMP-3, T-90M | Ka-52 Alligator, Mi-8AMTSh | Su-57, Su-25 |
+| 🇨🇳 China | Soldado (QBZ-191 + PF-98), metralhador, atirador (QBU-191), médico | Dongfeng Mengshi, ZBL-08, ZBD-04A, Type 99A | Z-10, Z-20 | J-20, J-16 |
 
-Os EUA também têm a Marinha (docas, destróier, porta-aviões USS Enterprise) e os jatos (F-35C, F/A-18E, F-22, A-10).
-Marinha e jatos da Rússia e da China ficam para a próxima etapa.
+- Cada base do computador tem pista de pouso e baterias antiaéreas; a partir da 2ª onda o comandante junta dinheiro
+  para jatos e os manda atacar as suas tropas. **Baterias antiaéreas** (Patriot / S-400 / HQ-9) derrubam jatos e
+  helicópteros; só elas acertam jatos voando.
+- Prédios e estruturas só cedem a explosões e canhões (metralhadoras quase não os ferem); o QG tem 12.000 de vida.
+- Unidades paradas avançam sozinhas contra inimigos próximos. As ondas de ataque crescem aos poucos.
+- Os EUA também têm a Marinha (docas, destróier, porta-aviões USS Enterprise); a marinha da Rússia e da China fica
+  para a próxima etapa.
 
 ## Baixar
 
