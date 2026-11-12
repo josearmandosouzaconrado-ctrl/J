@@ -52,7 +52,7 @@ COURO = mat('couro', (0.32, 0.18, 0.08), 0.8)
 COURO_ESC = mat('couro_esc', (0.18, 0.1, 0.05), 0.8)
 MADEIRA = mat('madeira', (0.38, 0.24, 0.12), 0.85)
 PELE = mat('pele', (0.86, 0.6, 0.45), 0.6)
-PELO = mat('pelo', (0.42, 0.33, 0.24), 1.0)
+PELO = mat('pelo', (0.2, 0.13, 0.08), 1.0)
 BARBA_RUIVA = mat('barba_ruiva', (0.55, 0.22, 0.08), 0.9)
 BARBA_LOIRA = mat('barba_loira', (0.75, 0.6, 0.3), 0.9)
 CALCA = mat('calca', (0.33, 0.36, 0.33), 0.9)
@@ -104,7 +104,7 @@ def escudo(pai, m, raio=0.42):
 def viking(var):
     root = vazio('raiz', (0, 0, 0))
     jarl = var == 'jarl'; bers = var == 'berserker'; arq = var == 'arqueiro'; ald = var == 'aldea'
-    capa_m = mat('capa_' + var, {'guerreiro': (0.1, 0.14, 0.035), 'berserker': (0.22, 0.17, 0.11), 'arqueiro': (0.08, 0.12, 0.16), 'jarl': (0.5, 0.06, 0.06), 'aldea': (0.35, 0.3, 0.22)}[var], 0.9)
+    capa_m = mat('capa_' + var, {'guerreiro': (0.1, 0.14, 0.035), 'berserker': (0.22, 0.17, 0.11), 'arqueiro': (0.08, 0.12, 0.16), 'jarl': (0.26, 0.025, 0.03), 'aldea': (0.35, 0.3, 0.22)}[var], 0.9)
     k = 1.12 if jarl else 1.0
     corpo = vazio('corpo', (0, 0, 0), root); corpo.scale = (k, k, k)
     # ---- pernas (pivô no quadril) ----
