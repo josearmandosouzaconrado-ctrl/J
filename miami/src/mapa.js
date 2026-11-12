@@ -200,7 +200,7 @@ function texTelhado() {
   return t;
 }
 
-function texTelha() {
+export function texTelha() {
   // telha cerâmica: fileiras com sombra embaixo de cada fiada
   const N = 128, c = document.createElement('canvas');
   c.width = c.height = N;
@@ -287,7 +287,7 @@ export function construirPredios(cena) {
     ch.uv.push(0, 0, 0, 0.2, 0.2, 0.2, 0, 0, 0.2, 0.2, 0.2, 0);
   };
   for (const p of predios) {
-    if (p.removido) continue;
+    if (p.removido || p.kit) continue;   // as do kit do Blender são desenhadas por kit.js
     const base = Math.floor(p.cx / TAM) + ',' + Math.floor(p.cz / TAM);
     const n = p.pts.length / 2, h = p.h, pts = p.pts;
     const sem = (p.id * 2654435761) >>> 0;

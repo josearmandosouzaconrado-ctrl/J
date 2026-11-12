@@ -1,6 +1,7 @@
 // Miami: Surto Zumbi — estratégia em tempo real 3D no mapa real de Miami
 import * as THREE from 'three';
 import { G } from './estado.js';
+import { atualizarKit } from './kit.js';
 import { LARG, ALT, lugares, predios, MAT_PREDIOS, META, COSTA, definirQualidade, atualizarDecoracao, atualizarPredios } from './mapa.js';
 import { Hash } from './util.js';
 import { criarAmbiente } from './modelos.js';
@@ -223,6 +224,7 @@ async function iniciar() {
     if (camera.far !== cena.fog.far + 300) { camera.far = cena.fog.far + 300; camera.updateProjectionMatrix(); }
     if (G.decor) atualizarDecoracao(G.decor, camRTS.alvo, camRTS.dist);
     if (G.malhasPredios) atualizarPredios(G.malhasPredios, camRTS.alvo, camRTS.dist, cena.fog.far + camRTS.dist * 0.5);
+    if (G.kit) atualizarKit(G.kit, camRTS.alvo, camRTS.dist, cena.fog.far + camRTS.dist * 0.5, camera, agora);
     ciclo(G.pausado ? 0 : dt);
     mat4.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     frustum.setFromProjectionMatrix(mat4);

@@ -302,6 +302,17 @@ function predioNoToque(sx, sy, cam) {
     const p = predioEm(h.point.x - n.x * 0.6, h.point.z - n.z * 0.6);
     if (p) return p;
   }
+  // casas do kit (instanciadas): anda pelo raio até entrar numa construção abaixo da altura dela
+  {
+    const o = ray.ray.origin, d = ray.ray.direction;
+    for (let t = 0; t < 2500; t += 1.5) {
+      const y = o.y + d.y * t;
+      if (y < 0) break;
+      if (y > 70) continue;
+      const p = predioEm(o.x + d.x * t, o.z + d.z * t);
+      if (p && p.kit && y <= p.h + 1.5) return p;
+    }
+  }
   // blocos da base (sem malha própria)
   const ch = G.cam.chao(sx, sy);
   if (ch) { const p = predioEm(ch.x, ch.z); if (p) return p; }

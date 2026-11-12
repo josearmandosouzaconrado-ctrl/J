@@ -9,6 +9,7 @@ import {
 import { prepararNavegacao, pontoLivreProximo, livre } from './caminho.js';
 import { TIPOS, ESTRUTURAS, CONSTRUIR } from './tipos.js';
 import { criarModelo } from './modelos.js';
+import { construirKit } from './kit.js';
 import {
   criarUnidade, danoUnidade, naZonaSegura, volEm, vagas, embarcarCivil, embarcar, chaoEm, marcarSelecao, padPorta, padLivre,
 } from './unidades.js';
@@ -74,6 +75,7 @@ export function construirVisual() {
   G.agua = construirAgua(G.cena);
   const naoBase = predios.filter((p) => p.base);
   for (const p of naoBase) p.removido = true;   // não desenha os blocos (os modelos da base aparecem no lugar)
+  G.kit = construirKit(G.cena);                 // casas e lojas modeladas no Blender
   G.malhasPredios = construirPredios(G.cena);
   for (const p of naoBase) p.removido = false;
   // sem árvores em cima da pista de pouso (cidades sem mar)

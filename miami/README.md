@@ -59,6 +59,11 @@ O Android pede para permitir "instalar apps desconhecidos", porque o APK não ve
 - **Helicópteros com modelo 3D texturizado:** SH-60B Seahawk da Marinha (cinza, metralhadora M240 na porta e mísseis
   Hellfire, leva 5) e CH-47 Chinook do Exército (verde-oliva "U.S. ARMY"), com os rotores girando de verdade
   (o Chinook com os dois rotores em sentidos opostos).
+- **Casas modeladas no Blender:** casas de telha, casas com alpendre, sobrados de laje com caixa d'água e varanda,
+  sobrados de telha, casas de teto plano (Flórida), lojas com toldo e letreiro e galpões, com molduras, peitoris,
+  portas e sombra nos cantos. Cada construção retangular do mapa recebe o modelo que cabe nela, virada para a rua;
+  fileiras compridas viram casas geminadas. Perto da câmera aparece o modelo detalhado, longe uma versão simples.
+  As janelas acendem à noite. Gerado por `ferramentas/predios/kit.py`.
 - **Carcaças:** todo veículo terrestre destruído fica no lugar como carcaça queimada, pegando fogo e soltando fumaça,
   e some depois de alguns minutos.
 - **Soldados entram** em veículos, helicópteros, barcos e no Osprey; o Chinook e o LCAC levam veículos.
