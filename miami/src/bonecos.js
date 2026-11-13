@@ -171,6 +171,36 @@ function texCamo() {
 }
 
 const COM_CAMO = { quadril: 1, tronco: 1, coxa: 1, canela: 1, braco: 1, antebraco: 1, mochila: 1, colete: 1 };
+// peças do equipamento modeladas no Blender (www/modelos/soldados.js): têm a cor gravada por vértice e o atributo
+// 'liso' (1 = sem camuflagem: bolsas, armas, óculos); o resto recebe a textura de camuflagem da nação
+const COM_CAMO_N = { ...COM_CAMO, capacete: 1, arma: 1 };
+function b64buf(t) { const b = atob(t), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u.buffer; }
+function geoBlender(pt) {
+  const P = new Int16Array(b64buf(pt.p)), N = new Int8Array(b64buf(pt.n)), Cc = new Uint8Array(b64buf(pt.c)), U = new Int16Array(b64buf(pt.uv)), L = new Uint8Array(b64buf(pt.l));
+  const n = L.length, pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), cor = new Float32Array(n * 3), uv = new Float32Array(n * 2), liso = new Float32Array(n);
+  for (let i = 0; i < n * 3; i++) { pos[i] = P[i] / 2000; nor[i] = N[i] / 127; cor[i] = Cc[i] / 255; }
+  for (let i = 0; i < n * 2; i++) uv[i] = U[i] / 2048;
+  for (let i = 0; i < n; i++) liso[i] = L[i];
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  g.setAttribute('color', new THREE.BufferAttribute(cor, 3));
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  g.setAttribute('liso', new THREE.BufferAttribute(liso, 1));
+  g.setIndex(new THREE.BufferAttribute(new Uint16Array(b64buf(pt.i)), 1));
+  g.computeBoundingSphere();
+  return g;
+}
+// camuflagem só onde 'liso' = 0 (peças do corpo não têm o atributo: o valor padrão é 0)
+function comLiso(mat) {
+  mat.onBeforeCompile = (sh) => {
+    sh.vertexShader = 'attribute float liso;\nvarying float vLiso;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvLiso = liso;');
+    sh.fragmentShader = 'varying float vLiso;\n' + sh.fragmentShader.replace('#include <map_fragment>',
+      '#ifdef USE_MAP\nvec4 sampledDiffuseColor = texture2D( map, vMapUv );\ndiffuseColor.rgb *= mix( sampledDiffuseColor.rgb, vec3( 1.0 ), vLiso );\n#endif');
+  };
+  mat.customProgramCacheKey = () => 'liso';
+  return mat;
+}
 const DUPLAS = { coxa: 1, canela: 1, bota: 1, braco: 1, antebraco: 1, mao: 1 };
 
 // ---------- matemática: R = Ry(yaw) * Rx(p) * Rz(r) ----------
@@ -189,12 +219,13 @@ function dirParaPR(dx, dy, dz, out) {
 }
 
 class Conjunto {
-  constructor(cena, geos, max, camo) {
+  constructor(cena, geos, max, camo, comCamo = COM_CAMO) {
     this.m = {}; this.n = {};
     this.max = {};
     for (const k in geos) {
       const mx = DUPLAS[k] ? max * 2 : max;
-      const mat = new THREE.MeshLambertMaterial({ vertexColors: true, map: camo && COM_CAMO[k] ? camo : null });
+      const mat = new THREE.MeshLambertMaterial({ vertexColors: true, map: camo && comCamo[k] ? camo : null });
+      if (comCamo !== COM_CAMO && mat.map) comLiso(mat);
       const im = new THREE.InstancedMesh(geos[k], mat, mx);
       im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(mx * 3), 3);
@@ -208,6 +239,7 @@ class Conjunto {
     for (const k in this.m) {
       const m = this.m[k];
       m.count = Math.min(this.max[k], this.n[k]);
+      m.visible = m.count > 0;
       m.instanceMatrix.needsUpdate = true;
       m.instanceColor.needsUpdate = true;
     }
@@ -234,17 +266,30 @@ class Conjunto {
 }
 
 const LUVA = [0.25, 0.22, 0.18], PRETO = [0.13, 0.13, 0.14], COLETE_MIL = [0.62, 0.56, 0.42], CAP_MIL = [0.52, 0.48, 0.36];
-const BOTA_MIL = [0.55, 0.45, 0.32], BOTA_CIV = [0.2, 0.18, 0.17];
+const BOTA_MIL = [0.55, 0.45, 0.32], BOTA_CIV = [0.2, 0.18, 0.17], BRANCO = [1, 1, 1], ESCURO_SNIPER = [0.82, 0.84, 0.8];
 const _pr = [0, 0];
 
 export class Bonecos {
   constructor(cena) {
     const geos = geometrias();
     this.civ = new Conjunto(cena, geos, 2600, null);
-    this.mil = new Conjunto(cena, geos, 600, texCamo());
+    this.mil = new Conjunto(cena, geos, 300, texCamo());
+    // um conjunto por nação, com a camuflagem e o equipamento modelados no Blender
+    this.nac = {};
+    const SD = window.SOLDADOS;
+    if (SD) for (const n in SD.pecas) {
+      const g = { ...geos };
+      for (const k in SD.pecas[n]) g[k] = geoBlender(SD.pecas[n][k]);
+      if (!SD.pecas[n].mochila) delete g.mochila;
+      delete g.cabelo;
+      const t = new THREE.TextureLoader().load(SD.texturas[n]);
+      t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+      this.nac[n] = new Conjunto(cena, g, 500, t, COM_CAMO_N);
+      this.nac[n].blender = true;
+    }
   }
-  comecar() { this.civ.comecar(); this.mil.comecar(); }
-  terminar() { this.civ.terminar(); this.mil.terminar(); }
+  comecar() { this.civ.comecar(); this.mil.comecar(); for (const n in this.nac) this.nac[n].comecar(); }
+  terminar() { this.civ.terminar(); this.mil.terminar(); for (const n in this.nac) this.nac[n].terminar(); }
 
   // membro de 2 ossos: do ponto S (ombro/quadril) até o alvo H, dobrando para o lado do polo
   _membro(S, k1, k2, L1, L2, ombro, alvo, polo, bx, by, bz, cy, sy, esc, cor1, cor2, kMao, corMao) {
@@ -276,7 +321,14 @@ export class Bonecos {
   // pose: 0 andando, 1 zumbi, 2 mirando/atirando, 3 caído, 4 acenando
   add(x, y, z, ang, fase, pose, camisa, calca, pele, estilo = 0, esc = 1, cabelo = null, vel = 1, equip = null) {
     const mil = estilo === 1 || estilo === 3;
-    const S = mil ? this.mil : this.civ;
+    const SN = mil && equip && equip.nacao ? this.nac[equip.nacao] : null;
+    const S = SN || (mil ? this.mil : this.civ);
+    this._S = S;
+    if (SN) {
+      // farda: a textura já tem as cores; o colete/capacete/arma trazem as cores do Blender
+      camisa = equip.sniper ? ESCURO_SNIPER : BRANCO; calca = BRANCO;
+      if (equip.pele) pele = equip.pele;
+    }
     const cy = Math.cos(ang), sy = Math.sin(ang);
     const armado = estilo === 1 || estilo === 2 || estilo === 4 || estilo === 5;
     if (pose === 3) {
@@ -299,7 +351,7 @@ export class Bonecos {
     const cl = Math.cos(lean), sl = Math.sin(lean);
     // ---- pernas ----
     const roupaPerna = calca;
-    const corBota = mil ? BOTA_MIL : estilo === 2 || estilo === 5 ? PRETO : BOTA_CIV;
+    const corBota = SN ? (equip.nacao === 'eua' ? BOTA_MIL : PRETO) : mil ? BOTA_MIL : estilo === 2 || estilo === 5 ? PRETO : BOTA_CIV;
     for (const s of [1, -1]) {
       const f = s === 1 ? sw : -sw;
       const coxa = pose === 5 ? -1.45 + f * 0.08 : -f * 0.55 * andando;   // negativo = perna para frente
@@ -322,9 +374,9 @@ export class Bonecos {
     const olhar = pose === 1 ? -0.25 : pose === 2 ? 0.05 : 0;
     S.parte('cabeca', x, y, z, cy, sy, pc0[0], pc0[1], pc0[2], -lean * 0.4 + olhar, 0, esc, pele);
     if (mil || estilo === 2 || estilo === 5) {
-      S.parte('colete', x, y, z, cy, sy, 0, hy + 0.12 * cl, 0.12 * sl, -lean, 0, esc, estilo === 2 || estilo === 5 ? PRETO : estilo === 3 ? [0.45, 0.42, 0.33] : equip ? equip[0] : COLETE_MIL);
-      S.parte('capacete', x, y, z, cy, sy, pc0[0], pc0[1], pc0[2], -lean * 0.4 + olhar, 0, esc, estilo === 2 || estilo === 5 ? PRETO : estilo === 3 ? [0.5, 0.47, 0.38] : equip ? equip[1] : CAP_MIL);
-      if (mil) S.parte('mochila', x, y, z, cy, sy, 0, hy + 0.12 * cl, 0.12 * sl, -lean, 0, esc, estilo === 3 ? [0.6, 0.58, 0.5] : [0.92, 0.9, 0.85]);
+      S.parte('colete', x, y, z, cy, sy, 0, hy + 0.12 * cl, 0.12 * sl, -lean, 0, esc, SN ? BRANCO : estilo === 2 || estilo === 5 ? PRETO : estilo === 3 ? [0.45, 0.42, 0.33] : equip && equip.colete ? equip.colete : COLETE_MIL);
+      S.parte('capacete', x, y, z, cy, sy, pc0[0], pc0[1], pc0[2], -lean * 0.4 + olhar, 0, esc, SN ? BRANCO : estilo === 2 || estilo === 5 ? PRETO : estilo === 3 ? [0.5, 0.47, 0.38] : equip && equip.capacete ? equip.capacete : CAP_MIL);
+      if (mil && S.m.mochila) S.parte('mochila', x, y, z, cy, sy, 0, hy + 0.12 * cl, 0.12 * sl, -lean, 0, esc, SN ? BRANCO : estilo === 3 ? [0.6, 0.58, 0.5] : [0.92, 0.9, 0.85]);
     } else if (cabelo) S.parte('cabelo', x, y, z, cy, sy, pc0[0], pc0[1], pc0[2], -lean * 0.4 + olhar, 0, esc, cabelo);
     // ---- braços ----
     const oE = T(0.2, TRONCO - 0.05, 0, [0, 0, 0]), oD = T(-0.2, TRONCO - 0.05, 0, [0, 0, 0]);
@@ -368,7 +420,7 @@ export class Bonecos {
     // R = Ry(ang+yawA) * Rx(pitch): soma o desvio ao giro do corpo
     const c2 = Math.cos(Math.atan2(sy, cy) + yawA), s2 = Math.sin(Math.atan2(sy, cy) + yawA);
     const wx = bx + (cy * gx + sy * gz) * esc, wz = bz + (-sy * gx + cy * gz) * esc;
-    S.parte('arma', wx, by, wz, c2, s2, 0, gy, 0, pitch, 0, esc, [0.38, 0.38, 0.39]);
+    S.parte('arma', wx, by, wz, c2, s2, 0, gy, 0, pitch, 0, esc, S.blender ? BRANCO : [0.38, 0.38, 0.39]);
   }
 }
 

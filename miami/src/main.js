@@ -34,6 +34,14 @@ G.salvarCfg = () => { try { localStorage.setItem('miami-cfg', JSON.stringify(G.c
 
 const CEU_DIA = new THREE.Color(0xa9cfe8), CEU_TARDE = new THREE.Color(0xf0b27a), CEU_NOITE = new THREE.Color(0x0d1830);
 const SNIPER = [0.78, 0.86, 0.66];
+// equipamento de cada nação para o desenho dos soldados (os russos usam balaclava verde no rosto)
+const BALACLAVA = [0.2, 0.23, 0.15];
+const _equip = {};
+function equipDe(nacao, sniper = false) {
+  const k = nacao + (sniper ? 's' : '');
+  if (!_equip[k]) { const N = NACOES[nacao] || NACOES.eua; _equip[k] = { nacao, sniper, colete: N.colete, capacete: N.capacete, pele: nacao === 'russia' ? BALACLAVA : null }; }
+  return _equip[k];
+}
 
 async function iniciar() {
   lerCfg();
@@ -239,7 +247,7 @@ async function iniciar() {
         const pose = u.rapel ? 4 : u.mirando > 0 && u.velAtual < 0.5 ? 2 : 0;
         const vn = Math.min(1, u.velAtual / 3);
         const N = NACOES[u.nacao] || NACOES.eua;
-        bon.add(u.x, u.y, u.z, u.ang, u.fase, pose, u.tipo.includes('sniper') ? N.farda.map((c) => c * 0.82) : N.farda, N.calca, PELE_SOLD, 1, 1, null, vn, [N.colete, N.capacete]);
+        bon.add(u.x, u.y, u.z, u.ang, u.fase, pose, u.tipo.includes('sniper') ? N.farda.map((c) => c * 0.82) : N.farda, N.calca, PELE_SOLD, 1, 1, null, vn, equipDe(u.nacao, u.tipo.includes('sniper')));
       }
       // soldados caídos ficam no chão por um tempo
       if (G.mortos) for (let i = G.mortos.length - 1; i >= 0; i--) {
@@ -247,7 +255,7 @@ async function iniciar() {
         if (G.tempo - m.t > 60) { G.mortos.splice(i, 1); continue; }
         if (!visivel(m.x, m.z)) continue;
         const N = NACOES[m.nacao] || NACOES.eua;
-        bon.add(m.x, m.y, m.z, m.ang, 0, 3, N.farda, N.calca, PELE_SOLD, 1, 1, null, 0, [N.colete, N.capacete]);
+        bon.add(m.x, m.y, m.z, m.ang, 0, 3, N.farda, N.calca, PELE_SOLD, 1, 1, null, 0, equipDe(m.nacao));
       }
       for (const u of G.unidades) {
         if (!u.vivo || u.dentro || !u.m || !u.m.def.bancos || !u.passageiros.length || !visivel(u.x, u.z)) continue;
@@ -257,7 +265,7 @@ async function iniciar() {
           const lado = i % 2 ? -1 : 1, lz = 0.85 - Math.floor(i / 2) * 0.6, lx = lado * 1.02;
           const x = u.x + c * lx + s * lz, z = u.z - s * lx + c * lz;
           const N = NACOES[p.nacao] || NACOES.eua;
-          bon.add(x, u.y + 0.97 - 0.93, z, u.ang + lado * Math.PI / 2, 0, 5, N.farda, N.calca, PELE_SOLD, 1, 1, null, 0, [N.colete, N.capacete]);
+          bon.add(x, u.y + 0.97 - 0.93, z, u.ang + lado * Math.PI / 2, 0, 5, N.farda, N.calca, PELE_SOLD, 1, 1, null, 0, equipDe(p.nacao));
         });
       }
       desenharAgentes(bon, visivel);

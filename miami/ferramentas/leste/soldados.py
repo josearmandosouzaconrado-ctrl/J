@@ -11,6 +11,7 @@ from mathutils import Vector, Matrix
 ARGS = sys.argv[sys.argv.index('--') + 1:]
 OUT = ARGS[0]
 os.makedirs(OUT, exist_ok=True)
+BAIXO = False   # True: versão leve para o jogo (menos segmentos, sem chanfros)
 bpy.ops.wm.read_factory_settings(use_empty=True)
 SC = bpy.context.scene
 
@@ -18,6 +19,7 @@ SC = bpy.context.scene
 # ---------------- materiais ----------------
 def material(nome, cor, rug=0.75, metal=0.0, camo=None, escala=6.0, digital=False, sujeira=0.3):
     m = bpy.data.materials.new(nome); m.use_nodes = True
+    m['cor'] = list(cor) if cor else [1.0, 1.0, 1.0]; m['camo'] = bool(camo)   # usados na exportação para o jogo
     nt = m.node_tree; b = nt.nodes['Principled BSDF']
     b.inputs['Roughness'].default_value = rug; b.inputs['Metallic'].default_value = metal
     if metal < 0.3: b.inputs['Specular IOR Level'].default_value = 0.25
@@ -65,7 +67,7 @@ def objeto(bm, mat, bevel=0.0, suave=False, pai=None):
     me = bpy.data.meshes.new('p'); bm.to_mesh(me); bm.free()
     o = bpy.data.objects.new('p', me); SC.collection.objects.link(o)
     me.materials.append(mat)
-    if bevel:
+    if bevel and not BAIXO:
         m = o.modifiers.new('b', 'BEVEL'); m.width = bevel; m.segments = 2; m.limit_method = 'ANGLE'
     if suave:
         for p in me.polygons: p.use_smooth = True
@@ -84,7 +86,7 @@ def caixa(dim, pos, mat, bevel=0.006, rot=Matrix.Identity(3), pai=None):
 def cilindro(r1, r2, comp, pos, mat, rot=Matrix.Identity(3), n=16, pai=None):
     """cilindro ao longo de +Y (depois girado por rot)"""
     bm = bmesh.new()
-    bmesh.ops.create_cone(bm, cap_ends=True, segments=n, radius1=r1, radius2=r2, depth=comp)
+    bmesh.ops.create_cone(bm, cap_ends=True, segments=min(n, 8) if BAIXO else n, radius1=r1, radius2=r2, depth=comp)
     bmesh.ops.rotate(bm, cent=(0, 0, 0), matrix=rot @ Matrix.Rotation(-math.pi / 2, 3, 'X'), verts=bm.verts)
     bmesh.ops.translate(bm, vec=Vector(pos), verts=bm.verts)
     return objeto(bm, mat, suave=True, pai=pai)
@@ -92,7 +94,7 @@ def cilindro(r1, r2, comp, pos, mat, rot=Matrix.Identity(3), n=16, pai=None):
 
 def esfera(r, pos, mat, esc=(1, 1, 1), corte=None, pai=None):
     """esfera achatada; corte = altura relativa abaixo da qual a malha é removida (capacete)"""
-    bm = bmesh.new(); bmesh.ops.create_uvsphere(bm, u_segments=28, v_segments=18, radius=r)
+    bm = bmesh.new(); bmesh.ops.create_uvsphere(bm, u_segments=12 if BAIXO else 28, v_segments=8 if BAIXO else 18, radius=r)
     if corte is not None:
         bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.co.z < r * corte], context='VERTS')
     bmesh.ops.scale(bm, vec=Vector(esc), verts=bm.verts)
@@ -200,7 +202,10 @@ def mochila(J, cor):
 def fuzil(estilo, J, preto, extra):
     """fuzil na posição baixa (pronto): coronha no ombro direito, cano apontando para a frente e para baixo"""
     # mão direita na empunhadura (0,33 m da coronha, 8 cm abaixo do eixo) e esquerda no guarda-mão
-    mD = J['pulsoD'][0] + Vector((0, 0.03, -0.01)); mE = J['pulsoE'][0] + Vector((0, 0.03, -0.01))
+    if J is None:
+        mD, mE = Vector((0, 0.28, -0.06)), Vector((0, 1.0, -0.06))
+    else:
+        mD = J['pulsoD'][0] + Vector((0, 0.03, -0.01)); mE = J['pulsoE'][0] + Vector((0, 0.03, -0.01))
     d = (mE - mD).normalized()
     up = Vector((0, 0, 1)); up = (up - d * up.dot(d)).normalized()
     E = 0.85                                   # escala do fuzil (M4: ~84 cm)
