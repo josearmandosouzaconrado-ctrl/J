@@ -1560,6 +1560,8 @@ function blocosERA(c, x, y, z0, z1, n, cor) {
 
 const LESTE_V = {
   t90() {
+    const real = lesteReal('t90', { torreY: 1.62, torreZ: 0, canoZ: 7.2, canoY: 0.38, destrocoTorre: true });
+    if (real) return real;
     // T-90M: casco baixo, torre com cunhas de blindagem reativa Relikt, canhão 125 mm, tambores de combustível atrás
     const c = new Mont(), C = RU, C2 = RU2;
     c.add(loftZ([
@@ -1598,6 +1600,8 @@ const LESTE_V = {
     return { corpo: c.build(), torre: t.build(), torreY: 1.6, torreZ: 0.2, canoZ: 6.9, canoY: 0.35 };
   },
   type99() {
+    const real = lesteReal('type99', { torreY: 1.62, torreZ: 0, canoZ: 7.65, canoY: 0.38, destrocoTorre: true });
+    if (real) return real;
     // Type 99A: casco longo, torre com frente em ponta de flecha, canhão 125 mm, caixa do dissuasor a laser
     const c = new Mont(), C = CN, C2 = CN2;
     c.add(loftZ([
@@ -1853,9 +1857,18 @@ const LESTE_A = {
 };
 // jatos russos e chineses: variantes dos jatos do jogo com a pintura e as marcas da nação
 Object.assign(LESTE_A, {
-  su57() { return comPintura(0x7f93a8, 'russia', () => AERO.f22()); },    // Su-57: cinza-azulado
+  su57() {
+    // Su-57 do Blender (sem o arquivo: variante pintada do F-22)
+    const base = comPintura(0x7f93a8, 'russia', () => AERO.f22());
+    const real = lesteReal('su57', { motorZ: -10.9, motorY: 1.45, motores: [-1.15, 1.15], chamaR: 0.42, pontas: 7.1 });
+    return real ? { ...base, ...real, corpo: null, vidro: null, trem: true } : base;
+  },
   su25() { return comPintura(0x6f7a50, 'russia', () => AERO.a10()); },    // Su-25: verde-oliva
-  j20() { return comPintura(0x4f565e, 'china', () => AERO.f35()); },      // J-20: cinza-escuro
+  j20() {
+    const base = comPintura(0x4f565e, 'china', () => AERO.f35());
+    const real = lesteReal('j20', { motorZ: -10.9, motorY: 1.45, motores: [-0.62, 0.62], chamaR: 0.4, pontas: 6.5 });
+    return real ? { ...base, ...real, corpo: null, vidro: null, trem: true } : base;
+  },
   j16() { return comPintura(0x8d99a6, 'china', () => AERO.f18()); },      // J-16: cinza-claro
 });
 Object.assign(VEIC, LESTE_V);
@@ -1889,6 +1902,40 @@ function portaReal(M) {
     malhas.push({ geo: g, mat, semSombra: pt.alfa });
   }
   return { malhas, deck: M.deck, real: true };
+}
+
+// tanques e jatos da Rússia e da China modelados no Blender (www/modelos/leste.js): textura com a pintura assada
+const _texLeste = {};
+function lesteReal(nome, extra) {
+  const M = window.MODELOS_LESTE && window.MODELOS_LESTE[nome];
+  if (!M) return null;
+  const b64 = (t) => { const b = atob(t), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u.buffer; };
+  const malhas = (pt, chave) => {
+    const P = new Int16Array(b64(pt.p)), N = new Int8Array(b64(pt.n)), U = new Int16Array(b64(pt.uv));
+    const pos = new Float32Array(P.length), nor = new Float32Array(N.length), uv = new Float32Array(U.length);
+    for (let i = 0; i < P.length; i++) { pos[i] = P[i] / 1000; nor[i] = N[i] / 127; }
+    for (let i = 0; i < U.length; i++) uv[i] = U[i] / 32767;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    g.setIndex(new THREE.BufferAttribute(new Uint16Array(b64(pt.i)), 1));
+    g.computeBoundingSphere();
+    let mat;
+    if (!pt.tex) mat = matVidro();
+    else {
+      const t = _texLeste[chave] || (_texLeste[chave] = new THREE.TextureLoader().load(pt.tex));
+      t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = QUAL === 0 ? 2 : 4; t.flipY = false;
+      mat = QUAL === 0 ? new THREE.MeshLambertMaterial({ map: t }) : new THREE.MeshStandardMaterial({ map: t, roughness: 0.72, metalness: 0.12, envMapIntensity: 0.5 });
+    }
+    return [{ geo: g, mat }];
+  };
+  const def = { ...extra, real: true };
+  def.malhas = malhas(M.corpo, nome + '/corpo');
+  if (M.vidro) def.malhas.push(...malhas(M.vidro, nome + '/vidro'));
+  if (M.torre) { def.torre = true; def.torreMalhas = malhas(M.torre, nome + '/torre'); }
+  if (M.trem) { def.trem = true; def.tremMalhas = malhas(M.trem, nome + '/trem'); }
+  return def;
 }
 
 // helicópteros com modelo 3D texturizado (www/modelos/helis.js): corpo, rotores e rotor de cauda separados
@@ -1948,8 +1995,10 @@ export function criarModelo(nome) {
   if (def.corpo) grupo.add(new THREE.Mesh(def.corpo, matCorpo()));
   for (const m of def.malhas || []) { const o = new THREE.Mesh(m.geo, m.mat); o.userData.semSombra = m.semSombra; grupo.add(o); }
   if (def.vidro) grupo.add(new THREE.Mesh(def.vidro, matVidro()));
+  // peças com várias malhas texturizadas (modelos importados) viram um grupo
+  const grupoDe = (ms) => { const g = new THREE.Group(); for (const m of ms) g.add(new THREE.Mesh(m.geo, m.mat)); return g; };
   if (def.torre) {
-    const t = new THREE.Mesh(def.torre, matCorpo());
+    const t = def.torreMalhas ? grupoDe(def.torreMalhas) : new THREE.Mesh(def.torre, matCorpo());
     t.position.set(0, def.torreY, def.torreZ);
     grupo.add(t); r.torre = t;
   }
@@ -2002,7 +2051,7 @@ export function criarModelo(nome) {
     }
   }
   if (def.trem) {
-    r.trem = new THREE.Mesh(def.trem, matCorpo());
+    r.trem = def.tremMalhas ? grupoDe(def.tremMalhas) : new THREE.Mesh(def.trem, matCorpo());
     grupo.add(r.trem);
   }
   if (def.nacele) {

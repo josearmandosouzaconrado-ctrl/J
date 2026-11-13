@@ -23,6 +23,10 @@ os **EUA contra a Rússia e a China**, que são aliadas. Antes chamado "Miami: S
 | 🇷🇺 Rússia | Soldado (AK-12 + RPG-7), metralhador (PKP), atirador (SVD), médico | GAZ Tigr, BTR-82A, BMP-3, T-90M | Ka-52 Alligator, Mi-8AMTSh | Su-57, Su-25 |
 | 🇨🇳 China | Soldado (QBZ-191 + PF-98), metralhador, atirador (QBU-191), médico | Dongfeng Mengshi, ZBL-08, ZBD-04A, Type 99A | Z-10, Z-20 | J-20, J-16 |
 
+- **Modelos feitos no Blender por código** (`ferramentas/leste/`): tanques T-90M e Type 99A e jatos Su-57 e J-20 com
+  a pintura (camuflagem digital, sujeira e estrelas) assada numa textura, torre que gira, trem de pouso que recolhe e
+  versão destruída queimada; soldados com as camuflagens OCP (EUA), EMR "tsifra" (Rússia) e Tipo 07 (China) e o
+  capacete, colete, mochila e fuzil (M4A1, AK-12, QBZ-191) de cada exército. Os russos usam balaclava.
 - Cada base do computador tem pista de pouso e baterias antiaéreas; a partir da 2ª onda o comandante junta dinheiro
   para jatos e os manda atacar as suas tropas. **Baterias antiaéreas** (Patriot / S-400 / HQ-9) derrubam jatos e
   helicópteros; só elas acertam jatos voando.

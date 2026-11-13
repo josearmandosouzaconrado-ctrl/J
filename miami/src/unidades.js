@@ -1263,13 +1263,21 @@ function criarDestroco(u) {
   const d = u.m.def, grupo = new THREE.Group();
   grupo.position.set(u.x, u.y, u.z);
   grupo.rotation.y = u.ang;
-  const casco = new THREE.Mesh(queimar(d.corpo), matQueimado());
-  casco.castShadow = casco.receiveShadow = true;
+  // modelos texturizados: mesma malha com a textura escurecida (metal queimado); os outros: cores queimadas
+  const queimado = (geo, malhas) => {
+    if (!malhas) { const m = new THREE.Mesh(queimar(geo), matQueimado()); m.castShadow = m.receiveShadow = true; return m; }
+    const g = new THREE.Group();
+    for (const ms of malhas) {
+      const mat = new THREE.MeshLambertMaterial({ map: ms.mat.map || null, color: ms.mat.map ? 0x3a332c : 0x141414 });
+      const m = new THREE.Mesh(ms.geo, mat); m.castShadow = m.receiveShadow = true; g.add(m);
+    }
+    return g;
+  };
+  const casco = queimado(d.corpo, d.corpo ? null : d.malhas);
   grupo.add(casco);
   const w = { grupo, t: 0, x: u.x, y: u.y, z: u.z, raio: u.d.raio || 3, torre: null };
   if (d.torre) {
-    const t = new THREE.Mesh(queimar(d.torre), matQueimado());
-    t.castShadow = t.receiveShadow = true;
+    const t = queimado(d.torre, d.torreMalhas);
     t.position.set(0, d.torreY, d.torreZ);
     t.rotation.y = u.torreAng || 0;
     grupo.add(t);

@@ -66,9 +66,11 @@ def material(nome, cor, rug=0.6, metal=0.0, camo=None, escala=1.2, sujeira=0.25,
     return m
 
 
+PARTE = 'corpo'   # peça do modelo (corpo, torre, trem): usada na exportação para o jogo
 def objeto(bm, mat, nome='p', bevel=0.0, suave=False, segs=2):
     me = bpy.data.meshes.new(nome); bm.to_mesh(me); bm.free()
     o = bpy.data.objects.new(nome, me); bpy.context.scene.collection.objects.link(o)
+    o['parte'] = PARTE
     me.materials.append(mat)
     if bevel:
         m = o.modifiers.new('bevel', 'BEVEL'); m.width = bevel; m.segments = segs; m.limit_method = 'ANGLE'; m.angle_limit = math.radians(35)
@@ -222,6 +224,8 @@ def esteira(x, larg, rodas, m_lagarta, m_roda, m_aro):
 
 # ---------------- tanques ----------------
 def tanque(estilo):
+    global PARTE
+    PARTE = 'corpo'
     russo = estilo == 't90'
     if russo:
         tinta = material('verde', (0.13, 0.15, 0.08), 0.65, camo=[(0.12, 0.14, 0.07), (0.09, 0.1, 0.05), (0.2, 0.18, 0.1)], escala=0.9)
@@ -266,6 +270,7 @@ def tanque(estilo):
     for sx in (-1, 1):
         cilindro(0.025, 0.025, 1.6, (sx * 0.9, y0 + 1.6, 1.68), aco, 'Y', 8)            # cabos de reboque
     # ---- torre ----
+    PARTE = 'torre'
     zt = 1.62
     if russo:
         casco([(sx * w, y, zt + z) for sx in (-1, 1) for (w, y, z) in [(1.0, -1.9, 0.0), (1.05, -1.9, 0.6), (1.32, -0.9, 0.0), (1.38, -0.7, 0.66), (1.3, 0.6, 0.0), (1.2, 0.8, 0.7), (0.55, 1.6, 0.05), (0.5, 1.5, 0.55)]], tinta, 0.05)
@@ -308,6 +313,8 @@ def tanque(estilo):
 
 # ---------------- jatos ----------------
 def jato(estilo):
+    global PARTE
+    PARTE = 'corpo'
     su = estilo == 'su57'
     if su:
         tinta = material('su57', (0.2, 0.25, 0.3), 0.85, 0.0, camo=[(0.17, 0.22, 0.28), (0.1, 0.13, 0.18), (0.3, 0.35, 0.4), (0.06, 0.08, 0.11)], escala=0.35, sujeira=0.15)
@@ -357,6 +364,7 @@ def jato(estilo):
             cilindro(0.12, 0.12, 0.012, (sx * 4.5, -4.0, 1.745), amarelo, 'Z', 12)
             estrela((sx * 1.85, -8.3, 3.3), 0.3, vermelho, (sx * 0.9, 0, 0.4))
     # trem de pouso
+    PARTE = 'trem'
     trem = material('trem', (0.55, 0.56, 0.55), 0.4, 0.5, sujeira=0.2)
     pneu = material('pneu', (0.03, 0.03, 0.03), 0.9, sujeira=0)
     for (x, y, h, r) in [(0, 7.0, 1.0, 0.3), (-1.6, -2.0, 1.0, 0.42), (1.6, -2.0, 1.0, 0.42)]:
