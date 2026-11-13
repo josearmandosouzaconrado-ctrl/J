@@ -1,21 +1,28 @@
 'use strict';
 // ===================== GELEIRA DE HRIMGARD E OS VIKINGS =====================
 // Expansão no noroeste de Eldoria: um manto de gelo puro que nunca derrete (nem depois do inverno),
-// território de clãs vikings fortíssimos. Os vikings, as casas longas, o salão do jarl, o drakkar,
-// as pedras rúnicas e as torres de vigia foram modelados e renderizados no Blender 4.2
-// (tools/blender/vikings.py e construcoes_vikings.py) e reduzidos a pixel art.
+// território de clãs vikings fortíssimos. Os vikings usam o mesmo gerador de pessoas do jogo; as casas
+// longas, o salão do jarl, o drakkar, as pedras rúnicas e as torres de vigia foram modelados e
+// renderizados no Blender 4.2 (tools/blender/construcoes_vikings.py) e reduzidos a pixel art.
 // A geleira só aparece depois que o resto do mundo foi gerado: nada do mapa antigo muda.
 const HRIM = { x: 300, y: 205, rx: 290, ry: 175 };
 const HRIM_LVL = [40, 55];
 const HRIM_PONTE = { x0: 380, y0: 320, x1: 470, y1: 470, r: 46 };
-const VK_VARS = ['guerreiro', 'berserker', 'arqueiro', 'jarl', 'aldea'];
 
+// ---------- aparência: o mesmo gerador de pessoas do jogo, com cota de malha, elmo de ponta, capa e escudo redondo ----------
+const VK_LOOK = {
+  guerreiro: { k: 'hum', skin: '#e8b890', hair: '#c89040', beard: true, beardC: '#b07830', helm: '#9aa0a8', helmStyle: 'spangen', body: '#6a6e78', mail: true, mailTrim: '#8a2a20', sleeve: '#8a2a20', legs: '#5a5e58', boots: '#5a3a20', cape: '#3a4a1a', scarf: '#4a5a24', shield: '#d8c8a0', shieldB: '#2a4a8a', shieldRound: true, weapon: 'axe', wc: '#b8c0c8', tall: true, bulky: true },
+  berserker: { k: 'hum', skin: '#e0a880', hair: '#a03a14', beard: true, beardC: '#8a3010', hairStyle: 4, body: '#5a3a24', fur: true, sleeve: '#e0a880', legs: '#4a4038', boots: '#4a3020', scarf: '#7a5a3a', weapon: 'axe', wc: '#c8ccd0', tall: true, bulky: true, nobelt: false },
+  arqueiro: { k: 'hum', skin: '#e8c0a0', hair: '#d8b060', beard: true, beardC: '#c8a050', helm: '#8a9098', helmStyle: 'spangen', body: '#5e626c', mail: true, mailTrim: '#2a4a6a', sleeve: '#3a4a5a', legs: '#4a4a44', boots: '#5a3a20', cape: '#2a3a4a', weapon: 'bow', wc: '#6a4a2a', tall: true },
+  jarl: { k: 'hum', skin: '#e8b890', hair: '#e0d0b0', beard: true, beardC: '#e8dcc0', short: 0, helm: '#d8b048', helmStyle: 'spangen', helmHorns: true, body: '#7a7e88', mail: true, mailTrim: '#d8b048', sleeve: '#7a1a14', legs: '#4a3a30', boots: '#3a2416', cape: '#7a1a14', scarf: '#c8b8a0', shield: '#d0a030', shieldB: '#8a1a14', shieldRound: true, weapon: 'axe', wc: '#e0c060', tall: true, bulky: true, size: 1.25 },
+  aldea: { k: 'hum', skin: '#f0c8a8', hair: '#e0c070', hairStyle: 1, body: '#8a6a4a', sleeve: '#a08060', legs: '#6a5040', boots: '#4a3020', apron: '#c8b890', hat: 'lenco', hatC: '#7a2a20' }
+};
 // ---------- inimigos vikings ----------
-ENEMIES.viking_guerreiro = { name: 'Guerreiro Viking', look: { k: 'viking', v: 0 }, hp: 260, dmg: 24, spd: 66, ai: 'melee', xp: 320, armor: 45, r: 6, aggro: 330, gold: [60, 160], drops: [['casaco_pele', 0.06], ['pocao_vida_m', 0.2]] };
-ENEMIES.viking_berserker = { name: 'Berserker', look: { k: 'viking', v: 1 }, hp: 230, dmg: 32, spd: 92, ai: 'melee', cd: 0.85, xp: 360, armor: 25, r: 6, aggro: 380, gold: [50, 140], drops: [['casaco_pele', 0.08]] };
-ENEMIES.viking_arqueiro = { name: 'Arqueiro Viking', look: { k: 'viking', v: 2 }, hp: 170, dmg: 22, spd: 62, ai: 'ranged', proj: 'arrow', xp: 300, armor: 30, r: 6, aggro: 360, gold: [40, 120], drops: [['flecha', 0.6]] };
-ENEMIES.viking_jarl = { name: 'Jarl Hrolf Punho-de-Gelo', look: { k: 'viking', v: 3 }, hp: 1100, dmg: 34, spd: 70, ai: 'melee', cd: 0.9, xp: 4000, armor: 70, r: 8, aggro: 500, boss: true, gold: [1500, 2500], drops: [['machado_hrimgard', 1], ['escudo_hrimgard', 1], ['manto_urso', 1]] };
-ENEMIES.viking_aldea = { name: 'Aldeã Viking', look: { k: 'viking', v: 4 }, hp: 60, dmg: 0, spd: 70, ai: 'flee', xp: 0, r: 5, passive: true, noMeat: true };
+ENEMIES.viking_guerreiro = { name: 'Guerreiro Viking', look: VK_LOOK.guerreiro, hp: 260, dmg: 24, spd: 66, ai: 'melee', xp: 320, armor: 45, r: 6, aggro: 330, gold: [60, 160], drops: [['casaco_pele', 0.06], ['pocao_vida_m', 0.2]] };
+ENEMIES.viking_berserker = { name: 'Berserker', look: VK_LOOK.berserker, hp: 230, dmg: 32, spd: 92, ai: 'melee', cd: 0.85, xp: 360, armor: 25, r: 6, aggro: 380, gold: [50, 140], drops: [['casaco_pele', 0.08]] };
+ENEMIES.viking_arqueiro = { name: 'Arqueiro Viking', look: VK_LOOK.arqueiro, hp: 170, dmg: 22, spd: 62, ai: 'ranged', proj: 'arrow', xp: 300, armor: 30, r: 6, aggro: 360, gold: [40, 120], drops: [['flecha', 0.6]] };
+ENEMIES.viking_jarl = { name: 'Jarl Hrolf Punho-de-Gelo', look: VK_LOOK.jarl, hp: 1100, dmg: 34, spd: 70, ai: 'melee', cd: 0.9, xp: 4000, armor: 70, r: 8, aggro: 500, boss: true, gold: [1500, 2500], drops: [['machado_hrimgard', 1], ['escudo_hrimgard', 1], ['manto_urso', 1]] };
+ENEMIES.viking_aldea = { name: 'Aldeã Viking', look: VK_LOOK.aldea, hp: 60, dmg: 0, spd: 70, ai: 'flee', xp: 0, r: 5, passive: true, noMeat: true };
 // armas e roupas que só o jarl carrega
 idef('machado_hrimgard', { name: 'Machado do Jarl de Hrimgard', type: 'weapon', slot: 'weapon', wclass: 'axe', mat: 'draconico', tier: 8, dmg: 52, cd: 0.5, range: 21, arc: 1.2, crit: 0.12, value: 9000, icon: { k: 'axe', c: '#a8dcff' }, lvl: 35, desc: 'Lâmina barbada forjada com gelo eterno. Dano enorme e golpes críticos.' });
 idef('escudo_hrimgard', { name: 'Escudo Rúnico de Hrimgard', type: 'armor', slot: 'offhand', akind: 'shield', mat: 'draconico', tier: 8, armor: 52, value: 7000, icon: { k: 'shield', c: '#c03028' }, lvl: 35, desc: 'Escudo redondo pintado, com runas que brilham no frio.' });
@@ -30,28 +37,11 @@ if (typeof ORE_BY_REGION !== 'undefined') ORE_BY_REGION.hrimgard = ORE_BY_REGION
 CULTURES.viking = Object.assign({}, CULTURES.nordic);
 
 const Vikings = {
-  img: null, ok: false, casas: {}, cache: {},
+  casas: {},
   carregar() {
-    const im = new Image(); im.onload = () => { this.img = im; this.ok = true; this.cache = {}; }; im.src = imgSrc('img/vikings.png');
     for (const n of ['casa_longa', 'salao_jarl', 'drakkar', 'pedra_runica', 'torre_vigia']) { const c = new Image(); c.src = imgSrc('img/vk_' + n + '.png'); this.casas[n] = c; }
-  },
-  // folha: uma faixa por variante; 3 direções (down, up, right) x 4 quadros (parado, passo, passo, golpe)
-  sheet(v) {
-    if (this.cache[v]) return this.cache[v];
-    if (!this.ok) { const c = Sprites.cv(20, 30), x = c.getContext('2d'); x.fillStyle = '#5a6068'; x.fillRect(5, 4, 10, 24); const a = [c, c, c]; return { type: 'hum', white: {}, down: a, up: a, left: a, right: a, w: 20, h: 30, placeholder: true, real: () => this.ok ? this.sheet(v) : null }; }
-    const FW = this.img.width / 12, FH = this.img.height / VK_VARS.length;
-    const q = (d, i, flip) => { const c = Sprites.cv(FW, FH), x = c.getContext('2d'); if (flip) { x.translate(FW, 0); x.scale(-1, 1); } x.drawImage(this.img, (d * 4 + i) * FW, v * FH, FW, FH, 0, 0, FW, FH); return c; };
-    const S = { type: 'hum', white: {} };
-    S.down = [0, 1, 2].map(i => q(0, i)); S.up = [0, 1, 2].map(i => q(1, i)); S.right = [0, 1, 2].map(i => q(2, i)); S.left = [0, 1, 2].map(i => q(2, i, true));
-    S.atk = { type: 'hum', white: {}, down: [q(0, 3)], up: [q(1, 3)], right: [q(2, 3)], left: [q(2, 3, true)] };
-    S.w = FW; S.h = FH;
-    return (this.cache[v] = S);
   }
 };
-(function () {
-  const a0 = Sprites.actor;
-  Sprites.actor = function (L) { if (L && L.k === 'viking') return Vikings.sheet(L.v || 0); return a0.apply(this, arguments); };
-})();
 
 const Hrimgard = {
   // quanto este ponto está dentro da geleira (0 fora, 1 no centro), com a borda recortada
