@@ -561,8 +561,8 @@ def entidade_cliente(ident, nome, cores, corpo_a_corpo=True):
         'spawn_egg': {'base_color': cores[0], 'overlay_color': cores[1]}}}}
 
 
-def controladores(nome, corpo_a_corpo=True):
-    comb = f"query.property('{NS}:em_combate')"
+def controladores(nome, corpo_a_corpo=True, ns=NS):
+    comb = f"query.property('{ns}:em_combate')"
     ctr = {f'controller.animation.{nome}.postura': {'initial_state': 'normal', 'states': {
         'normal': {'animations': ['parado', {'andar': 'query.modified_move_speed > 0.05'}],
                    'transitions': [{'combate': comb}], 'blend_transition': 0.2},
@@ -645,6 +645,64 @@ def entidade_inimigo(ident, vida, dano, vel, arqueiro=False):
                    f'{NS}:voltar': {'remove': {'component_groups': [f'{NS}:fugindo']}}}}}
 
 
+def entidade_tropa_romana(ident, vida, dano, vel, arqueiro=False, caixa=(0.6, 1.95)):
+    """Arqueiro romano e cavaleiro: lutam contra bárbaros e monstros, chamam ajuda e podem vigiar torres."""
+    comp = {
+        'minecraft:type_family': {'family': ['romano', 'mob']},
+        'minecraft:health': {'value': vida, 'max': vida},
+        'minecraft:collision_box': {'width': caixa[0], 'height': caixa[1]},
+        'minecraft:physics': {},
+        'minecraft:pushable': {'is_pushable': True, 'is_pushable_by_piston': True},
+        'minecraft:breathable': {'total_supply': 15, 'suffocate_time': 0},
+        'minecraft:nameable': {},
+        'minecraft:persistent': {},
+        'minecraft:movement': {'value': vel},
+        'minecraft:navigation.walk': {'can_path_over_water': True, 'avoid_damage_blocks': True},
+        'minecraft:movement.basic': {},
+        'minecraft:jump.static': {},
+        'minecraft:follow_range': {'value': 28, 'max': 28},
+        'minecraft:knockback_resistance': {'value': 0.5 if not arqueiro else 0.1},
+        'minecraft:behavior.float': {'priority': 0},
+        'minecraft:behavior.hurt_by_target': {'priority': 1, 'alert_same_type': True},
+        'minecraft:behavior.nearest_attackable_target': {
+            'priority': 3, 'must_see': True, 'reselect_targets': True,
+            'entity_types': [
+                {'filters': {'test': 'is_family', 'subject': 'other', 'value': 'barbaro'}, 'max_dist': 24},
+                {'filters': {'all_of': [{'test': 'is_family', 'subject': 'other', 'value': 'monster'},
+                                        {'test': 'is_family', 'subject': 'other', 'operator': '!=', 'value': 'creeper'}]},
+                 'max_dist': 16},
+            ]},
+        'minecraft:behavior.random_stroll': {'priority': 7, 'speed_multiplier': 0.8},
+        'minecraft:behavior.look_at_player': {'priority': 8, 'look_distance': 8, 'probability': 0.05},
+        'minecraft:behavior.random_look_around': {'priority': 9},
+        'minecraft:environment_sensor': {'triggers': [
+            {'filters': {'test': 'has_target', 'value': True}, 'event': 'romano:entrar_combate'},
+            {'filters': {'test': 'has_target', 'value': False}, 'event': 'romano:sair_combate'},
+        ]},
+    }
+    if arqueiro:
+        comp['minecraft:behavior.avoid_mob_type'] = {'priority': 1, 'entity_types': [
+            {'filters': {'test': 'is_family', 'subject': 'other', 'value': 'barbaro'},
+             'max_dist': 5, 'walk_speed_multiplier': 1.1, 'sprint_speed_multiplier': 1.4}]}
+        comp['minecraft:shooter'] = {'def': 'minecraft:arrow'}
+        comp['minecraft:behavior.ranged_attack'] = {'priority': 2, 'attack_interval_min': 1.2,
+                                                    'attack_interval_max': 2.5, 'attack_radius': 18.0}
+    else:
+        comp['minecraft:attack'] = {'damage': dano}
+        comp['minecraft:behavior.melee_attack'] = {'priority': 2, 'speed_multiplier': 1.3, 'track_target': True}
+    return {'format_version': '1.21.0', 'minecraft:entity': {
+        'description': {'identifier': ident, 'is_spawnable': True, 'is_summonable': True,
+                        'properties': {'romano:em_combate': {'type': 'bool', 'default': False, 'client_sync': True}}},
+        'component_groups': {'romano:guarda': {'minecraft:movement': {'value': 0.0}}},
+        'components': comp,
+        'events': {
+            'romano:entrar_combate': {'set_property': {'romano:em_combate': True}},
+            'romano:sair_combate': {'set_property': {'romano:em_combate': False}},
+            'romano:comecar_guarda': {'add': {'component_groups': ['romano:guarda']}},
+            'romano:terminar_guarda': {'remove': {'component_groups': ['romano:guarda']}},
+        }}}
+
+
 def regra_spawn(ident, biomas, grupo):
     return {'format_version': '1.8.0', 'minecraft:spawn_rules': {
         'description': {'identifier': ident, 'population_control': 'monster'},
@@ -678,6 +736,10 @@ summon inimigo:guerreiro_germano ~4 ~ ~-10
 summon inimigo:guerreiro_germano ~-2 ~ ~-12
 summon inimigo:arqueiro_parto ~2 ~ ~-14
 summon inimigo:arqueiro_parto ~5 ~ ~-14
+summon romano:sagitario ~-3 ~ ~15
+summon romano:sagitario ~3 ~ ~15
+summon romano:cavaleiro ~-8 ~ ~11
+summon romano:cavaleiro ~8 ~ ~11
 """
 
 BATALHA_GRANDE = """# Batalha grande: duas legiões e uma horda (cuidado com o lag em celulares fracos)
@@ -776,18 +838,85 @@ def main():
                                  'set_property': {'romano:construindo': False}},
         'romano:recuar': {'add': {'component_groups': ['romano:recuando']}},
         'romano:fim_recuo': {'remove': {'component_groups': ['romano:recuando']}},
+        'romano:comecar_guarda': {'add': {'component_groups': ['romano:guarda']},
+                                  'set_property': {'romano:de_guarda': True}},
+        'romano:terminar_guarda': {'remove': {'component_groups': ['romano:guarda']},
+                                   'set_property': {'romano:de_guarda': False, 'romano:marchando': False}},
+        'romano:marchar': {'set_property': {'romano:marchando': True}},
+        'romano:parar': {'set_property': {'romano:marchando': False}},
     })
+    ent['component_groups']['romano:guarda'] = {'minecraft:movement': {'value': 0.0}}
     arquivos[f'{bp}/entities/{gs.NOME}.json'] = L.json_bytes(romano)
-    for js in ('main.js', 'plano.js'):
+    for js in ('main.js', 'plano.js', 'obras.js', 'sistema.js'):
         with open(os.path.join(AQUI, 'scripts_batalha', js), 'rb') as f:
             arquivos[f'{bp}/scripts/{js}'] = f.read()
     lang_pt += [f'entity.{gs.ID}.name=Soldado Romano', f'item.spawn_egg.entity.{gs.ID}.name=Gerar Soldado Romano']
     lang_en += [f'entity.{gs.ID}.name=Roman Soldier', f'item.spawn_egg.entity.{gs.ID}.name=Spawn Roman Soldier']
 
+    # ---- tropas romanas novas: arqueiro (sagittarius) e cavaleiro (eques)
+    import tropas_romanas as TR
+    for construtor, ident, pt, en, vida, dano, vel, arq, caixa, cores in (
+        (TR.sagitario, 'romano:sagitario', 'Arqueiro Romano', 'Roman Archer', 22, 0, 0.3, True, (0.6, 1.95), ('#a01e1e', '#b8bec8')),
+        (TR.cavaleiro, 'romano:cavaleiro', 'Cavaleiro Romano', 'Roman Cavalry', 44, 8, 0.36, False, (1.3, 2.9), ('#7a4a28', '#a01e1e')),
+    ):
+        m = construtor()
+        png = m.montar_textura()
+        with open(os.path.join(SAIDA, f'{m.nome}.bbmodel'), 'w', encoding='utf-8') as f:
+            L.json.dump(m.bbmodel(), f, ensure_ascii=False, indent=1)
+        olhar = {f'animation.{m.nome}.olhar': {'loop': True, 'bones': {'cabeca': {
+            'rotation': ['query.target_x_rotation', 'query.target_y_rotation', 0]}}}}
+        arquivos[f'{rp}/models/entity/{m.nome}.geo.json'] = L.json_bytes(m.geo())
+        arquivos[f'{rp}/animations/{m.nome}.animation.json'] = L.json_bytes(m.animacoes_bedrock(olhar))
+        arquivos[f'{rp}/animation_controllers/{m.nome}.animation_controllers.json'] = L.json_bytes(controladores(m.nome, not arq, 'romano'))
+        arquivos[f'{rp}/entity/{m.nome}.entity.json'] = L.json_bytes(entidade_cliente(ident, m.nome, cores, not arq))
+        arquivos[f'{rp}/render_controllers/{m.nome}.render_controllers.json'] = L.json_bytes(render(m.nome))
+        arquivos[f'{rp}/textures/entity/{m.nome}.png'] = png
+        arquivos[f'{bp}/entities/{m.nome}.json'] = L.json_bytes(entidade_tropa_romana(ident, vida, dano, vel, arq, caixa))
+        lang_pt += [f'entity.{ident}.name={pt}', f'item.spawn_egg.entity.{ident}.name=Gerar {pt}']
+        lang_en += [f'entity.{ident}.name={en}', f'item.spawn_egg.entity.{ident}.name=Spawn {en}']
+
+    # ---- armadura do general (attachables), item do Sistema, ícones e skin
+    import general_romano as GR
+    texturas_itens = {}
+    for construtor, item_id, nome, slot, setup, protecao in GR.PECAS:
+        m = construtor()
+        png = m.montar_textura()
+        with open(os.path.join(SAIDA, f'{m.nome}.bbmodel'), 'w', encoding='utf-8') as f:
+            L.json.dump(m.bbmodel(), f, ensure_ascii=False, indent=1)
+        arquivos[f'{rp}/models/entity/{m.nome}.geo.json'] = L.json_bytes(m.geo())
+        arquivos[f'{rp}/textures/models/armor/{m.nome}.png'] = png
+        arquivos[f'{rp}/attachables/{m.nome}.json'] = L.json_bytes(GR.attachable(item_id, m.nome, setup))
+        arquivos[f'{bp}/items/{m.nome}.json'] = L.json_bytes(GR.item_armadura(item_id, nome, slot, protecao, m.nome))
+        texturas_itens[m.nome] = {'textures': f'textures/items/{m.nome}'}
+    arquivos[f'{bp}/items/sistema.json'] = L.json_bytes(GR.ITEM_SISTEMA)
+    texturas_itens['sistema'] = {'textures': 'textures/items/sistema'}
+    for nome, png in GR.icones().items():
+        arquivos[f'{rp}/textures/items/{nome}.png'] = png
+    arquivos[f'{rp}/textures/item_texture.json'] = L.json_bytes(
+        {'resource_pack_name': 'batalha_romana', 'texture_name': 'atlas.items', 'texture_data': texturas_itens})
+    sk = 'pacote_skin'
+    skin_png, _ = GR.skin()
+    arquivos[f'{sk}/general_romano.png'] = skin_png
+    arquivos[f'{sk}/skins.json'] = L.json_bytes({
+        'skins': [{'localization_name': 'general', 'geometry': 'geometry.humanoid.custom',
+                   'texture': 'general_romano.png', 'type': 'free'}],
+        'serialize_name': 'BatalhaRomana', 'localization_name': 'BatalhaRomana'})
+    for lg, nome_skin in (('pt_BR', 'General Romano'), ('en_US', 'Roman General')):
+        arquivos[f'{sk}/texts/{lg}.lang'] = (f'skinpack.BatalhaRomana=Batalha Romana\nskin.BatalhaRomana.general={nome_skin}\n').encode()
+    arquivos[f'{sk}/texts/languages.json'] = L.json_bytes(['pt_BR', 'en_US'])
+    man_skin = L.manifesto('batalha_romana', 'skin_pack', 'Batalha Romana: General', 'Skin do General Romano', 'nada')
+    man_skin.pop('dependencies')
+    man_skin['header'].pop('min_engine_version')
+    man_skin['format_version'] = 1
+    arquivos[f'{sk}/manifest.json'] = L.json_bytes(man_skin)
+
     arquivos[f'{bp}/functions/batalha.mcfunction'] = BATALHA.encode()
     arquivos[f'{bp}/functions/batalha_grande.mcfunction'] = BATALHA_GRANDE.encode()
     arquivos[f'{bp}/functions/posto_avancado.mcfunction'] = POSTO.encode()
     arquivos[f'{bp}/functions/cancelar_obras.mcfunction'] = b'scriptevent romano:cancelar\n'
+    arquivos[f'{bp}/functions/sistema.mcfunction'] = b'# Abre a janela do Sistema\nscriptevent sistema:abrir\n'
+    arquivos[f'{bp}/functions/reiniciar_sistema.mcfunction'] = (
+        '# Apaga seu progresso no Sistema e mostra a chegada do General de novo\nscriptevent sistema:reiniciar\n').encode()
     arquivos[f'{bp}/loot_tables/batalha/inimigo.json'] = L.json_bytes(SAQUE)
     arquivos[f'{rp}/texts/languages.json'] = L.json_bytes(['pt_BR', 'en_US'])
     arquivos[f'{rp}/texts/pt_BR.lang'] = ('\n'.join(lang_pt) + '\n').encode()
@@ -801,6 +930,7 @@ def main():
                            'uuid': L.uuid.uuid5(L.uuid.NAMESPACE_URL, base + '/modulo/script').__str__(),
                            'version': [1, 0, 0]})
     man['dependencies'].append({'module_name': '@minecraft/server', 'version': '1.11.0'})
+    man['dependencies'].append({'module_name': '@minecraft/server-ui', 'version': '1.2.0'})
     arquivos[f'{bp}/manifest.json'] = L.json_bytes(man)
     icone = gs.icone()
     arquivos[f'{rp}/pack_icon.png'] = icone
@@ -812,8 +942,20 @@ def main():
         with open(caminho, 'wb') as f:
             f.write(dados)
     with open(os.path.join(SAIDA, 'BatalhaRomana.mcaddon'), 'wb') as f:
-        f.write(L.mcaddon(arquivos, [(rp, 'BatalhaRomana_RP.mcpack'), (bp, 'BatalhaRomana_BP.mcpack')]))
+        f.write(L.mcaddon(arquivos, [(rp, 'BatalhaRomana_RP.mcpack'), (bp, 'BatalhaRomana_BP.mcpack'),
+                                     ('pacote_skin', 'BatalhaRomana_Skin.mcpack')]))
+    with open(os.path.join(SAIDA, 'SkinGeneralRomano.mcpack'), 'wb') as f:
+        f.write(_zip_pasta(arquivos, 'pacote_skin'))
     print('ok:', os.path.normpath(SAIDA))
+
+
+def _zip_pasta(arquivos, pasta):
+    buf = L.io.BytesIO()
+    with L.zipfile.ZipFile(buf, 'w', L.zipfile.ZIP_DEFLATED) as z:
+        for rel, dados in sorted(arquivos.items()):
+            if rel.startswith(pasta + '/'):
+                z.writestr(rel[len(pasta) + 1:], dados)
+    return buf.getvalue()
 
 
 if __name__ == '__main__':

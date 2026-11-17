@@ -223,13 +223,13 @@ class Modelo:
                 'anim_time_update': '', 'blend_weight': '', 'start_delay': '', 'loop_delay': '',
                 'animators': animators,
             })
-        raiz = next(o[0] for o in self.ossos if o[1] is None)
+        raizes = [o[0] for o in self.ossos if o[1] is None]
         return {
             'meta': {'format_version': '4.10', 'model_format': 'bedrock', 'box_uv': False},
             'name': self.nome, 'model_identifier': self.nome, 'visible_box': [1.5, 2.5, 1.25],
             'variable_placeholders': '', 'variable_placeholder_buttons': [], 'timeline_setups': [],
             'unhandled_root_fields': {}, 'resolution': {'width': self.tex, 'height': self.tex},
-            'elements': elementos, 'outliner': [grupo(raiz)],
+            'elements': elementos, 'outliner': [grupo(r) for r in raizes],
             'textures': [{
                 'path': '', 'name': f'{self.nome}.png', 'folder': 'textures/entity', 'namespace': '',
                 'id': '0', 'width': self.tex, 'height': self.tex, 'uv_width': self.tex,

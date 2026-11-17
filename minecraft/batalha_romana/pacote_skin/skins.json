@@ -1,0 +1,12 @@
+{
+  "skins": [
+    {
+      "localization_name": "general",
+      "geometry": "geometry.humanoid.custom",
+      "texture": "general_romano.png",
+      "type": "free"
+    }
+  ],
+  "serialize_name": "BatalhaRomana",
+  "localization_name": "BatalhaRomana"
+}

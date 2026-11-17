@@ -1,0 +1,23 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:item": {
+    "description": {
+      "identifier": "batalha:sistema",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "textures": {
+          "default": "sistema"
+        }
+      },
+      "minecraft:display_name": {
+        "value": "§b[ Sistema ]"
+      },
+      "minecraft:max_stack_size": 1,
+      "minecraft:glint": true
+    }
+  }
+}

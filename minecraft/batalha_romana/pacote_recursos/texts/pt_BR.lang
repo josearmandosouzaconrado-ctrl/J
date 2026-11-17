@@ -6,3 +6,7 @@ entity.inimigo:arqueiro_parto.name=Arqueiro Parto
 item.spawn_egg.entity.inimigo:arqueiro_parto.name=Gerar Arqueiro Parto
 entity.romano:legionario.name=Soldado Romano
 item.spawn_egg.entity.romano:legionario.name=Gerar Soldado Romano
+entity.romano:sagitario.name=Arqueiro Romano
+item.spawn_egg.entity.romano:sagitario.name=Gerar Arqueiro Romano
+entity.romano:cavaleiro.name=Cavaleiro Romano
+item.spawn_egg.entity.romano:cavaleiro.name=Gerar Cavaleiro Romano

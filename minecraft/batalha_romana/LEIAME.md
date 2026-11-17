@@ -12,12 +12,75 @@ O legionário romano contra os inimigos de Roma na época do Império:
 
 ![inimigos](previa_inimigos.png)
 
+## O Sistema: você é o General de Roma
+
+![janelas do Sistema](previa_sistema.png)
+
+Na **primeira vez que você entra no mundo**, aparece uma janela no estilo dos animes de "outro mundo":
+o **[ SISTEMA ]** encontrou uma alma compatível e escolheu você para substituir o General que caiu em
+batalha. (Se clicar em Recusar... "Recusar não é uma opção".) Ao aceitar, você é vestido com a
+**armadura do General** e recebe o item **Sistema**, o **Gládio do General**, um escudo, o poder
+**Grito de Guerra** e 200 denários.
+
+![o general](previa_general.png)
+
+- **Armadura do General** (4 peças em 3D que acompanham seus movimentos): elmo dourado com diadema e
+  **crista vermelha atravessada** de comandante, couraça anatômica dourada com águia, faixa vermelha e
+  **capa longa**, ombreiras com tiras de couro, braceletes, saiote de tiras (pteruges) e grevas douradas
+  com sandálias.
+- **Seu corpo novo**: a skin **General Romano** (`SkinGeneralRomano.mcpack`, também dentro do
+  `.mcaddon`): pele morena, cabelo curto escuro no estilo romano, coroa de louros, túnica vermelha com
+  barra dourada e sandálias. ⚠️ O Minecraft não deixa um add-on trocar sua skin sozinho: depois de
+  importar, escolha **General Romano** no Vestiário (Dressing Room → Skins clássicas). Com a armadura
+  vestida você já fica com cara de general de qualquer jeito.
+
+Abra o Sistema **usando o item Sistema** (ou `/function sistema`). O menu tem:
+
+| Botão | O que faz |
+|---|---|
+| **Status** | nível, XP, denários, título, sua legião e bárbaros derrotados |
+| **Missões** | 9 missões com barra de progresso; cada uma dá XP, denários, **poderes novos** ou o título *Imperator* |
+| **Poderes** | 7 poderes com recarga (veja abaixo) |
+| **Construir** | ergue um **forte** (300 den.), uma **torre de vigia** (80) ou uma **muralha com portão** (150) na direção para onde você olha. Os legionários livres por perto constroem; sem soldados, **o próprio Sistema ergue a obra** com brilho azul |
+| **Recrutar** | **legionário** (50 den.), **arqueiro romano** (60) ou **cavaleiro** (120); eles seguem você |
+| **Ordens à legião** | *Sigam-me*, *Aguardem aqui*, *Montem guarda* (vão patrulhar o forte mais perto) e *Reunir!* |
+
+**Poderes** (o primeiro vem de início, os outros pelas missões):
+
+| Poder | Efeito | Recarga |
+|---|---|---|
+| Grito de Guerra | legião ganha força e velocidade; bárbaros perto ficam fracos e lentos | 45 s |
+| Muralha de Escudos | você e a legião ganham resistência por 15 s | 60 s |
+| Bênção de Minerva | cura você e os soldados romanos perto | 75 s |
+| Chamar a Cavalaria | três cavaleiros romanos chegam e seguem você | 150 s |
+| Chuva de Flechas | flechas caem do céu sobre os inimigos à sua frente | 50 s |
+| Fúria de Marte | força II, velocidade e regeneração por 20 s | 90 s |
+| Raio de Júpiter | raios atingem até 6 inimigos perto | 120 s |
+
+Você ganha XP e denários derrotando bárbaros (a sua legião também conta), concluindo construções e
+missões; a cada nível o Sistema avisa **LEVEL UP!** e dá mais denários. `/function reiniciar_sistema`
+apaga seu progresso e mostra a chegada do General de novo.
+
+## Tropas romanas: legionários, arqueiros e cavalaria
+
+![arqueiro e cavaleiro](previa_tropas.png)
+
+- **Arqueiro romano (sagittarius)**: galea de ferro, cota de malha, túnica vermelha, arco recurvo e
+  aljava; atira de longe, recua se um bárbaro chega perto e prefere vigiar as torres.
+- **Cavaleiro romano (eques)**: cavalo baio de crina preta com manta vermelha e sela romana de quatro
+  pontas; o cavaleiro tem cota de malha, capa, galea com penacho, **lança comprida** e escudo oval azul
+  (parma). Galopa, empina no ataque e dá 8 de dano.
+- `/function batalha` agora também traz 2 arqueiros e 2 cavaleiros do lado romano.
+
 ## Arquivos
 
 | Arquivo | Para que serve |
 |---|---|
 | `BatalhaRomana.mcaddon` | Add-on completo: **inclui o Soldado Romano** e os três inimigos |
-| `guerreiro_gaules.bbmodel`, `guerreiro_germano.bbmodel`, `arqueiro_parto.bbmodel` | Projetos do Blockbench (modelo, textura e animações) |
+| `guerreiro_gaules.bbmodel`, `guerreiro_germano.bbmodel`, `arqueiro_parto.bbmodel` | Projetos do Blockbench dos inimigos |
+| `sagitario_romano.bbmodel`, `cavaleiro_romano.bbmodel` | Arqueiro e cavaleiro romanos |
+| `elmo_general.bbmodel`, `couraca_general.bbmodel`, `saiote_general.bbmodel`, `grevas_general.bbmodel` | As 4 peças da armadura do General |
+| `SkinGeneralRomano.mcpack` | A skin do General (também vai dentro do `.mcaddon`) |
 | `pacote_recursos/`, `pacote_comportamento/` | O conteúdo do add-on, aberto |
 
 O modelo do legionário está em `../soldado_romano/soldado_romano.bbmodel`.
@@ -75,6 +138,19 @@ Os legionários erguem um **castellum de madeira** comprido, de 15 × 25 blocos,
   Terreno muito irregular (mais de 4 blocos de desnível) ou com água é recusado.
 - `/function cancelar_obras` cancela as obras em andamento.
 
+## Patrulha: os soldados vigiam o forte
+
+![patrulha](previa_patrulha.png)
+
+Quando uma construção fica pronta (forte, torre ou muralha), soldados livres num raio de 40 blocos
+**sobem nela**:
+
+- **Vigias nas torres**: um por torre (arqueiros têm preferência), parados no alto olhando em volta.
+- **Rondas na passarela**: legionários andam de um lado para o outro nos trechos do adarve, com a
+  animação de marcha, e dão meia-volta nas pontas.
+- Se aparece um inimigo, a sentinela larga o posto e desce para lutar; depois outro soldado assume.
+- Soldados que estão seguindo você não são chamados; use **Ordens → Montem guarda** para mandá-los.
+
 ## IA mais esperta
 
 - **Legionários:** chamam os companheiros quando um é atacado; o scutum segura metade do dano das
@@ -82,12 +158,13 @@ Os legionários erguem um **castellum de madeira** comprido, de 15 × 25 blocos,
 - **Bárbaros:** também chamam ajuda; com pouca vida perdem a coragem e fogem por 8 s.
 - **Arqueiro parto:** mantém distância — se um romano chega a 6 blocos, ele recua e volta a atirar de longe.
 
-O posto usa a API de scripts do Bedrock (`@minecraft/server` 1.11.0, já embutida no add-on). Precisa do
-Minecraft Bedrock 1.21 ou mais novo.
+Os scripts usam a API do Bedrock (`@minecraft/server` 1.11.0 e `@minecraft/server-ui` 1.2.0, já
+declaradas no add-on). Precisa do Minecraft Bedrock 1.21 ou mais novo.
 
 ## Animações (aba Animate do Blockbench)
 
 - Legionário (`../soldado_romano/soldado_romano.bbmodel`): também `construir` (martelando)
+- Arqueiro romano: `parado`, `andar`, `combate`; cavaleiro: `parado`, `andar` (galope), `combate`, `atacar` (empina e estoca)
 
 - Gaulês e germânico: `parado`, `andar`, `combate`, `atacar`
 - Arqueiro: `parado`, `andar`, `combate` (mira, puxa a corda e solta)

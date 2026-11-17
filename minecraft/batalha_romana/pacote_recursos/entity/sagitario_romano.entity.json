@@ -1,0 +1,37 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "romano:sagitario",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/sagitario_romano"
+      },
+      "geometry": {
+        "default": "geometry.sagitario_romano"
+      },
+      "animations": {
+        "parado": "animation.sagitario_romano.parado",
+        "andar": "animation.sagitario_romano.andar",
+        "combate": "animation.sagitario_romano.combate",
+        "olhar": "animation.sagitario_romano.olhar",
+        "postura": "controller.animation.sagitario_romano.postura"
+      },
+      "scripts": {
+        "animate": [
+          "postura",
+          "olhar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.sagitario_romano"
+      ],
+      "spawn_egg": {
+        "base_color": "#a01e1e",
+        "overlay_color": "#b8bec8"
+      }
+    }
+  }
+}

@@ -15,6 +15,16 @@
           "type": "bool",
           "default": false,
           "client_sync": true
+        },
+        "romano:de_guarda": {
+          "type": "bool",
+          "default": false,
+          "client_sync": true
+        },
+        "romano:marchando": {
+          "type": "bool",
+          "default": false,
+          "client_sync": true
         }
       }
     },
@@ -206,6 +216,37 @@
             "romano:recuando"
           ]
         }
+      },
+      "romano:comecar_guarda": {
+        "add": {
+          "component_groups": [
+            "romano:guarda"
+          ]
+        },
+        "set_property": {
+          "romano:de_guarda": true
+        }
+      },
+      "romano:terminar_guarda": {
+        "remove": {
+          "component_groups": [
+            "romano:guarda"
+          ]
+        },
+        "set_property": {
+          "romano:de_guarda": false,
+          "romano:marchando": false
+        }
+      },
+      "romano:marchar": {
+        "set_property": {
+          "romano:marchando": true
+        }
+      },
+      "romano:parar": {
+        "set_property": {
+          "romano:marchando": false
+        }
       }
     },
     "component_groups": {
@@ -236,6 +277,11 @@
           "time_down_event": {
             "event": "romano:fim_recuo"
           }
+        }
+      },
+      "romano:guarda": {
+        "minecraft:movement": {
+          "value": 0.0
         }
       }
     }

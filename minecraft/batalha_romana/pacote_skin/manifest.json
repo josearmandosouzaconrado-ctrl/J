@@ -1,0 +1,24 @@
+{
+  "format_version": 1,
+  "header": {
+    "name": "Batalha Romana: General",
+    "description": "Skin do General Romano",
+    "uuid": "896f9930-6a4d-54a1-821a-7dd35db1815a",
+    "version": [
+      1,
+      0,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "type": "skin_pack",
+      "uuid": "ab2d8b3d-afde-59a2-a5b3-2a7255071cd5",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "romano:cavaleiro",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/cavaleiro_romano"
+      },
+      "geometry": {
+        "default": "geometry.cavaleiro_romano"
+      },
+      "animations": {
+        "parado": "animation.cavaleiro_romano.parado",
+        "andar": "animation.cavaleiro_romano.andar",
+        "combate": "animation.cavaleiro_romano.combate",
+        "atacar": "animation.cavaleiro_romano.atacar",
+        "olhar": "animation.cavaleiro_romano.olhar",
+        "postura": "controller.animation.cavaleiro_romano.postura",
+        "ataque": "controller.animation.cavaleiro_romano.ataque"
+      },
+      "scripts": {
+        "animate": [
+          "postura",
+          "ataque",
+          "olhar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.cavaleiro_romano"
+      ],
+      "spawn_egg": {
+        "base_color": "#7a4a28",
+        "overlay_color": "#a01e1e"
+      }
+    }
+  }
+}

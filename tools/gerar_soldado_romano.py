@@ -749,6 +749,8 @@ def gerar_animacoes_bedrock():
 
 COMBATE = f"query.property('{NS}:em_combate')"
 OBRA = f"query.property('{NS}:construindo')"
+GUARDA = f"query.property('{NS}:de_guarda')"
+MARCHA = f"query.property('{NS}:marchando')"
 CONTROLADORES = {
     'format_version': '1.10.0',
     'animation_controllers': {
@@ -757,7 +759,13 @@ CONTROLADORES = {
             'states': {
                 'normal': {
                     'animations': ['parado', {'andar': 'query.modified_move_speed > 0.05'}],
-                    'transitions': [{'combate': COMBATE}, {'construindo': OBRA + ' && !' + COMBATE}],
+                    'transitions': [{'combate': COMBATE}, {'construindo': OBRA + ' && !' + COMBATE},
+                                    {'guarda': GUARDA + ' && !' + COMBATE}],
+                    'blend_transition': 0.2,
+                },
+                'guarda': {  # patrulha na passarela ou vigia nas torres
+                    'animations': ['parado', {'andar': MARCHA}],
+                    'transitions': [{'combate': COMBATE}, {'normal': '!' + GUARDA}],
                     'blend_transition': 0.2,
                 },
                 'construindo': {
@@ -810,7 +818,9 @@ ENTIDADE_SERVIDOR = {
         'description': {
             'identifier': ID, 'is_spawnable': True, 'is_summonable': True,
             'properties': {f'{NS}:em_combate': {'type': 'bool', 'default': False, 'client_sync': True},
-                           f'{NS}:construindo': {'type': 'bool', 'default': False, 'client_sync': True}},
+                           f'{NS}:construindo': {'type': 'bool', 'default': False, 'client_sync': True},
+                           f'{NS}:de_guarda': {'type': 'bool', 'default': False, 'client_sync': True},
+                           f'{NS}:marchando': {'type': 'bool', 'default': False, 'client_sync': True}},
         },
         'components': {
             'minecraft:type_family': {'family': ['romano', 'mob']},

@@ -13,3 +13,7 @@ summon inimigo:guerreiro_germano ~4 ~ ~-10
 summon inimigo:guerreiro_germano ~-2 ~ ~-12
 summon inimigo:arqueiro_parto ~2 ~ ~-14
 summon inimigo:arqueiro_parto ~5 ~ ~-14
+summon romano:sagitario ~-3 ~ ~15
+summon romano:sagitario ~3 ~ ~15
+summon romano:cavaleiro ~-8 ~ ~11
+summon romano:cavaleiro ~8 ~ ~11

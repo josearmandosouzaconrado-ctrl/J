@@ -1,0 +1,21 @@
+{
+  "resource_pack_name": "batalha_romana",
+  "texture_name": "atlas.items",
+  "texture_data": {
+    "elmo_general": {
+      "textures": "textures/items/elmo_general"
+    },
+    "couraca_general": {
+      "textures": "textures/items/couraca_general"
+    },
+    "saiote_general": {
+      "textures": "textures/items/saiote_general"
+    },
+    "grevas_general": {
+      "textures": "textures/items/grevas_general"
+    },
+    "sistema": {
+      "textures": "textures/items/sistema"
+    }
+  }
+}

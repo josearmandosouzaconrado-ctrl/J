@@ -17,6 +17,26 @@
             },
             {
               "construindo": "query.property('romano:construindo') && !query.property('romano:em_combate')"
+            },
+            {
+              "guarda": "query.property('romano:de_guarda') && !query.property('romano:em_combate')"
+            }
+          ],
+          "blend_transition": 0.2
+        },
+        "guarda": {
+          "animations": [
+            "parado",
+            {
+              "andar": "query.property('romano:marchando')"
+            }
+          ],
+          "transitions": [
+            {
+              "combate": "query.property('romano:em_combate')"
+            },
+            {
+              "normal": "!query.property('romano:de_guarda')"
             }
           ],
           "blend_transition": 0.2

@@ -1,0 +1,25 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:attachable": {
+    "description": {
+      "identifier": "batalha:elmo_general",
+      "materials": {
+        "default": "armor",
+        "enchanted": "armor_enchanted"
+      },
+      "textures": {
+        "default": "textures/models/armor/elmo_general",
+        "enchanted": "textures/misc/enchanted_item_glint"
+      },
+      "geometry": {
+        "default": "geometry.elmo_general"
+      },
+      "scripts": {
+        "parent_setup": "variable.helmet_layer_visible = 0.0;"
+      },
+      "render_controllers": [
+        "controller.render.armor"
+      ]
+    }
+  }
+}
