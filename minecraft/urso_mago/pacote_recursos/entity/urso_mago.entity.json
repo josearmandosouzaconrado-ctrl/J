@@ -1,0 +1,40 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "mago:urso_mago",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/urso_mago"
+      },
+      "geometry": {
+        "default": "geometry.urso_mago"
+      },
+      "animations": {
+        "parado": "animation.urso_mago.parado",
+        "andar": "animation.urso_mago.andar",
+        "levantar": "animation.urso_mago.levantar",
+        "em_pe": "animation.urso_mago.em_pe",
+        "magia": "animation.urso_mago.magia",
+        "abaixar": "animation.urso_mago.abaixar",
+        "olhar": "animation.urso_mago.olhar",
+        "postura": "controller.animation.urso_mago.postura"
+      },
+      "scripts": {
+        "animate": [
+          "postura",
+          "olhar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.urso_mago"
+      ],
+      "spawn_egg": {
+        "base_color": "#6b4426",
+        "overlay_color": "#5fe4ff"
+      }
+    }
+  }
+}

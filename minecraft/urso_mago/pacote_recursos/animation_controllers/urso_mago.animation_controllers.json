@@ -1,0 +1,69 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.urso_mago.postura": {
+      "initial_state": "quatro_patas",
+      "states": {
+        "quatro_patas": {
+          "animations": [
+            "parado",
+            {
+              "andar": "query.modified_move_speed > 0.05"
+            }
+          ],
+          "transitions": [
+            {
+              "levantando": "query.property('mago:em_pe') || query.property('mago:conjurando')"
+            }
+          ],
+          "blend_transition": 0.2
+        },
+        "levantando": {
+          "animations": [
+            "levantar"
+          ],
+          "transitions": [
+            {
+              "em_pe": "query.all_animations_finished"
+            }
+          ]
+        },
+        "em_pe": {
+          "animations": [
+            "em_pe"
+          ],
+          "transitions": [
+            {
+              "conjurando": "query.property('mago:conjurando')"
+            },
+            {
+              "abaixando": "!query.property('mago:em_pe') && !query.property('mago:conjurando')"
+            }
+          ],
+          "blend_transition": 0.25
+        },
+        "conjurando": {
+          "animations": [
+            "magia"
+          ],
+          "transitions": [
+            {
+              "em_pe": "!query.property('mago:conjurando')"
+            }
+          ],
+          "blend_transition": 0.25
+        },
+        "abaixando": {
+          "animations": [
+            "abaixar"
+          ],
+          "transitions": [
+            {
+              "quatro_patas": "query.all_animations_finished"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Urso Mago (recursos)",
+    "description": "Modelo, textura e animações do Urso Mago",
+    "uuid": "4b41c8f3-c33d-5145-8712-d98edc85469d",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "ff40e2c9-aebf-5070-b032-7002fa3ffeda",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "e9f5b608-d4f1-5048-bc87-fa2e8a163a89",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ]
+}
