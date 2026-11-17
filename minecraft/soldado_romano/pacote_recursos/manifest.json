@@ -1,0 +1,39 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Soldado Romano (recursos)",
+    "description": "Modelo, textura e animações do legionário",
+    "uuid": "d55b3246-67cd-5198-8fb3-f3788187fea8",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "78fe5416-31a3-598e-b369-2d4688166565",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "4d4c5534-4160-5fde-8813-c5165b2bdeb8",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ]
+}
