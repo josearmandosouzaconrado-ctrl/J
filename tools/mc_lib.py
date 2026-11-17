@@ -127,13 +127,14 @@ class Modelo:
     def osso(self, nome, pai, pivo, rot=(0, 0, 0)):
         self.ossos.append((nome, pai, list(pivo), list(rot)))
 
-    def cubo(self, osso, nome, de, ate, mat, sem=()):
-        self.cubos.append(dict(osso=osso, nome=nome, de=list(de), ate=list(ate), mat=mat, sem=sem))
+    # ds = densidade da textura (pixels por unidade): 2 dá o dobro de detalhe naquela peça
+    def cubo(self, osso, nome, de, ate, mat, sem=(), ds=1):
+        self.cubos.append(dict(osso=osso, nome=nome, de=list(de), ate=list(ate), mat=mat, sem=sem, ds=ds))
 
-    def cubo_girado(self, osso, nome, centro, tam, rot, mat, sem=()):
+    def cubo_girado(self, osso, nome, centro, tam, rot, mat, sem=(), ds=1):
         de = [centro[i] - tam[i] / 2 for i in range(3)]
         ate = [centro[i] + tam[i] / 2 for i in range(3)]
-        self.cubos.append(dict(osso=osso, nome=nome, de=de, ate=ate, mat=mat, sem=sem,
+        self.cubos.append(dict(osso=osso, nome=nome, de=de, ate=ate, mat=mat, sem=sem, ds=ds,
                                rot=list(rot), origem=list(centro)))
 
     def material(self, *nomes):
@@ -153,8 +154,9 @@ class Modelo:
             c['uv'] = {}
             for f in FACES:
                 w, h = dims_face(c, f)
+                ds = c.get('ds', 1)
                 if w > 0 and h > 0 and f not in c['sem']:
-                    pedidos.append((math.ceil(w), math.ceil(h), c, f))
+                    pedidos.append((math.ceil(w * ds), math.ceil(h * ds), c, f))
         pedidos.sort(key=lambda p: (-p[1], -p[0]))
         x = y = alt = 0
         for w, h, c, f in pedidos:
@@ -167,7 +169,8 @@ class Modelo:
                 raise ValueError(f'material sem pintor: {c["mat"]}')
             pintor(Pincel(img, f, x, y, w, h), c)
             fw, fh = dims_face(c, f)
-            c['uv'][f] = [x, y, x + fw, y + fh]
+            ds = c.get('ds', 1)
+            c['uv'][f] = [x, y, x + fw * ds, y + fh * ds]
             x += w
             alt = max(alt, h)
         buf = io.BytesIO()
