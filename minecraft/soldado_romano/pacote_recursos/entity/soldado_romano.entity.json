@@ -18,6 +18,7 @@
         "combate": "animation.soldado_romano.combate",
         "atacar": "animation.soldado_romano.atacar",
         "saudar": "animation.soldado_romano.saudar",
+        "construir": "animation.soldado_romano.construir",
         "olhar": "animation.soldado_romano.olhar",
         "postura": "controller.animation.soldado_romano.postura",
         "ataque": "controller.animation.soldado_romano.ataque"

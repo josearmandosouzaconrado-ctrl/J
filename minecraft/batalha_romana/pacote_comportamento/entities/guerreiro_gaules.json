@@ -13,6 +13,41 @@
         }
       }
     },
+    "component_groups": {
+      "inimigo:fugindo": {
+        "minecraft:behavior.avoid_mob_type": {
+          "priority": 0,
+          "entity_types": [
+            {
+              "filters": {
+                "any_of": [
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "value": "romano"
+                  },
+                  {
+                    "test": "is_family",
+                    "subject": "other",
+                    "value": "player"
+                  }
+                ]
+              },
+              "max_dist": 14,
+              "walk_speed_multiplier": 1.2,
+              "sprint_speed_multiplier": 1.5
+            }
+          ]
+        },
+        "minecraft:timer": {
+          "looping": false,
+          "time": 8,
+          "time_down_event": {
+            "event": "inimigo:voltar"
+          }
+        }
+      }
+    },
     "components": {
       "minecraft:type_family": {
         "family": [
@@ -62,7 +97,8 @@
         "priority": 0
       },
       "minecraft:behavior.hurt_by_target": {
-        "priority": 1
+        "priority": 1,
+        "alert_same_type": true
       },
       "minecraft:behavior.nearest_attackable_target": {
         "priority": 3,
@@ -114,6 +150,15 @@
               "value": false
             },
             "event": "inimigo:sair_combate"
+          },
+          {
+            "filters": {
+              "test": "actor_health",
+              "subject": "self",
+              "operator": "<",
+              "value": 6
+            },
+            "event": "inimigo:fugir"
           }
         ]
       },
@@ -135,6 +180,20 @@
       "inimigo:sair_combate": {
         "set_property": {
           "inimigo:em_combate": false
+        }
+      },
+      "inimigo:fugir": {
+        "add": {
+          "component_groups": [
+            "inimigo:fugindo"
+          ]
+        }
+      },
+      "inimigo:voltar": {
+        "remove": {
+          "component_groups": [
+            "inimigo:fugindo"
+          ]
         }
       }
     }

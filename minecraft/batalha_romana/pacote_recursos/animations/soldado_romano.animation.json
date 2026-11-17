@@ -187,6 +187,15 @@
               "lerp_mode": "catmullrom"
             }
           }
+        },
+        "martelo": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ]
+          }
         }
       },
       "loop": true
@@ -463,6 +472,15 @@
               "lerp_mode": "catmullrom"
             }
           }
+        },
+        "martelo": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ]
+          }
         }
       },
       "loop": true
@@ -635,6 +653,15 @@
               "lerp_mode": "catmullrom"
             }
           }
+        },
+        "martelo": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ]
+          }
         }
       },
       "loop": true
@@ -793,6 +820,15 @@
               "lerp_mode": "catmullrom"
             }
           }
+        },
+        "martelo": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ]
+          }
         }
       }
     },
@@ -942,8 +978,216 @@
               "lerp_mode": "catmullrom"
             }
           }
+        },
+        "martelo": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ]
+          }
         }
       }
+    },
+    "animation.soldado_romano.construir": {
+      "animation_length": 0.6,
+      "bones": {
+        "braco_dir": {
+          "rotation": {
+            "0.0": {
+              "post": [
+                -120,
+                0,
+                12
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.22": {
+              "post": [
+                -35,
+                0,
+                8
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.3": {
+              "post": [
+                -40,
+                0,
+                8
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.6": {
+              "post": [
+                -120,
+                0,
+                12
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "martelo": {
+          "rotation": {
+            "0.0": {
+              "post": [
+                30,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.22": {
+              "post": [
+                -10,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.6": {
+              "post": [
+                30,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "braco_esq": {
+          "rotation": {
+            "0.0": {
+              "post": [
+                -4,
+                0,
+                -10
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "corpo": {
+          "rotation": {
+            "0.0": {
+              "post": [
+                4,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.22": {
+              "post": [
+                12,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.6": {
+              "post": [
+                4,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "cabeca": {
+          "rotation": {
+            "0.0": {
+              "post": [
+                12,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.22": {
+              "post": [
+                20,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.6": {
+              "post": [
+                12,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "perna_dir": {
+          "rotation": {
+            "0.0": {
+              "post": [
+                10,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "perna_esq": {
+          "rotation": {
+            "0.0": {
+              "post": [
+                -12,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "capa": {
+          "rotation": {
+            "0.0": {
+              "post": [
+                6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.22": {
+              "post": [
+                12,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            },
+            "0.6": {
+              "post": [
+                6,
+                0,
+                0
+              ],
+              "lerp_mode": "catmullrom"
+            }
+          }
+        },
+        "gladio": {
+          "scale": {
+            "0.0": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      },
+      "loop": true
     },
     "animation.soldado_romano.olhar": {
       "loop": true,

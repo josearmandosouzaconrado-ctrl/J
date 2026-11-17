@@ -14,6 +14,23 @@
           "transitions": [
             {
               "combate": "query.property('romano:em_combate')"
+            },
+            {
+              "construindo": "query.property('romano:construindo') && !query.property('romano:em_combate')"
+            }
+          ],
+          "blend_transition": 0.2
+        },
+        "construindo": {
+          "animations": [
+            "construir"
+          ],
+          "transitions": [
+            {
+              "combate": "query.property('romano:em_combate')"
+            },
+            {
+              "normal": "!query.property('romano:construindo')"
             }
           ],
           "blend_transition": 0.2

@@ -10,6 +10,11 @@
           "type": "bool",
           "default": false,
           "client_sync": true
+        },
+        "romano:construindo": {
+          "type": "bool",
+          "default": false,
+          "client_sync": true
         }
       }
     },

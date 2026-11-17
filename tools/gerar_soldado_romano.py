@@ -48,6 +48,7 @@ OSSOS = [
     ('capa', 'corpo', [0, 24, 3], [0, 0, 0]),
     ('braco_dir', 'corpo', [5, 22, 0], [0, 0, 0]),
     ('gladio', 'braco_dir', [6, 13, 0], [0, 0, 0]),
+    ('martelo', 'braco_dir', [6, 13, 0], [0, 0, 0]),
     ('braco_esq', 'corpo', [-5, 22, 0], [0, 0, 0]),
     ('escudo', 'braco_esq', [-9, 14, 0], [0, 0, 0]),
 ]
@@ -142,6 +143,10 @@ cubo('gladio', 'nervura', [5.5, 12.7, -11], [6.5, 13.3, -2.9], 'nervura')
 cubo('gladio', 'ponta_0', [5.7, 12.25, -12], [6.3, 13.75, -11], 'lamina')
 cubo('gladio', 'ponta_1', [5.75, 12.55, -12.8], [6.25, 13.45, -12], 'lamina')
 cubo('gladio', 'ponta_2', [5.8, 12.8, -13.4], [6.2, 13.2, -12.8], 'nervura')
+# martelo de construção (só aparece na animação construir)
+cubo('martelo', 'martelo_cabo', [5.6, 12.6, -7], [6.4, 13.4, 1.5], 'cabo')
+cubo('martelo', 'martelo_cabeca', [5.1, 11, -9], [6.9, 15, -6.8], 'ombreira')
+cubo('martelo', 'martelo_face', [5.3, 10.4, -8.7], [6.7, 11, -7.1], 'lorica')
 # ---- scutum curvo: cinco painéis num arco, umbo em domo e bordas douradas
 R, CX = 8, -1.5
 for i, ang in enumerate((-45, -22.5, 0, 22.5, 45)):
@@ -574,6 +579,21 @@ def anim_saudar():
     })
 
 
+def anim_construir():
+    # marteladas: braço sobe para a frente e desce batendo
+    return dict(loop='loop', length=0.6, bones={
+        'braco_dir': {'rotation': [(0, [120, 0, 12]), (0.22, [35, 0, 8]), (0.3, [40, 0, 8]), (0.6, [120, 0, 12])]},
+        'martelo': {'rotation': [(0, [-30, 0, 0]), (0.22, [10, 0, 0]), (0.6, [-30, 0, 0])]},
+        'braco_esq': {'rotation': [(0, [4, 0, -10])]},
+        'corpo': {'rotation': [(0, [-4, 0, 0]), (0.22, [-12, 0, 0]), (0.6, [-4, 0, 0])]},
+        'cabeca': {'rotation': [(0, [-12, 0, 0]), (0.22, [-20, 0, 0]), (0.6, [-12, 0, 0])]},
+        'perna_dir': {'rotation': [(0, [-10, 0, 0])]},
+        'perna_esq': {'rotation': [(0, [12, 0, 0])]},
+        'capa': {'rotation': [(0, [-6, 0, 0]), (0.22, [-12, 0, 0]), (0.6, [-6, 0, 0])]},
+        'gladio': {'scale': [(0, [0, 0, 0], 'step')]},
+    })
+
+
 ANIMACOES = {
     'parado': anim_parado(),
     'andar': anim_andar(),
@@ -581,6 +601,9 @@ ANIMACOES = {
     'atacar': anim_atacar(),
     'saudar': anim_saudar(),
 }
+for _a in ANIMACOES.values():  # martelo escondido fora da obra
+    _a['bones']['martelo'] = {'scale': [(0, [0, 0, 0], 'step')]}
+ANIMACOES['construir'] = anim_construir()
 
 
 # --------------------------------------------------------------------------
@@ -725,6 +748,7 @@ def gerar_animacoes_bedrock():
 
 
 COMBATE = f"query.property('{NS}:em_combate')"
+OBRA = f"query.property('{NS}:construindo')"
 CONTROLADORES = {
     'format_version': '1.10.0',
     'animation_controllers': {
@@ -733,7 +757,12 @@ CONTROLADORES = {
             'states': {
                 'normal': {
                     'animations': ['parado', {'andar': 'query.modified_move_speed > 0.05'}],
-                    'transitions': [{'combate': COMBATE}],
+                    'transitions': [{'combate': COMBATE}, {'construindo': OBRA + ' && !' + COMBATE}],
+                    'blend_transition': 0.2,
+                },
+                'construindo': {
+                    'animations': ['construir'],
+                    'transitions': [{'combate': COMBATE}, {'normal': '!' + OBRA}],
                     'blend_transition': 0.2,
                 },
                 'combate': {
@@ -780,7 +809,8 @@ ENTIDADE_SERVIDOR = {
     'minecraft:entity': {
         'description': {
             'identifier': ID, 'is_spawnable': True, 'is_summonable': True,
-            'properties': {f'{NS}:em_combate': {'type': 'bool', 'default': False, 'client_sync': True}},
+            'properties': {f'{NS}:em_combate': {'type': 'bool', 'default': False, 'client_sync': True},
+                           f'{NS}:construindo': {'type': 'bool', 'default': False, 'client_sync': True}},
         },
         'components': {
             'minecraft:type_family': {'family': ['romano', 'mob']},

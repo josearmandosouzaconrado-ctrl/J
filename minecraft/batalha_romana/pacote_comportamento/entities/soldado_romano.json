@@ -10,6 +10,11 @@
           "type": "bool",
           "default": false,
           "client_sync": true
+        },
+        "romano:construindo": {
+          "type": "bool",
+          "default": false,
+          "client_sync": true
         }
       }
     },
@@ -69,7 +74,8 @@
         "track_target": true
       },
       "minecraft:behavior.hurt_by_target": {
-        "priority": 1
+        "priority": 1,
+        "alert_same_type": true
       },
       "minecraft:behavior.nearest_attackable_target": {
         "priority": 2,
@@ -135,6 +141,23 @@
               "value": false
             },
             "event": "romano:sair_combate"
+          },
+          {
+            "filters": {
+              "test": "actor_health",
+              "subject": "self",
+              "operator": "<",
+              "value": 8
+            },
+            "event": "romano:recuar"
+          }
+        ]
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "cause": "projectile",
+            "damage_multiplier": 0.5
           }
         ]
       }
@@ -148,6 +171,71 @@
       "romano:sair_combate": {
         "set_property": {
           "romano:em_combate": false
+        }
+      },
+      "romano:comecar_obra": {
+        "add": {
+          "component_groups": [
+            "romano:obra"
+          ]
+        },
+        "set_property": {
+          "romano:construindo": true
+        }
+      },
+      "romano:terminar_obra": {
+        "remove": {
+          "component_groups": [
+            "romano:obra"
+          ]
+        },
+        "set_property": {
+          "romano:construindo": false
+        }
+      },
+      "romano:recuar": {
+        "add": {
+          "component_groups": [
+            "romano:recuando"
+          ]
+        }
+      },
+      "romano:fim_recuo": {
+        "remove": {
+          "component_groups": [
+            "romano:recuando"
+          ]
+        }
+      }
+    },
+    "component_groups": {
+      "romano:obra": {
+        "minecraft:movement": {
+          "value": 0.0
+        }
+      },
+      "romano:recuando": {
+        "minecraft:behavior.avoid_mob_type": {
+          "priority": 0,
+          "entity_types": [
+            {
+              "filters": {
+                "test": "is_family",
+                "subject": "other",
+                "value": "barbaro"
+              },
+              "max_dist": 10,
+              "walk_speed_multiplier": 1.1,
+              "sprint_speed_multiplier": 1.4
+            }
+          ]
+        },
+        "minecraft:timer": {
+          "looping": false,
+          "time": 6,
+          "time_down_event": {
+            "event": "romano:fim_recuo"
+          }
         }
       }
     }

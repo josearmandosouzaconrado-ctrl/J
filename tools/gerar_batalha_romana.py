@@ -613,7 +613,16 @@ def entidade_inimigo(ident, vida, dano, vel, arqueiro=False):
             {'filters': {'test': 'has_target', 'value': False}, 'event': f'{NS}:sair_combate'},
         ]},
     }
+    # chamam os companheiros quando um é atacado
+    comp['minecraft:behavior.hurt_by_target'] = {'priority': 1, 'alert_same_type': True}
+    # moral: com pouca vida fogem dos romanos por alguns segundos
+    comp['minecraft:environment_sensor']['triggers'].append(
+        {'filters': {'test': 'actor_health', 'subject': 'self', 'operator': '<', 'value': 6}, 'event': f'{NS}:fugir'})
     if arqueiro:
+        # mantém distância: recua se um romano chega perto e volta a atirar de longe
+        comp['minecraft:behavior.avoid_mob_type'] = {'priority': 1, 'entity_types': [
+            {'filters': {'test': 'is_family', 'subject': 'other', 'value': 'romano'},
+             'max_dist': 6, 'walk_speed_multiplier': 1.1, 'sprint_speed_multiplier': 1.4}]}
         comp['minecraft:shooter'] = {'def': 'minecraft:arrow'}
         comp['minecraft:behavior.ranged_attack'] = {'priority': 2, 'attack_interval_min': 1.5,
                                                     'attack_interval_max': 3.0, 'attack_radius': 15.0}
@@ -623,9 +632,17 @@ def entidade_inimigo(ident, vida, dano, vel, arqueiro=False):
     return {'format_version': '1.21.0', 'minecraft:entity': {
         'description': {'identifier': ident, 'is_spawnable': True, 'is_summonable': True,
                         'properties': {f'{NS}:em_combate': {'type': 'bool', 'default': False, 'client_sync': True}}},
+        'component_groups': {f'{NS}:fugindo': {
+            'minecraft:behavior.avoid_mob_type': {'priority': 0, 'entity_types': [
+                {'filters': {'any_of': [{'test': 'is_family', 'subject': 'other', 'value': 'romano'},
+                                        {'test': 'is_family', 'subject': 'other', 'value': 'player'}]},
+                 'max_dist': 14, 'walk_speed_multiplier': 1.2, 'sprint_speed_multiplier': 1.5}]},
+            'minecraft:timer': {'looping': False, 'time': 8, 'time_down_event': {'event': f'{NS}:voltar'}}}},
         'components': comp,
         'events': {f'{NS}:entrar_combate': {'set_property': {f'{NS}:em_combate': True}},
-                   f'{NS}:sair_combate': {'set_property': {f'{NS}:em_combate': False}}}}}
+                   f'{NS}:sair_combate': {'set_property': {f'{NS}:em_combate': False}},
+                   f'{NS}:fugir': {'add': {'component_groups': [f'{NS}:fugindo']}},
+                   f'{NS}:voltar': {'remove': {'component_groups': [f'{NS}:fugindo']}}}}}
 
 
 def regra_spawn(ident, biomas, grupo):
@@ -677,6 +694,11 @@ summon inimigo:guerreiro_germano ~0 ~ ~-14
 summon inimigo:guerreiro_germano ~4 ~ ~-14
 summon inimigo:arqueiro_parto ~-3 ~ ~-17
 summon inimigo:arqueiro_parto ~3 ~ ~-17
+"""
+
+POSTO = """# Manda os legionários por perto (até 32 blocos) construírem um posto avançado
+# de madeira na direção para onde você está olhando, com o portão virado para você.
+scriptevent romano:construir
 """
 
 INIMIGOS = [
@@ -732,12 +754,40 @@ def main():
     alvo = romano['minecraft:entity']['components']['minecraft:behavior.nearest_attackable_target']
     alvo['entity_types'].insert(0, {'filters': {'test': 'is_family', 'subject': 'other', 'value': 'barbaro'}, 'max_dist': 24})
     alvo['priority'] = 2
+    ent = romano['minecraft:entity']
+    comp = ent['components']
+    comp['minecraft:behavior.hurt_by_target'] = {'priority': 1, 'alert_same_type': True}
+    # parede de escudos: o scutum segura metade do dano das flechas
+    comp['minecraft:damage_sensor'] = {'triggers': [{'cause': 'projectile', 'damage_multiplier': 0.5}]}
+    comp['minecraft:environment_sensor']['triggers'].append(
+        {'filters': {'test': 'actor_health', 'subject': 'self', 'operator': '<', 'value': 8}, 'event': 'romano:recuar'})
+    ent['component_groups'] = {
+        'romano:obra': {'minecraft:movement': {'value': 0.0}},
+        'romano:recuando': {
+            'minecraft:behavior.avoid_mob_type': {'priority': 0, 'entity_types': [
+                {'filters': {'test': 'is_family', 'subject': 'other', 'value': 'barbaro'},
+                 'max_dist': 10, 'walk_speed_multiplier': 1.1, 'sprint_speed_multiplier': 1.4}]},
+            'minecraft:timer': {'looping': False, 'time': 6, 'time_down_event': {'event': 'romano:fim_recuo'}}},
+    }
+    ent['events'].update({
+        'romano:comecar_obra': {'add': {'component_groups': ['romano:obra']},
+                                'set_property': {'romano:construindo': True}},
+        'romano:terminar_obra': {'remove': {'component_groups': ['romano:obra']},
+                                 'set_property': {'romano:construindo': False}},
+        'romano:recuar': {'add': {'component_groups': ['romano:recuando']}},
+        'romano:fim_recuo': {'remove': {'component_groups': ['romano:recuando']}},
+    })
     arquivos[f'{bp}/entities/{gs.NOME}.json'] = L.json_bytes(romano)
+    for js in ('main.js', 'plano.js'):
+        with open(os.path.join(AQUI, 'scripts_batalha', js), 'rb') as f:
+            arquivos[f'{bp}/scripts/{js}'] = f.read()
     lang_pt += [f'entity.{gs.ID}.name=Soldado Romano', f'item.spawn_egg.entity.{gs.ID}.name=Gerar Soldado Romano']
     lang_en += [f'entity.{gs.ID}.name=Roman Soldier', f'item.spawn_egg.entity.{gs.ID}.name=Spawn Roman Soldier']
 
     arquivos[f'{bp}/functions/batalha.mcfunction'] = BATALHA.encode()
     arquivos[f'{bp}/functions/batalha_grande.mcfunction'] = BATALHA_GRANDE.encode()
+    arquivos[f'{bp}/functions/posto_avancado.mcfunction'] = POSTO.encode()
+    arquivos[f'{bp}/functions/cancelar_obras.mcfunction'] = b'scriptevent romano:cancelar\n'
     arquivos[f'{bp}/loot_tables/batalha/inimigo.json'] = L.json_bytes(SAQUE)
     arquivos[f'{rp}/texts/languages.json'] = L.json_bytes(['pt_BR', 'en_US'])
     arquivos[f'{rp}/texts/pt_BR.lang'] = ('\n'.join(lang_pt) + '\n').encode()
@@ -745,8 +795,13 @@ def main():
     base = 'batalha_romana'
     arquivos[f'{rp}/manifest.json'] = L.json_bytes(L.manifesto(base, 'resources', 'Batalha Romana (recursos)',
                                                               'Romanos contra gauleses, germânicos e partos', 'data'))
-    arquivos[f'{bp}/manifest.json'] = L.json_bytes(L.manifesto(base, 'data', 'Batalha Romana (comportamento)',
-                                                              'Use /function batalha para começar uma batalha', 'resources'))
+    man = L.manifesto(base, 'data', 'Batalha Romana (comportamento)',
+                      'Use /function batalha para começar uma batalha', 'resources')
+    man['modules'].append({'type': 'script', 'language': 'javascript', 'entry': 'scripts/main.js',
+                           'uuid': L.uuid.uuid5(L.uuid.NAMESPACE_URL, base + '/modulo/script').__str__(),
+                           'version': [1, 0, 0]})
+    man['dependencies'].append({'module_name': '@minecraft/server', 'version': '1.11.0'})
+    arquivos[f'{bp}/manifest.json'] = L.json_bytes(man)
     icone = gs.icone()
     arquivos[f'{rp}/pack_icon.png'] = icone
     arquivos[f'{bp}/pack_icon.png'] = icone
