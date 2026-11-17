@@ -25,7 +25,7 @@ from PIL import Image, ImageDraw
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 SAIDA = os.path.join(AQUI, '..', 'minecraft', 'soldado_romano')
-TEX = 128
+TEX = 256
 NOME = 'soldado_romano'
 NS = 'romano'
 ID = f'{NS}:legionario'
@@ -55,48 +55,102 @@ OSSOS = [
 CUBOS = []
 
 
-def cubo(osso, nome, de, ate, mat):
-    CUBOS.append(dict(osso=osso, nome=nome, de=de, ate=ate, mat=mat))
+def cubo(osso, nome, de, ate, mat, sem=()):
+    CUBOS.append(dict(osso=osso, nome=nome, de=de, ate=ate, mat=mat, sem=sem))
 
 
-# tronco: túnica vermelha, lorica segmentata, cinto com avental de tiras e saia
+def cubo_girado(osso, nome, centro, tam, rot, mat):
+    """Cubo com rotação própria (graus, convenção interna) em torno do seu centro."""
+    de = [centro[i] - tam[i] / 2 for i in range(3)]
+    ate = [centro[i] + tam[i] / 2 for i in range(3)]
+    CUBOS.append(dict(osso=osso, nome=nome, de=de, ate=ate, mat=mat, sem=(),
+                      rot=rot, origem=list(centro)))
+
+
+def espelho(lado):
+    s = 1 if lado == 'dir' else -1
+    return lambda a, b: sorted([a * s, b * s])
+
+
+# ---- tronco: túnica, lorica segmentata em faixas sobrepostas, cinto e saia
 cubo('corpo', 'tronco', [-4, 12, -2], [4, 24, 2], 'tunica')
-cubo('corpo', 'lorica', [-4.5, 15, -2.5], [4.5, 23, 2.5], 'lorica')
-cubo('corpo', 'gola', [-3, 23, -2.5], [3, 24, 2.5], 'tunica')
-cubo('corpo', 'cinto', [-5, 13, -3], [5, 15, 3], 'cinto')
-cubo('corpo', 'avental', [-2, 7, -3.25], [2, 13, -3], 'avental')
-cubo('corpo', 'saia', [-4.5, 8, -2.5], [4.5, 13, 2.5], 'saia')
-cubo('capa', 'capa', [-4.5, 8, 3], [4.5, 24, 4], 'capa')
-# cabeça com galea (capacete), viseira, protetor de nuca, bochecheiras e penacho
+cubo('corpo', 'gola', [-3, 23.5, -2.5], [3, 24.25, 2.5], 'tunica')
+for i, (y0, y1, e) in enumerate(((15, 17, 0.45), (16.8, 18.8, 0.6), (18.6, 20.6, 0.75))):
+    cubo('corpo', f'lorica_faixa_{i}', [-4 - e, y0, -2 - e], [4 + e, y1, 2 + e], 'lorica')
+cubo('corpo', 'peitoral', [-4.6, 20.4, -2.6], [4.6, 23.4, 2.6], 'peitoral')
+for lado in ('dir', 'esq'):
+    x = espelho(lado)
+    cubo('corpo', f'alca_{lado}', [x(2.2, 2.8)[0], 20.6, -3], [x(2.2, 2.8)[1], 23.6, -2.6], 'bronze')
+    cubo('corpo', f'fibula_{lado}', [x(2.9, 3.9)[0], 23, -3.1], [x(2.9, 3.9)[1], 24, -2.6], 'bronze')
+cubo('corpo', 'cinto', [-4.9, 13, -2.9], [4.9, 15, 2.9], 'cinto')
+cubo('corpo', 'fivela', [-1, 13.25, -3.3], [1, 14.75, -2.9], 'bronze')
+for i, x0 in enumerate((-1.9, -0.375, 1.15)):
+    cubo('corpo', f'tira_{i}', [x0, 7.8, -3.2], [x0 + 0.75, 13, -2.95], 'couro')
+    cubo('corpo', f'ponteira_{i}', [x0 - 0.1, 7, -3.3], [x0 + 0.85, 7.8, -2.85], 'bronze')
+cubo('corpo', 'saia', [-4.5, 9, -2.5], [4.5, 13, 2.5], 'saia')
+cubo('corpo', 'barra', [-4.9, 8, -2.9], [4.9, 9.5, 2.9], 'saia')
+# bainha vazia do gládio (lado direito) e punhal (lado esquerdo)
+cubo_girado('corpo', 'bainha', [5.5, 9.5, 3], [1, 7, 2], [-12, 0, 0], 'bainha')
+cubo_girado('corpo', 'bainha_boca', [5.5, 13, 3.4], [1.3, 1, 2.3], [-12, 0, 0], 'bronze')
+cubo_girado('corpo', 'bainha_ponteira', [5.5, 5.8, 2.2], [1.2, 0.8, 1.6], [-12, 0, 0], 'bronze')
+cubo('corpo', 'punhal_bainha', [-4, 9.5, -3.4], [-3, 13, -2.95], 'bainha')
+cubo('corpo', 'punhal_cabo', [-3.75, 13, -3.35], [-3.25, 15, -3], 'cabo')
+cubo('corpo', 'punhal_pomo', [-4, 15, -3.45], [-3, 15.6, -2.9], 'bronze')
+# ---- capa com dobra nos ombros
+cubo('capa', 'capa', [-4.5, 8, 3], [4.5, 22, 4], 'capa')
+cubo('capa', 'capa_dobra', [-4.7, 21.5, 2.7], [4.7, 24.2, 4.4], 'capa')
+# ---- cabeça e galea (capacete) com cúpula, viseira, nuca larga, bochecheiras e penacho
 cubo('cabeca', 'cabeca', [-4, 24, -4], [4, 32, 4], 'rosto')
-cubo('cabeca', 'galea', [-4.5, 28, -4.5], [4.5, 33, 4.5], 'galea')
-cubo('cabeca', 'viseira', [-4.5, 28, -5.5], [4.5, 29, -4.5], 'bronze')
-cubo('cabeca', 'nuca', [-4.5, 26, 4.5], [4.5, 28, 6], 'galea')
-cubo('cabeca', 'bochecheira_dir', [3.5, 24.5, -4.5], [4.5, 28, -0.5], 'bochecheira')
-cubo('cabeca', 'bochecheira_esq', [-4.5, 24.5, -4.5], [-3.5, 28, -0.5], 'bochecheira')
-cubo('crista', 'suporte', [-0.5, 33, -1], [0.5, 34, 1], 'bronze')
-cubo('crista', 'penacho', [-1, 34, -4], [1, 37, 4], 'penacho')
-# braços com ombreiras
-for lado, s in (('dir', 1), ('esq', -1)):
-    def x(a, b):
-        return sorted([a * s, b * s])
+cubo('cabeca', 'nariz', [-0.5, 25.6, -4.6], [0.5, 27, -4], 'nariz')
+cubo('cabeca', 'galea', [-4.5, 28, -4.5], [4.5, 32, 4.5], 'galea')
+cubo('cabeca', 'cupula', [-4, 32, -4], [4, 33, 4], 'cupula')
+cubo('cabeca', 'topo', [-3, 33, -3], [3, 33.5, 3], 'cupula')
+cubo('cabeca', 'viseira', [-4.8, 28, -5.3], [4.8, 29, -4.5], 'bronze')
+cubo('cabeca', 'nuca', [-4.5, 26.5, 4.5], [4.5, 28.5, 6], 'galea')
+cubo('cabeca', 'nuca_aba', [-5, 26, 6], [5, 27, 7.2], 'galea')
+for lado in ('dir', 'esq'):
+    x = espelho(lado)
+    cubo('cabeca', f'bochecheira_{lado}', [x(3.6, 4.6)[0], 24, -4.4], [x(3.6, 4.6)[1], 28, -0.6], 'bochecheira')
+    cubo('cabeca', f'rebite_{lado}', [x(4.6, 4.85)[0], 25.6, -3], [x(4.6, 4.85)[1], 26.6, -2], 'bronze')
+cubo('crista', 'suporte', [-0.75, 33.5, -0.75], [0.75, 34.5, 0.75], 'bronze')
+cubo('crista', 'penacho', [-1, 34.5, -3], [1, 37.5, 3], 'penacho')
+cubo('crista', 'penacho_frente', [-1, 34, -4.6], [1, 36.6, -3], 'penacho')
+cubo('crista', 'penacho_tras', [-1, 34, 3], [1, 36.6, 4.6], 'penacho')
+cubo('crista', 'penacho_topo', [-0.75, 37.5, -2], [0.75, 38.2, 2], 'penacho')
+# ---- braços com ombreiras em três placas e braceletes; pernas com caligae vazadas
+for lado in ('dir', 'esq'):
+    x = espelho(lado)
     b = f'braco_{lado}'
     cubo(b, f'braco_{lado}', [x(4, 8)[0], 12, -2], [x(4, 8)[1], 24, 2], 'braco')
-    cubo(b, f'ombreira_{lado}', [x(3.5, 8.5)[0], 19, -2.5], [x(3.5, 8.5)[1], 24.5, 2.5], 'ombreira')
+    for i, (xa, xb, y0, y1, e) in enumerate(((3.5, 8.7, 23, 24.8, 2.7), (4, 8.6, 21.3, 23.2, 2.6), (4.2, 8.5, 19.6, 21.5, 2.5))):
+        cubo(b, f'ombreira_{lado}_{i}', [x(xa, xb)[0], y0, -e], [x(xa, xb)[1], y1, e], 'ombreira')
+    cubo(b, f'bracelete_{lado}', [x(3.7, 8.3)[0], 13.2, -2.3], [x(3.7, 8.3)[1], 16, 2.3], 'bracelete')
     p = f'perna_{lado}'
     cubo(p, f'perna_{lado}', [x(0, 4)[0], 1, -2], [x(0, 4)[1], 12, 2], 'perna')
-    cubo(p, f'sola_{lado}', [x(-0.5, 4.5)[0], 0, -2.5], [x(-0.5, 4.5)[1], 1, 2.5], 'sola')
-# gládio na mão direita, apontando para a frente
-cubo('gladio', 'cabo', [5.5, 12.5, -2], [6.5, 13.5, 1.5], 'cabo')
-cubo('gladio', 'pomo', [5, 12, 1.5], [7, 14, 2.5], 'bronze')
-cubo('gladio', 'guarda', [5, 11.5, -2.5], [7, 14.5, -2], 'bronze')
-cubo('gladio', 'lamina', [5.5, 12, -11], [6.5, 14, -2.5], 'lamina')
-cubo('gladio', 'ponta', [5.5, 12.5, -12], [6.5, 13.5, -11], 'lamina')
-# scutum (escudo curvo) no braço esquerdo
-cubo('escudo', 'escudo_centro', [-10, 6, -4], [-9, 22, 4], 'escudo')
-cubo('escudo', 'escudo_frente', [-9.5, 6, -6.5], [-8.5, 22, -4], 'escudo_borda')
-cubo('escudo', 'escudo_tras', [-9.5, 6, 4], [-8.5, 22, 6.5], 'escudo_borda')
-cubo('escudo', 'umbo', [-11, 12.5, -1.5], [-10, 15.5, 1.5], 'umbo')
+    cubo(p, f'caliga_{lado}', [x(-0.3, 4.3)[0], 1, -2.3], [x(-0.3, 4.3)[1], 6, 2.3], 'caliga', sem=('up', 'down'))
+    cubo(p, f'sola_{lado}', [x(-0.5, 4.5)[0], 0, -2.8], [x(-0.5, 4.5)[1], 1, 2.5], 'sola')
+# ---- gládio em 3D: lâmina com nervura e ponta afunilada, guarda, cabo com anéis e pomo
+cubo('gladio', 'cabo', [5.6, 12.6, -2], [6.4, 13.4, 1.5], 'cabo')
+cubo('gladio', 'anel_0', [5.5, 12.5, -1.2], [6.5, 13.5, -0.8], 'marfim')
+cubo('gladio', 'anel_1', [5.5, 12.5, 0.4], [6.5, 13.5, 0.8], 'marfim')
+cubo('gladio', 'pomo', [5.1, 12.1, 1.5], [6.9, 13.9, 2.6], 'bronze')
+cubo('gladio', 'pomo_topo', [5.4, 12.4, 2.6], [6.6, 13.6, 3.1], 'bronze')
+cubo('gladio', 'guarda', [4.8, 11.4, -2.6], [7.2, 14.6, -2], 'bronze')
+cubo('gladio', 'guarda_aba', [5.1, 11.8, -2.9], [6.9, 14.2, -2.6], 'marfim')
+cubo('gladio', 'lamina', [5.65, 12, -11], [6.35, 14, -2.9], 'lamina')
+cubo('gladio', 'nervura', [5.5, 12.7, -11], [6.5, 13.3, -2.9], 'nervura')
+cubo('gladio', 'ponta_0', [5.7, 12.25, -12], [6.3, 13.75, -11], 'lamina')
+cubo('gladio', 'ponta_1', [5.75, 12.55, -12.8], [6.25, 13.45, -12], 'lamina')
+cubo('gladio', 'ponta_2', [5.8, 12.8, -13.4], [6.2, 13.2, -12.8], 'nervura')
+# ---- scutum curvo: cinco painéis num arco, umbo em domo e bordas douradas
+R, CX = 8, -1.5
+for i, ang in enumerate((-45, -22.5, 0, 22.5, 45)):
+    r = math.radians(ang)
+    mat = {0: 'escudo_c', 22.5: 'escudo_m', 45: 'escudo_e'}[abs(ang)]
+    cubo_girado('escudo', f'painel_{i}', [CX - R * math.cos(r), 14, R * math.sin(r)], [1, 18, 3.3], [0, ang, 0], mat)
+cubo('escudo', 'umbo', [-10.9, 12, -2], [-9.9, 16, 2], 'umbo')
+cubo('escudo', 'umbo_domo', [-11.6, 12.5, -1.5], [-10.9, 15.5, 1.5], 'umbo')
+cubo('escudo', 'umbo_ponta', [-12, 13.4, -0.6], [-11.6, 14.6, 0.6], 'umbo')
 
 # --------------------------------------------------------------------------
 # Pintura
@@ -117,6 +171,7 @@ COURO = (110, 68, 38)
 COURO_CLARO = (150, 98, 56)
 COURO_ESC = (66, 40, 22)
 OURO = (255, 206, 80)
+OURO_ESC = (200, 142, 44)
 
 rng = random.Random(11)
 
@@ -342,6 +397,72 @@ def pintar(img, mat, face, x0, y0, w, h):
                 px(xx, 0, OURO)
                 px(xx, h - 1, OURO)
         return
+    if mat in ('peitoral',):
+        preencher(img, x0, y0, w, h, face, ACO, ACO_CLARO, ACO_ESC, 3)
+        if lateral:
+            for xx in range(w):
+                px(xx, 0, ACO_CLARO)
+                px(xx, h - 1, ACO_ESC)
+            if face == 'north':
+                for xx in (1, w - 2):
+                    px(xx, 1, BRONZE)
+        return
+    if mat == 'cupula':
+        preencher(img, x0, y0, w, h, face, misturar(ACO, ACO_CLARO, 0.3), ACO_CLARO, ACO, 3)
+        if face == 'up':
+            for yy in range(h):
+                px(w // 2, yy, misturar(ACO, ACO_ESC, 0.4))
+        return
+    if mat == 'nariz':
+        preencher(img, x0, y0, w, h, face, PELE, PELE_CLARA, PELE_ESC, 2)
+        return
+    if mat in ('couro', 'bainha', 'bracelete'):
+        preencher(img, x0, y0, w, h, face, COURO, COURO_CLARO, COURO_ESC, 4)
+        if mat == 'bainha' and lateral:
+            for yy in range(0, h, 3):
+                for xx in range(w):
+                    px(xx, yy, BRONZE)
+        if mat == 'bracelete' and lateral:
+            for xx in range(0, w, 2):
+                px(xx, 1, BRONZE)
+        return
+    if mat == 'caliga':
+        for yy in range(h):
+            for xx in range(w):
+                if yy % 2 == 0 or xx == w // 2 or yy == h - 1:
+                    px(xx, yy, ruido(COURO if yy < h - 1 else COURO_ESC, 4))
+        return
+    if mat == 'marfim':
+        preencher(img, x0, y0, w, h, face, (232, 222, 196), (250, 244, 228), (180, 166, 136), 3)
+        return
+    if mat == 'nervura':
+        preencher(img, x0, y0, w, h, face, (226, 232, 240), (255, 255, 255), (150, 156, 168), 2)
+        return
+    if mat in ('escudo_c', 'escudo_m', 'escudo_e'):
+        if face == 'east':
+            preencher(img, x0, y0, w, h, face, (128, 88, 52), (160, 118, 74), (86, 56, 30), 5)
+            for yy in range(0, h, 4):
+                for xx in range(w):
+                    px(xx, yy, (100, 66, 36))
+            return
+        if face != 'west':
+            preencher(img, x0, y0, w, h, face, BRONZE, BRONZE_CLARO, BRONZE_ESC, 3)
+            return
+        preencher(img, x0, y0, w, h, face, VERMELHO, VERM_CLARO, VERM_ESC, 4)
+        meio = h // 2
+        for xx in range(w):
+            px(xx, 0, OURO)
+            px(xx, h - 1, OURO)
+            px(xx, meio, OURO)
+        if mat == 'escudo_e':
+            for yy in range(h):
+                px(0, yy, OURO)
+                px(w - 1, yy, OURO)
+        if mat == 'escudo_m':  # um raio dourado em cada metade
+            for (xx, yy) in [(2, 3), (1, 4), (2, 5), (1, 6)]:
+                px(xx, yy, OURO)
+                px(xx, h - 1 - yy, OURO)
+        return
     raise ValueError(mat)
 
 
@@ -364,7 +485,7 @@ def montar_textura():
         c['uv'] = {}
         for f in FACES:
             w, h = dims_face(c, f)
-            if w > 0 and h > 0:
+            if w > 0 and h > 0 and f not in c['sem']:
                 pedidos.append((math.ceil(w), math.ceil(h), c, f))
     pedidos.sort(key=lambda p: (-p[1], -p[0]))
     x = y = alt = 0
@@ -481,8 +602,8 @@ def gerar_bbmodel(png):
             'name': c['nome'], 'box_uv': False, 'rescale': False, 'locked': False,
             'light_emission': 0, 'render_order': 'default', 'allow_mirror_modeling': True,
             'from': [num(v) for v in c['de']], 'to': [num(v) for v in c['ate']], 'autouv': 0,
-            'color': sum(map(ord, c['mat'])) % 8, 'origin': [num(v) for v in piv],
-            'rotation': [0, 0, 0], 'inflate': 0, 'faces': faces, 'type': 'cube', 'uuid': u,
+            'color': sum(map(ord, c['mat'])) % 8, 'origin': [num(v) for v in c.get('origem', piv)],
+            'rotation': [num(v) for v in c.get('rot', [0, 0, 0])], 'inflate': 0, 'faces': faces, 'type': 'cube', 'uuid': u,
         })
         filhos[c['osso']].append(u)
 
@@ -560,8 +681,13 @@ def gerar_geo():
                     uv[f] = {'uv': [num(u2), num(v2)], 'uv_size': [num(-du), num(-dv)]}
                 else:
                     uv[f] = {'uv': [num(u1), num(v1)], 'uv_size': [num(du), num(dv)]}
-            cubes.append({'origin': [num(-(c['de'][0] + size[0])), num(c['de'][1]), num(c['de'][2])],
-                          'size': [num(v) for v in size], 'uv': uv})
+            cubo_br = {'origin': [num(-(c['de'][0] + size[0])), num(c['de'][1]), num(c['de'][2])],
+                       'size': [num(v) for v in size], 'uv': uv}
+            if any(c.get('rot', [0, 0, 0])):
+                o = c['origem']
+                cubo_br['pivot'] = [num(-o[0]), num(o[1]), num(o[2])]
+                cubo_br['rotation'] = br_rot(c['rot'])
+            cubes.append(cubo_br)
         if cubes:
             b['cubes'] = cubes
         bones.append(b)

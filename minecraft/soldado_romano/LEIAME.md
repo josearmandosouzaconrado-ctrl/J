@@ -4,14 +4,21 @@ Um legionário romano com galea (capacete de aço com bochecheiras de bronze e p
 lorica segmentata (armadura de placas), túnica e capa vermelhas, cinto com avental de tiras,
 sandálias (caligae), gládio na mão direita e scutum (escudo curvo vermelho e dourado) na esquerda.
 
+Tudo modelado em volume: a armadura tem placas sobrepostas e ombreiras em três camadas, o capacete
+tem cúpula, viseira, nuca larga e penacho em degraus, as sandálias têm tiras vazadas, o escudo é
+curvo de verdade (cinco painéis em arco com umbo em domo) e o gládio tem lâmina com nervura,
+ponta afunilada, guarda, cabo com anéis de marfim e pomo. No cinto ficam a bainha e um punhal.
+
 ![prévia](previa.png)
+
+![detalhes: capacete, gládio e escudo](previa_detalhes.png)
 
 ## Arquivos
 
 | Arquivo | Para que serve |
 |---|---|
 | `soldado_romano.bbmodel` | Projeto do **Blockbench** (modelo, textura e 5 animações) |
-| `soldado_romano.png` | Textura 128×128 |
+| `soldado_romano.png` | Textura 256×256 |
 | `SoldadoRomano.mcaddon` | Add-on pronto para o Minecraft Bedrock |
 | `pacote_recursos/`, `pacote_comportamento/` | O conteúdo do add-on, aberto, para editar |
 
