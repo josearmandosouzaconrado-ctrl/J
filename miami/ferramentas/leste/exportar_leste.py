@@ -22,7 +22,14 @@ CFG = {
     'type99': dict(f=lambda: M['tanque']('type99'), pecas={'corpo': (1024, 3500), 'torre': (512, 2200)}),
     'su57': dict(f=lambda: M['jato']('su57'), pecas={'corpo': (512, 2500), 'trem': (64, 500), 'vidro': (0, 400)}),
     'j20': dict(f=lambda: M['jato']('j20'), pecas={'corpo': (512, 2500), 'trem': (64, 500), 'vidro': (0, 400)}),
+    'bmp3': dict(f=lambda: M['bmp']('bmp3'), pecas={'corpo': (1024, 3500), 'torre': (512, 1800)}),
+    'zbd04': dict(f=lambda: M['bmp']('zbd04'), pecas={'corpo': (1024, 3500), 'torre': (512, 1800)}),
+    'btr82': dict(f=lambda: M['btr']('btr82'), pecas={'corpo': (1024, 3500), 'torre': (512, 1200)}),
+    'zbl08': dict(f=lambda: M['btr']('zbl08'), pecas={'corpo': (1024, 3500), 'torre': (512, 1200)}),
+    'tigr': dict(f=lambda: M['jipe']('tigr'), pecas={'corpo': (512, 2500), 'torre': (256, 600), 'vidro': (0, 200)}),
+    'mengshi': dict(f=lambda: M['jipe']('mengshi'), pecas={'corpo': (512, 2500), 'torre': (256, 600), 'vidro': (0, 200)}),
 }
+
 
 
 def juntar(objs, nome):
@@ -92,7 +99,9 @@ def malha(ob, pivo=(0, 0, 0)):
 saida = {}
 for nome, cfg in CFG.items():
     bpy.ops.wm.read_factory_settings(use_empty=True)
+    M['PIVO'] = (0, 0, 1.62); M['LEVE'] = True
     cfg['f']()
+    PV = M['PIVO']
     grupos = {}
     for o in list(bpy.context.scene.objects):
         if o.type != 'MESH': continue
@@ -111,8 +120,9 @@ for nome, cfg in CFG.items():
             bpy.context.view_layer.objects.active = ob; bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True)
             bpy.ops.object.modifier_apply(modifier='dec')
         tex = assar(ob, lado, f'{nome}_{p}') if lado else None
-        pivo = (0, 0, 1.62) if p == 'torre' else (0, 0, 0)
+        pivo = PV if p == 'torre' else (0, 0, 0)
         res[p] = dict(malha(ob, pivo), tex=tex)
+    res['pivo'] = [round(-PV[0], 3), round(PV[2], 3), round(PV[1], 3)]   # posição da torre no jogo (x, altura, frente)
     saida[nome] = res
     print('ok', nome)
 with open(SAIDA, 'w') as f:

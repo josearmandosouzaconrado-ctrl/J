@@ -1628,6 +1628,8 @@ const LESTE_V = {
     return { corpo: c.build(), torre: t.build(), torreY: 1.7, torreZ: 0.1, canoZ: 7.3, canoY: 0.4 };
   },
   bmp3() {
+    const real = lesteReal('bmp3', { canoZ: 3.9, canoY: 0.32 });
+    if (real) return real;
     // BMP-3: casco baixo com glacis longo, aleta anfíbia, torre com canhão 100 mm e 30 mm
     const c = new Mont(), C = RU, C2 = RU2;
     c.add(loftZ([
@@ -1652,6 +1654,8 @@ const LESTE_V = {
     return { corpo: c.build(), torre: t.build(), torreY: 1.82, torreZ: 0.6, canoZ: 4.1, canoY: 0.35 };
   },
   zbd04() {
+    const real = lesteReal('zbd04', { canoZ: 3.9, canoY: 0.32 });
+    if (real) return real;
     // ZBD-04A: casco anguloso com blindagem adicional em caixas, torre com 100 mm + 30 mm
     const c = new Mont(), C = CN, C2 = CN2;
     c.add(loftZ([
@@ -1675,6 +1679,8 @@ const LESTE_V = {
     return { corpo: c.build(), torre: t.build(), torreY: 1.95, torreZ: 0.4, canoZ: 4.2, canoY: 0.38 };
   },
   btr82() {
+    const real = lesteReal('btr82', { canoZ: 2.9, canoY: 0.32 });
+    if (real) return real;
     // BTR-82A: 8x8 com casco de barco (proa em cunha), portas laterais entre os eixos, torre com 30 mm
     const c = new Mont(), C = RU, C2 = RU2;
     c.add(loftZ([
@@ -1699,6 +1705,8 @@ const LESTE_V = {
     return { corpo: c.build(), torre: t.build(), torreY: 2.15, torreZ: 1.0, canoZ: 2.9, canoY: 0.35 };
   },
   zbl08() {
+    const real = lesteReal('zbl08', { canoZ: 2.9, canoY: 0.32 });
+    if (real) return real;
     // ZBL-08: 8x8 de laterais retas e frente inclinada, torre de 30 mm
     const c = new Mont(), C = CN, C2 = CN2;
     c.add(loftZ([
@@ -1718,6 +1726,8 @@ const LESTE_V = {
     return { corpo: c.build(), torre: t.build(), torreY: 2.4, torreZ: 0.6, canoZ: 3.3, canoY: 0.32 };
   },
   tigr() {
+    const real = lesteReal('tigr', { canoZ: 1.37, canoY: 0.33 });
+    if (real) return real;
     // GAZ Tigr: jipe blindado russo, capô alto com grade vertical, cabine quadrada de janelas pequenas
     const c = new Mont(), v = new Mont(), C = RU, C2 = RU2;
     c.box(2.2, 0.5, 5.3, C2, 0, 0.75, 0);
@@ -1739,6 +1749,8 @@ const LESTE_V = {
     return { corpo: c.build(), vidro: v.build(false), torre: t.build(), torreY: 2.44, torreZ: -0.5, canoZ: 1.3, canoY: 0.25 };
   },
   mengshi() {
+    const real = lesteReal('mengshi', { canoZ: 1.37, canoY: 0.33 });
+    if (real) return real;
     // Dongfeng Mengshi: parecido com o Humvee, cabine mais alta e capô com grade larga
     const c = new Mont(), v = new Mont(), C = CN, C2 = CN2;
     c.box(2.0, 0.45, 4.6, C2, 0, 0.72, 0);
@@ -1931,6 +1943,7 @@ function lesteReal(nome, extra) {
     return [{ geo: g, mat }];
   };
   const def = { ...extra, real: true };
+  if (M.pivo) { if (def.torreY === undefined) def.torreY = M.pivo[1]; if (def.torreZ === undefined) def.torreZ = M.pivo[2]; }
   def.malhas = malhas(M.corpo, nome + '/corpo');
   if (M.vidro) def.malhas.push(...malhas(M.vidro, nome + '/vidro'));
   if (M.torre) { def.torre = true; def.torreMalhas = malhas(M.torre, nome + '/torre'); }

@@ -373,6 +373,232 @@ def jato(estilo):
     return 'jato'
 
 
+# ================= blindados (BMP-3 / ZBD-04A, BTR-82A / ZBL-08, Tigr / Mengshi) =================
+LEVE = False          # True na exportação para o jogo: pneus sem os blocos da banda de rodagem
+PIVO = (0, 0, 1.62)   # pivô da torre (Blender: x, frente, altura), lido pelo exportador
+
+
+def tintas(china):
+    if china:
+        tinta = material('camo_cn', (0.2, 0.22, 0.13), 0.6, camo=[(0.2, 0.22, 0.12), (0.12, 0.15, 0.08), (0.3, 0.27, 0.16), (0.06, 0.07, 0.05)], escala=1.6)
+    else:
+        tinta = material('verde', (0.13, 0.15, 0.08), 0.65, camo=[(0.12, 0.14, 0.07), (0.09, 0.1, 0.05), (0.2, 0.18, 0.1)], escala=0.9)
+    return dict(
+        tinta=tinta,
+        escuro=material('escuro', (0.03, 0.03, 0.03), 0.5, 0.3, sujeira=0.1),
+        borracha=material('borracha', (0.035, 0.032, 0.03), 0.9, 0.0, sujeira=0.3),
+        aco=material('aco', (0.2, 0.2, 0.19), 0.4, 0.8, sujeira=0.2),
+        lente=material('vidro', (0.05, 0.12, 0.1), vidro=True),
+        farol=material('farol', (0.85, 0.82, 0.7), 0.2, 0.3, sujeira=0),
+        vermelho=material('estrela', (0.6, 0.03, 0.02), 0.6, sujeira=0),
+        amarelo=material('amarelo', (0.8, 0.6, 0.05), 0.6, sujeira=0),
+        lona=material('lona', (0.18, 0.17, 0.12), 0.95, sujeira=0.3),
+    )
+
+
+def marca(T, pos, r, normal, china):
+    estrela(pos, r, T['vermelho'], normal)
+    if china:
+        n = Vector(normal)
+        cilindro(r * 0.25, r * 0.25, 0.006, tuple(Vector(pos) + n * 0.008), T['amarelo'], Vector((0, 0, 1)).rotation_difference(n).to_matrix() @ Matrix.Rotation(math.pi / 2, 3, 'X'), 12)
+
+
+def roda(T, x, y, z, r, larg, cubo=True):
+    """pneu militar com banda de rodagem (blocos), aro e cubo"""
+    cilindro(r, r, larg, (x, y, z), T['borracha'], 'X', 16 if LEVE else 28, bevel=0 if LEVE else 0.03)
+    for k in range(0 if LEVE else 18):
+        a = 2 * math.pi * k / 18
+        caixa((larg * 0.9, 0.09, 0.035), (x, y + math.cos(a) * r, z + math.sin(a) * r), T['borracha'], 0.008, rot=(a + math.pi / 2, 0, 0))
+    lado = 1 if x > 0 else -1
+    cilindro(r * 0.6, r * 0.6, larg * 0.08, (x + lado * larg * 0.47, y, z), T['tinta'], 'X', 20)
+    if cubo:
+        cilindro(r * 0.22, r * 0.26, larg * 0.14, (x + lado * larg * 0.53, y, z), T['aco'], 'X', 12)
+        for k in range(6):
+            a = 2 * math.pi * k / 6
+            cilindro(0.02, 0.02, 0.04, (x + lado * larg * 0.53, y + math.cos(a) * r * 0.38, z + math.sin(a) * r * 0.38), T['aco'], 'X', 6)
+
+
+def lancadores_fumaca(T, x, y, z, lado, n=3):
+    for k in range(n):
+        R = Matrix.Rotation(-0.55, 3, 'X') @ Matrix.Rotation(lado * (0.35 + 0.18 * k), 3, 'Z')
+        cilindro(0.055, 0.055, 0.32, (x + lado * k * 0.07, y - k * 0.13, z), T['aco'], R @ Matrix.Rotation(-math.pi / 2, 3, 'X'), 10)
+
+
+def bmp(estilo):
+    """BMP-3 (Rússia) / ZBD-04A (China): blindado de esteiras com canhão 100 mm + 30 mm"""
+    global PARTE, PIVO
+    PARTE = 'corpo'
+    china = estilo == 'zbd04'
+    T = tintas(china); tinta, aco, escuro = T['tinta'], T['aco'], T['escuro']
+    L = 7.2; y0, y1 = -L / 2, L / 2
+    # casco inferior (entre as esteiras) e superior (sobre as esteiras), glacis longo e baixo
+    casco([(sx * 1.02, y, z) for sx in (-1, 1) for (y, z) in [(y0 + 0.1, 0.35), (y0, 0.98), (y1 - 0.2, 0.98), (y1, 0.55), (y1 - 0.6, 0.3), (y0 + 0.6, 0.3)]], tinta)
+    casco([(sx * 1.56, y, z) for sx in (-1, 1) for (y, z) in [(y0, 0.96), (y0, 1.62), (y1 - 2.9, 1.66), (y1 - 0.15, 1.02), (y1, 0.96)]], tinta, 0.04)
+    # aleta anfíbia recolhida sobre o glacis
+    ang = math.atan2(1.66 - 1.02, 2.75)
+    caixa((2.9, 1.0, 0.06), (0, y1 - 1.3, 1.31), tinta, 0.015, rot=(-ang, 0, 0))
+    for k in range(4): caixa((0.05, 0.9, 0.05), (-1.1 + k * 0.73, y1 - 1.3, 1.36), tinta, 0.01, rot=(-ang, 0, 0))
+    # periscópios do motorista, faróis e escotilhas
+    for k in range(3): caixa((0.16, 0.1, 0.08), (-0.25 + k * 0.25, y1 - 2.85, 1.7), T['lente'], 0.01)
+    for sx in (-1, 1):
+        caixa((0.2, 0.08, 0.14), (sx * 1.25, y1 - 0.12, 1.08), T['farol'], 0.02)
+        caixa((0.18, 0.04, 0.11), (sx * 1.25, y1 - 0.08, 1.08), escuro, 0.01)
+    for sx in (-0.75, 0.75): cilindro(0.3, 0.3, 0.06, (sx, y0 + 1.0, 1.65), tinta, 'Z', 20, bevel=0.01)
+    # convés do motor (traseira) com grades
+    caixa((2.4, 1.6, 0.1), (0, y0 + 1.05, 1.67), tinta, 0.02)
+    for k in range(9): caixa((2.2, 0.05, 0.03), (0, y0 + 0.4 + k * 0.16, 1.73), escuro, 0.005)
+    # portas traseiras e degraus
+    for sx in (-0.45, 0.45):
+        caixa((0.8, 0.06, 0.55), (sx, y0 - 0.02, 1.32), tinta, 0.02)
+        caixa((0.12, 0.03, 0.04), (sx + 0.25, y0 - 0.06, 1.32), aco, 0.005)
+    caixa((0.6, 0.25, 0.05), (0, y0 - 0.1, 0.6), aco, 0.01)
+    # esteiras com 6 rodas pequenas, roda motriz atrás e saia de borracha
+    for sx in (-1, 1):
+        rodas = [(y0 + 0.85 + i * (L - 1.7) / 5, 0.36, 0.33) for i in range(6)] + [(y1 - 0.3, 0.62, 0.27), (y0 + 0.25, 0.62, 0.29)]
+        esteira(sx * 1.3, 0.45, rodas, T['borracha'], tinta, aco)
+        caixa((0.05, L - 0.4, 0.3), (sx * 1.56, 0.0, 0.8), T['borracha'], 0.01)
+        if china:
+            # blindagem adicional em caixas ao longo do lado
+            for i in range(5): caixa((0.16, 1.2, 0.62), (sx * 1.66, y0 + 0.8 + i * 1.28, 1.28), tinta, 0.02)
+            marca(T, (sx * 1.75, -0.1, 1.33), 0.2, (sx, 0, 0), True)
+        else:
+            for i in range(3): caixa((0.35, 0.8, 0.28), (sx * 1.3, y0 + 1.8 + i * 1.0, 1.78), tinta, 0.02)   # caixas de ferramentas
+            marca(T, (sx * 1.565, 0.6, 1.3), 0.18, (sx, 0, 0), False)
+        cilindro(0.025, 0.025, 1.6, (sx * 1.05, y0 + 1.6, 1.7), aco, 'Y', 8)               # cabos de reboque
+        cilindro(0.09, 0.09, 0.35, (sx * 1.35, y0 + 0.4, 1.75), escuro, 'Y', 12)            # escapamentos
+    # ---- torre ----
+    PARTE = 'torre'
+    yt, zt = 0.3, 1.66
+    PIVO = (0, yt, zt)
+    casco([(sx * w, yt + y, zt + z) for sx in (-1, 1) for (w, y, z) in [(0.95, -1.05, 0.0), (0.85, -1.0, 0.5), (1.08, 0.2, 0.0), (0.92, 0.3, 0.56), (0.7, 1.05, 0.0), (0.52, 0.95, 0.45)]], tinta, 0.04)
+    caixa((0.62, 0.5, 0.5), (0, yt + 1.15, zt + 0.3), tinta, 0.04)                         # mantelete
+    cilindro(0.12, 0.11, 2.4, (0, yt + 2.5, zt + 0.32), tinta, 'Y', 20)                    # canhão 100 mm
+    cilindro(0.135, 0.135, 0.35, (0, yt + 3.75, zt + 0.32), escuro, 'Y', 20)
+    cilindro(0.04, 0.04, 2.5, (0.32, yt + 2.4, zt + 0.28), aco, 'Y', 10)                   # canhão 30 mm
+    cilindro(0.055, 0.055, 0.2, (0.32, yt + 3.65, zt + 0.28), escuro, 'Y', 10)
+    caixa((0.38, 0.35, 0.36), (-0.55, yt + 0.4, zt + 0.7), tinta, 0.03)                    # mira do atirador
+    caixa((0.28, 0.04, 0.2), (-0.55, yt + 0.58, zt + 0.72), T['lente'], 0.01)
+    cilindro(0.28, 0.3, 0.18, (0.48, yt - 0.35, zt + 0.62), tinta, 'Z', 18, bevel=0.01)    # cúpula do comandante
+    caixa((0.25, 0.25, 0.25), (0.48, yt - 0.25, zt + 0.82), tinta, 0.02)
+    caixa((0.2, 0.04, 0.12), (0.48, yt - 0.12, zt + 0.84), T['lente'], 0.01)
+    for sx in (-1, 1): lancadores_fumaca(T, sx * 0.88, yt + 0.25, zt + 0.42, sx, 3)
+    cilindro(0.012, 0.018, 2.4, (-0.7, yt - 0.85, zt + 1.6), aco, 'Z', 6)
+    if china:
+        for sx in (-1, 1): caixa((0.26, 0.9, 0.26), (sx * 1.12, yt - 0.2, zt + 0.42), tinta, 0.02)   # mísseis HJ-73
+    return 'blindado'
+
+
+def btr(estilo):
+    """BTR-82A (Rússia) / ZBL-08 (China): blindado 8x8 com torre de 30 mm"""
+    global PARTE, PIVO
+    PARTE = 'corpo'
+    china = estilo == 'zbl08'
+    T = tintas(china); tinta, aco, escuro = T['tinta'], T['aco'], T['escuro']
+    L = 7.6; y0, y1 = -L / 2, L / 2
+    if china:
+        # casco de laterais retas e frente em cunha
+        casco([(sx * x, y, z) for sx in (-1, 1) for (x, y, z) in [(1.2, y0 + 0.3, 0.6), (1.2, y1 - 0.9, 0.6), (1.48, y0, 0.95), (1.48, y1 - 1.0, 0.95), (1.45, y0, 1.95),
+                                                                     (1.45, y1 - 1.7, 2.0), (1.3, y0 + 0.05, 2.15), (1.3, y1 - 1.9, 2.15), (1.15, y1, 1.0), (1.25, y1 - 0.4, 1.4)]], tinta, 0.04)
+    else:
+        # casco de "barco": laterais inclinadas para dentro, proa em cunha
+        casco([(sx * x, y, z) for sx in (-1, 1) for (x, y, z) in [(1.0, y0 + 0.2, 0.6), (1.0, y1 - 1.0, 0.6), (1.43, y0, 1.22), (1.43, y1 - 1.2, 1.22),
+                                                                     (1.12, y0 + 0.05, 2.0), (1.12, y1 - 1.75, 2.05), (0.85, y1, 1.08), (0.92, y1 - 0.15, 1.38)]], tinta, 0.04)
+    ys = [-2.75, -1.35, 0.75, 2.15]
+    for sx in (-1, 1):
+        for y in ys:
+            roda(T, sx * 1.32, y, 0.56, 0.56, 0.38)
+            caixa((0.42, 1.25, 0.05), (sx * 1.38, y, 1.18), tinta, 0.01, rot=(0, sx * 0.25, 0))      # para-lama
+        # porta lateral entre os eixos 2 e 3, seteiras e degrau
+        zp = 1.5 if not china else 1.45
+        caixa((0.05, 0.85, 0.75), (sx * (1.33 if not china else 1.5), -0.3, zp), tinta, 0.015, rot=(0, sx * (0.32 if not china else 0), 0))
+        caixa((0.06, 0.1, 0.05), (sx * (1.37 if not china else 1.53), 0.0, zp), aco, 0.005)
+        for y in (-2.0, -0.95, 1.4, 2.6): cilindro(0.06, 0.06, 0.08, (sx * (1.3 if not china else 1.5), y, 1.65), escuro, 'X', 10)
+        if china:
+            for i in range(4): caixa((0.1, 1.5, 0.5), (sx * 1.54, y0 + 0.9 + i * 1.6, 1.62), tinta, 0.015)
+            marca(T, (sx * 1.6, -1.95, 1.62), 0.22, (sx, 0, 0), True)
+        else:
+            marca(T, (sx * 1.3, 1.4, 1.7), 0.2, (sx, 0, 0), False)
+            caixa((0.25, 0.5, 0.3), (sx * 1.05, y0 + 0.5, 2.05), tinta, 0.02)
+        caixa((0.18, 0.08, 0.12), (sx * 0.7, y1 - 0.05 if china else y1 - 0.25, 1.35), T['farol'], 0.02)
+        cilindro(0.02, 0.02, 1.4, (sx * 0.8, y0 + 1.4, 2.08 if not china else 2.18), aco, 'Y', 8)
+    caixa((1.4, 0.08, 0.9), (0, y0 - 0.02, 1.4), tinta, 0.02)                                      # porta/jato d'água traseiro
+    for k in range(2): cilindro(0.3, 0.3, 0.05, (-0.45 + k * 0.9, y1 - 2.4, 2.05 if not china else 2.17), tinta, 'Z', 18)   # escotilhas
+    for k in range(3): caixa((0.16, 0.08, 0.08), (-0.6 + k * 0.6, y1 - 1.55, 2.1 if not china else 2.2), T['lente'], 0.01)
+    cilindro(0.012, 0.018, 2.6, (-0.95, y0 + 0.6, 3.2), aco, 'Z', 6)
+    # ---- torre ----
+    PARTE = 'torre'
+    yt, zt = 0.95, 2.02 if not china else 2.14
+    PIVO = (0, yt, zt)
+    if china:
+        casco([(sx * w, yt + y, zt + z) for sx in (-1, 1) for (w, y, z) in [(0.85, -0.85, 0.0), (0.8, -0.85, 0.55), (0.92, 0.45, 0.0), (0.82, 0.5, 0.55), (0.45, 1.0, 0.05), (0.4, 0.95, 0.45)]], tinta, 0.03)
+    else:
+        cilindro(0.78, 0.62, 0.52, (0, yt, zt + 0.26), tinta, 'Z', 20, bevel=0.02)
+        caixa((0.55, 0.5, 0.36), (0.1, yt + 0.55, zt + 0.32), tinta, 0.03)
+    cilindro(0.045, 0.05, 2.2, (0.08, yt + 1.75, zt + 0.32), aco, 'Y', 10)                    # canhão 30 mm
+    cilindro(0.065, 0.065, 0.18, (0.08, yt + 2.82, zt + 0.32), escuro, 'Y', 10)
+    cilindro(0.025, 0.025, 0.9, (-0.25, yt + 1.0, zt + 0.3), aco, 'Y', 8)                     # metralhadora coaxial
+    caixa((0.3, 0.3, 0.3), (-0.45, yt + 0.15, zt + 0.7), tinta, 0.02)
+    caixa((0.22, 0.04, 0.16), (-0.45, yt + 0.31, zt + 0.72), T['lente'], 0.01)
+    for sx in (-1, 1): lancadores_fumaca(T, sx * 0.6, yt - 0.1, zt + 0.42, sx, 3)
+    return 'blindado'
+
+
+def jipe(estilo):
+    """GAZ Tigr (Rússia) / Dongfeng Mengshi (China): blindado leve 4x4 com estação de armas no teto"""
+    global PARTE, PIVO
+    PARTE = 'corpo'
+    china = estilo == 'mengshi'
+    T = tintas(china); tinta, aco, escuro = T['tinta'], T['aco'], T['escuro']
+    vidro = material('cabine_j', (0.05, 0.07, 0.08), vidro=True)
+    L = 5.7 if not china else 5.0
+    y0, y1 = -L / 2, L / 2
+    caixa((1.9, L - 0.4, 0.35), (0, 0, 0.75), escuro, 0.02)                                         # chassi
+    if china:
+        # capô largo e baixo, cabine de para-brisa reto, caçamba atrás
+        casco([(sx * x, y, z) for sx in (-1, 1) for (x, y, z) in [(1.1, y1, 0.9), (1.1, y1, 1.4), (1.15, y1 - 1.6, 0.9), (1.15, y1 - 1.6, 1.5)]], tinta, 0.04)
+        casco([(sx * x, y, z) for sx in (-1, 1) for (x, y, z) in [(1.15, y1 - 1.6, 0.9), (1.15, y1 - 1.6, 1.5), (1.08, y1 - 1.85, 2.25), (1.08, y0 + 1.4, 2.25), (1.15, y0 + 1.3, 0.9), (1.15, y0 + 1.3, 1.5)]], tinta, 0.04)
+        casco([(sx * x, y, z) for sx in (-1, 1) for (x, y, z) in [(1.15, y0 + 1.3, 0.9), (1.15, y0 + 1.3, 1.55), (1.15, y0, 0.9), (1.15, y0, 1.55)]], tinta, 0.03)
+        caixa((2.2, 1.25, 0.05), (0, y0 + 0.7, 1.58), escuro, 0.01)
+        caixa((1.7, 0.06, 0.45), (0, y1 + 0.02, 1.15), escuro, 0.01)
+        for k in range(7): caixa((0.05, 0.08, 0.4), (-0.7 + k * 0.233, y1 + 0.05, 1.15), aco, 0.005)
+        caixa((2.2, 0.12, 0.12), (0, y1 + 0.15, 0.85), aco, 0.02)                                       # para-choque
+        ywin, zwin, angw = y1 - 1.71, 1.88, -0.32
+        torre_y, torre_z = y0 + 1.9, 2.25
+    else:
+        # Tigr: capô alto com grade vertical, cabine de chapas retas e janelas pequenas
+        casco([(sx * x, y, z) for sx in (-1, 1) for (x, y, z) in [(1.12, y1, 0.85), (1.12, y1, 1.45), (1.2, y1 - 1.85, 0.85), (1.2, y1 - 1.85, 1.62)]], tinta, 0.04)
+        casco([(sx * x, y, z) for sx in (-1, 1) for (x, y, z) in [(1.2, y1 - 1.85, 0.85), (1.2, y1 - 1.85, 1.62), (1.12, y1 - 2.35, 2.38), (1.12, y0 + 0.05, 2.38), (1.2, y0, 0.85), (1.2, y0, 1.7)]], tinta, 0.04)
+        caixa((1.7, 0.06, 0.5), (0, y1 + 0.02, 1.15), escuro, 0.01)
+        for k in range(9): caixa((0.05, 0.08, 0.46), (-0.72 + k * 0.18, y1 + 0.05, 1.15), aco, 0.005)
+        caixa((2.25, 0.15, 0.15), (0, y1 + 0.12, 0.85), aco, 0.02)
+        cilindro(0.33, 0.33, 0.22, (0, y0 - 0.12, 1.5), T['borracha'], 'Y', 20)                         # estepe
+        ywin, zwin, angw = y1 - 2.08, 2.01, -0.58
+        torre_y, torre_z = y0 + 1.9, 2.38
+    # para-brisa (duas partes), janelas laterais e faróis
+    for sx in (-1, 1):
+        caixa((0.95, 0.06, 0.6 if not china else 0.6), (sx * 0.5, ywin, zwin), vidro, 0.01, rot=(-angw, 0, 0))
+        caixa((0.05, 0.8 if not china else 1.2, 0.42), (sx * (1.18 if not china else 1.13), y1 - 2.9 if not china else y1 - 2.45, 1.95 if not china else 1.85), vidro, 0.01)
+        if not china: caixa((0.05, 0.6, 0.38), (sx * 1.18, y1 - 3.9, 1.95), vidro, 0.01)
+        caixa((0.22, 0.06, 0.15), (sx * 0.8, y1 + 0.03, 1.38), T['farol'], 0.02)
+        caixa((0.06, 0.12, 0.18), (sx * 1.25, ywin - 0.05, 1.75), escuro, 0.01)                       # retrovisor
+        for y in (y1 - 1.25, y0 + 1.25 if not china else y0 + 0.95):
+            roda(T, sx * 1.0, y, 0.6, 0.6, 0.42)
+            caixa((0.5, 1.4, 0.06), (sx * 1.05, y, 1.25), tinta, 0.01)                                 # para-lama
+        caixa((0.05, 0.12, 0.04), (sx * 1.2, y1 - 2.6, 1.7), aco, 0.005)                               # maçaneta
+        marca(T, (sx * 1.21, y0 + 0.9, 1.35), 0.17, (sx, 0, 0), china)
+    cilindro(0.012, 0.015, 2.0, (-0.9, y0 + 0.4, 3.0), aco, 'Z', 6)
+    # ---- estação de armas no teto ----
+    PARTE = 'torre'
+    PIVO = (0, torre_y, torre_z)
+    cilindro(0.42, 0.45, 0.14, (0, torre_y, torre_z + 0.07), tinta, 'Z', 18, bevel=0.01)
+    caixa((0.3, 0.55, 0.32), (0, torre_y + 0.05, torre_z + 0.3), tinta, 0.03)
+    cilindro(0.028, 0.028, 1.1, (0.05, torre_y + 0.75, torre_z + 0.33), aco, 'Y', 8)
+    cilindro(0.045, 0.045, 0.14, (0.05, torre_y + 1.3, torre_z + 0.33), escuro, 'Y', 8)
+    caixa((0.12, 0.25, 0.22), (0.24, torre_y + 0.0, torre_z + 0.28), aco, 0.01)                       # caixa de munição
+    caixa((0.5, 0.05, 0.35), (0, torre_y + 0.38, torre_z + 0.35), tinta, 0.01)                         # escudo
+    return 'blindado'
+
+
 # ---------------- cena e foto ----------------
 def fotografar(nome, tipo):
     sc = bpy.context.scene
@@ -388,6 +614,8 @@ def fotografar(nome, tipo):
     cam.data.lens = 50
     if tipo == 'tanque':
         alvo, pos = Vector((0, 0.8, 1.3)), Vector((10.5, 11.0, 5.5))
+    elif tipo == 'blindado':
+        alvo, pos = Vector((0, 0.4, 1.2)), Vector((9.5, 10.0, 5.0))
     else:
         alvo, pos = Vector((0, -0.5, 1.6)), Vector((17.0, 17.0, 10.0))
     cam.location = pos; cam.rotation_euler = (alvo - pos).to_track_quat('-Z', 'Y').to_euler()
@@ -401,6 +629,7 @@ def fotografar(nome, tipo):
 for nome in QUAIS:
     limpar()
     random.seed(1)
-    tipo = tanque(nome) if nome in ('t90', 'type99') else jato(nome)
+    FAB = {'bmp3': bmp, 'zbd04': bmp, 'btr82': btr, 'zbl08': btr, 'tigr': jipe, 'mengshi': jipe}
+    tipo = tanque(nome) if nome in ('t90', 'type99') else FAB[nome](nome) if nome in FAB else jato(nome)
     fotografar(nome, tipo)
     print('ok', nome)
