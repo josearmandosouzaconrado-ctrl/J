@@ -26,7 +26,7 @@ from PIL import Image, ImageDraw
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 SAIDA = os.path.join(AQUI, '..', 'minecraft', 'urso_mago')
-TEX = 128
+TEX = 256
 NOME = 'urso_mago'
 NS = 'mago'
 ID = f'{NS}:{NOME}'
@@ -44,14 +44,18 @@ OSSOS = [
     ('perna_traseira_dir', 'urso', [5, 11, 6.5], [0, 0, 0]),
     ('perna_traseira_esq', 'urso', [-5, 11, 6.5], [0, 0, 0]),
     ('quadril', 'urso', [0, 15, 6], [0, 0, 0]),
-    ('cauda', 'quadril', [0, 17, 10], [0, 0, 0]),
+    ('cauda', 'quadril', [0, 17, 11], [0, 0, 0]),
     ('perna_dianteira_dir', 'quadril', [5, 11, -6.5], [0, 0, 0]),
     ('perna_dianteira_esq', 'quadril', [-5, 11, -6.5], [0, 0, 0]),
     ('cabeca', 'quadril', [0, 16, -10], [0, 0, 0]),
-    ('chapeu', 'cabeca', [0, 20, -14], [0, 0, 0]),
-    ('chapeu_meio', 'chapeu', [0, 24, -14], [10, 0, 8]),
-    ('chapeu_ponta', 'chapeu_meio', [0, 27, -14], [16, 0, 16]),
-    ('orbe', 'urso', [-13, 23, -11], [0, 0, 0]),
+    ('mandibula', 'cabeca', [0, 10, -16], [0, 0, 0]),
+    ('orelha_dir', 'cabeca', [6.5, 18, -13], [0, 0, 0]),
+    ('orelha_esq', 'cabeca', [-6.5, 18, -13], [0, 0, 0]),
+    ('chapeu', 'cabeca', [0, 20, -14.5], [0, 0, 0]),
+    ('chapeu_meio', 'chapeu', [0, 25, -14.5], [8, 0, 6]),
+    ('chapeu_ponta', 'chapeu_meio', [0, 28, -14.5], [14, 0, 12]),
+    ('chapeu_bico', 'chapeu_ponta', [0, 31, -14.5], [18, 0, 18]),
+    ('orbe', 'urso', [-14, 23, -11], [0, 0, 0]),
     ('circulo_magico', 'urso', [0, 0, -2], [0, 0, 0]),
 ]
 
@@ -65,51 +69,87 @@ def cubo(osso, nome, de, ate, mat):
     CUBOS.append(dict(osso=osso, nome=nome, de=de, ate=ate, mat=mat))
 
 
+# corpo: tronco, peito felpudo, barriga, traseiro arredondado e manto de mago
 cubo('quadril', 'corpo', [-8, 9, -10], [8, 21, 10], 'corpo')
-cubo('quadril', 'corcova', [-7, 21, -9], [7, 23, 0], 'corcova')
-cubo('cauda', 'cauda', [-1.5, 15, 10], [1.5, 18, 12], 'cauda')
-cubo('cabeca', 'cabeca', [-4.5, 11, -18], [4.5, 20, -10], 'cabeca')
-cubo('cabeca', 'focinho', [-2.5, 11, -21], [2.5, 15, -18], 'focinho')
-cubo('cabeca', 'orelha_dir', [3.5, 17.5, -14], [6.5, 20.5, -12], 'orelha')
-cubo('cabeca', 'orelha_esq', [-6.5, 17.5, -14], [-3.5, 20.5, -12], 'orelha')
-cubo('chapeu', 'aba', [-5.5, 20, -19.5], [5.5, 21, -8.5], 'aba')
-cubo('chapeu', 'copa', [-3.5, 21, -17.5], [3.5, 25, -10.5], 'copa')
-cubo('chapeu_meio', 'cone', [-2.5, 24.5, -16.5], [2.5, 27.5, -11.5], 'cone')
-cubo('chapeu_ponta', 'ponta', [-1.5, 27, -15.5], [1.5, 30, -12.5], 'ponta')
+cubo('quadril', 'peito', [-7, 8, -11], [7, 15, -8], 'peito')
+cubo('quadril', 'barriga', [-6, 8, -6], [6, 9, 7], 'barriga')
+cubo('quadril', 'traseiro', [-7, 10, 9], [7, 20, 11], 'corpo')
+cubo('quadril', 'manto', [-8.5, 20, -10], [8.5, 23, 2], 'manto')
+cubo('quadril', 'manto_topo', [-7, 23, -8], [7, 24, 0], 'manto')
+cubo('quadril', 'manto_dir', [8, 12, -10], [9, 20, 2], 'manto_lado')
+cubo('quadril', 'manto_esq', [-9, 12, -10], [-8, 20, 2], 'manto_lado')
+cubo('quadril', 'gola', [-8.5, 18, -11], [8.5, 21, -9], 'gola')
+cubo('cauda', 'cauda', [-1.5, 16, 11], [1.5, 19, 13], 'cauda')
+# cabeça redonda com bochechas, focinho, nariz, mandíbula e barbinha
+cubo('cabeca', 'cabeca', [-5, 10, -19], [5, 20, -10], 'cabeca')
+cubo('cabeca', 'bochechas', [-6, 10, -17], [6, 15, -12], 'bochecha')
+cubo('cabeca', 'focinho', [-3, 11, -23], [3, 15, -19], 'focinho')
+cubo('cabeca', 'nariz', [-1.5, 14, -23.5], [1.5, 16, -22.5], 'nariz')
+cubo('mandibula', 'queixo', [-2.5, 10, -22], [2.5, 11, -17], 'focinho')
+cubo('mandibula', 'barba', [-2.5, 7, -21], [2.5, 10, -17], 'barba')
+cubo('mandibula', 'barba_ponta', [-1.5, 5, -20], [1.5, 7, -18], 'barba')
 for lado, s in (('dir', 1), ('esq', -1)):
     def x(a, b):
         return sorted([a * s, b * s])
-    xa = x(2, 8)
-    xp = x(1.5, 8.5)
-    cubo(f'perna_dianteira_{lado}', f'pata_dianteira_{lado}', [xa[0], 2, -9.5], [xa[1], 11, -3.5], 'perna')
-    cubo(f'perna_dianteira_{lado}', f'pe_dianteiro_{lado}', [xp[0], 0, -10], [xp[1], 2, -3], 'pe')
-    cubo(f'perna_traseira_{lado}', f'pata_traseira_{lado}', [xa[0], 2, 3.5], [xa[1], 11, 9.5], 'perna')
-    cubo(f'perna_traseira_{lado}', f'pe_traseiro_{lado}', [xp[0], 0, 3], [xp[1], 2, 10], 'pe')
-cubo('orbe', 'nucleo', [-15, 21, -13], [-11, 25, -9], 'orbe')
-for i, (dx, dz) in enumerate(((4, 0), (-4, 0), (0, 4), (0, -4))):
-    cx, cz = -13 + dx, -11 + dz
-    cubo('orbe', f'faisca_{i}', [cx - 0.5, 22.5 + (i % 2), cz - 0.5], [cx + 0.5, 23.5 + (i % 2), cz + 0.5], 'faisca')
+    xo, xt = x(5, 8), x(6, 8)
+    cubo(f'orelha_{lado}', f'orelha_{lado}', [xo[0], 17, -14], [xo[1], 20, -12], 'orelha')
+    cubo(f'orelha_{lado}', f'orelha_ponta_{lado}', [xt[0], 20, -14], [xt[1], 21, -12], 'orelha')
+# chapéu de mago curvado, com faixa dourada e estrela na ponta
+cubo('chapeu', 'aba', [-6.5, 20, -21], [6.5, 21, -8], 'aba')
+cubo('chapeu', 'faixa', [-4.5, 21, -19], [4.5, 22, -10], 'faixa')
+cubo('chapeu', 'copa', [-4, 22, -18.5], [4, 25, -10.5], 'copa')
+cubo('chapeu_meio', 'cone', [-3, 25, -17.5], [3, 28, -11.5], 'cone')
+cubo('chapeu_ponta', 'ponta', [-2, 28, -16.5], [2, 31, -12.5], 'ponta')
+cubo('chapeu_bico', 'bico', [-1, 31, -15.5], [1, 33, -13.5], 'ponta')
+cubo('chapeu_bico', 'estrela', [-0.5, 33, -15], [0.5, 34, -14], 'estrela')
+# pernas grossas: ombro/coxa, pata, pé e garras
+for lado, s in (('dir', 1), ('esq', -1)):
+    def x(a, b):
+        return sorted([a * s, b * s])
+    xa, xp, xc = x(2, 8), x(1.5, 8.5), x(1.5, 8.5)
+    fd, td = f'perna_dianteira_{lado}', f'perna_traseira_{lado}'
+    cubo(fd, f'ombro_{lado}', [xc[0], 7, -10], xc[1:] + [13, -3], 'coxa')
+    cubo(fd, f'pata_dianteira_{lado}', [xa[0], 2, -9.5], [xa[1], 7, -3.5], 'perna')
+    cubo(fd, f'pe_dianteiro_{lado}', [xp[0], 0, -11], [xp[1], 2, -3], 'pe')
+    cubo(td, f'coxa_{lado}', [xc[0], 6, 2.5], xc[1:] + [15, 10.5], 'coxa')
+    cubo(td, f'pata_traseira_{lado}', [xa[0], 2, 3.5], [xa[1], 6, 9.5], 'perna')
+    cubo(td, f'pe_traseiro_{lado}', [xp[0], 0, 2.5], [xp[1], 2, 10.5], 'pe')
+    for i, gx in enumerate((2.5, 4.5, 6.5)):
+        g = x(gx, gx + 1)
+        cubo(fd, f'garra_d{lado}_{i}', [g[0], 0, -12], [g[1], 1, -11], 'garra')
+        cubo(td, f'garra_t{lado}_{i}', [g[0], 0, 1.5], [g[1], 1, 2.5], 'garra')
+# orbe mágico com anel e faíscas
+cubo('orbe', 'nucleo', [-16, 21, -13], [-12, 25, -9], 'orbe')
+cubo('orbe', 'anel', [-18.5, 23, -15.5], [-9.5, 23, -6.5], 'anel')
+for i, (dx, dz) in enumerate(((5, 0), (-5, 0), (0, 5), (0, -5))):
+    cx, cz = -14 + dx, -11 + dz
+    cubo('orbe', f'faisca_{i}', [cx - 0.5, 21.5 + 2 * (i % 2), cz - 0.5], [cx + 0.5, 22.5 + 2 * (i % 2), cz + 0.5], 'faisca')
 cubo('circulo_magico', 'runas', [-14, 0.1, -16], [14, 0.1, 12], 'circulo')
 
 # --------------------------------------------------------------------------
 # Pintura da textura
 # --------------------------------------------------------------------------
-PELO = (116, 76, 45)
-PELO_ESC = (84, 54, 32)
-PELO_CLARO = (150, 104, 64)
-FOCINHO = (201, 163, 118)
-NARIZ = (38, 26, 22)
-PE = (64, 42, 28)
-GARRA = (230, 224, 206)
-CHAPEU = (52, 42, 128)
-CHAPEU_CLARO = (74, 60, 168)
-OURO = (255, 210, 84)
+PELO = (122, 80, 47)
+PELO_ESC = (78, 49, 29)
+PELO_CLARO = (166, 117, 72)
+FOCINHO = (212, 175, 128)
+NARIZ = (34, 24, 22)
+PE = (58, 38, 26)
+GARRA = (236, 230, 212)
+CHAPEU = (46, 36, 118)
+CHAPEU_CLARO = (84, 66, 184)
+MANTO = (92, 40, 130)
+MANTO_CLARO = (128, 66, 172)
+OURO = (255, 208, 82)
+OURO_ESC = (198, 140, 40)
 CIANO = (96, 228, 255)
+BARBA = (226, 222, 214)
 
 rng = random.Random(7)
 
 
 def misturar(a, b, t):
+    t = max(0.0, min(1.0, t))
     return tuple(int(round(a[i] + (b[i] - a[i]) * t)) for i in range(3))
 
 
@@ -118,112 +158,185 @@ def ruido(cor, forca=10):
     return tuple(max(0, min(255, c + d)) for c in cor)
 
 
-def pintar_pelo(img, x0, y0, w, h, face, base=PELO, belly=None):
+def sombrear(face, xx, yy, w, h, base, claro, escuro):
+    """Luz vinda de cima: topo claro, laterais em degradê, bordas com sombra."""
+    if face == 'up':
+        c = misturar(base, claro, 0.35)
+    elif face == 'down':
+        c = misturar(base, escuro, 0.55)
+    else:
+        t = yy / max(1, h - 1)
+        c = misturar(misturar(base, claro, 0.3), escuro, t * 0.7)
+        if yy == 0:
+            c = misturar(c, claro, 0.35)
+    if face != 'up' and (xx in (0, w - 1)) and w > 2:
+        c = misturar(c, escuro, 0.2)
+    return c
+
+
+def pintar_pelo(img, x0, y0, w, h, face, base=PELO, claro=PELO_CLARO, escuro=PELO_ESC, belly=None):
+    tela = [[None] * w for _ in range(h)]
     for yy in range(h):
         for xx in range(w):
-            if face in ('up',):
-                c = misturar(base, PELO_CLARO, 0.25)
-            elif face == 'down':
-                c = belly or misturar(base, PELO_ESC, 0.5)
+            if face == 'down' and belly:
+                c = belly
             else:
-                t = yy / max(1, h - 1)
-                c = misturar(misturar(base, PELO_CLARO, 0.2), PELO_ESC, t * 0.6)
-            # mechas de pelo: listras verticais suaves
-            if face not in ('up', 'down') and (xx * 7 + yy // 3) % 5 == 0:
-                c = misturar(c, PELO_ESC, 0.25)
-            img.putpixel((x0 + xx, y0 + yy), ruido(c, 9) + (255,))
+                c = sombrear(face, xx, yy, w, h, base, claro, escuro)
+            tela[yy][xx] = ruido(c, 7)
+    # mechas de pelo: tracinhos verticais claros e escuros
+    for _ in range(max(1, w * h // 7)):
+        sx, sy = rng.randrange(w), rng.randrange(h)
+        tom = escuro if rng.random() < 0.6 else claro
+        for k in range(rng.randint(1, 3)):
+            if sy + k < h:
+                tela[sy + k][sx] = misturar(tela[sy + k][sx], tom, 0.35)
+    for yy in range(h):
+        for xx in range(w):
+            img.putpixel((x0 + xx, y0 + yy), tela[yy][xx] + (255,))
+
+
+def preencher(img, x0, y0, w, h, face, base, claro, escuro, forca=5):
+    for yy in range(h):
+        for xx in range(w):
+            c = sombrear(face, xx, yy, w, h, base, claro, escuro)
+            img.putpixel((x0 + xx, y0 + yy), ruido(c, forca) + (255,))
+
+
+def desenhar(img, x0, y0, w, h, desenho, cores):
+    oy = 0
+    for yy, linha in enumerate(desenho):
+        for xx, ch in enumerate(linha):
+            if ch in cores and 0 <= xx < w and 0 <= yy + oy < h:
+                img.putpixel((x0 + xx, y0 + yy + oy), cores[ch] + (255,))
 
 
 def pintar(img, mat, face, x0, y0, w, h):
     px = lambda x, y, c: img.putpixel((x0 + x, y0 + y), tuple(c) + (255,))
-    if mat in ('corpo', 'corcova', 'cauda', 'perna', 'orelha', 'cabeca'):
-        base = {'cabeca': misturar(PELO, PELO_CLARO, 0.15), 'corcova': PELO,
-                'cauda': PELO_CLARO}.get(mat, PELO)
-        belly = misturar(PELO, FOCINHO, 0.35) if mat == 'corpo' else None
-        pintar_pelo(img, x0, y0, w, h, face, base, belly)
-        if mat == 'perna' and face not in ('up', 'down'):
-            for yy in range(h - 3, h):
+    lateral = face not in ('up', 'down')
+    if mat in ('corpo', 'cauda', 'perna', 'coxa', 'orelha', 'cabeca', 'bochecha', 'peito', 'barriga'):
+        base = {'cabeca': misturar(PELO, PELO_CLARO, 0.15), 'bochecha': misturar(PELO, PELO_CLARO, 0.3),
+                'cauda': PELO_CLARO, 'peito': misturar(PELO, FOCINHO, 0.35),
+                'barriga': misturar(PELO, FOCINHO, 0.3)}.get(mat, PELO)
+        belly = misturar(PELO, FOCINHO, 0.3) if mat in ('corpo', 'peito', 'barriga') else None
+        pintar_pelo(img, x0, y0, w, h, face, base, belly=belly)
+        if mat == 'perna' and lateral:
+            for yy in range(max(0, h - 2), h):
                 for xx in range(w):
-                    px(xx, yy, ruido(misturar(PELO_ESC, PE, 0.5), 6))
-        if mat == 'orelha' and face == 'north':
+                    px(xx, yy, ruido(misturar(PELO_ESC, PE, 0.6), 5))
+        if mat == 'orelha' and face == 'north' and w >= 3:
             for yy in range(1, h):
                 for xx in range(1, w - 1):
-                    px(xx, yy, ruido((150, 98, 82), 5))
+                    px(xx, yy, ruido((170, 112, 94), 5))
+        if mat == 'bochecha' and face == 'north':
+            for xx in (0, 1, w - 2, w - 1):
+                for yy in range(h):
+                    px(xx, yy, ruido(misturar(PELO_CLARO, FOCINHO, 0.4), 6))
         if mat == 'cabeca' and face == 'north':
-            for ex in (1, 6):  # olhos 2x2 com brilho
-                for dy in range(2):
-                    for dx in range(2):
-                        px(ex + dx, 3 + dy, (18, 14, 14))
-                px(ex, 3, (240, 240, 255))
-                px(ex, 2, misturar(PELO_ESC, (0, 0, 0), 0.3))
-                px(ex + 1, 2, misturar(PELO_ESC, (0, 0, 0), 0.3))
-        if mat == 'corpo' and face in ('east', 'west'):
-            # runa mágica brilhante no ombro
-            runa = ['..#..', '.#.#.', '#.#.#', '.#.#.', '..#..']
-            ox = 3 if face == 'east' else w - 8
-            for yy, linha in enumerate(runa):
-                for xx, ch in enumerate(linha):
-                    if ch == '#':
-                        px(ox + xx, 3 + yy, CIANO)
+            olho = ['wd', 'dk']
+            cores = {'w': (250, 250, 255), 'd': (16, 12, 14), 'k': (52, 34, 30)}
+            desenhar(img, x0 + 2, y0 + 4, w, h, olho, cores)
+            desenhar(img, x0 + 6, y0 + 4, w, h, ['dw', 'kd'], cores)
+            sobr = misturar(PELO_ESC, (0, 0, 0), 0.35)
+            for xx in (1, 2, 3, 6, 7, 8):
+                px(xx, 3, sobr if xx in (2, 3, 6, 7) else misturar(PELO_ESC, PELO, 0.5))
+            for xx in (2, 7):  # brilhinho mágico abaixo dos olhos
+                px(xx, 6, misturar(PELO_CLARO, FOCINHO, 0.5))
         return
     if mat == 'focinho':
-        for yy in range(h):
-            for xx in range(w):
-                c = FOCINHO if face != 'down' else misturar(FOCINHO, PELO_ESC, 0.3)
-                img.putpixel((x0 + xx, y0 + yy), ruido(c, 6) + (255,))
+        preencher(img, x0, y0, w, h, face, FOCINHO, (236, 206, 164), (160, 120, 82))
         if face == 'north':
-            for xx in range(1, 4):
-                px(xx, 0, NARIZ)
-            px(2, 1, NARIZ)
-            px(2, 2, (90, 50, 40))
-            px(1, 3, (90, 50, 40))
-            px(3, 3, (90, 50, 40))
-            px(1, 0, (90, 80, 80))
-        if face == 'up':
-            for xx in range(1, 4):
-                px(xx, h - 1, NARIZ)
+            meio = w // 2
+            for yy in range(1, h):
+                px(meio - 1 if w % 2 == 0 else meio, yy, (120, 76, 56))
+            if h >= 4:
+                for xx in range(1, w - 1):
+                    px(xx, h - 1, (120, 76, 56))
+        return
+    if mat == 'nariz':
+        preencher(img, x0, y0, w, h, face, NARIZ, (90, 78, 80), (10, 8, 8), 2)
+        if face == 'north':
+            px(0, h - 1, (8, 6, 6))
+            px(w - 1, h - 1, (8, 6, 6))
+            px(1, 0, (120, 110, 115))
+        return
+    if mat == 'barba':
+        preencher(img, x0, y0, w, h, face, BARBA, (255, 255, 255), (170, 166, 160), 6)
+        if lateral:
+            for xx in range(0, w, 2):
+                for yy in range(h):
+                    px(xx, yy, misturar(BARBA, (160, 156, 150), 0.25 + 0.1 * (yy % 2)))
         return
     if mat == 'pe':
-        for yy in range(h):
-            for xx in range(w):
-                img.putpixel((x0 + xx, y0 + yy), ruido(PE, 5) + (255,))
-        if face == 'north':
-            for xx in (1, 3, 5) if w >= 6 else (1,):
-                px(xx, h - 1, GARRA)
+        preencher(img, x0, y0, w, h, face, PE, (92, 64, 44), (36, 24, 18), 4)
         if face == 'down':
-            for yy in range(1, h - 1):
-                for xx in range(1, w - 1):
-                    px(xx, yy, (44, 30, 24))
+            for yy in range(2, h - 2):
+                for xx in range(2, w - 2):
+                    px(xx, yy, (40, 28, 26))
         return
-    if mat in ('aba', 'copa', 'cone', 'ponta'):
-        for yy in range(h):
+    if mat == 'garra':
+        px(0, 0, GARRA)
+        return
+    if mat in ('manto', 'manto_lado', 'gola'):
+        preencher(img, x0, y0, w, h, face, MANTO, MANTO_CLARO, (54, 22, 80), 6)
+        if mat == 'manto' and face == 'up':
             for xx in range(w):
-                c = misturar(CHAPEU, CHAPEU_CLARO, rng.random() * 0.5)
-                if mat == 'aba' and face not in ('up', 'down'):
-                    c = OURO
-                if mat == 'copa' and face not in ('up', 'down') and yy == h - 1:
-                    c = OURO
-                img.putpixel((x0 + xx, y0 + yy), ruido(c, 5) + (255,))
-        if face not in ('up', 'down') and mat != 'aba':
-            # estrelas douradas
-            pts = {'copa': [(1, 0), (4, 1), (2, 2), (6, 1)], 'cone': [(1, 1), (3, 0)],
-                   'ponta': [(1, 1)]}[mat]
-            for (sx, sy) in pts:
-                if sx < w and sy < h:
-                    px(sx, sy, OURO)
+                for yy in range(h):
+                    if xx in (0, w - 1) or yy in (0, h - 1):
+                        px(xx, yy, OURO if (xx + yy) % 2 else OURO_ESC)
+            desenhar(img, x0 + w // 2 - 2, y0 + h // 2 - 2, w, h,
+                     ['..#..', '.#.#.', '#.o.#', '.#.#.', '..#..'], {'#': OURO, 'o': CIANO})
+        if mat == 'manto_lado' and lateral:
+            for xx in range(w):
+                px(xx, h - 1, OURO)
+                if h > 2:
+                    px(xx, h - 2, OURO_ESC)
+            if w >= 7:
+                desenhar(img, x0 + w // 2 - 2, y0 + 1, w, h,
+                         ['..#..', '.#.#.', '#.#.#', '.#.#.', '..#..'], {'#': CIANO})
+        if mat == 'gola' and lateral:
+            for xx in range(w):
+                px(xx, 0, OURO)
+                px(xx, h - 1, OURO_ESC)
+        return
+    if mat in ('aba', 'faixa', 'copa', 'cone', 'ponta'):
+        if mat == 'faixa':
+            preencher(img, x0, y0, w, h, face, OURO, (255, 240, 160), OURO_ESC, 4)
+            return
+        preencher(img, x0, y0, w, h, face, CHAPEU, CHAPEU_CLARO, (26, 20, 74), 5)
+        if mat == 'aba' and lateral:
+            for xx in range(w):
+                px(xx, 0, OURO_ESC)
         if mat == 'aba' and face == 'up':
             for xx in range(w):
                 for yy in range(h):
-                    if (xx in (0, w - 1) or yy in (0, h - 1)):
+                    if xx in (0, w - 1) or yy in (0, h - 1):
                         px(xx, yy, OURO)
+        if lateral and mat != 'aba':
+            pts = {'copa': [(1, 1), (5, 0), (6, 2)], 'cone': [(1, 0), (4, 1)], 'ponta': [(2, 1)]}[mat]
+            for sx, sy in pts:
+                if sx < w and sy < h:
+                    px(sx, sy, OURO)
+            if mat == 'copa' and face == 'north':  # lua crescente na frente
+                desenhar(img, x0 + 3, y0, w, h, ['.##', '#..', '.##'], {'#': (255, 236, 150)})
+        return
+    if mat == 'estrela':
+        px(0, 0, (255, 236, 120))
         return
     if mat == 'orbe':
+        cx, cy = (w - 1) / 2, (h - 1) / 2
         for yy in range(h):
             for xx in range(w):
-                borda = xx in (0, w - 1) or yy in (0, h - 1)
-                c = misturar(CIANO, (40, 120, 230), 0.4) if borda else (205, 250, 255)
-                px(xx, yy, c)
+                d = math.hypot(xx - cx, yy - cy) / max(cx, 1)
+                px(xx, yy, misturar((225, 252, 255), (30, 110, 220), d * 0.8))
         px(1, 1, (255, 255, 255))
+        return
+    if mat == 'anel':
+        cx, cy = (w - 1) / 2, (h - 1) / 2
+        for yy in range(h):
+            for xx in range(w):
+                d = math.hypot(xx - cx, yy - cy)
+                if cx - 1.2 <= d <= cx + 0.3:
+                    px(xx, yy, (190, 160, 255) if (xx + yy) % 3 else (255, 255, 255))
         return
     if mat == 'faisca':
         px(0, 0, (255, 250, 190))
@@ -317,6 +430,9 @@ def anim_parado():
         'quadril': {'position': [(0, [0, 0, 0]), (1.5, [0, 0.35, 0]), (3, [0, 0, 0])]},
         'cabeca': {'rotation': [(0, [0, 0, 0]), (1, [-3, -6, 0]), (2, [2, 5, 0]), (3, [0, 0, 0])]},
         'cauda': {'rotation': [(0, [0, 0, 0]), (1.5, [0, 12, 0]), (3, [0, 0, 0])]},
+        'orelha_dir': {'rotation': [(0, [0, 0, 0]), (2.0, [0, 0, 0]), (2.1, [0, 0, -18]), (2.3, [0, 0, 0]), (3, [0, 0, 0])]},
+        'orelha_esq': {'rotation': [(0, [0, 0, 0]), (0.8, [0, 0, 0]), (0.9, [0, 0, 18]), (1.1, [0, 0, 0]), (3, [0, 0, 0])]},
+        'mandibula': {'rotation': [(0, [0, 0, 0]), (1.5, [-3, 0, 0]), (3, [0, 0, 0])]},
         'chapeu': {'rotation': [(0, [0, 0, 0]), (1.5, [0, 0, 3]), (3, [0, 0, 0])]},
         'chapeu_ponta': {'rotation': [(0, [0, 0, 0]), (1.5, [0, 0, -10]), (3, [0, 0, 0])]},
         'orbe': {'position': [(0, [0, 0, 0]), (1.5, [0, 1.5, 0]), (3, [0, 0, 0])],
@@ -367,6 +483,10 @@ def anim_transicao(subir):
     bones['orbe'] = {'position': [(0, [0, 0, 0] if subir else [-1, 8, 10]), (dur, [-1, 8, 10] if subir else [0, 0, 0])]}
     bones['chapeu_ponta'] = {'rotation': [(0, [0, 0, 0]), (dur * 0.5, [0, 0, -14 if subir else 14]), (dur, [0, 0, 0])]}
     bones['circulo_magico'] = {'scale': [(0, [0, 0, 0], 'step')]}
+    if subir:  # rugido ao levantar
+        bones['mandibula'] = {'rotation': [(0, [0, 0, 0]), (0.45, [-28, 0, 0]), (0.75, [-28, 0, 0]), (dur, [0, 0, 0])]}
+        bones['orelha_dir'] = {'rotation': [(0, [0, 0, 0]), (0.45, [0, 0, -20]), (dur, [0, 0, 0])]}
+        bones['orelha_esq'] = {'rotation': [(0, [0, 0, 0]), (0.45, [0, 0, 20]), (dur, [0, 0, 0])]}
     return dict(loop='hold', length=dur, bones=bones)
 
 
@@ -396,12 +516,13 @@ def anim_magia():
         bones[f'perna_dianteira_{lado}'] = {'rotation': [
             (0, [52, 0, 26 * z]), (0.25, [62, 0, 32 * z]), (0.5, [52, 0, 26 * z]),
             (0.75, [62, 0, 32 * z]), (1, [52, 0, 26 * z])]}
-    bones['orbe'] = {'position': [(0, [13, 19, -6]), (0.5, [13, 20.5, -6]), (1, [13, 19, -6])],
+    bones['orbe'] = {'position': [(0, [14, 19, -6]), (0.5, [14, 20.5, -6]), (1, [14, 19, -6])],
                      'rotation': [(0, [0, 0, 0], 'linear'), (1, [0, 720, 0], 'linear')],
                      'scale': [(0, [1.3, 1.3, 1.3]), (0.5, [1.6, 1.6, 1.6]), (1, [1.3, 1.3, 1.3])]}
     bones['circulo_magico'] = {'rotation': [(0, [0, 0, 0], 'linear'), (1, [0, -180, 0], 'linear')],
                                'scale': [(0, [1, 1, 1]), (0.5, [1.12, 1, 1.12]), (1, [1, 1, 1])]}
     bones['chapeu'] = {'rotation': [(0, [0, 0, 0]), (0.5, [0, 0, 6]), (1, [0, 0, 0])]}
+    bones['mandibula'] = {'rotation': [(0, [-8, 0, 0]), (0.5, [-18, 0, 0]), (1, [-8, 0, 0])]}
     bones['chapeu_ponta'] = {'rotation': [(0, [0, 0, 10]), (0.5, [0, 0, -10]), (1, [0, 0, 10])]}
     return dict(loop='loop', length=1.0, bones=bones)
 
