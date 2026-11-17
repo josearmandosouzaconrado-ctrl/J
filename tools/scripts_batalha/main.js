@@ -83,7 +83,7 @@ function terreno(dim, cx, cy, cz, rot) {
       max = Math.max(max, h);
     }
   }
-  return max - min <= 3 ? alt : null;
+  return max - min <= 4 ? alt : null;
 }
 
 function longeDeTudo(x, z) {
@@ -135,7 +135,9 @@ function liberar(e, obra) {
 
 function posicaoMundo(obra, b) {
   const [dx, dz] = girar(b.lx, b.lz, obra.rot);
-  return { x: obra.x + dx, y: obra.alt[b.lx][b.lz] + b.dy, z: obra.z + dz };
+  // o beiral dos telhados sai 1 bloco para fora da planta: usa o chão da coluna mais próxima
+  const ax = Math.min(TAM - 1, Math.max(0, b.lx)), az = Math.min(TAM - 1, Math.max(0, b.lz));
+  return { x: obra.x + dx, y: obra.alt[ax][az] + b.dy, z: obra.z + dz };
 }
 
 // leva o construtor para perto do bloco, olhando para ele: muro e torres são
@@ -200,7 +202,7 @@ function avancarObras() {
       recrutar(dim, obra, MAX_CONSTRUTORES - construtores.length);
     }
     if (!construtores.length) continue;
-    if (tick % 2 === 0) for (const c of construtores) colocarProximo(dim, obra, c);
+    for (const c of construtores) colocarProximo(dim, obra, c);
     if (obra.i >= PLANO.length) concluir(dim, obra, construtores);
   }
   if (tick % 20 === 0) salvar();

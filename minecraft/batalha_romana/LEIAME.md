@@ -44,21 +44,31 @@ Comportamento:
 
 ![martelando](previa_martelando.png)
 
-Os legionários erguem um **castellum de madeira** de 11 × 11 blocos: paliçada de troncos com pontas,
-duas torres de vigia com plataforma, parapeito e tochas, portão com verga, e lá dentro uma fogueira,
-tenda de couro, estandarte vermelho com águia dourada, bancada, barril e feno.
+Os legionários erguem um **castellum de madeira** de 15 × 15 blocos, no estilo dos fortes romanos de fronteira:
+
+![forte pronto](previa_forte.png)
+
+- **Muralha de estacas pontudas** (troncos escuros alternando com troncos descascados).
+- **Guarita do portão:** duas torres com seteiras, parapeito e telhado, ligadas por uma ponte
+  por cima da passagem (3 × 3), com lanternas.
+- **Torres de vigia** nos dois cantos do fundo, com piso, parapeito, telhado com beiral e
+  mastro com bandeira vermelha e ponta dourada.
+- **Adarve:** passarela de tábuas por dentro do muro, apoiada em postes, com escadas dos dois
+  lados do portão para os soldados subirem.
+- **Acampamento:** tenda listrada do comandante (principia), duas tendas de couro dos soldados,
+  estandarte com a águia dourada, fogueira, lanternas e depósito com barris, feno, bancada e bigorna.
 
 - **Sozinhos:** quando 3 ou mais legionários estão juntos, sem inimigos num raio de 24 blocos e sem
   outro posto num raio de 48, eles decidem construir (a cada 30 s há uma chance).
 - **Sob ordem:** `/function posto_avancado` (ou `/scriptevent romano:construir`) manda os legionários
   livres até 32 blocos construírem para onde você está olhando, com o portão virado para você.
 - **Como aparece:** até 4 soldados trocam o gládio por um martelo, vão até a obra e martelam; os
-  blocos surgem um por um (muro de baixo para cima, depois torres, plataformas, portão e acampamento),
+  blocos surgem um por um (muralha de baixo para cima, depois torres, portão, adarve, telhados e acampamento),
   com som de madeira e partículas. O muro é feito pelo lado de fora, então ninguém fica preso.
-  Uns 261 blocos, mais ou menos 30 a 45 segundos com 3 ou 4 construtores.
+  São 763 blocos: cerca de 1 minuto com 3 construtores, menos com 4.
 - Se aparece um inimigo, quem está em combate larga o martelo e luta; depois outros são chamados de volta.
 - O posto só ocupa espaço livre: grama e flores são trocadas, mas nada que você construiu é destruído.
-  Terreno muito irregular (mais de 3 blocos de desnível) ou com água é recusado.
+  Terreno muito irregular (mais de 4 blocos de desnível) ou com água é recusado.
 - `/function cancelar_obras` cancela as obras em andamento.
 
 ## IA mais esperta
