@@ -1,0 +1,41 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "romano:legionario",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/soldado_romano"
+      },
+      "geometry": {
+        "default": "geometry.soldado_romano"
+      },
+      "animations": {
+        "parado": "animation.soldado_romano.parado",
+        "andar": "animation.soldado_romano.andar",
+        "combate": "animation.soldado_romano.combate",
+        "atacar": "animation.soldado_romano.atacar",
+        "saudar": "animation.soldado_romano.saudar",
+        "olhar": "animation.soldado_romano.olhar",
+        "postura": "controller.animation.soldado_romano.postura",
+        "ataque": "controller.animation.soldado_romano.ataque"
+      },
+      "scripts": {
+        "animate": [
+          "postura",
+          "ataque",
+          "olhar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.soldado_romano"
+      ],
+      "spawn_egg": {
+        "base_color": "#a01e1e",
+        "overlay_color": "#ffce50"
+      }
+    }
+  }
+}

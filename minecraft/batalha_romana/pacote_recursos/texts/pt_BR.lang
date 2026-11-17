@@ -1,0 +1,8 @@
+entity.inimigo:guerreiro_gaules.name=Guerreiro Gaulês
+item.spawn_egg.entity.inimigo:guerreiro_gaules.name=Gerar Guerreiro Gaulês
+entity.inimigo:guerreiro_germano.name=Guerreiro Germânico
+item.spawn_egg.entity.inimigo:guerreiro_germano.name=Gerar Guerreiro Germânico
+entity.inimigo:arqueiro_parto.name=Arqueiro Parto
+item.spawn_egg.entity.inimigo:arqueiro_parto.name=Gerar Arqueiro Parto
+entity.romano:legionario.name=Soldado Romano
+item.spawn_egg.entity.romano:legionario.name=Gerar Soldado Romano

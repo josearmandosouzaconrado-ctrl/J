@@ -1,0 +1,38 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.arqueiro_parto.postura": {
+      "initial_state": "normal",
+      "states": {
+        "normal": {
+          "animations": [
+            "parado",
+            {
+              "andar": "query.modified_move_speed > 0.05"
+            }
+          ],
+          "transitions": [
+            {
+              "combate": "query.property('inimigo:em_combate')"
+            }
+          ],
+          "blend_transition": 0.2
+        },
+        "combate": {
+          "animations": [
+            "combate",
+            {
+              "andar": "query.modified_move_speed > 0.05"
+            }
+          ],
+          "transitions": [
+            {
+              "normal": "!query.property('inimigo:em_combate')"
+            }
+          ],
+          "blend_transition": 0.25
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "inimigo:guerreiro_gaules",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/guerreiro_gaules"
+      },
+      "geometry": {
+        "default": "geometry.guerreiro_gaules"
+      },
+      "animations": {
+        "parado": "animation.guerreiro_gaules.parado",
+        "andar": "animation.guerreiro_gaules.andar",
+        "combate": "animation.guerreiro_gaules.combate",
+        "atacar": "animation.guerreiro_gaules.atacar",
+        "olhar": "animation.guerreiro_gaules.olhar",
+        "postura": "controller.animation.guerreiro_gaules.postura",
+        "ataque": "controller.animation.guerreiro_gaules.ataque"
+      },
+      "scripts": {
+        "animate": [
+          "postura",
+          "ataque",
+          "olhar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.guerreiro_gaules"
+      ],
+      "spawn_egg": {
+        "base_color": "#30683a",
+        "overlay_color": "#ffcc4a"
+      }
+    }
+  }
+}

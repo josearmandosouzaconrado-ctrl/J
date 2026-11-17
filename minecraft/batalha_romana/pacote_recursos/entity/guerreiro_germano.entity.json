@@ -1,0 +1,40 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "inimigo:guerreiro_germano",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/guerreiro_germano"
+      },
+      "geometry": {
+        "default": "geometry.guerreiro_germano"
+      },
+      "animations": {
+        "parado": "animation.guerreiro_germano.parado",
+        "andar": "animation.guerreiro_germano.andar",
+        "combate": "animation.guerreiro_germano.combate",
+        "atacar": "animation.guerreiro_germano.atacar",
+        "olhar": "animation.guerreiro_germano.olhar",
+        "postura": "controller.animation.guerreiro_germano.postura",
+        "ataque": "controller.animation.guerreiro_germano.ataque"
+      },
+      "scripts": {
+        "animate": [
+          "postura",
+          "ataque",
+          "olhar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.guerreiro_germano"
+      ],
+      "spawn_egg": {
+        "base_color": "#76695c",
+        "overlay_color": "#a42a20"
+      }
+    }
+  }
+}

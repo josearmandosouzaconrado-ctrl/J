@@ -1,0 +1,37 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "inimigo:arqueiro_parto",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/arqueiro_parto"
+      },
+      "geometry": {
+        "default": "geometry.arqueiro_parto"
+      },
+      "animations": {
+        "parado": "animation.arqueiro_parto.parado",
+        "andar": "animation.arqueiro_parto.andar",
+        "combate": "animation.arqueiro_parto.combate",
+        "olhar": "animation.arqueiro_parto.olhar",
+        "postura": "controller.animation.arqueiro_parto.postura"
+      },
+      "scripts": {
+        "animate": [
+          "postura",
+          "olhar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.arqueiro_parto"
+      ],
+      "spawn_egg": {
+        "base_color": "#c88828",
+        "overlay_color": "#923026"
+      }
+    }
+  }
+}

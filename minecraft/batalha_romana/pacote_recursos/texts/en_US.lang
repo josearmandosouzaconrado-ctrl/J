@@ -1,0 +1,8 @@
+entity.inimigo:guerreiro_gaules.name=Gaulish Warrior
+item.spawn_egg.entity.inimigo:guerreiro_gaules.name=Spawn Gaulish Warrior
+entity.inimigo:guerreiro_germano.name=Germanic Warrior
+item.spawn_egg.entity.inimigo:guerreiro_germano.name=Spawn Germanic Warrior
+entity.inimigo:arqueiro_parto.name=Parthian Archer
+item.spawn_egg.entity.inimigo:arqueiro_parto.name=Spawn Parthian Archer
+entity.romano:legionario.name=Roman Soldier
+item.spawn_egg.entity.romano:legionario.name=Spawn Roman Soldier

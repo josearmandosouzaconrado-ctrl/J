@@ -1,0 +1,39 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Batalha Romana (recursos)",
+    "description": "Romanos contra gauleses, germânicos e partos",
+    "uuid": "4d12545d-4602-5c47-ab02-fc260cbfbe99",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "9ea1a432-9c95-5b74-bc1e-daa92f299ec8",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "7ccab67e-f49d-51d6-b6ad-ceff00bc4498",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ]
+}
