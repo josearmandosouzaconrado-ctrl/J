@@ -41,11 +41,11 @@ def nobre(nome, semente, pele, cabelo, olhos, stola, palla, cabelos, joia=(60, 1
 
     # ---- corpo no formato do jogador: tronco 8x12x4, braços de 3 (Alex) e pernas 4x12x4
     c('corpo', 'tronco', [-4, 12, -2], [4, 24, 2], 'tronco')
-    c('corpo', 'busto', [-3, 18.6, -2.5], [3, 21, -2], 'busto', sem=('up',))
+    c('corpo', 'busto', [-3, 18.4, -3], [3, 21.2, -2], 'busto', sem=('up',))
     c('corpo', 'cinto', [-4.15, 17.6, -2.15], [4.15, 18.6, 2.15], 'ouro')
     c('corpo', 'saia_cintura', [-4.25, 12, -2.25], [4.25, 17.6, 2.25], 'saia', sem=('up',))
     # ---- palla: cruza o peito na diagonal, cobre o ombro esquerdo e cai pelas costas
-    m.cubo_girado('corpo', 'palla_frente', [0.4, 16.6, -2.75], [1.6, 13, 0.35], [0, 0, -34], 'palla', ds=D)
+    m.cubo_girado('corpo', 'palla_frente', [0.4, 16.6, -3.25], [1.6, 13, 0.35], [0, 0, -34], 'palla', ds=D)
     c('corpo', 'palla_costas', [-4.2, 6, 2.1], [4.2, 23.8, 2.8], 'palla')
     c('braco_esq', 'palla_ombro', [-7.3, 21.2, -1.8], [-3.7, 24.4, 1.8], 'palla')
     # ---- joias
@@ -181,7 +181,10 @@ def pintar(m, nome, pele, cabelo, olhos, stola, palla, joia):
         p.preencher(base, claro, escuro, forca=2)
         if p.face == 'north':
             p.linha_h(0, claro)
-            p.linha_h(p.h - 1, misturar(base, escuro, 0.5))
+            p.linha_h(1, misturar(base, claro, 0.5))
+            p.linha_h(p.h - 1, misturar(base, escuro, 0.6))
+            p.linha_v(p.w // 2 - 1, misturar(base, escuro, 0.25))
+            p.linha_v(p.w // 2, misturar(base, escuro, 0.25))
 
     @m.material('saia', 'manga')
     def _(p, c_):

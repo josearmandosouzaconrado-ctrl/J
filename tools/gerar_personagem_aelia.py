@@ -53,14 +53,14 @@ def modelo():
     # ---- corpo no formato do jogador: tronco 8x12x4, braços de 3 (Alex) e pernas 4x12x4
     c('corpo', 'tronco', [-4, 12, -2], [4, 24, 2], 'blusa')
     c('corpo', 'gola', [-1.6, 23.2, -1.6], [1.6, 24.6, 1.6], 'renda', sem=('up', 'down'))
-    c('corpo', 'busto', [-3, 18.6, -2.5], [3, 21, -2], 'blusa', sem=('up',))
+    c('corpo', 'busto', [-3, 18.4, -3], [3, 21.2, -2], 'blusa', sem=('up',))
     c('corpo', 'corpete', [-4.2, 15.2, -2.6], [4.2, 18.6, 2.2], 'corpete')
     c('corpo', 'corpete_ponta', [-1.2, 14.4, -2.6], [1.2, 15.2, -2.25], 'corpete')
     c('corpo', 'saia_cintura', [-4.25, 12, -2.25], [4.25, 15.2, 2.25], 'saia')
     c('corpo', 'sobressaia_cintura', [-4.4, 12, -1.4], [4.4, 15.2, 2.4], 'sobressaia', sem=('north', 'up', 'down'))
     c('corpo', 'colar', [-1.9, 22.4, -2.25], [1.9, 22.8, -2.05], 'ouro')
-    c('corpo', 'colar_2', [-1.2, 21.5, -2.55], [1.2, 21.9, -2.3], 'ouro')
-    c('corpo', 'pingente', [-0.35, 20.8, -2.6], [0.35, 21.5, -2.35], 'safira')
+    c('corpo', 'colar_2', [-1.2, 22, -2.55], [1.2, 22.4, -2.3], 'ouro')
+    c('corpo', 'pingente', [-0.35, 21.3, -2.65], [0.35, 22, -2.4], 'safira')
     # ---- braços (ombros de fora), manga solta com fenda, braçadeira com pingentes, pulseira
     for lado in ('dir', 'esq'):
         x = espelho(lado)
@@ -214,7 +214,10 @@ def pintar(m):
                 for xx in range(p.w):
                     p.px(xx, yy, PELE)
         if c_['nome'] == 'busto' and p.face == 'north':
+            p.linha_h(0, (255, 255, 255))
             p.linha_h(p.h - 1, BRANCO_SOMBRA)
+            p.linha_v(p.w // 2 - 1, misturar(BRANCO, BRANCO_SOMBRA, 0.5))
+            p.linha_v(p.w // 2, misturar(BRANCO, BRANCO_SOMBRA, 0.5))
 
     @mat('renda')
     def _(p, c_):
