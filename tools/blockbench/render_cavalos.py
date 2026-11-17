@@ -97,7 +97,7 @@ def camera(vista, cx):
     # de lado a câmera fica um pouco acima (mostra a sela); de frente e de costas fica bem mais alta,
     # como os outros sprites do jogo vistos de cima, e um pouco mais perto (o cavalo é estreito)
     cam.data.ortho_scale = max(CW, CH) if vista == 'lado' else max(CW, CH) / 1.3
-    el = math.radians(24 if vista == 'lado' else 50)
+    el = math.radians({'lado': 24, 'frente': 38, 'costas': 50}[vista])
     k = 1 if vista == 'lado' else 1.3
     alvo = (cx, 0, (CH / 2 - 1.5) / k / math.cos(el) if vista == 'lado' else (CH / 2 - 2) / k / math.cos(el))
     if vista == 'lado': cam.rotation_euler = (math.pi / 2 - el, 0, 0); d = (0, math.cos(el), -math.sin(el))
