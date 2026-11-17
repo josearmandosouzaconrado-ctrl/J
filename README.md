@@ -111,6 +111,16 @@ Criar um reino é difícil e leva tempo:
 
 A menina que os guardas do reino tirano levaram na abertura está viva. No segundo dia, um **mineiro fugido** conta onde ela está: nas **Minas do Rei**, perto da capital do reino tirano (a missão aparece no rastreador e na bússola). Lá dentro há guardas, besteiros e o **Capataz das Minas**, que guarda a chave das correntes. Derrote o capataz, solte a menina e fuja com ela; os guardas vêm atrás. Leve-a até uma cidade fora do reino tirano (ou até a sua vila) e escolha: **adotar** (ela vira sua filha, se você tiver casa) ou deixá-la aos cuidados do templo.
 
+## Urso de Guerra, modelado no Blockbench (0.46)
+
+Nova montaria: o **Urso de Guerra** das geleiras de Hrimgard, com testeira de ferro com chifres, ombreiras e peitoral de aço, manta viking, sela de couro e um escudo redondo pintado pendurado no flanco. É vendido no **estábulo de Nordheim** (6500 ouro, velocidade 195%), e o cavaleiro vai sentado mais alto, porque o urso é maior que um cavalo.
+
+O urso foi feito em cubos como um modelo do **Blockbench** (`tools/blockbench/urso_guerra.bbmodel`, 72 cubos, ossos para cabeça, cauda e as quatro patas, animações `andar` e `parado`). Para editar, abra o arquivo no Blockbench (File > Open Model). Os quadros do jogo saem do próprio modelo:
+
+1. `python3 tools/blockbench/urso_guerra.py` gera o `.bbmodel` e a textura pixel art.
+2. `node tools/blockbench/render.js tools/blockbench/urso_guerra.bbmodel <pasta>` renderiza o perfil, a frente (corpo e cabeça separados, com o cavaleiro entre os dois) e as costas, parado e em dois passos (precisa de `three@0.149` e `playwright` no `NODE_PATH`).
+3. `python3 tools/blockbench/montaria_px.py <pasta> js/urso_px.js URSO_PX 0.85` reduz tudo a pixel art com contorno, centrado na sela.
+
 ## Exércitos mais espertos contra os jogadores (0.43)
 
 Antes, um herói forte destruía um exército de 100 homens matando só os 11 soldados que apareciam na batalha. Agora, quando os exércitos lutam **contra jogadores**:

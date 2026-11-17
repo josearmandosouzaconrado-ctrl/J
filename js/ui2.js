@@ -240,8 +240,8 @@ Object.assign(UI, {
     const f = this.reg();
     const list = Object.entries(MOUNTS).filter(([k, M]) => !M.where || M.where === R.id);
     const el = this.show('mounts', `<div class="panel"><div class="ptitle">Estábulo <span class="gold right">${fmt(P.gold)} ouro</span></div>
-      <p class="dim">Montarias especiais só são vendidas em seus reinos: Corcel Élfico (Sylvaris), Alce (Nordheim), Camelo (Zahrim), Lobo Gigante (Gor'Thak), Cavalo de Guerra (Valdoria).</p>
-      ${list.map(([k, M]) => `<div class="crow"><img class="portrait" style="width:52px;height:44px" src="${Sprites.horse(k).right[0].toDataURL()}"><div class="cinfo"><b>${M.name}</b> ${P.mount === k ? '<span class="good">(sua)</span>' : ''}<br><small>Velocidade ${Math.round(M.speed * 100)}% • ${M.desc}</small></div>${P.mount === k ? '' : `<button class="sbtn gold" ${f(() => {
+      <p class="dim">Montarias especiais só são vendidas em seus reinos: Corcel Élfico (Sylvaris), Alce e Urso de Guerra (Nordheim), Camelo (Zahrim), Lobo Gigante (Gor'Thak), Cavalo de Guerra (Valdoria).</p>
+      ${list.map(([k, M]) => `<div class="crow"><img class="portrait" style="width:52px;height:44px;object-fit:contain" src="${(Sprites.horse(k).retrato || Sprites.horse(k).right[0]).toDataURL()}"><div class="cinfo"><b>${M.name}</b> ${P.mount === k ? '<span class="good">(sua)</span>' : ''}<br><small>Velocidade ${Math.round(M.speed * 100)}% • ${M.desc}</small></div>${P.mount === k ? '' : `<button class="sbtn gold" ${f(() => {
         if (P.gold < M.price) return Game.toast('Ouro insuficiente.', '#ff8080');
         P.gold -= M.price; P.mount = k; P.hasHorse = true; P.mounted = false; P.horse = { x: (b.door.x) * 16 + 8, y: (b.door.y + 2) * 16 + 8, dir: 'right' };
         Sfx.play('horse'); Game.chron(`Comprei ${M.name === 'Burro' ? 'um' : 'um(a)'} ${M.name.toLowerCase()} em ${b.settlement.name}.`); Game.centerMsg(M.name.toUpperCase() + ' ADQUIRIDO!', 'Está esperando na frente do estábulo. Use o botão de montaria.'); this.close();

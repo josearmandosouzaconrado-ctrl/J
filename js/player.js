@@ -703,7 +703,7 @@ class Player extends Actor {
       this.drawShadow(ctx, camX, camY, vert ? 14 : 20);
       const img = H[hk][f];
       ctx.drawImage(img, Math.round(this.x - img.width / 2 - camX), Math.round(this.y - img.height + 3 - camY));
-      this.z = 9;
+      this.z = (MOUNTS[this.mount] || MOUNTS.cavalo).z || 9;   // o urso é mais alto que um cavalo
       const sd = this.dir; this.dir = hk;
       if (blink) ctx.globalAlpha = 0.5;
       if (hk === 'up') this.drawWeapon(ctx, camX, camY, this.wimg, this.wclass, this.swingAngle());

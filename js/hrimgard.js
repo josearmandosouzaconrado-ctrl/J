@@ -320,3 +320,29 @@ class SalaoJarl {
     this.tone(110, 1.1, 'sawtooth', 0.12, 0, 0); this.tone(165, 1.4, 'sawtooth', 0.1, -8, 0.9); this.tone(55, 2.2, 'triangle', 0.14, 0, 0);
   };
 })();
+// ---------- Urso de Guerra: montaria modelada no Blockbench ----------
+// O modelo em cubos está em tools/blockbench/urso_guerra.bbmodel (abre no Blockbench). Os quadros de
+// perfil, de frente (corpo e cabeça separados, com o cavaleiro no meio) e de costas foram renderizados
+// do modelo (tools/blockbench/render.js) e reduzidos a pixel art em js/urso_px.js.
+// Vendido no estábulo de Nordheim, a porta de entrada para a geleira.
+MOUNTS.urso_guerra = { name: 'Urso de Guerra', price: 6500, speed: 1.95, c: '#6b4527', where: 'nordheim', z: 11, desc: 'Urso das geleiras de Hrimgard, com armadura e escudo vikings.' };
+(function () {
+  if (typeof URSO_PX === 'undefined') return;
+  const pal = URSO_PX.pal.map(hexToRgb);
+  const decod = (D, f) => {
+    const c = Sprites.cv(D.w, D.h), x = c.getContext('2d'), img = x.createImageData(D.w, D.h), d = img.data, bin = atob(D.f[f]);
+    for (let i = 0; i < bin.length; i++) { const k = bin.charCodeAt(i); if (!k) continue; const q = pal[k - 1]; d[i * 4] = q[0]; d[i * 4 + 1] = q[1]; d[i * 4 + 2] = q[2]; d[i * 4 + 3] = 255; }
+    x.putImageData(img, 0, 0); return c;
+  };
+  const h0 = Sprites.horse; let H = null;
+  Sprites.horse = function (kind = 'cavalo') {
+    if (kind !== 'urso_guerra') return h0.apply(this, arguments);
+    if (H) return H;
+    const q = (D) => [0, 1, 2].map(f => decod(D, f)), right = q(URSO_PX.lado);
+    // retrato do estábulo: o perfil recortado (o quadro tem sobra porque é centrado na sela)
+    const d = right[0].getContext('2d').getImageData(0, 0, right[0].width, right[0].height).data; let x0 = right[0].width, x1 = 0;
+    for (let i = 3; i < d.length; i += 4) if (d[i]) { const x = (i >> 2) % right[0].width; x0 = Math.min(x0, x); x1 = Math.max(x1, x); }
+    const retrato = Sprites.cv(x1 - x0 + 1, right[0].height); retrato.getContext('2d').drawImage(right[0], -x0, 0);
+    return (H = { right, left: right.map(Sprites.flip), down: q(URSO_PX.frente_corpo), frente: q(URSO_PX.frente_cabeca), up: q(URSO_PX.costas), retrato });
+  };
+})();
