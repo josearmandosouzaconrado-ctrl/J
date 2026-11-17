@@ -67,6 +67,15 @@ export const TIPOS = {
   portaavioes: { nome: 'Porta-aviões USS Enterprise', sub: 'CVN-80, classe Ford • base flutuante', icone: '⚓', classe: 'naval', modelo: 'portaavioes', nav: 2, hp: 30000, vel: 7, carga: 0, custo: 0, de: null, raio: 60, unico: true },
 };
 
+// combate aéreo: mísseis ar-ar (quantidade, alcance em metros, nome) e canhão de cada jato
+const AA = { f22: [6, 2600, 'AIM-120'], f35: [4, 2500, 'AIM-120'], f18: [4, 2400, 'AIM-120'], a10: [2, 1000, 'AIM-9'],
+  su57: [6, 2600, 'R-77'], su25: [2, 900, 'R-60'], j20: [6, 2800, 'PL-15'], j16: [4, 2400, 'PL-12'] };
+for (const k in AA) {
+  if (!TIPOS[k]) continue;
+  const [n, alc, nome] = AA[k];
+  TIPOS[k].aa = { misseis: n, alcance: alc, dano: 1100, cadencia: 5, nome };
+  TIPOS[k].canhaoAA = { alcance: 650, dano: 24, cadencia: 0.07 };
+}
 // blindagem (0 = nenhuma, 1 = imune a tiros comuns): quanto do dano de armas leves é barrado
 const BLIND = { humvee: 0.5, tigr: 0.5, mengshi: 0.5, ambulancia: 0.4, bearcat: 0.55, stryker: 0.75, btr82: 0.75, zbl08: 0.75, bradley: 0.85, bmp3: 0.85, zbd04: 0.85,
   abrams: 0.95, t90: 0.95, type99: 0.95, paladin: 0.85, himars: 0.6 };

@@ -125,6 +125,8 @@ export function atualizarGuerra(dt) {
     ia.dinheiro += (inimiga ? RENDA[G.dificuldade] || 10 : 8) * dt;
     ia.prox -= dt;
     if (ia.prox <= 0) { ia.prox = 2; produzirIA(n, ia, base); }
+    ia.proxInt = (ia.proxInt ?? 5) - dt;
+    if (ia.proxInt <= 0) { ia.proxInt = 4; interceptacao(n, base); }
     ia.proxJato = (ia.proxJato ?? 60) - dt;
     if (ia.proxJato <= 0) { ia.proxJato = G.dificuldade === 'dificil' ? 40 : 60; ataqueAereo(n, base); }
     ia.proxOnda -= dt;
@@ -175,6 +177,24 @@ function produzirIA(n, ia, base) {
   const pesado = Math.min(3, Math.floor(ia.onda / 2) + (Math.random() < 0.35 ? 1 : 0));
   if (nVei * 3 < nInf + 2) pede('patio', P.patio[Math.min(P.patio.length - 1, pesado)]);
   if (ia.onda >= 1 && nAer < 1 + Math.floor(ia.onda / 3) && Math.random() < 0.3) pede('heliporto', P.heliporto[Math.random() < 0.65 ? 0 : 1]);
+}
+
+// defesa aérea do computador: aeronave inimiga perto da base ou das suas tropas faz os caças decolarem
+function interceptacao(n, base) {
+  let alvo = null, md = 4500 * 4500;
+  for (const v of G.unidades) {
+    if (!v.vivo || v.dentro || !hostisN(n, v.nacao) || !(v.classe === 'jato' || v.classe === 'aereo') || !G.aereoNoAr(v)) continue;
+    const d = dist2(v.x, v.z, base.x, base.z);
+    if (d < md) { md = d; alvo = v; }
+  }
+  if (!alvo) return;
+  let n2 = 0;
+  for (const j of G.unidades) {
+    if (!j.vivo || j.nacao !== n || j.classe !== 'jato' || !j.d.aa || j.missAA <= 0 || j.estadoJato !== 'pronto') continue;
+    G.interceptar(j, alvo); n2++;
+    if (n2 >= 2) break;
+  }
+  if (n2 && hostisN(n, G.nacao)) alerta(`✈️ Caças ${NACOES[n].bandeira} decolando para interceptar ${alvo.d.nome}!`, alvo.x, alvo.z, 'surto');
 }
 
 // jatos parados na pista saem para atacar o grupo inimigo mais perto da base (ou uma estrutura)

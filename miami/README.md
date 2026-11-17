@@ -27,6 +27,10 @@ os **EUA contra a Rússia e a China**, que são aliadas. Antes chamado "Miami: S
   a pintura (camuflagem digital, sujeira e estrelas) assada numa textura, torre que gira, trem de pouso que recolhe e
   versão destruída queimada; soldados com as camuflagens OCP (EUA), EMR "tsifra" (Rússia) e Tipo 07 (China) e o
   capacete, colete, mochila e fuzil (M4A1, AK-12, QBZ-191) de cada exército. Os russos usam balaclava.
+- **Combate aéreo:** caças com mísseis ar-ar (F-22 e Su-57 com 6, J-20 com 6 PL-15, F-35/F/A-18/J-16 com 4,
+  A-10 e Su-25 com 2 de curto alcance) e canhão; tocar numa aeronave inimiga no ar com jatos selecionados manda
+  interceptar. Os comandantes do computador fazem os caças decolar quando aeronaves inimigas se aproximam. Mísseis
+  guiados com rastro de fumaça, flares que despistam, e aviões abatidos caem pegando fogo até explodir no chão.
 - Cada base do computador tem pista de pouso e baterias antiaéreas; a partir da 2ª onda o comandante junta dinheiro
   para jatos e os manda atacar as suas tropas. **Baterias antiaéreas** (Patriot / S-400 / HQ-9) derrubam jatos e
   helicópteros; só elas acertam jatos voando.

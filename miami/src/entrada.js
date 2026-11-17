@@ -4,7 +4,7 @@ import { G } from './estado.js';
 import { LARG, ALT, predioEm, predios, dentroPoligono } from './mapa.js';
 import { clamp, lerp, dist, dist2 } from './util.js';
 import {
-  ordenar, ordenarMover, marcarSelecao, cabe, desembarcar, sairDoPredio, chaoEm, ordenarAreaJatos, padLivre,
+  ordenar, ordenarMover, marcarSelecao, cabe, desembarcar, sairDoPredio, chaoEm, ordenarAreaJatos, padLivre, aereoNoAr, ordenarInterceptar,
 } from './unidades.js';
 import { somUI, iniciarSom } from './som.js';
 import { inimigoDoJogador } from './guerra.js';
@@ -408,7 +408,8 @@ function toque(sx, sy, camRTS, duplo, ultimo) {
     const atac = sel.filter((s) => s.d.arma && s.classe !== 'jato');
     ordenar(atac, { tipo: 'atacar', alvo: z });
     const jatos = sel.filter((s) => s.classe === 'jato');
-    if (jatos.length) ordenarMover(jatos, z.x, z.z);
+    // tocar numa aeronave inimiga no ar: os caças decolam (se preciso) e vão caçá-la
+    if (jatos.length) { if (aereoNoAr(z)) jatos.forEach((j) => ordenarInterceptar(j, z)); else ordenarMover(jatos, z.x, z.z); }
     G.ui.ping(z.x, z.z, 'atacar');
     somUI('ok');
     return;

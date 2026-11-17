@@ -10,7 +10,7 @@ import { NACOES } from './guerra.js';
 import { Efeitos } from './efeitos.js';
 import { CameraRTS, configurarEntrada } from './entrada.js';
 import { montarMundo, construirVisual, iniciarPartida, atualizarJogo } from './jogo.js';
-import { atualizarUnidades, atualizarProjeteis, atualizarDestrocos, matarUnidade, padLivre, chaoEm, ordenar, ordenarMover, desembarcar } from './unidades.js';
+import { atualizarUnidades, atualizarProjeteis, atualizarMisseisAA, atualizarDestrocos, matarUnidade, padLivre, chaoEm, ordenar, ordenarMover, desembarcar } from './unidades.js';
 import { telaDe } from './entrada.js';
 import * as NAV from './caminho.js';
 import * as MAPA from './mapa.js';
@@ -151,6 +151,7 @@ async function iniciar() {
     atualizarUnidades(dt);
     atualizarAgentes(dt);
     atualizarProjeteis(dt);
+    atualizarMisseisAA(dt);
     atualizarDestrocos(dt);
   }
   function ciclo(dt) {

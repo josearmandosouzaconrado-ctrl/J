@@ -35,7 +35,7 @@ export function criarUnidade(tipo, x, z, ang = 0, opts = {}) {
     G.cena.add(u.m.grupo);
   }
   if (u.classe === 'aereo') { u.alt = opts.alt ?? 0; u.altAlvo = u.alt; }
-  if (u.classe === 'jato') { u.estadoJato = 'pronto'; u.alt = 9.5; }
+  if (u.classe === 'jato') { u.estadoJato = 'pronto'; u.alt = 9.5; u.missAA = d.aa ? d.aa.misseis : 0; }
   G.unidades.push(u);
   posicionarModelo(u, 0);
   return u;
@@ -400,7 +400,7 @@ export function entregarCivis(t) {
 function alvoValido(a, u) { return !!(a && a.vivo && !a.dentro && (!u || hostis(u, a))); }
 
 // classes de arma: leves (fuzis e metralhadoras), médias (canhões 20-30 mm) e pesadas (canhão de tanque, mísseis...)
-const PENETRA = { explosao: 0.7, fuzil: 0.04, pistola: 0.02, sniper: 0.15, mg: 0.05, m240: 0.06, m134: 0.07, '50cal': 0.35, '25mm': 0.6, '30mm': 0.62, canhao: 0.85 };
+const PENETRA = { missil: 1, explosao: 0.7, fuzil: 0.04, pistola: 0.02, sniper: 0.15, mg: 0.05, m240: 0.06, m134: 0.07, '50cal': 0.35, '25mm': 0.6, '30mm': 0.62, canhao: 0.85 };
 function penetracao(w) { return PENETRA[w.arma] ?? 1; }
 // dano que passa pela blindagem do alvo
 export function fatorBlindagem(alvo, w) {
@@ -966,7 +966,7 @@ function atualizarJato(u, dt) {
     u.velAtual = 0; u.banco = 0;
     if (u.estadoJato === 'rearmando') {
       u.rearme -= dt;
-      if (u.rearme <= 0) { u.estadoJato = 'pronto'; u.municao = d.municao; u.hp = u.hpMax; alerta(`${d.nome} rearmado e pronto`, u.x, u.z); }
+      if (u.rearme <= 0) { u.estadoJato = 'pronto'; u.municao = d.municao; u.missAA = d.aa ? d.aa.misseis : 0; u.hp = u.hpMax; if (doJogador(u)) alerta(`${d.nome} rearmado e pronto`, u.x, u.z); }
     }
     return;
   }
@@ -1018,6 +1018,18 @@ function atualizarJato(u, dt) {
     tx = a.x; tz = a.z;
     if (dist(u.x, u.z, a.x, a.z) < 700) alvoAlt = deck + 100;
     if (dist(u.x, u.z, a.x, a.z) < 180) u.estadoJato = 'aproximando';
+  } else if (o.tipo === 'interceptar') {
+    // caça: persegue o avião ou helicóptero inimigo; se ele cai ou foge, procura outro perto ou volta
+    let a = o.alvo;
+    if (!aereoNoAr(a) || !hostis(u, a)) { a = aereoInimigoPerto(u, 3500); o.alvo = a; }
+    if (!a || (u.missAA <= 0 && u.municao <= 0)) { u.ordem = null; u.estadoJato = 'voltando'; tx = u.x + Math.sin(u.ang) * 500; tz = u.z + Math.cos(u.ang) * 500; }
+    else {
+      // mira à frente do alvo (posição futura) e na mesma altura
+      const t = Math.min(3, dist(u.x, u.z, a.x, a.z) / Math.max(100, u.velAtual));
+      tx = a.x + Math.sin(a.ang) * (a.velAtual || 0) * t; tz = a.z + Math.cos(a.ang) * (a.velAtual || 0) * t;
+      alvoAlt = Math.max(60, a.y);
+      vAlvo = d.vel; giro = 1.25;
+    }
   } else if (o.tipo === 'area') {
     const r = jatoArea(u, o, dt);
     tx = r.tx; tz = r.tz; alvoAlt = r.alt;
@@ -1083,6 +1095,7 @@ function atualizarJato(u, dt) {
   u.vy = clamp((alvoAlt - u.y) * 0.8, -40, 40);
   u.y += clamp(alvoAlt - u.y, -40 * dt, 40 * dt);
   if (u.y < chaoEm(u.x, u.z) + 15 && u.estadoJato !== 'aproximando') u.y = chaoEm(u.x, u.z) + 15;
+  combateAereo(u, dt);
   // fumaça do motor e vórtices nas pontas das asas em curvas fechadas
   const ef = G.efeitos;
   if (Math.random() < dt * 25) ef.particula(u.x - Math.sin(u.ang) * 9, u.y + 0.9, u.z - Math.cos(u.ang) * 9, 0, 0, 0, 1.2, 0.5, [0.8, 0.8, 0.8], [0.6, 0.6, 0.6], 0.22, 0, 2);
@@ -1095,6 +1108,101 @@ function atualizarJato(u, dt) {
     }
   }
 }
+
+// ---------------- combate aéreo ----------------
+// aeronave voando (jatos fora da pista, helicópteros no ar)
+export function aereoNoAr(v) {
+  if (!v || !v.vivo || v.dentro) return false;
+  if (v.classe === 'jato') return v.estadoJato !== 'pronto' && v.estadoJato !== 'rearmando' && v.estadoJato !== 'pousando' && v.y > 30;
+  return v.classe === 'aereo' && v.y > 8;
+}
+export function aereoInimigoPerto(u, raio) {
+  let melhor = null, md = raio * raio;
+  for (const v of G.unidades) {
+    if ((v.classe !== 'jato' && v.classe !== 'aereo') || !hostis(u, v) || !aereoNoAr(v)) continue;
+    const d2 = dist2(u.x, u.z, v.x, v.z) * (v.classe === 'jato' ? 1 : 1.5);   // prefere os jatos
+    if (d2 < md) { md = d2; melhor = v; }
+  }
+  return melhor;
+}
+// caça no ar: dispara mísseis ar-ar e o canhão contra aeronaves inimigas à frente
+function combateAereo(u, dt) {
+  const d = u.d;
+  if (!d.aa || u.estadoJato === 'aproximando') return;
+  u.cdAA = (u.cdAA || 0) - dt; u.cdGun = (u.cdGun || 0) - dt; u.buscaAA = (u.buscaAA || 0) - dt;
+  if (u.buscaAA <= 0) {
+    u.buscaAA = 0.5;
+    u.alvoAA = aereoInimigoPerto(u, d.aa.alcance);
+    // os jatos do computador (e os seus que estão voltando) caçam sozinhos o inimigo que chega perto
+    if (u.alvoAA && (!doJogador(u) || !u.ordem) && u.missAA > 0 && !(u.ordem && u.ordem.tipo === 'interceptar') && u.estadoJato !== 'decolando') {
+      u.ordem = { tipo: 'interceptar', alvo: u.alvoAA }; u.estadoJato = 'voando';
+    }
+  }
+  const a = u.alvoAA;
+  if (!aereoNoAr(a) || !hostis(u, a)) return;
+  const dd = Math.hypot(a.x - u.x, a.z - u.z, a.y - u.y);
+  const frente = Math.abs(angDif(u.ang, Math.atan2(a.x - u.x, a.z - u.z)));
+  if (u.missAA > 0 && u.cdAA <= 0 && dd < d.aa.alcance && dd > 250 && frente < 0.7) {
+    u.missAA--; u.cdAA = d.aa.cadencia;
+    lancarMissilAA(u, a);
+    if (doJogador(u) || doJogador(a)) {
+      if (!G._avisoAA || G.tempo - G._avisoAA > 20) { alerta(`🚀 Combate aéreo: ${d.nome} disparou um ${d.aa.nome}!`, u.x, u.z, doJogador(u) ? 'info' : 'surto'); G._avisoAA = G.tempo; }
+    }
+  } else if (dd < d.canhaoAA.alcance && frente < 0.3 && u.cdGun <= 0) {
+    // rajada do canhão interno
+    u.cdGun = d.canhaoAA.cadencia;
+    const nx = Math.sin(u.ang), nz = Math.cos(u.ang);
+    const acerta = Math.random() < 0.3;
+    G.efeitos.tracante(u.x + nx * 8, u.y, u.z + nz * 8, a.x + (acerta ? 0 : rand(-8, 8)), a.y + (acerta ? 0 : rand(-5, 5)), a.z + (acerta ? 0 : rand(-8, 8)), [1, 0.75, 0.3]);
+    if (acerta) danoUnidade(a, d.canhaoAA.dano * fatorBlindagem(a, { arma: '30mm' }), u);
+    if (Math.random() < 0.15) somTiro('30mm', volEm(u.x, u.z));
+  }
+}
+function lancarMissilAA(u, a) {
+  const m = { x: u.x, y: u.y - 1, z: u.z, vx: Math.sin(u.ang) * u.velAtual, vy: 0, vz: Math.cos(u.ang) * u.velAtual, alvo: a, dono: u, t: 0, dano: u.d.aa.dano, despistado: false };
+  (G.misseisAA || (G.misseisAA = [])).push(m);
+  somTiro('hellfire', volEm(u.x, u.z));
+  // o alvo solta flares: às vezes o míssil se perde
+  if (a.classe === 'jato' || a.classe === 'aereo') {
+    m.despistado = Math.random() < (a.classe === 'jato' ? 0.55 : 0.25);
+    a.flaresT = 2.5;
+  }
+}
+export function atualizarMisseisAA(dt) {
+  const L = G.misseisAA;
+  if (!L || !L.length) return;
+  const ef = G.efeitos;
+  for (let i = L.length - 1; i >= 0; i--) {
+    const m = L[i];
+    m.t += dt;
+    const a = m.alvo;
+    let tx, ty, tz;
+    if (a.vivo && !m.despistado) { tx = a.x; ty = a.y + 1; tz = a.z; }
+    else { if (!m.fx) { m.fx = (a.x || m.x) + rand(-60, 60); m.fy = (a.y || m.y) - 40; m.fz = (a.z || m.z) + rand(-60, 60); } tx = m.fx; ty = m.fy; tz = m.fz; }
+    // guiagem: acelera até ~750 m/s e vira em direção ao alvo
+    const dx = tx - m.x, dy = ty - m.y, dz = tz - m.z, dl = Math.hypot(dx, dy, dz) || 1;
+    const v = Math.min(750, 300 + m.t * 500);
+    const k = Math.min(1, dt * 4);
+    m.vx += (dx / dl * v - m.vx) * k; m.vy += (dy / dl * v - m.vy) * k; m.vz += (dz / dl * v - m.vz) * k;
+    m.x += m.vx * dt; m.y += m.vy * dt; m.z += m.vz * dt;
+    // rastro de fumaça branca e chama do motor
+    ef.particula(m.x, m.y, m.z, rand(-0.5, 0.5), rand(-0.5, 0.5), rand(-0.5, 0.5), 1.6, 2.5, [0.95, 0.95, 0.95], [0.7, 0.7, 0.72], 0.6, -0.1, 3.5);
+    ef.particula(m.x, m.y, m.z, 0, 0, 0, 0.9, 0.05, [1, 0.9, 0.6], [1, 0.5, 0.2], 1);
+    if (dl < 14 || m.t > 9) {
+      L.splice(i, 1);
+      ef.explosao(m.x, m.y, m.z, 6);
+      if (dl < 14 && a.vivo && !m.despistado && aereoNoAr(a)) danoUnidade(a, m.dano * fatorBlindagem(a, { arma: 'missil' }), m.dono);
+      if (volEm(m.x, m.z) > 0.05) somExplosao(volEm(m.x, m.z) * 0.6);
+    }
+  }
+}
+// ordem do jogador: caças interceptam uma aeronave inimiga
+export function ordenarInterceptar(j, alvo) {
+  if (!j.d.aa) { ordenarJato(j, alvo.x, alvo.z); return; }
+  ordenarJato(j, alvo.x, alvo.z);
+  if (j.ordem) j.ordem = { tipo: 'interceptar', alvo };
+}
+G.interceptar = ordenarInterceptar; G.aereoNoAr = aereoNoAr;
 
 function controleDireto(u, dt) {
   const c = G.joy || { x: 0, z: 0 };
@@ -1237,6 +1345,19 @@ export function matarUnidade(u, fonte) {
     }
   }
   if (!(u.classe === 'aereo' && u.y > 8) && u.classe !== 'naval') { u.pousado = true; desembarcar(u); }
+  if ((u.classe === 'jato' || u.classe === 'aereo') && u.y > 8 && u.m) {
+    // aeronave abatida: explode no ar e cai pegando fogo até bater no chão
+    G.efeitos.explosao(u.x, u.y, u.z, 8);
+    somExplosao(volEm(u.x, u.z));
+    const v = u.velAtual || 0;
+    (G.quedas || (G.quedas = [])).push({ g: u.m.grupo, x: u.x, y: u.y, z: u.z, vx: Math.sin(u.ang) * v * 0.7, vz: Math.cos(u.ang) * v * 0.7, vy: 0, gira: u.classe === 'aereo' ? rand(3, 6) : rand(-1.5, 1.5), rolar: rand(-2, 2), t: 0 });
+    if (u.m.rotor) u.m.rotor.visible = false;
+    u.m = null;
+    if (meu) alerta(`💥 ${u.d.nome} abatido!`, u.x, u.z, 'ruim');
+    else if (inimigoDoJogador(u) && fonte && fonte.nacao === G.nacao) alerta(`💥 ${bandeira}${u.d.nome} abatido!`, u.x, u.z, 'bom');
+    removerUnidade(u);
+    return;
+  }
   if (u.classe === 'inf') {
     if (meu) alerta(`${u.d.nome} abatido`, u.x, u.z, 'ruim');
     G.mortos = G.mortos || [];
@@ -1300,7 +1421,27 @@ function removerDestroco(w) {
   if (i >= 0) G.destrocos.splice(i, 1);
 }
 export function atualizarDestrocos(dt) {
-  if (!G.destrocos || !dt) return;
+  if (!dt) return;
+  // aeronaves abatidas caindo
+  if (G.quedas) for (let i = G.quedas.length - 1; i >= 0; i--) {
+    const q = G.quedas[i];
+    q.t += dt; q.vy -= 9.8 * dt;
+    q.x += q.vx * dt; q.y += q.vy * dt; q.z += q.vz * dt;
+    q.vx *= 1 - dt * 0.15; q.vz *= 1 - dt * 0.15;
+    q.g.position.set(q.x, q.y, q.z);
+    q.g.rotation.y += q.gira * dt; q.g.rotation.z += q.rolar * dt; q.g.rotation.x = Math.max(-1.2, q.g.rotation.x - dt * 0.35);
+    if (Math.random() < dt * 40) G.efeitos.particula(q.x, q.y, q.z, rand(-1, 1), 2, rand(-1, 1), 3, 3, [0.15, 0.13, 0.12], [0.35, 0.35, 0.35], 0.8, -0.3, 5);
+    if (Math.random() < dt * 30) G.efeitos.particula(q.x, q.y, q.z, 0, 0, 0, 2, 0.25, [1, 0.8, 0.3], [0.9, 0.3, 0.05], 1, 0, 1);
+    const ch = chaoEm(q.x, q.z);
+    if (q.y <= ch + 1 || q.t > 30) {
+      G.efeitos.explosao(q.x, ch + 1, q.z, 16, ehAgua(q.x, q.z) && ch === 0);
+      somExplosao(volEm(q.x, q.z), true);
+      explodir(q.x, ch + 0.5, q.z, 12, 200, null, false);
+      G.cena.remove(q.g);
+      G.quedas.splice(i, 1);
+    }
+  }
+  if (!G.destrocos) return;
   for (const w of G.destrocos.slice()) {
     w.t += dt;
     const v = w.voo, t = w.torre;
@@ -1398,6 +1539,11 @@ export function posicionarModelo(u, dt) {
     u.sombra.position.set(u.x - d.x / d.y * alt, ch + 0.3, u.z - d.z / d.y * alt);
     u.sombra.scale.set(u.d.raio * 0.7, 1, u.d.raio * 1.0);
     u.sombra.rotation.y = u.ang;
+  }
+  if (u.flaresT > 0) {
+    // flares: bolas de fogo caindo atrás da aeronave
+    u.flaresT -= dt;
+    if (Math.random() < dt * 14) G.efeitos.particula(u.x - Math.sin(u.ang) * 6, u.y - 1, u.z - Math.cos(u.ang) * 6, rand(-12, 12), rand(-6, 2), rand(-12, 12), 1.4, 1.6, [1, 0.95, 0.7], [1, 0.4, 0.1], 1, 6, 0.5);
   }
   const girando = u.classe === 'aereo' && !(u.pousado && u.y === chaoEm(u.x, u.z) && !u.ordem && u.velAtual < 0.1 && u.parado > 3);
   if (u.classe === 'aereo') u.parado = u.pousado ? (u.parado || 0) + dt : 0;
