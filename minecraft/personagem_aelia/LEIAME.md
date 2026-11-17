@@ -1,6 +1,7 @@
 # Aélia (modelo para o Blockbench)
 
-Personagem feita a partir de uma ilustração de referência, no estilo dos modelos do Minecraft.
+Personagem feita a partir de uma ilustração de referência, com o mesmo corpo do jogador e do soldado
+(tronco 8×12×4, braços de 3 como a skin "Alex", pernas 4×12×4, com a saia nas pernas como numa skin).
 
 ![Aélia](previa_aelia.png)
 

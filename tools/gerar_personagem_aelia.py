@@ -37,12 +37,12 @@ def modelo():
     m = Modelo('aelia', tex=256, semente=99)
     o = m.osso
     o('raiz', None, [0, 0, 0])
-    o('perna_dir', 'raiz', [1.2, 12, 0])
-    o('perna_esq', 'raiz', [-1.2, 12, 0])
+    o('perna_dir', 'raiz', [2, 12, 0])
+    o('perna_esq', 'raiz', [-2, 12, 0])
     o('corpo', 'raiz', [0, 12, 0])
     o('cabeca', 'corpo', [0, 24, 0])
-    o('braco_dir', 'corpo', [4, 22.5, 0])
-    o('braco_esq', 'corpo', [-4, 22.5, 0])
+    o('braco_dir', 'corpo', [5, 22, 0])
+    o('braco_esq', 'corpo', [-5, 22, 0])
 
     def c(osso, nome, de, ate, mat, sem=()):
         m.cubo(osso, nome, de, ate, mat, sem=sem, ds=D)
@@ -50,33 +50,32 @@ def modelo():
     def g(osso, nome, centro, tam, rot, mat, sem=()):
         m.cubo_girado(osso, nome, centro, tam, rot, mat, sem=sem, ds=D)
 
-    # ---- corpo: blusa branca, gola alta de renda, corpete dourado em ponta
-    c('corpo', 'tronco', [-3, 12, -1.5], [3, 22.6, 1.5], 'blusa')
-    c('corpo', 'pescoco', [-1, 22.6, -1], [1, 24.2, 1], 'pele')
-    c('corpo', 'gola', [-1.3, 22.8, -1.3], [1.3, 24.2, 1.3], 'renda', sem=('up', 'down'))
-    c('corpo', 'busto', [-2.6, 18.4, -2.05], [2.6, 20.9, -1.5], 'blusa', sem=('up',))
-    c('corpo', 'corpete', [-3.25, 15.4, -2.1], [3.25, 18.6, 1.75], 'corpete')
-    c('corpo', 'corpete_ponta', [-1.1, 14.6, -2.1], [1.1, 15.4, -1.8], 'corpete')
-    c('corpo', 'colar', [-1.7, 22.1, -1.75], [1.7, 22.5, -1.55], 'ouro')
-    c('corpo', 'colar_2', [-1.1, 21.3, -1.85], [1.1, 21.7, -1.6], 'ouro')
-    c('corpo', 'pingente', [-0.35, 20.6, -1.95], [0.35, 21.3, -1.7], 'safira')
-    # ---- saia rosa em "A" com sobressaia branca aberta na frente
-    for i, (y0, y1, hw, hz) in enumerate(((9, 15, 3.3, 1.8), (5, 9, 3.65, 2.1), (1, 5, 4, 2.4))):
-        c('corpo', f'saia_{i}', [-hw, y0, -hz], [hw, y1, hz], 'saia')
-        c('corpo', f'sobressaia_{i}', [-hw - 0.15, y0, -hz + 0.9], [hw + 0.15, y1, hz + 0.15], 'sobressaia', sem=('north', 'up'))
-    c('corpo', 'barra', [-4.3, 0, -2.7], [4.3, 1.2, 2.7], 'barra')
-    # ---- braços: ombros de fora, manga branca solta com fenda, braçadeira com pingentes, pulseira
+    # ---- corpo no formato do jogador: tronco 8x12x4, braços de 3 (Alex) e pernas 4x12x4
+    c('corpo', 'tronco', [-4, 12, -2], [4, 24, 2], 'blusa')
+    c('corpo', 'gola', [-1.6, 23.2, -1.6], [1.6, 24.6, 1.6], 'renda', sem=('up', 'down'))
+    c('corpo', 'busto', [-3, 18.6, -2.5], [3, 21, -2], 'blusa', sem=('up',))
+    c('corpo', 'corpete', [-4.2, 15.2, -2.6], [4.2, 18.6, 2.2], 'corpete')
+    c('corpo', 'corpete_ponta', [-1.2, 14.4, -2.6], [1.2, 15.2, -2.25], 'corpete')
+    c('corpo', 'saia_cintura', [-4.25, 12, -2.25], [4.25, 15.2, 2.25], 'saia')
+    c('corpo', 'sobressaia_cintura', [-4.4, 12, -1.4], [4.4, 15.2, 2.4], 'sobressaia', sem=('north', 'up', 'down'))
+    c('corpo', 'colar', [-1.9, 22.4, -2.25], [1.9, 22.8, -2.05], 'ouro')
+    c('corpo', 'colar_2', [-1.2, 21.5, -2.55], [1.2, 21.9, -2.3], 'ouro')
+    c('corpo', 'pingente', [-0.35, 20.8, -2.6], [0.35, 21.5, -2.35], 'safira')
+    # ---- braços (ombros de fora), manga solta com fenda, braçadeira com pingentes, pulseira
     for lado in ('dir', 'esq'):
         x = espelho(lado)
         b = f'braco_{lado}'
-        c(b, f'braco_{lado}', [x(3, 5)[0], 12.5, -1], [x(3, 5)[1], 23, 1], 'braco')
-        c(b, f'manga_{lado}', [x(2.7, 5.3)[0], 16.4, -1.3], [x(2.7, 5.3)[1], 20.8, 1.3], 'manga', sem=('up',))
-        c(b, f'bracadeira_{lado}', [x(2.75, 5.25)[0], 20.8, -1.25], [x(2.75, 5.25)[1], 21.5, 1.25], 'ouro')
-        for k, zz in enumerate((-0.6, 0.4)):
-            c(b, f'pingente_bracadeira_{lado}_{k}', [x(5.25, 5.45)[0], 19.6, zz], [x(5.25, 5.45)[1], 20.8, zz + 0.3], 'ouro')
-        c(b, f'pulseira_{lado}', [x(2.85, 5.15)[0], 13.2, -1.15], [x(2.85, 5.15)[1], 14.4, 1.15], 'ouro')
-        c(f'perna_{lado}', f'perna_{lado}', [x(0.2, 2.2)[0], 1, -1], [x(0.2, 2.2)[1], 12, 1], 'saia')
-        c(f'perna_{lado}', f'pe_{lado}', [x(0.3, 2.3)[0], 0, -3.1], [x(0.3, 2.3)[1], 0.8, 0.6], 'sapatilha')
+        c(b, f'braco_{lado}', [x(4, 7)[0], 12, -1.5], [x(4, 7)[1], 24, 1.5], 'braco')
+        c(b, f'manga_{lado}', [x(3.7, 7.3)[0], 16.2, -1.8], [x(3.7, 7.3)[1], 20.8, 1.8], 'manga', sem=('up',))
+        c(b, f'bracadeira_{lado}', [x(3.75, 7.25)[0], 20.8, -1.75], [x(3.75, 7.25)[1], 21.6, 1.75], 'ouro')
+        for k, zz in enumerate((-0.8, 0.5)):
+            c(b, f'pingente_bracadeira_{lado}_{k}', [x(7.25, 7.45)[0], 19.6, zz], [x(7.25, 7.45)[1], 20.8, zz + 0.3], 'ouro')
+        c(b, f'pulseira_{lado}', [x(3.85, 7.15)[0], 13, -1.65], [x(3.85, 7.15)[1], 14.4, 1.65], 'ouro')
+        # ---- pernas com a saia (como numa skin): rosa na frente, sobressaia branca dos lados e atrás
+        p = f'perna_{lado}'
+        c(p, f'perna_{lado}', [x(0, 4)[0], 0, -2], [x(0, 4)[1], 12, 2], 'saia_perna')
+        c(p, f'saia_{lado}', [x(-0.25, 4.25)[0], 1, -2.25], [x(-0.25, 4.25)[1], 12, 2.25], 'saia', sem=('up',))
+        c(p, f'sobressaia_{lado}', [x(-0.4, 4.4)[0], 1, -1.4], [x(-0.4, 4.4)[1], 12, 2.4], 'sobressaia', sem=('north', 'up'))
 
     # ---- cabeça e cabelo: risca no meio, franja de lado, mechas longas pela frente e atrás
     c('cabeca', 'cabeca', [-4, 24, -4], [4, 32, 4], 'rosto')
@@ -89,7 +88,7 @@ def modelo():
         x = espelho(lado)
         # mecha fina emoldurando o rosto e caindo na frente do ombro
         c('cabeca', f'mecha_frente_{lado}', [x(3.55, 4.5)[0], 18.5, -4.2], [x(3.55, 4.5)[1], 30.6, -2.8], 'cabelo_longo')
-        c('cabeca', f'volume_{lado}', [x(4.2, 5.3)[0], 12, -2], [x(4.2, 5.3)[1], 31, 3.6], 'cabelo_longo')
+        c('cabeca', f'volume_{lado}', [x(4.2, 5.4)[0], 12, 1.7], [x(4.2, 5.4)[1], 31, 3.8], 'cabelo_longo')
         # brincos: argola de ouro e gota vermelha
         c('cabeca', f'brinco_ouro_{lado}', [x(4.05, 4.45)[0], 25.4, -0.25], [x(4.05, 4.45)[1], 26, 0.25], 'ouro')
         c('cabeca', f'brinco_gota_{lado}', [x(4, 4.5)[0], 24, -0.35], [x(4, 4.5)[1], 25.4, 0.35], 'rubi')
@@ -246,6 +245,13 @@ def pintar(m):
             p.linha_h(0, OURO_CLARO)
             p.linha_h(p.h - 1, OURO_ESC)
 
+    @mat('saia_perna')
+    def _(p, c_):
+        p.preencher(ROSA, ROSA_CLARO, ROSA_ESC, forca=1)
+        if p.lateral:  # sapatilha branca com fita dourada
+            p.linha_h(p.h - 1, BRANCO)
+            p.linha_h(p.h - 2, OURO)
+
     @mat('saia')
     def _(p, c_):
         for yy in range(p.h):
@@ -261,6 +267,8 @@ def pintar(m):
             for xx in range(p.w):
                 cor = BRANCO if xx % 3 else misturar(BRANCO, BRANCO_SOMBRA, 0.6)
                 p.px(xx, yy, ruido(cor, 1))
+        if p.lateral and c_['de'][1] < 2:
+            p.linha_h(p.h - 1, OURO)
 
     @mat('barra')
     def _(p, c_):

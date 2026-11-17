@@ -6,7 +6,7 @@
   Cornélia  a irmã: stola rosa, cachos loiros ondulados e coroa de flores
   Júlia     a prima: stola verde, trança ruiva caindo pela frente do ombro e sardas
 
-Estilo: corpo esguio (ombros estreitos, braços finos, cintura marcada e vestido em "A"),
+Estilo: o mesmo corpo do jogador e do soldado (formato padrão do Minecraft),
 cabeça com rosto em resolução dobrada (16 x 16: olhos grandes com cílios e brilho) e
 cabelo em camadas 3D (franja, mechas que emolduram o rosto e volume atrás).
 
@@ -29,43 +29,38 @@ def nobre(nome, semente, pele, cabelo, olhos, stola, palla, cabelos, joia=(60, 1
     m = Modelo(nome, tex=256, semente=semente)
     o = m.osso
     o('raiz', None, [0, 0, 0])
-    o('perna_dir', 'raiz', [1.2, 12, 0])
-    o('perna_esq', 'raiz', [-1.2, 12, 0])
+    o('perna_dir', 'raiz', [2, 12, 0])
+    o('perna_esq', 'raiz', [-2, 12, 0])
     o('corpo', 'raiz', [0, 12, 0])
     o('cabeca', 'corpo', [0, 24, 0])
-    o('braco_dir', 'corpo', [4, 22.5, 0])
-    o('braco_esq', 'corpo', [-4, 22.5, 0])
+    o('braco_dir', 'corpo', [5, 22, 0])
+    o('braco_esq', 'corpo', [-5, 22, 0])
 
     def c(osso, nome_c, de, ate, mat, sem=()):
         m.cubo(osso, nome_c, de, ate, mat, sem=sem, ds=D)
 
-    # ---- corpo esguio: tronco estreito, pescoço, busto discreto e cinto sob o busto
-    c('corpo', 'tronco', [-3, 12, -1.5], [3, 23, 1.5], 'tronco')
-    c('corpo', 'pescoco', [-1, 23, -1], [1, 24.2, 1], 'pele')
-    c('corpo', 'busto', [-2.6, 18.4, -2.05], [2.6, 20.9, -1.5], 'busto', sem=('up',))
-    c('corpo', 'cinto', [-3.15, 17.6, -2.1], [3.15, 18.4, 1.65], 'ouro')
-    # ---- vestido em "A": cada faixa um pouco mais larga até a barra bordada
-    c('corpo', 'saia_1', [-3.3, 9, -1.8], [3.3, 13, 1.8], 'saia')
-    c('corpo', 'saia_2', [-3.65, 5, -2.1], [3.65, 9, 2.1], 'saia')
-    c('corpo', 'saia_3', [-4, 1, -2.4], [4, 5, 2.4], 'saia')
-    c('corpo', 'barra', [-4.3, 0, -2.7], [4.3, 1.2, 2.7], 'barra')
+    # ---- corpo no formato do jogador: tronco 8x12x4, braços de 3 (Alex) e pernas 4x12x4
+    c('corpo', 'tronco', [-4, 12, -2], [4, 24, 2], 'tronco')
+    c('corpo', 'busto', [-3, 18.6, -2.5], [3, 21, -2], 'busto', sem=('up',))
+    c('corpo', 'cinto', [-4.15, 17.6, -2.15], [4.15, 18.6, 2.15], 'ouro')
+    c('corpo', 'saia_cintura', [-4.25, 12, -2.25], [4.25, 17.6, 2.25], 'saia', sem=('up',))
     # ---- palla: cruza o peito na diagonal, cobre o ombro esquerdo e cai pelas costas
-    m.cubo_girado('corpo', 'palla_frente', [0.4, 16.4, -2.3], [1.4, 11, 0.35], [0, 0, -36], 'palla', ds=D)
-    c('corpo', 'palla_costas', [-3.2, 7, 1.6], [3.2, 22.8, 2.3], 'palla')
-    c('braco_esq', 'palla_ombro', [-5.3, 20.2, -1.3], [-2.7, 23.5, 1.3], 'palla')
+    m.cubo_girado('corpo', 'palla_frente', [0.4, 16.6, -2.75], [1.6, 13, 0.35], [0, 0, -34], 'palla', ds=D)
+    c('corpo', 'palla_costas', [-4.2, 6, 2.1], [4.2, 23.8, 2.8], 'palla')
+    c('braco_esq', 'palla_ombro', [-7.3, 21.2, -1.8], [-3.7, 24.4, 1.8], 'palla')
     # ---- joias
-    c('corpo', 'colar', [-1.6, 22.4, -1.75], [1.6, 23, -1.55], 'ouro')
-    c('corpo', 'pingente', [-0.4, 21.5, -1.8], [0.4, 22.4, -1.6], 'joia')
-    # ---- braços finos com manguinha e pulseira; pés aparecendo na barra
+    c('corpo', 'colar', [-1.9, 22.4, -2.25], [1.9, 23, -2.05], 'ouro')
+    c('corpo', 'pingente', [-0.4, 21.5, -2.6], [0.4, 22.4, -2.3], 'joia')
+    # ---- braços com manguinha e pulseira; vestido nas pernas, como numa skin
     for lado in ('dir', 'esq'):
         x = espelho(lado)
         b = f'braco_{lado}'
-        c(b, f'braco_{lado}', [x(3, 5)[0], 12.5, -1], [x(3, 5)[1], 23, 1], 'braco')
-        c(b, f'manga_{lado}', [x(2.8, 5.2)[0], 20.6, -1.2], [x(2.8, 5.2)[1], 23.3, 1.2], 'manga')
-        c(b, f'pulseira_{lado}', [x(2.85, 5.15)[0], 14.4, -1.15], [x(2.85, 5.15)[1], 15, 1.15], 'ouro')
+        c(b, f'braco_{lado}', [x(4, 7)[0], 12, -1.5], [x(4, 7)[1], 24, 1.5], 'braco')
+        c(b, f'manga_{lado}', [x(3.8, 7.2)[0], 20.6, -1.7], [x(3.8, 7.2)[1], 24.3, 1.7], 'manga')
+        c(b, f'pulseira_{lado}', [x(3.85, 7.15)[0], 14.2, -1.65], [x(3.85, 7.15)[1], 15, 1.65], 'ouro')
         p = f'perna_{lado}'
-        c(p, f'perna_{lado}', [x(0.2, 2.2)[0], 1, -1], [x(0.2, 2.2)[1], 12, 1], 'saia')
-        c(p, f'pe_{lado}', [x(0.3, 2.3)[0], 0, -3.1], [x(0.3, 2.3)[1], 0.8, 0.6], 'sandalia')
+        c(p, f'perna_{lado}', [x(0, 4)[0], 0, -2], [x(0, 4)[1], 12, 2], 'perna_vestido')
+        c(p, f'saia_{lado}', [x(-0.25, 4.25)[0], 1, -2.25], [x(-0.25, 4.25)[1], 12, 2.25], 'barra', sem=('up',))
         c('cabeca', f'brinco_{lado}', [x(4, 4.35)[0], 24.6, -0.3], [x(4, 4.35)[1], 26.2, 0.3], 'joia')
     c('cabeca', 'cabeca', [-4, 24, -4], [4, 32, 4], 'rosto')
     for item in cabelos():
@@ -201,14 +196,29 @@ def pintar(m, nome, pele, cabelo, olhos, stola, palla, joia):
             if c_['mat'] == 'manga':
                 p.linha_h(p.h - 1, OURO)
 
-    @m.material('barra')
+    @m.material('perna_vestido')
     def _(p, c_):
         p.preencher(base, claro, escuro, forca=2)
+        if p.lateral:  # sandália dourada aparecendo embaixo
+            p.linha_h(p.h - 1, (150, 104, 66))
+            p.linha_h(p.h - 2, OURO)
+
+    @m.material('barra')
+    def _(p, c_):
+        for yy in range(p.h):
+            for xx in range(p.w):
+                cor = base
+                if xx % 3 == 1:
+                    cor = misturar(base, escuro, 0.3)
+                elif xx % 3 == 2:
+                    cor = misturar(base, claro, 0.2)
+                p.px(xx, yy, ruido(cor if p.face != 'down' else escuro, 2))
         if p.lateral:  # instita: barra bordada com ondas gregas douradas
-            onda = ['oooo.', 'o..o.', 'o.oo.']
-            for yy in range(min(3, p.h)):
+            onda = ['o.oo.', 'o..o.', 'oooo.']
+            for k in range(3):
+                yy = p.h - 4 + k
                 for xx in range(p.w):
-                    if onda[yy][xx % 5] == 'o':
+                    if onda[k][xx % 5] == 'o':
                         p.px(xx, yy, OURO)
             p.linha_h(p.h - 1, OURO_ESC)
 
@@ -332,7 +342,7 @@ def livia():
         ]
         for lado in ('dir', 'esq'):
             x = espelho(lado)
-            itens.append(('cabeca', f'mecha_{lado}', [x(3.9, 4.7)[0], 17.5, -4.2], [x(3.9, 4.7)[1], 31, -1], 'cabelo'))
+            itens.append(('cabeca', f'mecha_{lado}', [x(3.6, 4.6)[0], 17.5, -4.2], [x(3.6, 4.6)[1], 31, -2.3], 'cabelo'))
         return itens
     return nobre('livia', 23, (222, 176, 136), (28, 22, 26), (70, 46, 40),
                  ((40, 70, 150), (74, 110, 192), (22, 40, 100)), (238, 234, 226), cabelos)
@@ -349,7 +359,7 @@ def cornelia():
         for lado in ('dir', 'esq'):
             x = espelho(lado)
             for i, (y0, y1, a, b) in enumerate(((29, 31.2, 3.9, 5), (26.8, 29.2, 4.1, 5.3), (24.4, 27, 3.9, 5.1), (22, 24.6, 4.2, 5.4))):
-                itens.append(('cabeca', f'cacho_{lado}_{i}', [x(a, b)[0], y0, -3.6], [x(a, b)[1], y1, -0.4], 'cachos'))
+                itens.append(('cabeca', f'cacho_{lado}_{i}', [x(a, b)[0], y0, -3.8], [x(a, b)[1], y1, -1.9], 'cachos'))
         return itens
     return nobre('cornelia', 37, (240, 204, 178), (236, 196, 108), (70, 140, 200),
                  ((206, 92, 118), (236, 136, 156), (146, 52, 74)), (244, 208, 214), cabelos)
@@ -367,9 +377,9 @@ def julia():
         # trança grossa caindo pela frente do ombro direito
         for i in range(7):
             w = 0.8 if i % 2 else 0.65
-            cx, cy, cz = 3.2 - i * 0.18, 23 - i * 1.4, -1.9 - i * 0.06
+            cx, cy, cz = 3.0 - i * 0.18, 23 - i * 1.4, -2.85 - i * 0.04
             itens.append(('corpo', f'tranca_{i}', [cx - w, cy - 0.8, cz - 0.65], [cx + w, cy + 0.8, cz + 0.65], 'cabelo'))
-        itens.append(('corpo', 'laco', [1.2, 12.6, -3], [3.6, 13.6, -1.8], 'ouro'))
+        itens.append(('corpo', 'laco', [1.0, 12.6, -3.6], [3.4, 13.6, -2.3], 'ouro'))
         return itens
     return nobre('julia', 41, (240, 200, 170), (184, 74, 36), (60, 140, 80),
                  ((40, 124, 84), (72, 164, 114), (20, 76, 48)), (206, 156, 74), cabelos, joia=(60, 180, 110))

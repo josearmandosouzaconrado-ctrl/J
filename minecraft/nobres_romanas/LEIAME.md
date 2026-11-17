@@ -4,7 +4,8 @@ Só os modelos, ainda sem comportamento no jogo. Todas são mulheres adultas de 
 vestidas como as nobres de Roma: **stola** (vestido longo) com barra dourada bordada, cinto sob o busto,
 **palla** (manto) cruzando o peito e caindo nas costas, colar com pingente, brincos, pulseiras e sandálias.
 
-Estilo: corpo esguio (ombros estreitos, braços finos, cintura marcada e vestido em "A"), rosto em
+Estilo: o mesmo corpo do jogador e do soldado (tronco 8×12×4, braços de 3 como a skin "Alex", pernas
+4×12×4, com o vestido nas pernas como numa skin), rosto em
 resolução dobrada (16 × 16) com olhos grandes, cílios e brilho, bochechas rosadas e boca delicada, e
 cabelo em camadas 3D: franja, mechas que emolduram o rosto e volume atrás.
 
