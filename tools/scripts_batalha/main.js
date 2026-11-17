@@ -7,7 +7,7 @@
 // soldados martelam ao lado; se um inimigo aparece, eles largam o martelo,
 // lutam e depois voltam à obra.
 import { world, system } from '@minecraft/server';
-import { planoPosto, girar, rotPara, TAM } from './plano.js';
+import { planoPosto, girar, rotPara, LARG, COMP } from './plano.js';
 
 const ROMANO = 'romano:legionario';
 const CHAVE = 'batalha:estado';
@@ -72,9 +72,9 @@ function particula(dim, id, local) {
 function terreno(dim, cx, cy, cz, rot) {
   const alt = [];
   let min = Infinity, max = -Infinity;
-  for (let lx = 0; lx < TAM; lx++) {
+  for (let lx = 0; lx < LARG; lx++) {
     alt.push([]);
-    for (let lz = 0; lz < TAM; lz++) {
+    for (let lz = 0; lz < COMP; lz++) {
       const [dx, dz] = girar(lx, lz, rot);
       const h = chao(dim, cx + dx, cz + dz, cy);
       if (h === null) return null;
@@ -136,7 +136,7 @@ function liberar(e, obra) {
 function posicaoMundo(obra, b) {
   const [dx, dz] = girar(b.lx, b.lz, obra.rot);
   // o beiral dos telhados sai 1 bloco para fora da planta: usa o chão da coluna mais próxima
-  const ax = Math.min(TAM - 1, Math.max(0, b.lx)), az = Math.min(TAM - 1, Math.max(0, b.lz));
+  const ax = Math.min(LARG - 1, Math.max(0, b.lx)), az = Math.min(COMP - 1, Math.max(0, b.lz));
   return { x: obra.x + dx, y: obra.alt[ax][az] + b.dy, z: obra.z + dz };
 }
 
@@ -221,7 +221,7 @@ function pensarEmConstruir() {
     if (Math.random() > 0.35) return;
     const v = r.getViewDirection();
     const n = Math.hypot(v.x, v.z) || 1;
-    const cx = p.x + (v.x / n) * 7, cz = p.z + (v.z / n) * 7;
+    const cx = p.x + (v.x / n) * 16, cz = p.z + (v.z / n) * 16;
     iniciarObra(dim, cx, p.y, cz, rotPara(p.x - cx, p.z - cz));
     return;
   }
@@ -252,7 +252,7 @@ system.afterEvents.scriptEventReceive.subscribe((ev) => {
     if (!perto.length) return quem.sendMessage?.('§c[Roma] Não há legionários livres por perto (até 32 blocos).');
     const v = quem.getViewDirection();
     const n = Math.hypot(v.x, v.z) || 1;
-    const cx = quem.location.x + (v.x / n) * 9, cz = quem.location.z + (v.z / n) * 9;
+    const cx = quem.location.x + (v.x / n) * 16, cz = quem.location.z + (v.z / n) * 16;
     const obra = iniciarObra(dim, cx, quem.location.y, cz, rotPara(quem.location.x - cx, quem.location.z - cz));
     if (!obra) quem.sendMessage?.('§c[Roma] O terreno ali é muito irregular ou tem água. Tente num lugar mais plano.');
   } else if (ev.id === 'romano:cancelar') {

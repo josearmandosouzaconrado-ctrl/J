@@ -44,28 +44,32 @@ Comportamento:
 
 ![martelando](previa_martelando.png)
 
-Os legionários erguem um **castellum de madeira** de 15 × 15 blocos, no estilo dos fortes romanos de fronteira:
+Os legionários erguem um **castellum de madeira** comprido, de 15 × 25 blocos, no formato de
+"carta de baralho" dos acampamentos romanos:
 
 ![forte pronto](previa_forte.png)
 
+![forte visto de cima](previa_forte_cima.png)
+
 - **Muralha de estacas pontudas** (troncos escuros alternando com troncos descascados).
-- **Guarita do portão:** duas torres com seteiras, parapeito e telhado, ligadas por uma ponte
-  por cima da passagem (3 × 3), com lanternas.
-- **Torres de vigia** nos dois cantos do fundo, com piso, parapeito, telhado com beiral e
-  mastro com bandeira vermelha e ponta dourada.
-- **Adarve:** passarela de tábuas por dentro do muro, apoiada em postes, com escadas dos dois
-  lados do portão para os soldados subirem.
-- **Acampamento:** tenda listrada do comandante (principia), duas tendas de couro dos soldados,
-  estandarte com a águia dourada, fogueira, lanternas e depósito com barris, feno, bancada e bigorna.
+- **Portão principal com guarita:** duas torres com seteiras, parapeito e telhado, ligadas por uma
+  ponte por cima da passagem (3 × 3), com lanternas. **Portão dos fundos** (porta decumana) com verga.
+- **Seis torres:** as duas do portão, duas no meio das muralhas compridas e duas nos cantos do fundo,
+  todas com telhado com beiral e mastro com bandeira vermelha e ponta dourada.
+- **Adarve:** passarela de tábuas por dentro de toda a muralha, apoiada em postes, com quatro escadas.
+- **Rua central** do portão até a **principia**, a tenda listrada do comandante, com o **estandarte** da águia na frente.
+- **Oito tendas dos soldados** em fileiras dos dois lados da rua, **celeiro (horreum)** de tábuas no
+  fundo com feno e barril, duas fogueiras, lanternas na rua, barris, bancada e bigorna.
 
 - **Sozinhos:** quando 3 ou mais legionários estão juntos, sem inimigos num raio de 24 blocos e sem
   outro posto num raio de 48, eles decidem construir (a cada 30 s há uma chance).
 - **Sob ordem:** `/function posto_avancado` (ou `/scriptevent romano:construir`) manda os legionários
-  livres até 32 blocos construírem para onde você está olhando, com o portão virado para você.
+  livres até 32 blocos construírem para onde você está olhando, com o portão virado para você
+  (o portão fica uns 4 blocos à sua frente e o forte se estende 25 blocos para trás).
 - **Como aparece:** até 4 soldados trocam o gládio por um martelo, vão até a obra e martelam; os
   blocos surgem um por um (muralha de baixo para cima, depois torres, portão, adarve, telhados e acampamento),
   com som de madeira e partículas. O muro é feito pelo lado de fora, então ninguém fica preso.
-  São 763 blocos: cerca de 1 minuto com 3 construtores, menos com 4.
+  São 1186 blocos: cerca de 1 minuto e meio com 3 construtores, uns 75 segundos com 4.
 - Se aparece um inimigo, quem está em combate larga o martelo e luta; depois outros são chamados de volta.
 - O posto só ocupa espaço livre: grama e flores são trocadas, mas nada que você construiu é destruído.
   Terreno muito irregular (mais de 4 blocos de desnível) ou com água é recusado.
