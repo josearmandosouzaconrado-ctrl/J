@@ -437,13 +437,25 @@ class World {
     }
   }
   // Pré-gera chunks próximos aos poucos
-  // pinta com antecedência os trechos à frente do jogador, 8 linhas por quadro (sem engasgos)
-  pregen(px, py) {
-    if (this.pending) { this.paintRows(this.pending, 8); if (this.pending.row >= 32) { this.finishChunk(this.pending); this.pending = null; } return; }
-    const cx = Math.floor(px / CHUNK_PX), cy = Math.floor(py / CHUNK_PX);
-    for (let r = 0; r <= 1; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-      const k = this.ckey(cx + dx, cy + dy);
-      if (!this.canvases.has(k) && cx + dx >= 0 && cy + dy >= 0 && cx + dx < WORLD_W / 32 && cy + dy < WORLD_H / 32) { this.pending = this.chunkJob(cx + dx, cy + dy); this.paintRows(this.pending, 8); return; }
+  // pinta com antecedência os trechos à frente do jogador, com limite de tempo por quadro (sem engasgos):
+  // primeiro o trecho para onde ele está andando; uma linha de cada vez, até gastar o tempo do quadro
+  pregen(px, py, vx, vy, ms) {
+    const lim = ms === undefined ? 2.5 : ms, t0 = performance.now();
+    for (let volta = 0; volta < 6; volta++) {
+      if (!this.pending) {
+        const ax = px + (vx || 0) * 0.8, ay = py + (vy || 0) * 0.8, cx = Math.floor(px / CHUNK_PX), cy = Math.floor(py / CHUNK_PX);
+        let melhor = null, md = Infinity;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const x = cx + dx, y = cy + dy; if (x < 0 || y < 0 || x >= WORLD_W / 32 || y >= WORLD_H / 32 || this.canvases.has(this.ckey(x, y))) continue;
+          const d = Math.hypot((x + 0.5) * CHUNK_PX - ax, (y + 0.5) * CHUNK_PX - ay); if (d < md) { md = d; melhor = [x, y]; }
+        }
+        if (!melhor) return;
+        this.pending = this.chunkJob(melhor[0], melhor[1]);
+      }
+      const J = this.pending;
+      while (J.row < 32) { this.paintRows(J, 1); if (performance.now() - t0 > lim) return; }
+      this.finishChunk(J); this.pending = null;
+      if (performance.now() - t0 > lim) return;
     }
   }
 
@@ -1385,9 +1397,26 @@ class World {
   }
 
   // ---------- Consultas ----------
+  // índice por região do mapa (células de 64 tiles): só olha as cidades daquela área, em vez de todas.
+  // As caravanas perguntam isso milhares de vezes por segundo ao traçar a rota.
   settlementAt(tx, ty) {
-    for (const s of this.settlements) if (tx >= s.x0 && ty >= s.y0 && tx < s.x0 + s.w && ty < s.y0 + s.h) return s;
+    const L = this.settlements;
+    let I = this._sIdx;
+    if (!I || I.n !== L.length || (this.tick - I.t) > 600) I = this.indexaCidades();
+    const cel = I.g.get(((ty >> 6) << 10) | (tx >> 6));
+    if (cel) for (const s of cel) if (tx >= s.x0 && ty >= s.y0 && tx < s.x0 + s.w && ty < s.y0 + s.h) return s;
     return null;
+  }
+  indexaCidades() {
+    const g = new Map(), M = 16;   // folga para a cidade crescer sem precisar refazer
+    for (const s of this.settlements) {
+      if (s.x0 === undefined) continue;
+      for (let cy = (s.y0 - M) >> 6; cy <= (s.y0 + s.h + M) >> 6; cy++) for (let cx = (s.x0 - M) >> 6; cx <= (s.x0 + s.w + M) >> 6; cx++) {
+        if (cx < 0 || cy < 0) continue; const k = (cy << 10) | cx; let l = g.get(k); if (!l) g.set(k, l = []); l.push(s);
+      }
+    }
+    const I = { g, n: this.settlements.length, t: this.tick };
+    return (this._sIdx = I);
   }
   nearestSettlement(tx, ty, filter) {
     let best = null, bd = Infinity;
@@ -1436,33 +1465,39 @@ class World {
     if (!this.homes.includes(h)) this.homes.push(h);
     return b;
   }
-  // Imagem do mapa-múndi gerada aos poucos
+  // Imagem do mapa-múndi gerada aos poucos (e guardada no aparelho: na próxima vez ela já vem pronta)
   startMapImage() {
     const R = MAP_H, step = 16;
     this.mapCanvas = Sprites.cv(MAP_W, R);
     this.mapCtx = this.mapCanvas.getContext('2d');
     this.mapImg = this.mapCtx.createImageData(MAP_W, R);
-    this.mapRow = 0; this.mapDone = false;
+    this.mapRow = 0; this.mapX = 0; this.mapDone = false;
     this.mapStep = step;
+    if (typeof MapaCache !== 'undefined') MapaCache.carregar(this);
   }
   // rows: limite de linhas; budget (ms): para antes se o quadro já gastou tempo demais
+  // (o tempo é conferido no meio da linha também: uma linha inteira já passava do limite nos celulares)
   stepMapImage(rows = 8, budget = 0) {
     if (this.mapDone || !this.mapImg) return;
     const R = MAP_H, step = this.mapStep, d = this.mapImg.data, t0 = budget ? performance.now() : 0;
-    for (let k = 0; k < rows && this.mapRow < R; k++, this.mapRow++) {
-      if (budget && k && performance.now() - t0 > budget) break;
+    if (!this.navWater) this.navWater = new Uint8Array(MAP_W * MAP_H);
+    let feitas = 0;
+    while (feitas < rows && this.mapRow < R) {
       const y = this.mapRow;
-      for (let x = 0; x < MAP_W; x++) {
+      const x1 = budget ? Math.min(MAP_W, this.mapX + 8) : MAP_W;
+      for (let x = this.mapX; x < x1; x++) {
         const t = this.baseTile(Math.floor(x * step + step / 2), Math.floor(y * step + step / 2));
-        if (!this.navWater) this.navWater = new Uint8Array(MAP_W * MAP_H);
         this.navWater[y * MAP_W + x] = (TWATER[t] || t === T.DEEP) ? 1 : 0;
         const [r, g, b] = hexToRgb(TILE_DEFS[t].c);
         const sh = clamp(1 + (this._e - 0.5) * 0.35, 0.8, 1.25);
         const i = (y * MAP_W + x) * 4; d[i] = r * sh; d[i + 1] = g * sh; d[i + 2] = b * sh; d[i + 3] = 255;
       }
+      this.mapX = x1;
+      if (this.mapX >= MAP_W) { this.mapX = 0; this.mapRow++; feitas++; }
+      if (budget && performance.now() - t0 > budget) break;
     }
     if (this.mapRow >= R) {
-      this.mapCtx.putImageData(this.mapImg, 0, 0); this.mapImg = null;   // já está no canvas: libera a cópia
+      this.mapCtx.putImageData(this.mapImg, 0, 0); this._mapBase = this.mapImg.data.buffer; this.mapImg = null;   // já está no canvas; a cópia (sem as estradas) fica só até ser guardada
       // estradas
       this.mapCtx.fillStyle = 'rgba(170,130,80,0.9)';
       for (const [k, set] of this.roadTiles) {
@@ -1470,6 +1505,7 @@ class World {
         for (const i of set) { if ((i & 3) || ((i >> 5) & 3)) continue; this.mapCtx.fillRect(Math.floor((cx * 32 + (i & 31)) / step), Math.floor((cy * 32 + (i >> 5)) / step), 1, 1); }
       }
       this.mapDone = true;
+      if (typeof MapaCache !== 'undefined') MapaCache.salvar(this);
     }
   }
 }

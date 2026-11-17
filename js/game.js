@@ -290,13 +290,14 @@ const Game = {
     if (IS_ADM && typeof UI !== 'undefined' && UI.toast) UI.toast(`⚠ Erro: ${msg}${where ? ' (' + where + ')' : ''}`, '#ff6060');
   },
   frame(dt) {
-    this.t += dt;
+    this.t += dt; this.ultDt = dt;
     this.fpsAcc += dt; this.fpsN++;
     if (this.fpsAcc >= 1) { this.fps = Math.round(this.fpsN / this.fpsAcc); this.fpsAcc = 0; this.fpsN = 0; }
     Input.update();
     if (this.state === 'title') { this.renderTitle(dt); return; }
     if (!this.started) return;
-    if (this.world && !this.world.mapDone) this.world.stepMapImage(10, 4);
+    // o mapa-múndi vai sendo montado com o tempo que sobra: menos ainda quando o aparelho está lento
+    if (this.world && !this.world.mapDone) this.world.stepMapImage(10, dt > 1 / 40 ? 0.8 : 2.5);
     if (!this.paused && !this.player.dead) {
       if (this.hitstop > 0) this.hitstop -= dt;
       else this.update(dt);
@@ -377,7 +378,7 @@ const Game = {
       this.discT -= dt; if (this.discT <= 0) { this.discT = 0.5; this.discoveryTick(); }
       this.smokeT = (this.smokeT || 0) - dt;
       if (this.smokeT <= 0) { this.smokeT = 0.22; for (const b of W.buildingsInView(this.camX, this.camY, this.camX + this.vw, this.camY + this.vh)) if (b.kind === 'factory') { const img = Sprites.building(b.spec), y = (b.ty + b.h) * 16 - img.height + 1; for (const sx of [b.tx * 16 + 9, b.tx * 16 + b.w * 16 - 11]) for (let k = 0; k < 2; k++) this.particles.push({ x: sx + Math.random() * 4, y, vx: 6 + Math.random() * 6, vy: -14 - Math.random() * 8, color: Math.random() < 0.5 ? 'rgba(70,70,78,0.7)' : 'rgba(110,110,118,0.6)', life: 3.2, max: 3.2, size: 2 + (Math.random() < 0.5 ? 1 : 0), grav: 0 }); } else if (b.spec && b.spec.chimney && !b.site) { const img = Sprites.building(b.spec); const x = b.tx * 16 + b.w * 16 - 9, y = (b.ty + b.h) * 16 - img.height + 1; if (Math.random() < 0.6) this.particles.push({ x: x + Math.random() * 3, y, vx: 4 + Math.random() * 4, vy: -10 - Math.random() * 6, color: Math.random() < 0.5 ? 'rgba(200,200,205,0.55)' : 'rgba(160,160,170,0.5)', life: 2.4, max: 2.4, size: Math.random() < 0.5 ? 2 : 1, grav: 0 }); } }
-      W.pregen(P.x + (Input.move.x * 300), P.y + (Input.move.y * 300));
+      W.pregen(P.x + (Input.move.x * 300), P.y + (Input.move.y * 300), 0, 0, (this.ultDt || 0) > 1 / 40 ? 1.2 : 2.5);
       this.updateWeather(dt);
     }
     this.autosaveT -= dt; if (this.autosaveT <= 0) { this.autosaveT = 150; this.saveGame(0, true); }

@@ -31,8 +31,8 @@ const Caravanas = {
     for (let k = 0; k < 24; k++) {
       const a = Math.random() * Math.PI * 2, r = 16 + Math.random() * 10, tx = Math.round(ptx + Math.cos(a) * r), ty = Math.round(pty + Math.sin(a) * r);
       if (!ESTRADA_T(W.tileAt(tx, ty)) || W.solidAt(tx, ty) || W.settlementAt(tx, ty)) continue;
-      const dr = this.destinoComRota(tx, ty, 40); if (!dr) return;
-      this.criar(tx, ty, dr.dest, { caminho: dr.caminho });
+      const dest = this.destino(tx, ty, 40); if (!dest) return;
+      this.criar(tx, ty, dest, {});   // o caminho é calculado aos poucos enquanto ela anda
       return;
     }
   },
@@ -41,7 +41,7 @@ const Caravanas = {
     const G = Game;
     C.mercador.x = C.x; C.mercador.y = C.y - 9; if (!G.actors.includes(C.mercador)) G.actors.push(C.mercador);
     for (const g of C.guardas) if (!g.dead && !G.actors.includes(g)) { g.x = C.x + (Math.random() - 0.5) * 40; g.y = C.y + (Math.random() - 0.5) * 30; G.findFree(g); g.home = { x: g.x, y: g.y }; G.actors.push(g); }
-    C.alvoT = null; C.caminho = undefined;
+    C.alvoT = null; C.caminho = undefined; C._rota = null;
   },
   retomar() {
     const P = Game.player, E = P.escolta, W = Game.world; P.escolta = null;
@@ -95,33 +95,60 @@ const Caravanas = {
     return { x: px, y: py };
   },
   // o caminho inteiro até o destino, preferindo as estradas (calculado uma vez)
-  rota(C) {
+  // o caminho inteiro até o destino, preferindo as estradas. Pode ser calculado de uma vez (rota)
+  // ou aos poucos, alguns milissegundos por quadro (rotaInicia + rotaPasso), para não travar o jogo.
+  rota(C) { const st = this.rotaInicia(C); if (!st) return null; let r; do { r = this.rotaPasso(st, 1e9); } while (r === undefined); return r || null; },
+  rotaInicia(C) {
     const W = Game.world, sx = Math.floor(C.x / 16), sy = Math.floor(C.y / 16), gx = C.dest.mid.x, gy = C.dest.mid.y;
     const m = 48, x0 = Math.min(sx, gx) - m, y0 = Math.min(sy, gy) - m, w = Math.abs(sx - gx) + m * 2 + 1, h = Math.abs(sy - gy) + m * 2 + 1;
     if (w * h > 400000) return null;
-    const g = new Float32Array(w * h).fill(Infinity), de = new Int32Array(w * h).fill(-1), custo = new Float32Array(w * h);   // custo: 0 = não visto, -1 = bloqueado
-    const cst = i => { let c = custo[i]; if (c) return c; const x = x0 + i % w, y = y0 + ((i / w) | 0), t = W.tileAt(x, y); c = W.solidAt(x, y) || TWATER[t] ? -1 : ESTRADA_T(t) ? 1 : W.settlementAt(x, y) ? 1.3 : 3.2; custo[i] = c; return c; };
-    const heap = [], hf = [], push = (i, f) => { let k = heap.length; heap.push(i); hf.push(f); while (k > 0) { const p_ = (k - 1) >> 1; if (hf[p_] <= f) break; heap[k] = heap[p_]; hf[k] = hf[p_]; k = p_; } heap[k] = i; hf[k] = f; };
-    const pop = () => { const top = heap[0], li = heap.pop(), lf = hf.pop(), n = heap.length; if (n) { let k = 0; for (;;) { let c = k * 2 + 1; if (c >= n) break; if (c + 1 < n && hf[c + 1] < hf[c]) c++; if (hf[c] >= lf) break; heap[k] = heap[c]; hf[k] = hf[c]; k = c; } heap[k] = li; hf[k] = lf; } return top; };
-    const si = (sy - y0) * w + (sx - x0); g[si] = 0; push(si, 0);
-    let fim = -1, n = 0;
-    while (heap.length && n++ < 160000) {
-      const i = pop(), x = i % w, y = (i / w) | 0;
-      if (Math.abs(x0 + x - gx) + Math.abs(y0 + y - gy) < 7) { fim = i; break; }
+    const st = { W, x0, y0, w, h, gx, gy, g: new Float32Array(w * h).fill(Infinity), de: new Int32Array(w * h).fill(-1), custo: new Float32Array(w * h), heap: [], hf: [], n: 0, si: (sy - y0) * w + (sx - x0) };   // custo: 0 = não visto, -1 = bloqueado
+    st.g[st.si] = 0; this.rotaPush(st, st.si, 0);
+    return st;
+  },
+  rotaCusto(st, i) {
+    let c = st.custo[i]; if (c) return c;
+    const W = st.W, x = st.x0 + i % st.w, y = st.y0 + ((i / st.w) | 0), t = W.tileAt(x, y);
+    c = W.solidAt(x, y) || TWATER[t] ? -1 : ESTRADA_T(t) ? 1 : W.settlementAt(x, y) ? 1.3 : 3.2; st.custo[i] = c; return c;
+  },
+  rotaPush(st, i, f) { const heap = st.heap, hf = st.hf; let k = heap.length; heap.push(i); hf.push(f); while (k > 0) { const p_ = (k - 1) >> 1; if (hf[p_] <= f) break; heap[k] = heap[p_]; hf[k] = hf[p_]; k = p_; } heap[k] = i; hf[k] = f; },
+  rotaPop(st) { const heap = st.heap, hf = st.hf, top = heap[0], li = heap.pop(), lf = hf.pop(), n = heap.length; if (n) { let k = 0; for (;;) { let c = k * 2 + 1; if (c >= n) break; if (c + 1 < n && hf[c + 1] < hf[c]) c++; if (hf[c] >= lf) break; heap[k] = heap[c]; hf[k] = hf[c]; k = c; } heap[k] = li; hf[k] = lf; } return top; },
+  // anda o A* até gastar 'ms'; devolve undefined (ainda calculando), o caminho, ou false (não há caminho)
+  rotaPasso(st, ms) {
+    const t0 = performance.now(), w = st.w, h = st.h, g = st.g, de = st.de;
+    let fim = -1, k = 0;
+    while (st.heap.length && st.n++ < 160000) {
+      if ((++k & 255) === 0 && performance.now() - t0 > ms) return undefined;
+      const i = this.rotaPop(st), x = i % w, y = (i / w) | 0;
+      if (Math.abs(st.x0 + x - st.gx) + Math.abs(st.y0 + y - st.gy) < 7) { fim = i; break; }
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
         if (!dx && !dy) continue; const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
-        const j = ny * w + nx, c = cst(j); if (c < 0) continue;
-        if (dx && dy && (cst(y * w + nx) < 0 || cst(ny * w + x) < 0)) continue;      // não corta quina
+        const j = ny * w + nx, c = this.rotaCusto(st, j); if (c < 0) continue;
+        if (dx && dy && (this.rotaCusto(st, y * w + nx) < 0 || this.rotaCusto(st, ny * w + x) < 0)) continue;      // não corta quina
         const ng = g[i] + c * (dx && dy ? 1.41 : 1);
-        if (ng < g[j]) { g[j] = ng; de[j] = i; push(j, ng + Math.hypot(x0 + nx - gx, y0 + ny - gy)); }
+        if (ng < g[j]) { g[j] = ng; de[j] = i; this.rotaPush(st, j, ng + Math.hypot(st.x0 + nx - st.gx, st.y0 + ny - st.gy)); }
       }
     }
-    if (fim < 0) return null;
-    const out = []; for (let i = fim; i >= 0 && i !== si; i = de[i]) out.push({ x: (x0 + i % w) * 16 + 8, y: (y0 + ((i / w) | 0)) * 16 + 8 });
+    if (fim < 0) return false;
+    const out = []; for (let i = fim; i >= 0 && i !== st.si; i = de[i]) out.push({ x: (st.x0 + i % w) * 16 + 8, y: (st.y0 + ((i / w) | 0)) * 16 + 8 });
     return out.reverse();
   },
+  // calcula a rota aos poucos (alguns milissegundos por quadro), mesmo com a caravana parada
+  avancaRota(C) {
+    if (C.caminho !== undefined) return;
+    {
+      try {
+        if (!C._rota) C._rota = this.rotaInicia(C) || 'sem';
+        const r = C._rota === 'sem' ? false : this.rotaPasso(C._rota, (Game.ultDt || 0) > 1 / 40 ? 1 : 2.5);
+        if (r !== undefined) {
+          C._rota = null; C.caminho = r || null; C.ci = 0;
+          // sem caminho por terra até lá: as caravanas comuns escolhem outra cidade (até 2 vezes)
+          if (!r && !C.escolta && (C.trocas || 0) < 2) { const d = this.destino(Math.floor(C.x / 16), Math.floor(C.y / 16), 40); if (d && d !== C.dest) { C.dest = d; C.trocas = (C.trocas || 0) + 1; C.caminho = undefined; } }
+        }
+      } catch (e) { C._rota = null; C.caminho = null; }
+    }
+  },
   proximo(C) {
-    if (C.caminho === undefined) { try { C.caminho = this.rota(C) || null; } catch (e) { C.caminho = null; } C.ci = 0; }
     if (C.caminho) {
       // segue o caminho; se saiu dele (empurrada, recolocada), volta para o ponto mais perto
       while (C.ci < C.caminho.length && dist(C.x, C.y, C.caminho[C.ci].x, C.caminho[C.ci].y) < 4) C.ci++;
@@ -155,6 +182,7 @@ const Caravanas = {
     return false;
   },
   mover(C, dt) {
+    this.avancaRota(C);
     const G = Game, P = G.player;
     if (dist(C.x, C.y, P.x, P.y) > 1300 && !C.escolta) return this.sumir(C);
     const vivos = C.guardas.filter(g => !g.dead);

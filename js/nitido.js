@@ -20,9 +20,11 @@ const Nitido = {
   },
   resize() {
     if (!this.cv) return;
-    const d = window.devicePixelRatio || 1, w = window.innerWidth, h = window.innerHeight;
+    // até 2x a resolução da tela: o texto continua nítido e a camada pesa bem menos nos celulares de tela densa
+    const d = Math.min(2, window.devicePixelRatio || 1), w = window.innerWidth, h = window.innerHeight;
     this.cv.width = Math.round(w * d); this.cv.height = Math.round(h * d);
     this.cv.style.width = w + 'px'; this.cv.style.height = h + 'px';
+    this.sujo = true;   // redimensionar apaga a camada
   },
   // quantos pixels da tela vale um pixel do jogo
   k() { return this.cv && Game.vw ? this.cv.width / Game.vw : 1; },
@@ -44,9 +46,16 @@ const Nitido = {
   },
   desenhar() {
     const c = this.ctx; if (!c) { this.fila.length = 0; return; }
+    // sem nenhum texto: não mexe na camada (limpar e reenviar uma imagem do tamanho da tela
+    // a cada quadro era o que mais pesava nos celulares) e esconde ela
+    if (!this.fila.length) {
+      if (this.sujo) { c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, this.cv.width, this.cv.height); this.sujo = false; this.cv.style.visibility = 'hidden'; }
+      return;
+    }
     c.setTransform(1, 0, 0, 1, 0, 0);
-    c.clearRect(0, 0, this.cv.width, this.cv.height);
-    if (!this.fila.length) return;
+    if (this.sujo) c.clearRect(0, 0, this.cv.width, this.cv.height);
+    if (!this.sujo) this.cv.style.visibility = 'visible';
+    this.sujo = true;
     const k = this.k(), fs = Math.max(10, Math.round(10 * k)), lh = Math.round(fs * 0.95), pad = Math.round(3 * k);
     c.font = this.fonte(fs); c.textAlign = 'center'; c.textBaseline = 'alphabetic';
     for (const it of this.fila) {
