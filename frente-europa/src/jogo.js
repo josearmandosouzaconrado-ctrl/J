@@ -11,7 +11,7 @@ export const ALIADOS = 0, EIXO = 1;
 const CEL = 1500;
 const DOIS_PI = Math.PI * 2;
 const angDif = (a, b) => { let d = (a - b) % DOIS_PI; if (d > Math.PI) d -= DOIS_PI; if (d < -Math.PI) d += DOIS_PI; return d; };
-const classe = (e) => (e.est ? 'b' : e.cat === 'air' || e.cat === 'heli' ? (e.estado === 'voando' ? 'a' : 't') : e.cat === 'ship' ? 's' : 't');
+const classe = (e) => (e.est ? 'b' : e.cat === 'air' ? (e.estado === 'voando' ? 'a' : 't') : e.cat === 'ship' ? 's' : 't');
 
 let proxId = 1;
 
@@ -46,7 +46,7 @@ export class Unidade extends Entidade {
     this.def = TIPOS[tipo];
     this.cat = this.def.cat;
     this.hp = this.hpMax = this.def.hp;
-    this.estado = this.cat === 'air' || this.cat === 'heli' ? 'voando' : 'solo';
+    this.estado = this.cat === 'air' ? 'voando' : 'solo';
     this.ordem = null;
     this.carga = [];
     this.dentro = null;
@@ -62,7 +62,7 @@ export class Unidade extends Entidade {
   get nome() { return this.def.nome + (this.fac === EIXO ? ' (Eixo)' : ''); }
   get capacidade() { return this.def.cap || 0; }
   get transporte() { return this.capacidade > 0; }
-  get voa() { return this.cat === 'air' || this.cat === 'heli'; }
+  get voa() { return this.cat === 'air'; }
 }
 
 export class Estrutura extends Entidade {
@@ -268,10 +268,9 @@ export class Jogo {
 
   parar(lista) { for (const u of lista) if (!u.est) { u.ordem = null; u.orbita = null; } }
 
-  // Pousar: aviões vão ao aeródromo / porta-aviões mais próximo; helicóptero pousa onde está
+  // Pousar: aviões vão ao aeródromo / porta-aviões mais próximo
   ordenarPousar(lista) {
     for (const u of lista) {
-      if (u.cat === 'heli') { u.ordem = { t: 'pousar', alvo: null }; continue; }
       if (u.cat !== 'air') continue;
       let melhor = null, md = 1e12;
       for (const e of [...this.estruturas, ...this.unidades]) {
@@ -323,7 +322,7 @@ export class Jogo {
   }
 
   pousarEm(u, alvo, instantaneo = false) {
-    if (!alvo) { // helicóptero ou sem lugar: pousa no chão
+    if (!alvo) { // sem lugar: pousa no chão
       u.estado = 'pousado';
       u.y = chao(u.x, u.z, false) ?? 0;
       u.v = 0;
@@ -350,7 +349,6 @@ export class Jogo {
     if (t.est) { [...t.guarnicao].forEach((u, i) => this.sairBunker(u, i)); return; }
     if (!t.carga.length) return;
     if (t.cat === 'air' && t.estado === 'voando') { this.saltar(t); return; }
-    if (t.cat === 'heli' && t.estado === 'voando') { this.msg('Pouse o helicóptero primeiro (botão Pousar)'); return; }
     if (t.cat === 'air' && t.def.hangar === undefined && t.estado === 'pousado') { /* ok, no aeródromo */ }
     if (t.cat === 'ship' && !t.def.hangar) {
       const p = this.pontoTerra(t.x, t.z, 400);
@@ -492,7 +490,6 @@ export class Jogo {
     }
     const u = this.addUnidade(tipo, est.fac, x, z);
     if (d.cat === 'air') this.pousarEm(u, est, true);
-    if (d.cat === 'heli') this.pousarEm(u, null, true);
     if (d.cat === 'ship' && d.hangar) u.hd = est.hd + Math.PI;
     if (est.encontro && !u.voa) u.ordem = { t: 'mover', x: est.encontro.x, z: est.encontro.z };
     this.msg(`Pronto: ${d.nome}`, est.fac);
@@ -559,7 +556,6 @@ export class Jogo {
     }
     if (u.pilotado) return;
     if (u.cat === 'air') return this._moverAviao(u, dt);
-    if (u.cat === 'heli') return this._moverHeli(u, dt);
     let alvo = null;
     const o = u.ordem;
     if (o) {
@@ -619,44 +615,6 @@ export class Jogo {
 
   _temAlvo(u) {
     return u.alvos.some((a) => a && a.vivo);
-  }
-
-  _moverHeli(u, dt) {
-    const d = u.def;
-    const g = chao(u.x, u.z, false) ?? 0;
-    const o = u.ordem;
-    if (u.estado === 'pousado') {
-      u.y = g;
-      if (o && (o.t === 'mover' || o.t === 'atacar')) u.estado = 'voando';
-      else return;
-    }
-    let alvoP = null, altDes = g + d.alt;
-    if (o) {
-      if (o.t === 'mover') alvoP = o;
-      if (o.t === 'atacar') { if (!o.alvo.vivo) u.ordem = null; else alvoP = o.alvo; }
-      if (o.t === 'pousar') {
-        altDes = g;
-        if (u.y - g < 1.5) { u.estado = 'pousado'; u.ordem = null; u.y = g; this.msg('Helicóptero pousou', u.fac); return; }
-      }
-    }
-    u.y += Math.max(-8 * dt, Math.min(6 * dt, altDes - u.y));
-    if (alvoP) {
-      const dx = alvoP.x - u.x, dz = alvoP.z - u.z;
-      const dist = Math.hypot(dx, dz);
-      const parar = o.t === 'atacar' ? (d.armas[0]?.alc || 300) * 0.7 : 5;
-      if (dist > parar) {
-        const da = angDif(Math.atan2(dx, dz), u.hd);
-        u.hd += Math.max(-d.giro * dt, Math.min(d.giro * dt, da));
-        const v = Math.min(d.vel, dist * 0.5);
-        u.x += Math.sin(u.hd) * v * dt;
-        u.z += Math.cos(u.hd) * v * dt;
-        u.pitch = -0.12 * Math.min(1, v / d.vel);
-        u.bank = -da * 0.4;
-      } else {
-        if (o.t === 'mover') u.ordem = null;
-        u.pitch *= 0.9; u.bank *= 0.9;
-      }
-    } else { u.pitch *= 0.9; u.bank *= 0.9; }
   }
 
   _moverAviao(u, dt) {

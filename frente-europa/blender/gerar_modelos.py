@@ -2,7 +2,7 @@
 """Frente Europa 1944 — gera no Blender todos os modelos 3D do jogo.
 
 Veículos, aviões, navios, soldados e estruturas do Exército/Marinha dos EUA na
-Segunda Guerra (mais o helicóptero UH-1 e o jato P-80 como "armas modernas"),
+Segunda Guerra (inclusive o P-80 Shooting Star, primeiro caça a jato dos EUA, de 1944/45),
 modelados em low-poly com as MEDIDAS REAIS de cada um (em metros).
 
 Uso (Blender instalado):
@@ -22,8 +22,7 @@ Exército dos EUA da época são de domínio público).
 
 Convenção: frente do modelo = -Y no Blender (vira +Z no glTF / Three.js),
 cima = +Z, chão = z 0 (navios: linha d'água = z 0).
-Peças que o jogo anima têm nomes fixos: "Torre" (gira), "Helice", "Rotor",
-"RotorCauda". Materiais "Pintura" e "Insignia" são recoloridos para o inimigo.
+Peças que o jogo anima têm nomes fixos: "Torre" (gira), "Helice". Materiais "Pintura" e "Insignia" são recoloridos para o inimigo.
 """
 import math
 import os
@@ -714,40 +713,6 @@ def c47():
     return [corpo, juntar(hs, 'Helice', origem=(0, -5.6, 0))]
 
 
-def huey():
-    P = paleta()
-    od = P['od']
-    pc = [loft('Cabine', [
-        (-2.9, 0.2, 0.3, 1.25), (-2.6, 0.75, 0.8, 1.2), (-1.8, 1.25, 1.0, 1.35), (0.0, 1.3, 1.05, 1.45),
-        (1.6, 1.25, 1.0, 1.5), (2.2, 0.8, 0.7, 1.7), (2.6, 0.35, 0.4, 1.85)], od, n=14, p=3.0)]
-    pc.append(esfera('Para-brisa', 1.0, 0, -2.1, 1.55, (1.2, 0.9, 0.75), P['vidro'], 14, 8))
-    pc.append(loft('Cone cauda', [(2.4, 0.4, 0.45, 1.85), (5.0, 0.25, 0.3, 1.95), (8.2, 0.14, 0.18, 2.05)], od, n=10))
-    pc.append(asa('Deriva', 1.5, 1.2, 0.8, 0.6, 0.15, 0, 8.0, 2.0, od, vertical=True))
-    pc.append(asa('Profundor', 2.6, 0.7, 0.5, 0.0, 0.12, 0, 6.2, 1.95, od))
-    pc.append(caixa('Carenagem motor', 1.0, 2.2, 0.7, 0, 0.9, 2.75, od, bev=0.2))
-    pc.append(cil('Mastro', 0.12, 0.6, 0, -0.1, 3.3, 'z', P['metal'], v=8))
-    pc.append(cil('Escape', 0.18, 0.6, 0, 2.15, 2.85, 'y', P['escape'], v=10))
-    for s in (1, -1):
-        pc.append(caixa('Porta aberta', 0.04, 1.4, 1.2, s * 1.31, -0.2, 1.45, P['preto']))
-        pc.append(cil('Esqui', 0.06, 3.6, s * 1.15, 0.0, 0.08, 'y', P['metal'], v=8))
-        pc.append(cil('Esqui ponta', 0.06, 0.5, s * 1.15, -1.95, 0.22, 'y', P['metal'], v=8, rot=(30, 0, 0)))
-        for yy in (-1.0, 1.0):
-            pc.append(cil('Suporte esqui', 0.05, 0.75, s * 1.08, yy, 0.45, 'z', P['metal'], v=6, rot=(0, s * 15, 0)))
-        for i in range(2):
-            pc.append(caixa('Soldado sentado', 0.35, 0.35, 0.6, s * 0.75, -0.6 + i * 0.7, 1.0, P['farda']))
-    pc.append(cil('Metralhadora porta', 0.03, 1.1, 1.25, -0.6, 1.4, 'y', P['metal'], v=6))
-    pc += estrela('Estrela', 0.35, 0.25, 4.5, 1.95, 'x', P['estrela'])
-    pc += estrela('Estrela', 0.35, -0.25, 4.5, 1.95, '-x', P['estrela'])
-    corpo = juntar(pc, 'Helicoptero')
-    rot = [cil('Cubo rotor', 0.25, 0.25, 0, -0.1, 3.65, 'z', P['metal'], v=10)]
-    rot.append(caixa('Pa rotor', 14.6, 0.53, 0.06, 0, -0.1, 3.7, P['preto']))
-    rotor = juntar(rot, 'Rotor', origem=(0, -0.1, 3.65))
-    cauda = [caixa('Pa cauda', 0.05, 0.25, 2.6, 0.25, 8.15, 2.4, P['preto']),
-             cil('Cubo cauda', 0.1, 0.2, 0.2, 8.15, 2.4, 'x', P['metal'], v=8)]
-    rc = juntar(cauda, 'RotorCauda', origem=(0.25, 8.15, 2.4))
-    return [corpo, rotor, rc]
-
-
 # ----------------------------------------------------------------------------
 # NAVIOS
 # ----------------------------------------------------------------------------
@@ -992,13 +957,88 @@ def antiaerea():
     return [base, torre]
 
 
+# ----------------------------------------------------------------------------
+# MARCOS DE PARIS (decoração do mapa, medidas reais)
+# ----------------------------------------------------------------------------
+def tronco_piramide(nome, cx0, cy0, h0, z0, cx1, cy1, h1, z1, m):
+    """Prisma de base quadrada entre dois quadrados horizontais (meia-largura h0 em z0 -> h1 em z1)."""
+    v = [(cx0 - h0, cy0 - h0, z0), (cx0 + h0, cy0 - h0, z0), (cx0 + h0, cy0 + h0, z0), (cx0 - h0, cy0 + h0, z0),
+         (cx1 - h1, cy1 - h1, z1), (cx1 + h1, cy1 - h1, z1), (cx1 + h1, cy1 + h1, z1), (cx1 - h1, cy1 + h1, z1)]
+    f = [(0, 3, 2, 1), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
+    return _malha(nome, v, f, m)
+
+
+def torre_eiffel():
+    ferro = mat('FerroEiffel', 0x5e4b3c, metal=0.6, rough=0.6)
+    pc = []
+    for sx in (1, -1):
+        for sy in (1, -1):
+            # pés curvos: 3 trechos cada vez mais inclinados para dentro
+            pts = [(50, 12, 0), (40, 10.5, 25), (31, 9, 45), (26, 8, 57)]
+            for (a, ha, za), (b, hb, zb) in zip(pts, pts[1:]):
+                pc.append(tronco_piramide('Pe', sx * a, sy * a, ha, za, sx * b, sy * b, hb, zb, ferro))
+            pc.append(tronco_piramide('Pe2', sx * 25, sy * 25, 7, 61, sx * 15, sy * 15, 5, 115, ferro))
+            # travessas em X (treliça) entre os pés
+            for z in (12, 30, 80, 100):
+                pc.append(caixa('Travessa', 1.0, 1.0, 1.0, sx * (44 - z * 0.35), 0, z, ferro))
+    # arcos decorativos entre os pés do 1º nível (curva feita de segmentos)
+    n = 14
+    for lado in range(4):
+        for i in range(n):
+            t0, t1 = -1 + 2 * i / n, -1 + 2 * (i + 1) / n
+            x0, x1 = 34 * t0, 34 * t1
+            z0, z1 = 53 - 30 * t0 * t0, 53 - 30 * t1 * t1
+            L = math.hypot(x1 - x0, z1 - z0)
+            ang = math.degrees(math.atan2(z1 - z0, x1 - x0))
+            o = caixa('Arco', L + 0.4, 2.5, 3.0, (x0 + x1) / 2, 34, (z0 + z1) / 2, ferro, rot=(0, -ang, 0))
+            bpy.context.scene.cursor.location = (0, 0, 0)
+            bpy.ops.object.select_all(action='DESELECT')
+            o.select_set(True)
+            bpy.context.view_layer.objects.active = o
+            bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
+            o.rotation_euler = (0, 0, R(90 * lado))
+            _aplicar(o)
+            pc.append(o)
+    pc.append(caixa('1o andar', 72, 72, 7, 0, 0, 57.5, ferro))
+    pc.append(caixa('Restaurante', 60, 60, 4, 0, 0, 63, mat('Vidraca', 0x8a7a66, rough=0.4)))
+    pc.append(caixa('2o andar', 42, 42, 5, 0, 0, 116, ferro))
+    pc.append(tronco_piramide('Fuste', 0, 0, 14, 118, 0, 0, 4.5, 276, ferro))
+    for z in (150, 190, 230):
+        pc.append(caixa('Anel fuste', 2 * (14 - (z - 118) * 0.0603) + 1.5, 2 * (14 - (z - 118) * 0.0603) + 1.5, 1.2, 0, 0, z, ferro))
+    pc.append(caixa('Topo', 11, 11, 9, 0, 0, 280, ferro))
+    pc.append(cil('Lanterna', 3, 10, 0, 0, 289, 'z', ferro, v=10))
+    pc.append(cil('Antena', 0.8, 30, 0, 0, 309, 'z', mat('Aco', 0x6a6c6e, metal=0.9, rough=0.35), v=8))
+    return [juntar(pc, 'TorreEiffel')]
+
+
+def arco_triunfo():
+    pedra = mat('Pedra', 0xd9cfb6, rough=0.9)
+    pedra2 = mat('PedraEscura', 0xbdb196, rough=0.9)
+    pc = []
+    for s in (1, -1):
+        # pilares (o arco grande atravessa no eixo Y, os arcos laterais no eixo X)
+        for t in (1, -1):
+            pc.append(caixa('Pilar', 15.2, 6.6, 37, s * 14.9, t * 7.7, 18.5, pedra))
+        pc.append(caixa('Pilar meio', 15.2, 8.8, 18.4, s * 14.9, 0, 27.8, pedra))
+        pc.append(caixa('Relevo', 9, 0.6, 12, s * 14.9, -11.2, 9, pedra2))
+        pc.append(caixa('Relevo', 9, 0.6, 12, s * 14.9, 11.2, 9, pedra2))
+    pc.append(caixa('Sobre arco', 14.6, 22, 8, 0, 0, 33, pedra))
+    pc.append(caixa('Cornija', 46.5, 23.5, 1.4, 0, 0, 37.7, pedra2))
+    pc.append(caixa('Atico', 45, 22, 11, 0, 0, 43.9, pedra))
+    pc.append(caixa('Topo', 45.6, 22.6, 0.8, 0, 0, 49.8, pedra2))
+    pc.append(caixa('Base', 50, 27, 0.8, 0, 0, 0.4, pedra2))
+    pc.append(cil('Chama', 0.6, 0.6, 0, 0, 1.0, 'z', mat('Luz', 0xffe9a8, emit=2.0), v=8))
+    return [juntar(pc, 'ArcoTriunfo')]
+
+
 MODELOS = {
     'sherman': sherman, 'm7_priest': m7_priest, 'jeep': jeep, 'halftrack': halftrack, 'caminhao': caminhao,
     'soldado': lambda: soldado('fuzil'), 'soldado_bazuca': lambda: soldado('bazuca'),
-    'p51': p51, 'p80': p80, 'b17': b17, 'c47': c47, 'huey': huey,
+    'p51': p51, 'p80': p80, 'b17': b17, 'c47': c47,
     'porta_avioes': porta_avioes, 'contratorpedeiro': contratorpedeiro, 'higgins': higgins,
     'qg': qg, 'quartel': quartel, 'garagem': garagem, 'aerodromo': aerodromo, 'porto': porto,
     'bunker': bunker, 'antiaerea': antiaerea,
+    'torre_eiffel': torre_eiffel, 'arco_triunfo': arco_triunfo,
 }
 
 

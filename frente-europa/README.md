@@ -2,7 +2,14 @@
 
 Jogo de **estratégia em tempo real (RTS)** na **Europa em tamanho real**, com foco na **França**, feito para **celular Android** (APK) e que também roda no navegador do PC.
 
-O mapa é o **mundo real**: fotos de **satélite** (Esri World Imagery) aplicadas sobre o **relevo real** (AWS Terrain Tiles), com 1 metro do jogo = 1 metro de verdade. Dá para afastar até ver a Europa inteira e aproximar até ver os campos da Normandia, as ruas de Paris e os tanques lado a lado. As **cidades são reais** (Paris, Caen, Cherbourg, Lyon, Marseille, Bruxelas, Berlim...) e as bases ficam nos lugares históricos (praia de Omaha, RAF Tangmere, aeroporto de Orly...).
+O mapa é o **mundo real**: fotos de **satélite** (Esri World Imagery) aplicadas sobre o **relevo real** (AWS Terrain Tiles), com 1 metro do jogo = 1 metro de verdade.
+
+O mundo é **construído em 3D**:
+- **Relevo**: morros, vales e montanhas reais com luz e sombra (exagero ajustável no menu: real 1×, 1,5× ou 2,5×).
+- **Cidades e vilas**: o jogo analisa as fotos de satélite e, onde há telhados e ruas, levanta **prédios e casas com telhado de duas águas**, com a cor dos telhados da própria foto. Nas cidades grandes (Paris, Lyon, Marseille...) os prédios são mais altos.
+- **Florestas e cercas vivas** (o *bocage* da Normandia) viram **árvores 3D**.
+- **Marcos**: **Torre Eiffel** (324 m) e **Arco do Triunfo** (50 m), modelados no Blender nos lugares e tamanhos reais.
+- Opcional: prédios reais do OpenStreetMap no lugar dos gerados. Dá para afastar até ver a Europa inteira e aproximar até ver os campos da Normandia, as ruas de Paris e os tanques lado a lado. As **cidades são reais** (Paris, Caen, Cherbourg, Lyon, Marseille, Bruxelas, Berlim...) e as bases ficam nos lugares históricos (praia de Omaha, RAF Tangmere, aeroporto de Orly...).
 
 > Projeto independente: não usa código de nenhum outro jogo deste repositório.
 
@@ -25,13 +32,12 @@ O jogo precisa de **internet** para baixar as imagens de satélite e o relevo do
 |---|---|
 | **Infantaria** | Fuzileiro (M1 Garand), Bazuca M1A1 |
 | **Veículos WW2** | Jipe Willys MB, Caminhão GMC CCKW, Half-track M3, Tanque **M4A3 Sherman**, Artilharia **M7 Priest** (alcance 11 km) |
-| **Aviões** | **P-51D Mustang** (caça), **P-80 Shooting Star** (jato), **B-17G** (bombardeiro), **C-47** (transporte de paraquedistas) |
-| **Helicóptero** | **UH-1** (leva 8 soldados, pousa em qualquer lugar) |
+| **Aviões** | **P-51D Mustang** (caça), **P-80 Shooting Star** (o primeiro caça a jato dos EUA, de 1944/45), **B-17G** (bombardeiro), **C-47** (transporte de paraquedistas) |
 | **Navios** | **Porta-aviões classe Essex** (12 aviões no hangar), **Contratorpedeiro Fletcher** (alcance 15 km), **Barco Higgins LCVP** (desembarque na praia) |
 | **Estruturas** | Quartel-General, Quartel (Quonset), Garagem, Aeródromo (pista de 700 m), Porto Naval, **Bunker** (até 6 soldados dentro), Canhão Antiaéreo Bofors |
 
 ### Soldados que entram em veículos e estruturas
-- Selecione soldados e **toque num jipe (3), caminhão (12), half-track (10), helicóptero pousado (8), C-47 no aeródromo (18), barco Higgins (12) ou bunker (6)**.
+- Selecione soldados e **toque num jipe (3), caminhão (12), half-track (10), C-47 no aeródromo (18), barco Higgins (12) ou bunker (6)**.
 - **Desembarcar** no painel. O **C-47 em voo solta paraquedistas** (🪂). O Higgins precisa encostar na praia.
 - Aviões pousam no **aeródromo** ou dentro do **porta-aviões** (toque nele com aviões selecionados). "Lançar aviões" decola todos.
 
@@ -45,7 +51,7 @@ Selecione **um** avião e toque em **✈ Pilotar**. Joystick à esquerda é o ma
 - Toque numa **estrutura** para produzir unidades
 - **Cidades**: fique perto com tropas para capturar; cada cidade dá suprimentos por minuto
 - Velocidade do tempo: ⏸ 1× 5× 20× 60× (a França é grande de verdade!)
-- **🏢 Prédios**: liga prédios 3D reais do OpenStreetMap quando a câmera chega perto de uma cidade
+- **🏙 Cidades 3D**: liga/desliga as cidades, casas e árvores em 3D
 - PC: WASD move, Q/E gira, R/F zoom, roda do mouse = zoom, botão direito = girar/inclinar
 
 ## 🛠 Como foi feito / como modificar
@@ -58,7 +64,8 @@ frente-europa/
 │   ├── jogo.js             simulação: unidades, combate, transporte, cidades, produção
 │   ├── ia.js               inteligência do inimigo
 │   ├── piloto.js           modo piloto (batalha aérea)
-│   ├── dados.js            unidades, estruturas, cidades reais e cenários (edite aqui!)
+│   ├── cidades3d.js        constrói prédios, casas e árvores a partir das fotos de satélite
+│   ├── dados.js            unidades, estruturas, cidades reais, marcos e cenários (edite aqui!)
 │   └── predios.js          prédios 3D do OpenStreetMap
 ├── blender/
 │   ├── gerar_modelos.py    gera TODOS os modelos 3D no Blender

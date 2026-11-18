@@ -1,4 +1,4 @@
-// Dados do jogo: unidades (WW2 dos EUA + helicóptero/jato), estruturas, cidades reais e cenários.
+// Dados do jogo: unidades da Segunda Guerra (EUA), estruturas, cidades reais e cenários.
 // Velocidades em m/s reais, alcances em metros, tamanhos reais (modelos do Blender).
 // alvos: t = terrestre, s = navio, a = aéreo, b = estrutura
 
@@ -62,11 +62,6 @@ export const TIPOS = {
     nome: 'C-47 Skytrain', desc: 'Transporte: 18 paraquedistas', modelo: 'c47', cat: 'air', hp: 900, vel: 70, alt: 500,
     custo: 600, tempo: 30, tam: 19.4, giro: 0.25, cap: 18, helice: true, paraquedas: true, armas: [],
   },
-  huey: {
-    nome: 'Helicóptero UH-1', desc: 'Leva 8 soldados, pousa em qualquer lugar', modelo: 'huey', cat: 'heli', hp: 650,
-    vel: 55, alt: 120, custo: 900, tempo: 35, tam: 12.7, giro: 1.2, cap: 8, rotor: true,
-    armas: [{ n: 'M60 de porta', alc: 650, dano: 12, cad: 0.12, alvos: 'tab', prec: 0.3, som: 'mg' }],
-  },
   higgins: {
     nome: 'Barco Higgins LCVP', desc: 'Desembarque: 12 soldados na praia', modelo: 'higgins', cat: 'ship', hp: 280,
     vel: 6, custo: 200, tempo: 15, tam: 11, giro: 0.5, cap: 12, anfibio: true,
@@ -99,7 +94,7 @@ export const ESTRUTURAS = {
   },
   aerodromo: {
     nome: 'Aeródromo', modelo: 'aerodromo', hp: 4500, custo: 900, tam: 80, tempo: 45, pista: true,
-    produz: ['p51', 'p80', 'b17', 'c47', 'huey'],
+    produz: ['p51', 'p80', 'b17', 'c47'],
   },
   porto: {
     nome: 'Porto Naval', modelo: 'porto', hp: 4500, custo: 800, tam: 70, tempo: 45, costa: true,
@@ -156,6 +151,12 @@ export const CIDADES = [
   { nome: 'Genebra', lat: 46.2044, lon: 6.1432, valor: 20, dono: -1 },
 ];
 
+// Marcos famosos (modelos do Blender). rot = rumo em graus; livre = raio sem prédios gerados em volta
+export const MARCOS = [
+  { nome: 'Torre Eiffel', modelo: 'torre_eiffel', lat: 48.85826, lon: 2.29450, rot: 47, livre: 110 },
+  { nome: 'Arco do Triunfo', modelo: 'arco_triunfo', lat: 48.87378, lon: 2.29504, rot: 63, livre: 140 },
+];
+
 // Cenário principal: Dia D, 6 de junho de 1944
 export const CENARIO_NORMANDIA = {
   nome: 'Dia D: Normandia → Paris',
@@ -176,7 +177,6 @@ export const CENARIO_NORMANDIA = {
       { tipo: 'jeep', n: 2, lat: 49.3545, lon: -0.8500 },
       { tipo: 'halftrack', n: 2, lat: 49.3520, lon: -0.8590, carga: { fuzileiro: 6 } },
       { tipo: 'm7', n: 1, lat: 49.3560, lon: -0.8700 },
-      { tipo: 'huey', n: 1, lat: 49.3570, lon: -0.8460, pousado: true },
       { tipo: 'fuzileiro', n: 8, lat: 49.4070, lon: -1.1650 },
       { tipo: 'sherman', n: 2, lat: 49.4040, lon: -1.1680 },
       { tipo: 'higgins', n: 3, lat: 49.3800, lon: -0.8700, carga: { fuzileiro: 8, bazuca: 2 } },

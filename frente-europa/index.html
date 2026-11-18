@@ -31,7 +31,7 @@
       <button id="btnCaixa">⬚<span>Área</span></button>
       <button id="btnTela">👥<span>Na tela</span></button>
       <button id="btnBase">⌂<span>Base</span></button>
-      <button id="btnPredios">🏢<span>Prédios</span></button>
+      <button id="btnPredios" class="ativo">🏙<span>Cidades 3D</span></button>
     </div>
 
     <canvas id="minimapa" width="200" height="200" class="escondido"></canvas>
@@ -73,7 +73,8 @@
           <button data-cen="normandia">🎖 Campanha: Dia D — Normandia → Paris</button>
           <button data-cen="aereo">✈ Batalha Aérea sobre o Canal da Mancha</button>
           <button data-cen="livre">🌍 Europa Livre (sandbox, suprimentos infinitos)</button>
-          <label class="opc"><input type="checkbox" id="optPredios"> Prédios 3D reais (OpenStreetMap)</label>
+          <label class="opc">Relevo <select id="optRelevo"><option value="1">Real (1×)</option><option value="1.5" selected>Destacado (1,5×)</option><option value="2.5">Montanhoso (2,5×)</option></select></label>
+          <label class="opc"><input type="checkbox" id="optPredios"> Usar prédios reais do OpenStreetMap (em vez dos gerados pelo satélite)</label>
           <label class="opc">Detalhe do mapa <select id="optDetalhe"><option value="1.6">Baixo (celular simples)</option><option value="2.2" selected>Médio</option><option value="3.2">Alto</option></select></label>
           <button id="btnAjuda" class="secundario">❓ Como jogar</button>
         </div>
@@ -83,10 +84,11 @@
             <li><b>Mover o mapa:</b> arraste com um dedo. <b>Zoom:</b> pinça. <b>Girar/inclinar:</b> dois dedos (gire e arraste para cima/baixo).</li>
             <li><b>Selecionar:</b> toque numa unidade. Toque duas vezes para pegar todas do mesmo tipo na tela. <b>⬚ Área</b> para arrastar um retângulo.</li>
             <li><b>Mover/atacar:</b> com unidades selecionadas, toque no chão ou num inimigo.</li>
-            <li><b>Entrar em veículos:</b> selecione soldados e toque num jipe, caminhão, half-track, helicóptero (pousado), C-47 (no aeródromo), barco Higgins ou bunker.</li>
+            <li><b>Entrar em veículos:</b> selecione soldados e toque num jipe, caminhão, half-track, C-47 (no aeródromo), barco Higgins ou bunker.</li>
             <li><b>Desembarcar / Saltar:</b> botão no painel. O C-47 em voo solta paraquedistas! O Higgins precisa chegar à praia.</li>
             <li><b>Aviões:</b> Pousar volta ao aeródromo ou porta-aviões. Toque num porta-aviões com aviões selecionados para pousar nele. <b>Decolar</b> lança os aviões.</li>
             <li><b>✈ Pilotar:</b> selecione UM avião e assuma o manche. Joystick à esquerda (puxe para baixo para subir), acelerador e FOGO à direita. PC: setas/WASD, Shift/Ctrl, Espaço, B = bomba.</li>
+            <li><b>Mundo 3D:</b> o relevo é real (com sombra nos morros) e as cidades, vilas e florestas são construídas em 3D a partir das fotos de satélite quando a câmera chega perto. Botão 🏙 liga/desliga.</li>
             <li><b>Cidades reais:</b> fique perto com tropas para capturar. Cada cidade dá suprimentos por minuto. Liberte Paris para vencer!</li>
             <li><b>Construir:</b> Quartel, Garagem, Aeródromo, Porto (na costa), Bunker e Antiaérea. Toque numa estrutura para produzir unidades.</li>
           </ul>

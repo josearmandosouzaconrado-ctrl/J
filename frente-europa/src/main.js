@@ -2,15 +2,16 @@
 import * as THREE from 'three';
 import { Terreno } from './terreno.js';
 import { CameraRTS } from './camera.js';
-import { carregarModelos, texturaIcone } from './modelos.js';
+import { carregarModelos, instanciar, texturaIcone } from './modelos.js';
 import { Efeitos } from './efeitos.js';
 import { ALIADOS, EIXO, Jogo } from './jogo.js';
 import { IA } from './ia.js';
 import { Piloto } from './piloto.js';
 import { Predios } from './predios.js';
-import { CENARIO_AEREO, CENARIO_LIVRE, CENARIO_NORMANDIA, ESTRUTURAS, TIPOS } from './dados.js';
+import { Cidades3D } from './cidades3d.js';
+import { CENARIO_AEREO, CENARIO_LIVRE, CENARIO_NORMANDIA, ESTRUTURAS, MARCOS, TIPOS } from './dados.js';
 import { lat2ty, lon2tx, paraMundo, tx2lon, ty2lat, formatarDist } from './geo.js';
-import { chao, preCarregar, tickRelevo } from './relevo.js';
+import { chao, definirExagero, preCarregar, tickRelevo } from './relevo.js';
 import { estatRede } from './rede.js';
 import { alternarSom, iniciarAudio } from './audio.js';
 
@@ -37,6 +38,8 @@ const terreno = new Terreno(cena, renderer);
 const rts = new CameraRTS(camera, renderer.domElement);
 const fx = new Efeitos(cena);
 const predios = new Predios(cena);
+const cidades3d = new Cidades3D(cena);
+const marcos = [];
 let jogo = null, ia = null, piloto = null;
 let velocidade = 5;
 let selecao = [];
@@ -70,8 +73,18 @@ function iniciar(cen) {
   iniciarAudio();
   if (jogo) location.reload();
   terreno.k = parseFloat($('#optDetalhe').value);
+  definirExagero(parseFloat($('#optRelevo').value));
   predios.ligado = $('#optPredios').checked;
-  $('#btnPredios').classList.toggle('ativo', predios.ligado);
+  cidades3d.semPredios = predios.ligado;
+  $('#btnPredios').classList.toggle('ativo', cidades3d.ligado);
+  for (const m of MARCOS) {
+    const o = instanciar(m.modelo, 0);
+    const p = paraMundo(m.lat, m.lon);
+    o.position.set(p.x, 0, p.z);
+    o.rotation.y = (180 - m.rot) * Math.PI / 180;
+    cena.add(o);
+    marcos.push(o);
+  }
   jogo = new Jogo(cena);
   jogo.fx = fx;
   ia = new IA(jogo, 1);
@@ -384,10 +397,11 @@ $('#btnTela').onclick = () => selecionar(jogo.unidades.filter((u) => u.fac === A
 })()));
 $('#btnBase').onclick = irBase;
 $('#btnPredios').onclick = () => {
-  predios.ligado = !predios.ligado;
-  $('#btnPredios').classList.toggle('ativo', predios.ligado);
-  if (!predios.ligado) predios.limpar();
-  msg(predios.ligado ? 'Prédios 3D do OpenStreetMap ligados (aproxime a câmera de uma cidade)' : 'Prédios 3D desligados');
+  cidades3d.ligado = !cidades3d.ligado;
+  $('#btnPredios').classList.toggle('ativo', cidades3d.ligado);
+  if (!cidades3d.ligado) { cidades3d.limpar(); predios.limpar(); }
+  predios.ligado = cidades3d.ligado && $('#optPredios').checked;
+  msg(cidades3d.ligado ? 'Cidades, casas e árvores em 3D ligadas (aproxime a câmera)' : 'Cidades 3D desligadas (só a foto de satélite)');
 };
 document.querySelectorAll('.velocidades button').forEach((b) => {
   b.onclick = () => {
@@ -530,8 +544,6 @@ function sincronizar(dt, t) {
     }
     const pt = e.modelo.userData.partes;
     if (pt.Helice) pt.Helice.rotation.z += dt * (e.estado === 'voando' ? 60 : 0);
-    if (pt.Rotor) pt.Rotor.rotation.y += dt * (e.estado === 'voando' ? 28 : 0);
-    if (pt.RotorCauda) pt.RotorCauda.rotation.x += dt * (e.estado === 'voando' ? 60 : 0);
     if (pt.Torre) {
       const a = e.alvos?.find((x) => x && x.vivo);
       const des = a ? Math.atan2(a.x - e.x, a.z - e.z) - e.hd : 0;
@@ -539,6 +551,11 @@ function sincronizar(dt, t) {
       da = Math.atan2(Math.sin(da), Math.cos(da));
       pt.Torre.rotation.y += Math.max(-dt * 1.2, Math.min(dt * 1.2, da));
     }
+  }
+  for (const o of marcos) {
+    const d = Math.hypot(o.position.x - cp.x, o.position.z - cp.z);
+    o.visible = d < 60000;
+    if (o.visible) { const h = chao(o.position.x, o.position.z, d < 10000); if (h !== null) o.position.y = h - 0.5; }
   }
   for (const c of jogo.cidades) {
     const y = (chao(c.x, c.z, false) ?? 0) + 30;
@@ -570,6 +587,10 @@ function laco(agora) {
     sincronizar(dt, agora / 1000);
     fx.atualizar(dt * Math.max(1, Math.min(velocidade, 3)), camera.position);
     predios.atualizar(rts.alvo, rts.dist);
+    if (piloto.ativo) {
+      const g = chao(camera.position.x, camera.position.z, false) ?? 0;
+      cidades3d.atualizar(camera.position, Math.max(200, (camera.position.y - g) * 2.5));
+    } else cidades3d.atualizar(rts.alvo, rts.dist);
     while (jogo.msgs.length) msg(jogo.msgs.shift());
     acumUI += dt;
     if (acumUI > 0.25) {
@@ -609,4 +630,4 @@ function laco(agora) {
 requestAnimationFrame(laco);
 
 // depuração no navegador
-window.FE = { get jogo() { return jogo; }, rts, terreno, camera, piloto: () => piloto, iniciar, CENARIO_NORMANDIA };
+window.FE = { get jogo() { return jogo; }, cidades3d, rts, terreno, camera, piloto: () => piloto, iniciar, CENARIO_NORMANDIA };

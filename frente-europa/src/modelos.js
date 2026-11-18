@@ -4,8 +4,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export const NOMES_MODELOS = [
   'sherman', 'm7_priest', 'jeep', 'halftrack', 'caminhao', 'soldado', 'soldado_bazuca', 'p51', 'p80', 'b17',
-  'c47', 'huey', 'porta_avioes', 'contratorpedeiro', 'higgins', 'qg', 'quartel', 'garagem', 'aerodromo',
-  'porto', 'bunker', 'antiaerea',
+  'c47', 'porta_avioes', 'contratorpedeiro', 'higgins', 'qg', 'quartel', 'garagem', 'aerodromo',
+  'porto', 'bunker', 'antiaerea', 'torre_eiffel', 'arco_triunfo',
 ];
 
 const base = {};
@@ -89,7 +89,7 @@ export function texturaIcone(cat, faccao, selecionado = false) {
   g.fillStyle = selecionado ? '#ffe36b' : cor;
   g.strokeStyle = '#111';
   g.lineWidth = 3;
-  if (cat === 'air' || cat === 'heli') {
+  if (cat === 'air') {
     g.beginPath(); g.arc(32, 36, 22, Math.PI, 0); g.lineTo(54, 50); g.lineTo(10, 50); g.closePath();
   } else if (cat === 'ship') {
     g.beginPath(); g.moveTo(6, 26); g.lineTo(58, 26); g.lineTo(48, 50); g.lineTo(16, 50); g.closePath();
@@ -106,7 +106,6 @@ export function texturaIcone(cat, faccao, selecionado = false) {
   if (cat === 'inf') { g.moveTo(6, 16); g.lineTo(58, 50); g.moveTo(58, 16); g.lineTo(6, 50); g.stroke(); }
   if (cat === 'veh') { g.ellipse(32, 33, 18, 9, 0, 0, Math.PI * 2); g.stroke(); }
   if (cat === 'air') { g.moveTo(14, 38); g.quadraticCurveTo(23, 28, 32, 38); g.quadraticCurveTo(41, 28, 50, 38); g.stroke(); }
-  if (cat === 'heli') { g.moveTo(16, 30); g.lineTo(48, 44); g.lineTo(48, 30); g.lineTo(16, 44); g.closePath(); g.stroke(); }
   if (cat === 'ship') { g.moveTo(32, 28); g.lineTo(32, 46); g.moveTo(24, 34); g.lineTo(40, 34); g.stroke(); }
   if (cat === 'est') { g.moveTo(22, 46); g.lineTo(22, 20); g.lineTo(42, 26); g.lineTo(22, 32); g.fill(); g.stroke(); }
   const t = new THREE.CanvasTexture(c);

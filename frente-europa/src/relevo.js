@@ -3,6 +3,10 @@
 import { baixarImagem, URL_RELEVO } from './rede.js';
 import { lat2ty, lon2tx, paraLatLon } from './geo.js';
 
+// Exagero do relevo (1 = real). A França é bem plana; 1,5× deixa morros e vales mais visíveis.
+export let EXAGERO = 1.5;
+export function definirExagero(v) { EXAGERO = v; }
+
 const cache = new Map(); // "z/x/y" -> { dados: Float32Array|null, estado, uso }
 const MAX_CACHE = 260;
 let quadro = 0;
@@ -85,7 +89,7 @@ export function altitude(xm, zm, pedir = true) {
 // Altura do chão onde as unidades andam (mar = 0)
 export function chao(xm, zm, pedir = true) {
   const h = altitude(xm, zm, pedir);
-  return h === null ? null : Math.max(0, h);
+  return h === null ? null : Math.max(0, h) * EXAGERO;
 }
 
 // É mar? (true / false / null = ainda não sabe)
