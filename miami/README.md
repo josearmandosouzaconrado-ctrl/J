@@ -40,6 +40,42 @@ os **EUA contra a Rússia e a China**, que são aliadas. Antes chamado "Miami: S
 - Os EUA também têm a Marinha (docas, destróier, porta-aviões USS Enterprise); a marinha da Rússia e da China fica
   para a próxima etapa.
 
+## 🎖️ Exército dos EUA na 2ª Guerra (Base 1944)
+
+Na base dos EUA, ao lado do quartel, fica a **Base 1944** (galpões Quonset, sacos de areia, torres de vigia de madeira e pátio
+de veículos). Ela produz o Exército americano da 2ª Guerra Mundial, com **todos os modelos feitos no Blender por código**
+(`ferramentas/ww2/`), em escala real, a partir das medidas publicadas de cada veículo:
+
+| Onde | Unidades de 1944 |
+|---|---|
+| 🎖️ Base 1944 | Soldado GI (M1 Garand), Sargento (Thompson), Atirador BAR, Bazuqueiro (bazuca M1A1), Atirador de elite (Springfield M1903A4), Médico |
+| 🎖️ Base 1944 | Jeep Willys MB (.30), Caminhão GMC CCKW "Deuce and a half" (leva 16), Meia-lagarta M3 (leva 10), Tanque **M4A3 Sherman** (75 mm), Tanque **M26 Pershing** (90 mm), Obuseiro **M7 Priest** (105 mm) |
+| 🛳️ Porta-aviões e 🛫 Pista | **P-51D Mustang**, **P-47D Thunderbolt**, **F4U Corsair** (asa de gaivota) e bombardeiro **B-25J Mitchell** |
+| ⚓ Docas | Lancha de desembarque **LCVP Higgins** (leva 36) e lancha torpedeira **PT** (Elco 80 pés) |
+
+- **Soldados de 1944** com farda HBT verde-oliva, capacete M1 com a jugular solta, cinto de cartucheiras com suspensórios,
+  cantil, granadas, mochila M1928 com a pá de trincheira e o fuzil M1 Garand de coronha de nogueira.
+- **Pintura assada do Blender:** verde-oliva do Exército com sujeira nos cantos, estrelas brancas com círculo, faixas de
+  invasão do Dia D (preto e branco) nas asas e na fuselagem do Mustang e do Thunderbolt, insígnia "star and bar",
+  pontas das hélices amarelas e o azul-marinho brilhante do Corsair.
+- **Peças que se mexem:** torres dos tanques e metralhadoras giram, o trem de pouso recolhe e as **hélices giram** em voo
+  (com o disco borrado), cada motor do B-25 com a sua hélice.
+- **Combate aéreo da 2ª Guerra:** os aviões a hélice não têm mísseis. Eles perseguem o inimigo em curvas mais fechadas que
+  os jatos e atiram com as metralhadoras .50 das asas (traçantes saindo das duas asas e convergindo no alvo); o B-25 se
+  defende com o metralhador da torre dorsal, que atira para qualquer lado. Aviões atingidos soltam fumaça.
+- **Ataque ao solo:** foguetes HVAR (Mustang e Corsair) e bombas (Thunderbolt com 2 de 500 lb, B-25 com 6).
+- **Som:** ronco de motor a pistão com a pulsação dos cilindros para os aviões a hélice.
+- Um Corsair e um Mustang já começam no convés do porta-aviões; o porta-aviões comporta até 9 aviões.
+
+```bash
+# modelos da 2ª Guerra (Blender como módulo: pip install bpy)
+cd miami/ferramentas/ww2
+python -I modelos_ww2.py -- previas                      # fotos de prévia de cada modelo
+python -I exportar_ww2.py -- ../../www/modelos/ww2.js previas
+# fardas e equipamento do GI de 1944 (só a nação ww2; as outras ficam como estão)
+cd ../leste && python -I exportar_soldados.py -- ../../www/modelos/soldados.js previas ww2
+```
+
 ## Baixar
 
 - **APK (Android 7+), sempre a versão mais nova:**
@@ -187,4 +223,4 @@ o arquivo original não vai para o repositório.
 Porta-aviões: modelo "USS Enterprise CVN-80 Aircraft Carrier" (Sketchfab), convertido com `ferramentas/porta/converter.py`
 para `www/modelos/porta.js` (geometria e texturas embutidas).
 Helicópteros: modelos "SH-60B Seahawk Helicopter" e "Boeing CH-47 Chinook Military Transport Aircraft", convertidos com
-`ferramentas/helis/converter.py` para `www/modelos/helis.js`. Os demais modelos 3D, os sons e o código foram feitos para este jogo.
+`ferramentas/helis/converter.py` para `www/modelos/helis.js`. Os demais modelos 3D (incluindo todo o Exército da 2ª Guerra), os sons e o código foram feitos para este jogo.

@@ -1886,6 +1886,70 @@ Object.assign(LESTE_A, {
 Object.assign(VEIC, LESTE_V);
 Object.assign(AERO, LESTE_A);
 
+// ---------------- Exército dos EUA na 2ª Guerra (www/modelos/ww2.js, feitos no Blender) ----------------
+Object.assign(VEIC, {
+  sherman() { return ww2Real('sherman', { canoZ: 4.5, canoY: 0.42, destrocoTorre: true }, () => VEIC.bradley()); },
+  pershing() { return ww2Real('pershing', { canoZ: 6.2, canoY: 0.48, destrocoTorre: true }, () => VEIC.bradley()); },
+  priest() { return ww2Real('priest', { canoZ: 3.2, canoY: 0.85 }, () => VEIC.paladin()); },
+  jeep() { return ww2Real('jeep', { canoZ: 1.0, canoY: 0.68 }, () => VEIC.humvee()); },
+  halftrack() { return ww2Real('halftrack', { canoZ: 1.4, canoY: 0.64 }, () => VEIC.stryker()); },
+  gmc() { return ww2Real('gmc', { canoZ: 1.2, canoY: 0.22 }, () => VEIC.humvee()); },
+});
+const AVIAO_WW2 = { p51: [7.6, 1.7], p47: [8.2, 2.0], corsair: [8.0, 2.0], b25: [12, 1.85] };
+for (const k in AVIAO_WW2) {
+  const [pontas, rh] = AVIAO_WW2[k];
+  AERO[k] = () => {
+    const real = ww2Real(k, { pontas, raioHelice: rh, semChama: true }, () => null);
+    if (real) return { ...real, trem: !!real.trem };
+    return { ...AERO.a10(), semChama: true };
+  };
+}
+Object.assign(NAVAL, {
+  lcvp() { return ww2Real('lcvp', { canoZ: 0.6, canoY: 0.9 }, () => NAVAL.lancha()); },
+  pt() { return ww2Real('pt', { canoZ: 1.5, canoY: 1.0 }, () => NAVAL.lancha()); },
+});
+// Base 1944: galpões Quonset (meia-lua de chapa ondulada), sacos de areia, pátio de veículos, caixas d'água e placa
+ESTR.base44 = () => {
+  const c = new Mont();
+  const OD = 0x5b5f3a, OD2 = 0x4a4e30, CHAPA = 0x8a8d84, AREIA_S = 0xb4a27a, TERRA = 0x6e6450;
+  c.box(78, 0.08, 78, TERRA, 0, 0.04, 0);
+  // galpões Quonset
+  for (let i = 0; i < 4; i++) {
+    const x = -26 + i * 13;
+    // meio cilindro deitado ao longo de z (arco para cima), com as pontas fechadas
+    c.add(new THREE.CylinderGeometry(4.6, 4.6, 22, 16, 1, false, Math.PI / 2, Math.PI), i % 2 ? CHAPA : OD, x, 0.05, -18, Math.PI / 2, 0, 0);
+    c.box(9.2, 4.6, 0.2, OD2, x, 2.3, -6.95);
+    c.box(1.8, 2.6, 0.25, 0x3a3020, x, 1.3, -6.85);
+    c.box(0.9, 0.8, 0.2, 0x8fb0c0, x - 2.6, 2.6, -6.85);
+    c.box(0.9, 0.8, 0.2, 0x8fb0c0, x + 2.6, 2.6, -6.85);
+  }
+  // pátio de veículos com abrigo de lona
+  c.box(36, 0.1, 22, 0x55584e, 14, 0.09, 18);
+  for (let i = 0; i < 4; i++) { c.cil(0.12, 0.12, 4.2, 6, 0x5a4a30, 0 + i * 9, 2.1, 9); c.cil(0.12, 0.12, 4.2, 6, 0x5a4a30, 0 + i * 9, 2.1, 27); }
+  for (const s of [-1, 1]) c.box(30, 0.15, 10.2, 0x6b6a48, 13.5, 6.0, 18 + s * 4.6, s * 0.36, 0, 0);   // telhado de lona em duas águas
+  // muro de sacos de areia em volta, com entrada
+  for (let i = 0; i < 40; i++) {
+    const a = (i / 40) * Math.PI * 2;
+    if (i % 10 === 0 || i % 10 === 1) continue;
+    const r = 37;
+    c.box(5.4, 1.4, 1.3, AREIA_S, Math.sin(a) * r, 0.7, Math.cos(a) * r, 0, a + Math.PI / 2, 0);
+  }
+  // ninho de metralhadora, torre de vigia de madeira e caixa d'água
+  for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 1.4 - 0.2; c.box(1.4, 0.6, 0.8, AREIA_S, -24 + Math.sin(a) * 3, 0.3 + (i % 2) * 0.55, 22 + Math.cos(a) * 3, 0, a, 0); }
+  for (const [x, z] of [[-30, 30], [30, -30]]) {
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) c.cil(0.15, 0.2, 9, 5, 0x5a4a30, x + sx * 1.4, 4.5, z + sz * 1.4);
+    c.box(4.2, 0.3, 4.2, 0x5a4a30, x, 9, z); c.box(4.2, 1.1, 0.12, 0x5a4a30, x, 9.6, z + 2.05); c.box(4.6, 0.25, 4.6, OD2, x, 11.4, z);
+  }
+  c.cil(2.2, 2.2, 3.5, 12, OD2, 30, 9, 30);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) c.cil(0.15, 0.15, 8, 5, 0x5a4a30, 30 + sx * 1.6, 4, 30 + sz * 1.6);
+  // caixotes de munição, tambores e placa da base
+  for (let i = 0; i < 8; i++) c.box(1.2, 0.6, 0.7, 0x4f5a2c, -8 + (i % 4) * 1.3, 0.3 + Math.floor(i / 4) * 0.6, 6);
+  for (let i = 0; i < 6; i++) c.cil(0.3, 0.3, 0.9, 10, i % 2 ? 0x4a5a2a : 0x3e4a26, 4 + (i % 3) * 0.7, 0.45, 5 + Math.floor(i / 3) * 0.7);
+  c.box(5, 1.6, 0.15, 0x2e3a1e, 0, 2.6, 36.2); c.box(4.4, 0.25, 0.17, 0xe8e2c8, 0, 2.9, 36.2); c.box(3.4, 0.2, 0.17, 0xe8e2c8, 0, 2.4, 36.2);
+  for (const sx of [-1, 1]) c.cil(0.1, 0.1, 3.4, 6, 0x5a4a30, sx * 2.3, 1.7, 36.2);
+  return { corpo: c.build() };
+};
+
 for (const k in VEIC) { if (k === 'abrams') continue; const f = VEIC[k]; VEIC[k] = () => { SUJAR = true; try { return f(); } finally { SUJAR = false; } }; }
 const TODOS = Object.assign({}, VEIC, AERO, NAVAL, ESTR);
 
@@ -1918,8 +1982,8 @@ function portaReal(M) {
 
 // tanques e jatos da Rússia e da China modelados no Blender (www/modelos/leste.js): textura com a pintura assada
 const _texLeste = {};
-function lesteReal(nome, extra) {
-  const M = window.MODELOS_LESTE && window.MODELOS_LESTE[nome];
+function lesteReal(nome, extra, fonte = window.MODELOS_LESTE) {
+  const M = fonte && fonte[nome];
   if (!M) return null;
   const b64 = (t) => { const b = atob(t), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u.buffer; };
   const malhas = (pt, chave) => {
@@ -1937,19 +2001,23 @@ function lesteReal(nome, extra) {
     if (!pt.tex) mat = matVidro();
     else {
       const t = _texLeste[chave] || (_texLeste[chave] = new THREE.TextureLoader().load(pt.tex));
-      t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = QUAL === 0 ? 2 : 4; t.flipY = false;
+      // a textura assada no Blender tem o V de baixo para cima: flipY = true (o padrão) deixa a pintura no lugar certo
+      t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = QUAL === 0 ? 2 : 4; t.flipY = true;
       mat = QUAL === 0 ? new THREE.MeshLambertMaterial({ map: t }) : new THREE.MeshStandardMaterial({ map: t, roughness: 0.72, metalness: 0.12, envMapIntensity: 0.5 });
     }
     return [{ geo: g, mat }];
   };
   const def = { ...extra, real: true };
-  if (M.pivo) { if (def.torreY === undefined) def.torreY = M.pivo[1]; if (def.torreZ === undefined) def.torreZ = M.pivo[2]; }
+  if (M.pivo) { if (def.torreY === undefined) def.torreY = M.pivo[1]; if (def.torreZ === undefined) def.torreZ = M.pivo[2]; if (def.torreX === undefined) def.torreX = M.pivo[0]; }
   def.malhas = malhas(M.corpo, nome + '/corpo');
   if (M.vidro) def.malhas.push(...malhas(M.vidro, nome + '/vidro'));
   if (M.torre) { def.torre = true; def.torreMalhas = malhas(M.torre, nome + '/torre'); }
   if (M.trem) { def.trem = true; def.tremMalhas = malhas(M.trem, nome + '/trem'); }
+  // hélices dos aviões da 2ª Guerra: peças que giram em volta do eixo do motor
+  if (M.helices && M.helices.length) def.helices = M.helices.filter((h) => M[h.peca]).map((h) => ({ pos: h.pos, malhas: malhas(M[h.peca], nome + '/' + h.peca) }));
   return def;
 }
+const ww2Real = (nome, extra, reserva) => lesteReal(nome, { ...extra, ww2: true }, window.MODELOS_WW2) || reserva();
 
 // helicópteros com modelo 3D texturizado (www/modelos/helis.js): corpo, rotores e rotor de cauda separados
 const _texHeli = {};
@@ -2012,7 +2080,7 @@ export function criarModelo(nome) {
   const grupoDe = (ms) => { const g = new THREE.Group(); for (const m of ms) g.add(new THREE.Mesh(m.geo, m.mat)); return g; };
   if (def.torre) {
     const t = def.torreMalhas ? grupoDe(def.torreMalhas) : new THREE.Mesh(def.torre, matCorpo());
-    t.position.set(0, def.torreY, def.torreZ);
+    t.position.set(def.torreX || 0, def.torreY, def.torreZ);
     grupo.add(t); r.torre = t;
   }
   // peça móvel: uma malha (modelos feitos no jogo) ou várias texturizadas (modelos 3D importados)
@@ -2062,6 +2130,21 @@ export function criarModelo(nome) {
       r.chamas.push(a, b);
       for (let k = 1; k <= 3; k++) { const t = new THREE.Mesh(g3, mat3); t.position.set(x, def.motorY, def.motorZ - k * R * 1.6); grupo.add(t); r.chamas.push(t); }
     }
+  }
+  if (def.helices) {
+    r.helices = [];
+    for (const h of def.helices) {
+      const g = grupoDe(h.malhas);
+      g.position.set(h.pos[0], h.pos[1], h.pos[2]);
+      grupo.add(g); r.helices.push(g);
+    }
+    // disco translúcido da hélice girando (borrão)
+    const disco = new THREE.MeshBasicMaterial({ color: 0x222222, transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide });
+    r.discos = def.helices.map((h) => {
+      const m = new THREE.Mesh(new THREE.CircleGeometry(def.raioHelice || 1.7, 24), disco);
+      m.position.set(h.pos[0], h.pos[1], h.pos[2] + 0.12); m.visible = false; m.userData.semSombra = true;
+      grupo.add(m); return m;
+    });
   }
   if (def.trem) {
     r.trem = def.tremMalhas ? grupoDe(def.tremMalhas) : new THREE.Mesh(def.trem, matCorpo());

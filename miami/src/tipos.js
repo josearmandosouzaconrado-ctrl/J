@@ -17,6 +17,28 @@ export const TIPOS = {
   abrams: { nome: 'Tanque M1A2 Abrams', sub: 'Canhão 120mm', icone: '🛡️', classe: 'veic', modelo: 'abrams', hp: 3200, vel: 19, alcance: 170, dano: 320, splash: 8, cadencia: 4.2, precisao: 0.85, arma: '120mm', sec: { alcance: 90, dano: 12, cadencia: 0.11, precisao: 0.45, arma: 'mg' }, custo: 950, tempo: 20, de: 'patio', slots: 20, raio: 4.8, atropela: true },
   paladin: { nome: 'Obuseiro M109A7 Paladin', sub: 'Artilharia 155mm • longo alcance', icone: '💥', classe: 'veic', modelo: 'paladin', hp: 1600, vel: 15, alcance: 700, minAlc: 80, dano: 300, splash: 15, cadencia: 6, precisao: 0.7, arma: '155mm', arco: true, custo: 900, tempo: 20, de: 'patio', slots: 18, raio: 4.6 },
   himars: { nome: 'HIMARS M142', sub: 'Lança-foguetes • 6 foguetes', icone: '🚀', classe: 'veic', modelo: 'himars', hp: 1100, vel: 22, alcance: 1100, minAlc: 150, dano: 230, splash: 16, cadencia: 0.5, salva: 6, recarga: 20, precisao: 0.75, arma: 'foguete', custo: 1200, tempo: 24, de: 'patio', slots: 16, raio: 3.8 },
+  // ---------------- Exército dos EUA na 2ª Guerra (Base 1944) ----------------
+  // visual: 'ww2' = farda verde-oliva, capacete M1 e equipamento de 1944 (www/modelos/soldados.js)
+  gi: { nome: 'Soldado GI', sub: '1944 • Fuzil M1 Garand + granadas', icone: '🪖', classe: 'inf', hp: 100, vel: 6.3, alcance: 60, dano: 21, cadencia: 0.55, precisao: 0.62, arma: 'fuzil', custo: 40, tempo: 4, de: 'base44', slots: 1, raio: 0.6, visual: 'ww2' },
+  gi_thompson: { nome: 'Sargento', sub: '1944 • Submetralhadora Thompson M1A1', icone: '🔫', classe: 'inf', hp: 110, vel: 6.5, alcance: 42, dano: 12, cadencia: 0.09, precisao: 0.45, arma: 'mg', custo: 60, tempo: 5, de: 'base44', slots: 1, raio: 0.6, visual: 'ww2' },
+  gi_bar: { nome: 'Atirador BAR', sub: '1944 • Fuzil automático Browning M1918A2', icone: '🔫', classe: 'inf', hp: 115, vel: 5.9, alcance: 64, dano: 14, cadencia: 0.16, precisao: 0.45, arma: 'mg', custo: 80, tempo: 6, de: 'base44', slots: 1, raio: 0.6, visual: 'ww2' },
+  gi_bazuca: { nome: 'Bazuqueiro', sub: '1944 • Carabina M1 + bazuca M1A1', icone: '🚀', classe: 'inf', hp: 100, vel: 6.1, alcance: 50, dano: 13, cadencia: 0.45, precisao: 0.55, arma: 'fuzil', sec: AT('rpg', 120), custo: 90, tempo: 6, de: 'base44', slots: 1, raio: 0.6, visual: 'ww2' },
+  gi_sniper: { nome: 'Atirador de elite', sub: '1944 • Springfield M1903A4 com luneta', icone: '🎯', classe: 'inf', hp: 90, vel: 6.1, alcance: 140, dano: 95, cadencia: 1.9, precisao: 0.9, arma: 'sniper', custo: 110, tempo: 8, de: 'base44', slots: 1, raio: 0.6, visual: 'ww2' },
+  gi_medico: { nome: 'Médico (1944)', sub: 'Braçadeira da Cruz Vermelha • cura soldados', icone: '⚕️', classe: 'inf', hp: 100, vel: 6.5, alcance: 35, dano: 8, cadencia: 0.6, precisao: 0.5, arma: 'pistola', cura: 7, custo: 90, tempo: 6, de: 'base44', slots: 1, raio: 0.6, visual: 'ww2' },
+  jeep: { nome: 'Jeep Willys MB', sub: '1944 • Metralhadora .30 M1919 • leva 3', icone: '🚙', classe: 'veic', modelo: 'jeep', hp: 380, vel: 29, alcance: 75, dano: 15, cadencia: 0.13, precisao: 0.45, arma: 'mg', carga: 3, cargaTipos: ['inf', 'civil'], custo: 140, tempo: 6, de: 'base44', slots: 4, raio: 2.0, leve: true, atropela: true },
+  halftrack: { nome: 'Meia-lagarta M3', sub: '1944 • Metralhadora .50 • leva 10', icone: '🚐', classe: 'veic', modelo: 'halftrack', hp: 850, vel: 23, alcance: 90, dano: 24, cadencia: 0.16, precisao: 0.48, arma: '50cal', carga: 10, cargaTipos: ['inf', 'civil'], custo: 300, tempo: 10, de: 'base44', slots: 9, raio: 3.2, atropela: true },
+  gmc: { nome: 'Caminhão GMC CCKW', sub: '1944 • "Deuce and a half" • leva 16', icone: '🚚', classe: 'veic', modelo: 'gmc', hp: 520, vel: 24, alcance: 85, dano: 22, cadencia: 0.16, precisao: 0.45, arma: '50cal', carga: 16, cargaTipos: ['inf', 'civil'], custo: 220, tempo: 8, de: 'base44', slots: 10, raio: 3.4, leve: true, atropela: true },
+  sherman: { nome: 'Tanque M4A3 Sherman', sub: '1944 • Canhão 75 mm + .50 no teto', icone: '🛡️', classe: 'veic', modelo: 'sherman', hp: 2200, vel: 18, alcance: 140, dano: 210, splash: 6, cadencia: 3.6, precisao: 0.78, arma: '120mm', sec: { alcance: 85, dano: 12, cadencia: 0.12, precisao: 0.45, arma: '50cal' }, custo: 600, tempo: 15, de: 'base44', slots: 16, raio: 3.6, atropela: true },
+  pershing: { nome: 'Tanque M26 Pershing', sub: '1945 • Canhão 90 mm', icone: '🛡️', classe: 'veic', modelo: 'pershing', hp: 2800, vel: 15, alcance: 160, dano: 270, splash: 7, cadencia: 4.0, precisao: 0.82, arma: '120mm', sec: { alcance: 85, dano: 12, cadencia: 0.12, precisao: 0.45, arma: '50cal' }, custo: 800, tempo: 18, de: 'base44', slots: 18, raio: 4.0, atropela: true },
+  priest: { nome: 'Obuseiro M7 Priest', sub: '1944 • Artilharia 105 mm', icone: '💥', classe: 'veic', modelo: 'priest', hp: 1500, vel: 15, alcance: 560, minAlc: 70, dano: 230, splash: 12, cadencia: 5.5, precisao: 0.68, arma: '155mm', arco: true, custo: 700, tempo: 17, de: 'base44', slots: 14, raio: 3.6 },
+  // aviões a hélice (porta-aviões e pista de pouso): combate aéreo só com as metralhadoras
+  p51: { nome: 'P-51D Mustang', sub: '1944 • Caça • 6 metralhadoras .50 e foguetes', icone: '🛩️', classe: 'jato', modelo: 'p51', hp: 650, vel: 170, altCruz: 120, dano: 130, splash: 7, municao: 3, rajada: 4, arma: 'foguete', custo: 650, tempo: 14, de: 'pista', raio: 7, helice: true },
+  p47: { nome: 'P-47D Thunderbolt', sub: '1944 • Caça-bombardeiro • 8 metralhadoras .50 e bombas', icone: '🛩️', classe: 'jato', modelo: 'p47', hp: 900, vel: 160, altCruz: 110, dano: 380, splash: 13, municao: 2, bombas: 2, arma: 'bomba', custo: 750, tempo: 16, de: 'pista', raio: 8, helice: true },
+  corsair: { nome: 'F4U Corsair', sub: '1944 • Caça da Marinha • asa de gaivota • foguetes HVAR', icone: '🛩️', classe: 'jato', modelo: 'corsair', hp: 750, vel: 165, altCruz: 115, dano: 150, splash: 8, municao: 3, rajada: 4, arma: 'foguete', custo: 700, tempo: 15, de: 'porta', raio: 8, helice: true },
+  b25: { nome: 'B-25J Mitchell', sub: '1944 • Bombardeiro bimotor • 6 bombas e torre .50', icone: '✈️', classe: 'jato', modelo: 'b25', hp: 1800, vel: 120, altCruz: 160, dano: 330, splash: 13, municao: 2, bombas: 6, arma: 'bomba', custo: 1100, tempo: 22, de: 'pista', raio: 12, helice: true },
+  // barcos (docas)
+  lcvp: { nome: 'Lancha Higgins LCVP', sub: '1944 • Desembarque na praia • leva 36', icone: '🛥️', classe: 'naval', modelo: 'lcvp', nav: 1, hp: 700, vel: 17, alcance: 80, dano: 12, cadencia: 0.12, precisao: 0.4, arma: 'mg', carga: 36, cargaTipos: ['inf', 'civil'], custo: 280, tempo: 10, de: 'docas', raio: 6 },
+  ptboat: { nome: 'Lancha torpedeira PT', sub: '1944 • .50 duplas e canhão 20 mm • muito rápida', icone: '🚤', classe: 'naval', modelo: 'pt', nav: 1, hp: 1200, vel: 34, alcance: 160, dano: 32, splash: 2, cadencia: 0.18, precisao: 0.5, arma: '25mm', custo: 520, tempo: 14, de: 'docas', raio: 13 },
   // ---------------- polícia SWAT de Miami (controlada pelo jogo, não pelo jogador) ----------------
   swat: { nome: 'Policial SWAT', sub: 'Polícia de Miami • age sozinha', icone: '🚓', classe: 'inf', hp: 115, vel: 6.4, alcance: 58, dano: 15, cadencia: 0.3, precisao: 0.58, arma: 'fuzil', custo: 0, slots: 1, raio: 0.6, policia: true },
   bearcat: { nome: 'Blindado SWAT BearCat', sub: 'Polícia de Miami • leva 10', icone: '🚓', classe: 'veic', modelo: 'bearcat', hp: 1300, vel: 25, carga: 10, cargaTipos: ['inf', 'civil'], custo: 0, slots: 10, raio: 3.0, atropela: true, policia: true },
@@ -76,9 +98,18 @@ for (const k in AA) {
   TIPOS[k].aa = { misseis: n, alcance: alc, dano: 1100, cadencia: 5, nome };
   TIPOS[k].canhaoAA = { alcance: 650, dano: 24, cadencia: 0.07 };
 }
+// aviões da 2ª Guerra: sem mísseis, combate aéreo com as metralhadoras .50 (dogfight)
+const GUNS = { p51: [6, 26], p47: [8, 30], corsair: [6, 26], b25: [4, 18] };
+for (const k in GUNS) {
+  const [n, dano] = GUNS[k];
+  TIPOS[k].aa = { misseis: 0, alcance: k === 'b25' ? 600 : 2200, dano: 0, cadencia: 5, nome: `${n} × .50` };
+  TIPOS[k].canhaoAA = { alcance: 520, dano, cadencia: 0.07, frente: k === 'b25' ? 3.2 : 0.3 };
+  TIPOS[k].soCanhao = true;
+}
 // blindagem (0 = nenhuma, 1 = imune a tiros comuns): quanto do dano de armas leves é barrado
 const BLIND = { humvee: 0.5, tigr: 0.5, mengshi: 0.5, ambulancia: 0.4, bearcat: 0.55, stryker: 0.75, btr82: 0.75, zbl08: 0.75, bradley: 0.85, bmp3: 0.85, zbd04: 0.85,
-  abrams: 0.95, t90: 0.95, type99: 0.95, paladin: 0.85, himars: 0.6 };
+  abrams: 0.95, t90: 0.95, type99: 0.95, paladin: 0.85, himars: 0.6,
+  jeep: 0.3, gmc: 0.35, halftrack: 0.65, sherman: 0.9, pershing: 0.92, priest: 0.8, lcvp: 0.6, ptboat: 0.4, p51: 0.3, corsair: 0.35, p47: 0.45, b25: 0.4 };
 for (const k in TIPOS) {
   const d = TIPOS[k];
   if (!d.nacao) d.nacao = 'eua';
@@ -96,6 +127,7 @@ export const ESTRUTURAS = {
   muro: { nome: 'Barreira', hp: 900, raio: 5 },
   fob: { nome: 'Posto Avançado (FOB)', hp: 2500, raio: 28 },
   pista: { nome: 'Pista de Pouso', hp: 8000, raio: 60 },
+  base44: { nome: 'Base 1944 (Exército da 2ª Guerra)', hp: 4000, raio: 40 },
   patriot: { nome: 'Bateria antiaérea', hp: 1500, raio: 6, alcance: 900, dano: 520, cadencia: 5, precisao: 0.8, arma: 'sam', soAereo: true, antiaereo: true },
 };
 
@@ -103,9 +135,10 @@ export const PRODUCAO = {
   quartel: ['fuzileiro', 'metralhador', 'sniper', 'medico'],
   patio: ['humvee', 'ambulancia', 'stryker', 'bradley', 'abrams', 'paladin', 'himars'],
   heliporto: ['littlebird', 'blackhawk', 'seahawk', 'chinook', 'apache', 'reaper'],
-  docas: ['lancha', 'lcac', 'destroier'],
-  porta: ['f35', 'f18', 'osprey', 'seahawk'],
-  pista: ['f22', 'a10', 'f35', 'f18'],
+  docas: ['lancha', 'lcac', 'destroier', 'lcvp', 'ptboat'],
+  porta: ['f35', 'f18', 'osprey', 'seahawk', 'corsair', 'p51', 'p47', 'b25'],
+  pista: ['f22', 'a10', 'f35', 'f18', 'p51', 'p47', 'b25', 'corsair'],
+  base44: ['gi', 'gi_thompson', 'gi_bar', 'gi_bazuca', 'gi_sniper', 'gi_medico', 'jeep', 'gmc', 'halftrack', 'sherman', 'pershing', 'priest'],
 };
 // o que cada nação produz em cada estrutura
 export const PRODUCAO_N = {
@@ -113,7 +146,7 @@ export const PRODUCAO_N = {
   russia: { quartel: ['ru_soldado', 'ru_metralhador', 'ru_sniper', 'ru_medico'], patio: ['tigr', 'btr82', 'bmp3', 't90'], heliporto: ['ka52', 'mi8'], pista: ['su57', 'su25'] },
   china: { quartel: ['cn_soldado', 'cn_metralhador', 'cn_sniper', 'cn_medico'], patio: ['mengshi', 'zbl08', 'zbd04', 'type99'], heliporto: ['z10', 'z20'], pista: ['j20', 'j16'] },
 };
-export const NOMES_PROD = { quartel: '🪖 Quartel', patio: '🚙 Pátio', heliporto: '🚁 Heliporto', docas: '⚓ Docas', porta: '🛳️ Porta-aviões', pista: '🛫 Pista de pouso' };
+export const NOMES_PROD = { quartel: '🪖 Quartel', patio: '🚙 Pátio', heliporto: '🚁 Heliporto', docas: '⚓ Docas', porta: '🛳️ Porta-aviões', pista: '🛫 Pista de pouso', base44: '🎖️ Base 1944' };
 // estruturas que o jogador pode construir em qualquer lugar do mapa
 export const CONSTRUIR = {
   fob: { nome: 'Posto Avançado (FOB)', sub: 'Zona segura para civis + QG de campo', icone: '⛺', custo: 900, tempo: 25, raio: 30 },
@@ -124,6 +157,7 @@ export const CONSTRUIR = {
   zona: { nome: 'Zona Segura', sub: 'Abrigo de civis (resgate)', icone: '🏥', custo: 700, tempo: 20, raio: 32 },
   torre: { nome: 'Torre de Vigia', sub: 'Metralhadora .50 automática', icone: '🗼', custo: 300, tempo: 10, raio: 6 },
   muro: { nome: 'Barreira', sub: 'Gabiões que seguram o avanço inimigo', icone: '🧱', custo: 60, tempo: 4, raio: 6 },
+  base44: { nome: 'Base 1944', sub: 'Exército dos EUA da 2ª Guerra: GIs, Jeep, Sherman, Pershing...', icone: '🎖️', custo: 1400, tempo: 35, raio: 40 },
   patriot: { nome: 'Bateria antiaérea', sub: 'Mísseis contra jatos e helicópteros (Patriot / S-400 / HQ-9)', icone: '🛰️', custo: 600, tempo: 15, raio: 8 },
   pista: { nome: 'Pista de Pouso', sub: 'Base aérea: F-22 e A-10 (precisa de muito espaço)', icone: '🛫', custo: 2500, tempo: 50, raio: 60, grande: true },
 };

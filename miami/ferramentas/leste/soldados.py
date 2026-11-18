@@ -181,6 +181,13 @@ def capacete(cab, estilo, cor, acessorio):
             caixa((0.012, 0.11, 0.02), cen + Vector((sx * 0.112, 0.0, 0.03)), acessorio, 0.003)   # trilhos
             cilindro(0.045, 0.045, 0.035, cen + Vector((sx * 0.105, -0.005, -0.02)), acessorio, Matrix.Rotation(math.pi / 2, 3, 'Z'), 16)   # fones
         caixa((0.17, 0.02, 0.035), cen + Vector((0, 0.1, -0.005)), material('oculos', (0.02, 0.02, 0.02), 0.1, 0.6, sujeira=0), 0.008)   # óculos
+    elif estilo == 'ww2':
+        # capacete M1 de 1944: cúpula funda, aba estreita em volta e jugular solta dos dois lados
+        esfera(0.134, cen + Vector((0, -0.006, 0.012)), cor, esc=(0.95, 1.04, 0.86), corte=-0.1)
+        cilindro(0.148, 0.148, 0.012, cen + Vector((0, -0.004, -0.0), ), cor, Matrix.Identity(3) @ Matrix.Rotation(math.pi / 2, 3, 'X'), 24)
+        for sx in (-1, 1):
+            caixa((0.008, 0.016, 0.09), cen + Vector((sx * 0.128, 0.0, -0.05)), acessorio, 0.002)
+            caixa((0.012, 0.022, 0.012), cen + Vector((sx * 0.126, 0.0, -0.095)), acessorio, 0.002)
     elif estilo == 'russia':
         esfera(0.13, cen + Vector((0, 0.0, 0.0)), cor, esc=(0.95, 1.0, 0.93), corte=-0.15)
         caixa((0.045, 0.02, 0.04), cen + Vector((0, 0.13, 0.06)), acessorio, 0.005)
@@ -233,6 +240,18 @@ def fuzil(estilo, J, preto, extra):
         peca((0.04, 0.09, 0.055), (0, 0.42, 0.07), preto)                      # mira
         caixa((0.026, 0.005, 0.03), coronha + R @ Vector((0, 0.466, 0.075)), material('lente', (0.1, 0.25, 0.2), 0.05, 0.6, sujeira=0), 0.002, rot=Rn)
         tubo(0.014, 0.1, (0.035, 0.75, 0.0), preto)                            # lanterna
+    elif estilo == 'ww2':
+        # M1 Garand: coronha e guarda-mão de nogueira, receptor e cano de aço, bandoleira de lona
+        peca((0.045, 0.3, 0.115), (0, 0.13, -0.025), extra)                    # coronha
+        peca((0.04, 0.12, 0.075), (0, 0.33, -0.035), extra)                    # punho
+        peca((0.042, 0.24, 0.06), (0, 0.5, 0.01), preto)                       # receptor
+        peca((0.046, 0.5, 0.055), (0, 0.86, -0.008), extra)                    # guarda-mão inferior
+        peca((0.036, 0.32, 0.028), (0, 0.8, 0.032), extra)                     # guarda-mão superior
+        tubo(0.011, 0.24, (0, 1.2, 0.006), preto)
+        peca((0.01, 0.02, 0.03), (0, 1.3, 0.03), preto)                        # massa de mira
+        peca((0.016, 0.03, 0.03), (0, 0.42, 0.05), preto)                      # alça de mira
+        peca((0.014, 0.07, 0.03), (0, 0.39, -0.07), preto)                     # guarda-mato
+        peca((0.008, 0.75, 0.006), (0, 0.6, -0.08), material('bandoleira', (0.35, 0.32, 0.22), 0.9, sujeira=0.1), 0.001)
     elif estilo == 'russia':
         # AK-12: coronha rebatível, receptor alto, carregador curvo, trilho superior e freio de boca
         peca((0.04, 0.22, 0.09), (0, 0.06, -0.01), preto)
@@ -257,6 +276,30 @@ def fuzil(estilo, J, preto, extra):
         peca((0.03, 0.05, 0.09), (0, 0.33, -0.08), preto)
         tubo(0.022, 0.13, (0, 0.44, 0.075), preto)                              # luneta
         peca((0.03, 0.05, 0.04), (0, 0.44, 0.045), preto)
+
+
+def equip_ww2(J, web, metal):
+    """equipamento M1923/M1936 de 1944: cinto de cartucheiras, suspensórios, cantil, estojo de primeiros socorros e granadas"""
+    pe, pv = J['peito'][0], J['pelve'][0]
+    caixa((0.35, 0.255, 0.065), (pv.x, pv.y, pv.z + 0.08), web, 0.012)
+    for i in range(5):
+        caixa((0.058, 0.04, 0.075), (pv.x - 0.14 + i * 0.07, pv.y + 0.135, pv.z + 0.075), web, 0.008)   # cartucheiras de 8 tiros
+    for sx in (-1, 1):
+        caixa((0.04, 0.018, 0.34), (pe.x + sx * 0.09, pe.y + 0.128, pe.z - 0.02), web, 0.004, rot=Matrix.Rotation(sx * 0.12, 3, 'Y'))
+        caixa((0.04, 0.018, 0.34), (pe.x + sx * 0.08, pe.y - 0.135, pe.z - 0.02), web, 0.004)
+        caixa((0.042, 0.26, 0.018), (pe.x + sx * 0.1, pe.y, pe.z + 0.155), web, 0.004)
+    caixa((0.055, 0.12, 0.165), (pv.x + 0.175, pv.y - 0.06, pv.z + 0.0), web, 0.02)          # cantil com capa
+    caixa((0.075, 0.04, 0.06), (pv.x - 0.055, pv.y + 0.155, pv.z + 0.005), web, 0.008)      # primeiros socorros
+    for sx in (-1, 1): esfera(0.028, (pe.x + sx * 0.09, pe.y + 0.15, pe.z + 0.06), metal, esc=(1, 1, 1.3))   # granadas Mk 2
+
+
+def mochila_ww2(J, web, pa):
+    """mochila M1928 (haversack) com a pá de trincheira M1943 presa atrás"""
+    pe = J['peito'][0]
+    caixa((0.24, 0.1, 0.32), (pe.x, pe.y - 0.2, pe.z - 0.02), web, 0.03)
+    cilindro(0.045, 0.045, 0.3, (pe.x, pe.y - 0.2, pe.z + 0.17), web, Matrix.Rotation(math.pi / 2, 3, 'Z'), 12)   # cobertor enrolado
+    caixa((0.14, 0.035, 0.2), (pe.x, pe.y - 0.27, pe.z - 0.2), web, 0.01)
+    cilindro(0.012, 0.012, 0.18, (pe.x, pe.y - 0.27, pe.z - 0.02), pa, Matrix.Rotation(math.pi / 2, 3, 'X'), 8)
 
 
 # ---------------- os três soldados ----------------

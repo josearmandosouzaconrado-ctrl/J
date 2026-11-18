@@ -395,7 +395,7 @@ function toque(sx, sy, camRTS, duplo, ultimo) {
     G.ui.atualizarSelecao();
     return;
   }
-  if (u && u.estr && !sel.length) { G.fonteSel = u; if (['quartel', 'patio', 'heliporto', 'docas'].includes(u.tipoEstr)) G.ui.abrirProducao(u.tipoEstr); else G.ui.alerta(`${u.d.nome}${u.construindo > 0 ? ' (em construção)' : ''}`, u.x, u.z, 'info'); return; }
+  if (u && u.estr && !sel.length) { G.fonteSel = u; if (['quartel', 'patio', 'heliporto', 'docas', 'base44'].includes(u.tipoEstr)) G.ui.abrirProducao(u.tipoEstr); else G.ui.alerta(`${u.d.nome}${u.construindo > 0 ? ' (em construção)' : ''}`, u.x, u.z, 'info'); return; }
   if (!sel.length) {
     // sem seleção: tocar num prédio mostra informações
     const p = predioNoToque(sx, sy, cam);

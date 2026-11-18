@@ -1,7 +1,7 @@
 """Leva para o jogo o que soldados.py modela no Blender: as texturas de camuflagem (OCP, EMR, Tipo 07) sem emenda
 e o equipamento de cada exército (capacete, colete, mochila e fuzil) numa versão leve, com sombra dos cantos
 gravada nas cores. Saída: www/modelos/soldados.js (window.SOLDADOS).
-Uso: python -I exportar_soldados.py -- ../../www/modelos/soldados.js [pasta_previas]
+Uso: python -I exportar_soldados.py -- ../../www/modelos/soldados.js [pasta_previas] [nações: eua russia china ww2]
 Eixos do jogo: Y para cima, frente +Z (Blender: Z para cima, frente +Y -> jogo (-x, z, y)).
 """
 import sys, os, math, json, base64, struct
@@ -31,6 +31,8 @@ CAMOS = {
     'eua': dict(camo=[(0.47, 0.42, 0.31), (0.33, 0.33, 0.22), (0.26, 0.21, 0.14), (0.6, 0.55, 0.42), (0.18, 0.15, 0.1)], escala=7, digital=False),
     'russia': dict(camo=[(0.33, 0.37, 0.25), (0.2, 0.24, 0.15), (0.45, 0.43, 0.32), (0.09, 0.1, 0.07)], escala=6, digital=True),
     'china': dict(camo=[(0.36, 0.4, 0.27), (0.2, 0.26, 0.15), (0.46, 0.42, 0.29), (0.11, 0.13, 0.09)], escala=8, digital=True),
+    # 1944: farda de brim HBT verde-oliva (sem camuflagem, só a variação do tecido gasto)
+    'ww2': dict(camo=[(0.25, 0.28, 0.17), (0.22, 0.25, 0.15), (0.28, 0.3, 0.19), (0.2, 0.22, 0.14)], escala=9, digital=False),
 }
 TILE = 2.2      # metros cobertos por uma repetição da textura (o mesmo do jogo: uv = metros / 2,2)
 PX = 512
@@ -149,6 +151,9 @@ def pecas(nacao):
         cor_col, cor_bolsa, cor_cap, mag = material('coyote', (0.4, 0.33, 0.23)), material('coyote2', (0.36, 0.3, 0.21)), material('cap', (0.38, 0.33, 0.24)), material('mag', (0.33, 0.28, 0.2))
     elif nacao == 'russia':
         cor_col, cor_bolsa, cor_cap, mag = camo, material('verde_ru2', (0.14, 0.17, 0.1)), camo, material('mag_ru', (0.12, 0.1, 0.08))
+    elif nacao == 'ww2':
+        cor_col = material('web', (0.4, 0.36, 0.24), 0.9); cor_cap = material('cap_ww2', (0.19, 0.21, 0.12), 0.85)
+        cor_bolsa = cor_col; mag = material('nogueira', (0.32, 0.16, 0.07), 0.55)
     else:
         cor_col, cor_bolsa, cor_cap, mag = camo, material('verde_cn', (0.22, 0.26, 0.16)), camo, preto
     REG.clear()
@@ -159,6 +164,16 @@ def pecas(nacao):
     REG.clear(); S['capacete'](cab, nacao, cor_cap, preto)
     print(' ', nacao, 'capacete'); res['capacete'] = exportar(list(REG), cen_cab - Vector((0, 0.005, 0.12 / 1.1)), 1.1, excluir=('balaclava', 'pele2'))
     # colete (com cinto e bolsas) e mochila: pivô 1,115 m de altura, 2 cm à frente
+    if nacao == 'ww2':
+        REG.clear(); S['capacete'](cab, 'ww2', cor_cap, cor_col)
+        print(' ', nacao, 'capacete'); res['capacete'] = exportar(list(REG), cen_cab - Vector((0, 0.005, 0.12 / 1.1)), 1.1)
+        REG.clear(); S['equip_ww2'](J, cor_col, material('granada', (0.12, 0.13, 0.07), 0.6))
+        print(' ', nacao, 'colete'); res['colete'] = exportar(list(REG), Vector((0, 0.02, 1.115)))
+        REG.clear(); S['mochila_ww2'](J, cor_col, mag)
+        print(' ', nacao, 'mochila'); res['mochila'] = exportar(list(REG), Vector((0, 0.02, 1.115)))
+        REG.clear(); S['fuzil']('ww2', None, preto, mag)
+        print(' ', nacao, 'fuzil'); res['arma'] = exportar(list(REG), Vector((0, 0.28, -0.065)))
+        return res
     REG.clear(); S['colete'](J, cor_col, cor_bolsa, 0.0, 4 if nacao == 'russia' else 3)
     print(' ', nacao, 'colete'); res['colete'] = exportar(list(REG), Vector((0, 0.02, 1.115)))
     if nacao != 'russia':
@@ -171,7 +186,11 @@ def pecas(nacao):
 
 
 saida = {'texturas': {}, 'pecas': {}, 'tile': TILE}
+SO = ARGS[2:]          # só estas nações (as outras ficam como estão no arquivo)
+if SO and os.path.exists(SAIDA):
+    txt = open(SAIDA).read(); saida = json.loads(txt[txt.index('{'):txt.rindex('}') + 1])
 for n, cfg in CAMOS.items():
+    if SO and n not in SO: continue
     saida['texturas'][n] = textura_camo(n, cfg)
     saida['pecas'][n] = pecas(n)
 with open(SAIDA, 'w') as f:

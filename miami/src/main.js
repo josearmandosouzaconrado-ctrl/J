@@ -17,7 +17,7 @@ import * as MAPA from './mapa.js';
 import { enfileirar } from './jogo.js';
 import { atualizarAgentes, desenharAgentes } from './agentes.js';
 import { UI, AJUDA } from './ui.js';
-import { iniciarSom, somLigado, somHeli, somJato, somMotor } from './som.js';
+import { iniciarSom, somLigado, somHeli, somJato, somMotor, somHelice } from './som.js';
 
 const $ = (s) => document.querySelector(s);
 const status = (t) => { const e = $('#carregando-txt'); if (e) e.textContent = t; };
@@ -248,7 +248,7 @@ async function iniciar() {
         const pose = u.rapel ? 4 : u.mirando > 0 && u.velAtual < 0.5 ? 2 : 0;
         const vn = Math.min(1, u.velAtual / 3);
         const N = NACOES[u.nacao] || NACOES.eua;
-        bon.add(u.x, u.y, u.z, u.ang, u.fase, pose, u.tipo.includes('sniper') ? N.farda.map((c) => c * 0.82) : N.farda, N.calca, PELE_SOLD, 1, 1, null, vn, equipDe(u.nacao, u.tipo.includes('sniper')));
+        bon.add(u.x, u.y, u.z, u.ang, u.fase, pose, u.tipo.includes('sniper') ? N.farda.map((c) => c * 0.82) : N.farda, N.calca, PELE_SOLD, 1, 1, null, vn, equipDe(u.d.visual || u.nacao, u.tipo.includes('sniper')));
       }
       // soldados caídos ficam no chão por um tempo
       if (G.mortos) for (let i = G.mortos.length - 1; i >= 0; i--) {
@@ -256,7 +256,7 @@ async function iniciar() {
         if (G.tempo - m.t > 60) { G.mortos.splice(i, 1); continue; }
         if (!visivel(m.x, m.z)) continue;
         const N = NACOES[m.nacao] || NACOES.eua;
-        bon.add(m.x, m.y, m.z, m.ang, 0, 3, N.farda, N.calca, PELE_SOLD, 1, 1, null, 0, equipDe(m.nacao));
+        bon.add(m.x, m.y, m.z, m.ang, 0, 3, N.farda, N.calca, PELE_SOLD, 1, 1, null, 0, equipDe((m.d && m.d.visual) || m.nacao));
       }
       for (const u of G.unidades) {
         if (!u.vivo || u.dentro || !u.m || !u.m.def.bancos || !u.passageiros.length || !visivel(u.x, u.z)) continue;
@@ -266,7 +266,7 @@ async function iniciar() {
           const lado = i % 2 ? -1 : 1, lz = 0.85 - Math.floor(i / 2) * 0.6, lx = lado * 1.02;
           const x = u.x + c * lx + s * lz, z = u.z - s * lx + c * lz;
           const N = NACOES[p.nacao] || NACOES.eua;
-          bon.add(x, u.y + 0.97 - 0.93, z, u.ang + lado * Math.PI / 2, 0, 5, N.farda, N.calca, PELE_SOLD, 1, 1, null, 0, equipDe(p.nacao));
+          bon.add(x, u.y + 0.97 - 0.93, z, u.ang + lado * Math.PI / 2, 0, 5, N.farda, N.calca, PELE_SOLD, 1, 1, null, 0, equipDe((p.d && p.d.visual) || p.nacao));
         });
       }
       desenharAgentes(bon, visivel);
@@ -282,14 +282,18 @@ async function iniciar() {
     }
     somHeli(G.pausado ? 0 : Math.max(0, hv));
     // jatos e motores dos blindados perto da câmera
-    let jv = 0, mv = 0, rot = 0;
+    let jv = 0, mv = 0, rot = 0, pv = 0;
     for (const u of G.unidades) {
       if (!u.vivo || u.dentro) continue;
       const d = Math.hypot(u.x - camRTS.alvo.x, u.z - camRTS.alvo.z) + camRTS.dist * 0.5;
-      if (u.classe === 'jato' && u.estadoJato !== 'pronto' && u.estadoJato !== 'rearmando') jv = Math.max(jv, (1 - d / 2600) * (u.estadoJato === 'pousando' ? 0.5 : 1));
+      if (u.classe === 'jato' && u.estadoJato !== 'pronto' && u.estadoJato !== 'rearmando') {
+        const v = (1 - d / (u.d.helice ? 1800 : 2600)) * (u.estadoJato === 'pousando' ? 0.5 : 1);
+        if (u.d.helice) pv = Math.max(pv, v); else jv = Math.max(jv, v);
+      }
       else if (u.classe === 'veic') { const v = (1 - d / 350) * (u.d.raio >= 3.4 ? 1 : 0.55); if (v > mv) { mv = v; rot = Math.min(1, u.velAtual / u.d.vel); } }
     }
     somJato(G.pausado ? 0 : Math.max(0, jv));
+    somHelice(G.pausado ? 0 : Math.max(0, pv));
     somMotor(G.pausado ? 0 : Math.max(0, mv), rot);
     renderer.render(cena, camera);
     if (G.iniciado) ui.quadro(dt);

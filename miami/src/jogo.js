@@ -45,7 +45,7 @@ export function montarMundo() {
   G.layout = {
     qg: L(0, -10), quartel: L(-150, -60), patio: L(-150, 60), heliporto: L(150, -20), zona: L(10, 110),
     torres: [L(-260, -120), L(-260, 140), L(260, -120), L(260, 140), L(0, -160)],
-    patriot: [L(90, 120), L(230, 60)],
+    patriot: [L(90, 120), L(230, 60)], base44: L(-150, -185),
   };
   const blocos = [['qg', 42, 28, 16], ['quartel', 56, 42, 6], ['patio', 64, 34, 10]];
   for (const [k, w, d, h] of blocos) {
@@ -183,7 +183,7 @@ export function construir(tipo, x, z) {
   u.m.grupo.scale.y = 0.15;
   if (saidaAgua) u.saidaAgua = saidaAgua;
   if (tipo === 'pista') { u.deck = 0.3; u.fila = []; }
-  if (tipo === 'quartel' || tipo === 'patio') u.saida = lugarLivre({ x: x + Math.sin(ang) * 40, z: z + Math.cos(ang) * 40 });
+  if (tipo === 'quartel' || tipo === 'patio' || tipo === 'base44') u.saida = lugarLivre({ x: x + Math.sin(ang) * 46, z: z + Math.cos(ang) * 46 });
   alerta(`🏗️ Construindo ${d.nome}...`, x, z, 'info');
   somUI('ok');
   return true;
@@ -234,6 +234,12 @@ export function iniciarPartida(dif, nacao = 'eua') {
   G.estr.zona = criarEstrutura('zona', zz.x, zz.z, ang);
   for (const t of L.torres) { const p = lugarLivre(t); if (dist(p.x, p.z, t.x, t.z) < 60) criarEstrutura('torre', p.x, p.z, ang); }
   for (const t of L.patriot) { const p = lugarLivre(t); criarEstrutura('patriot', p.x, p.z, ang + 0.5); }
+  // Base 1944 (Exército dos EUA da 2ª Guerra) ao lado do quartel
+  if (EUA) {
+    const p44 = lugarLivre(L.base44);
+    G.estr.base44 = criarEstrutura('base44', p44.x, p44.z, ang);
+    G.estr.base44.saida = lugarLivre({ x: p44.x + G.baseEixo.pp.x * 50, z: p44.z + G.baseEixo.pp.z * 50 });
+  }
   // docas: na beira d'água mais próxima (só em cidades com costa; por enquanto só os EUA têm marinha)
   const docas = COSTA && EUA ? acharBeiraMar(G.estr.qg.x, G.estr.qg.z) : null;
   if (docas) {
@@ -281,6 +287,12 @@ export function iniciarPartida(dif, nacao = 'eua') {
     const p = lugarLivre({ x: ps.x + (k % 3) * 8 - 8, z: ps.z + (k % 2) * 8 });
     criarUnidade(t, p.x, p.z, G.baseEixo.ang);
   }
+  if (G.estr.base44) {
+    const s4 = G.estr.base44.saida;
+    [['gi', 6], ['gi_bar', 1], ['gi_bazuca', 1], ['jeep', 1], ['sherman', 1]].forEach(([t, n]) => {
+      for (let i = 0; i < n; i++, k++) { const p = lugarLivre({ x: s4.x + (k % 4) * 4 - 6, z: s4.z + Math.floor(k / 4) % 3 * 4 }); criarUnidade(t, p.x, p.z, G.baseEixo.ang); }
+    });
+  }
   const hp = G.estr.heliporto;
   const [hTransp, hAtaque] = EUA ? ['blackhawk', 'apache'] : [P.heliporto[1], P.heliporto[0]];
   const bh = criarUnidade(hTransp, hp.x + G.baseEixo.ax.x * -30, hp.z + G.baseEixo.ax.z * -30, G.baseEixo.ang);
@@ -289,7 +301,7 @@ export function iniciarPartida(dif, nacao = 'eua') {
   ap.pousado = true;
   // jatos no convés / na pista
   if (pa) {
-    const js = EUA ? ['f35', 'f18'].concat(COSTA ? [] : ['a10']) : P.pista;
+    const js = EUA ? ['f35', 'f18'].concat(COSTA ? [] : ['a10']).concat(['corsair', 'p51']) : P.pista;
     js.forEach((t, i) => { const j = criarUnidade(t, pa.x, pa.z, 0); j.vagaConves = i; j.base = G.porta; });
   }
   // as bases da Rússia, da China e dos EUA controladas pelo computador
@@ -350,12 +362,14 @@ function espalharCivis(n) {
 export function enfileirar(tipo, aba) {
   const d = TIPOS[tipo];
   const fonte = fonteDe(aba || d.de);
+  if (!fonte && (aba || d.de) === 'base44') { alerta('Construa a Base 1944 (🔨 Construir) para produzir o Exército da 2ª Guerra', null, null, 'ruim'); somUI('erro'); return false; }
   if (!fonte && (aba || d.de) === 'pista') { alerta(G.unidades.some((u) => u.vivo && u.tipoEstr === 'pista') ? 'A pista de pouso ainda está em construção' : 'Construa uma Pista de Pouso (🔨 Construir) para usar F-22 e A-10', null, null, 'ruim'); somUI('erro'); return false; }
   if (!fonte || !fonte.vivo) { alerta('Estrutura destruída: não dá para produzir', 0, 0, 'ruim'); somUI('erro'); return false; }
   if (G.dinheiro < d.custo) { alerta('Dinheiro insuficiente', null, null, 'ruim'); somUI('erro'); return false; }
   if (fonte.fila.length >= 8) { alerta('Fila cheia', null, null); somUI('erro'); return false; }
-  if (d.classe === 'jato' && G.unidades.filter((u) => u.classe === 'jato' && u.vivo && (u.base || G.porta) === fonte).length + fonte.fila.filter((f) => TIPOS[f.tipo].classe === 'jato').length >= 6) {
-    alerta('Esta base comporta no máximo 6 jatos', null, null); somUI('erro'); return false;
+  const maxJ = fonte === G.porta && !fonte.aerodromo ? 9 : 6;
+  if (d.classe === 'jato' && G.unidades.filter((u) => u.classe === 'jato' && u.vivo && (u.base || G.porta) === fonte).length + fonte.fila.filter((f) => TIPOS[f.tipo].classe === 'jato').length >= maxJ) {
+    alerta(`Esta base comporta no máximo ${maxJ} aviões`, null, null); somUI('erro'); return false;
   }
   G.dinheiro -= d.custo;
   const tp = G.sandbox ? Math.max(1, d.tempo * 0.15) : d.tempo;

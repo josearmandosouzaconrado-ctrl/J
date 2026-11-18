@@ -3,7 +3,7 @@
 // rotores de helicóptero, ronco de jatos e motores de blindados.
 let ctx = null, mestre = null, eco = null, ruido = null, marrom = null, ligado = true;
 const ultimo = {};
-let heli = null, jato = null, motor = null;
+let heli = null, jato = null, motor = null, pistao = null;
 
 export function iniciarSom() {
   if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
@@ -276,6 +276,30 @@ export function somJato(v) {
   alvoGanho(jato.chiado.g, v * v * 0.35, 0.35);
   jato.ronco.f.frequency.setTargetAtTime(200 + v * 500, ctx.currentTime, 0.3);
   jato.chiado.f.frequency.setTargetAtTime(1200 + v * 2200, ctx.currentTime, 0.3);
+}
+
+// avião a hélice da 2ª Guerra: ronco de motor a pistão (dente de serra grave pulsando) e zumbido da hélice
+export function somHelice(v) {
+  if (!ctx) return;
+  if (!pistao) {
+    const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 62;
+    const o2 = ctx.createOscillator(); o2.type = 'square'; o2.frequency.value = 31;
+    const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 420; f.Q.value = 2;
+    const g = ctx.createGain(); g.gain.value = 0;
+    const g2 = ctx.createGain(); g2.gain.value = 0.35;
+    // pulsação dos cilindros (tremolo)
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 11; const lg = ctx.createGain(); lg.gain.value = 0;
+    lfo.connect(lg); lg.connect(g.gain);
+    o.connect(f); o2.connect(g2); g2.connect(f); f.connect(g); g.connect(mestre);
+    o.start(); o2.start(); lfo.start();
+    pistao = { o, o2, f, g, lg, vento: loop(ruido, 'bandpass', 700, 0.8) };
+  }
+  alvoGanho(pistao.g, v * 0.16, 0.3);
+  alvoGanho(pistao.lg, v * 0.05, 0.3);
+  alvoGanho(pistao.vento.g, v * v * 0.12, 0.3);
+  pistao.o.frequency.setTargetAtTime(55 + v * 22, ctx.currentTime, 0.4);
+  pistao.o2.frequency.setTargetAtTime(27.5 + v * 11, ctx.currentTime, 0.4);
+  pistao.f.frequency.setTargetAtTime(300 + v * 500, ctx.currentTime, 0.3);
 }
 
 // motor a diesel/turbina dos blindados

@@ -266,6 +266,7 @@ class Conjunto {
 }
 
 const LUVA = [0.25, 0.22, 0.18], PRETO = [0.13, 0.13, 0.14], COLETE_MIL = [0.62, 0.56, 0.42], CAP_MIL = [0.52, 0.48, 0.36];
+const BOTA_WW2 = [0.42, 0.3, 0.18];   // coturno marrom com perneira de lona (1944)
 const BOTA_MIL = [0.55, 0.45, 0.32], BOTA_CIV = [0.2, 0.18, 0.17], BRANCO = [1, 1, 1], ESCURO_SNIPER = [0.82, 0.84, 0.8];
 const _pr = [0, 0];
 
@@ -351,7 +352,7 @@ export class Bonecos {
     const cl = Math.cos(lean), sl = Math.sin(lean);
     // ---- pernas ----
     const roupaPerna = calca;
-    const corBota = SN ? (equip.nacao === 'eua' ? BOTA_MIL : PRETO) : mil ? BOTA_MIL : estilo === 2 || estilo === 5 ? PRETO : BOTA_CIV;
+    const corBota = SN ? (equip.nacao === 'eua' ? BOTA_MIL : equip.nacao === 'ww2' ? BOTA_WW2 : PRETO) : mil ? BOTA_MIL : estilo === 2 || estilo === 5 ? PRETO : BOTA_CIV;
     for (const s of [1, -1]) {
       const f = s === 1 ? sw : -sw;
       const coxa = pose === 5 ? -1.45 + f * 0.08 : -f * 0.55 * andando;   // negativo = perna para frente
