@@ -33,8 +33,8 @@ OUT = os.path.join(ROOT, 'CronicasDeEldoria-ADM.apk' if ADM else 'CronicasDeEldo
 PACKAGE = 'com.eldoria.cronicas.adm' if ADM else 'com.eldoria.cronicas'
 APP_NAME = 'Eldoria ADM' if ADM else 'Crônicas de Eldoria'
 UA_TAG = ' EldoriaAPK EldoriaADM' if ADM else ' EldoriaAPK'
-VERSION_CODE = 79
-VERSION_NAME = '0.48.0-beta'
+VERSION_CODE = 80
+VERSION_NAME = '0.49.0-beta'
 SIGN_DIR = 'signing'
 CERT_NOME = 'Cronicas de Eldoria'
 if MIAMI:
@@ -49,7 +49,7 @@ if MIAMI:
 ACTIVITY = PACKAGE + '.MainActivity'
 MIN_SDK, TARGET_SDK = 24, 34
 # img/ não entra: as imagens vão embutidas em js/imgdata.js (tools/gerar_imgdata.py)
-WEB_FILES = ['index.html', 'manifest.json', 'css', 'js', 'icons', 'anime/arte', 'img/oceano.webp']
+WEB_FILES = ['index.html', 'manifest.json', 'css', 'js', 'icons', 'anime/arte', 'img/oceano.webp', 'img/terreno.webp']
 ADM_SO = ['js/eramoderna_arte.js', 'js/eramoderna.js', 'js/batalhas_deco.js', 'js/batalhas.js', 'js/batalhas2.js']   # arquivos que só vão no APK ADM
 
 

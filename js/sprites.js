@@ -278,6 +278,9 @@ const Sprites = {};
     return c;
   }
   const NB4 = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+  // o chão de um quadradinho e a borda de um vizinho (terreno.js troca por texturas realistas)
+  S.pintaChao = (ctx, t, v, x, y) => ctx.drawImage(S.tiles[t][v], x * 16, y * 16);
+  S.pintaBorda = (ctx, n, k, ev, x, y, ox, oy, img) => ctx.drawImage(img, x * 16, y * 16);
   S.paintTiles = function (ctx, w, h, getT, seed, ox = 0, oy = 0) {
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const t = getT(x, y);
@@ -287,10 +290,10 @@ const Sprites = {};
       if (def.wall) {
         const below = getT(x, y + 1);
         if (!TILE_DEFS[below].wall) ctx.drawImage(S.wallFace[t][v % 3], x * 16, y * 16);
-        else ctx.drawImage(S.tiles[t][v], x * 16, y * 16);
+        else S.pintaChao(ctx, t, v, x, y, ox, oy);
         continue;
       }
-      ctx.drawImage(S.tiles[t][v], x * 16, y * 16);
+      S.pintaChao(ctx, t, v, x, y, ox, oy);
       // sombra de parede acima
       const above = getT(x, y - 1);
       if (TILE_DEFS[above].wall) { ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.fillRect(x * 16, y * 16, 16, 4); ctx.fillStyle = 'rgba(0,0,0,0.14)'; ctx.fillRect(x * 16, y * 16 + 4, 16, 3); }
@@ -303,7 +306,7 @@ const Sprites = {};
         const pr = BLEND[n], ev = (hash2(x + ox, y + oy, seed + k * 13) * 6) | 0;
         if (def.water && !TILE_DEFS[n].water && !TILE_DEFS[n].wall) ctx.drawImage(edgeImg('#b8daf4', k, ev, true), x * 16, y * 16);
         if (pr === undefined || pr <= my) continue;
-        ctx.drawImage(edgeImg(TILE_DEFS[n].c, k, ev, false), x * 16, y * 16);
+        S.pintaBorda(ctx, n, k, ev, x, y, ox, oy, edgeImg(TILE_DEFS[n].c, k, ev, false));
       }
     }
   };
