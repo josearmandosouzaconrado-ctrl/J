@@ -43,6 +43,9 @@ O jogo precisa de **internet** para baixar as imagens de satélite e o relevo do
 - **Desembarcar** no painel. O **C-47 em voo solta paraquedistas** (🪂). O Higgins precisa encostar na praia.
 - Aviões pousam no **aeródromo** ou dentro do **porta-aviões** (toque nele com aviões selecionados). "Lançar aviões" decola todos.
 
+### 🎮 Controle direto de soldados, tanques e veículos
+Selecione **um** soldado, tanque, veículo ou navio e toque em **🎮 Controlar (3ª pessoa)**. O joystick à esquerda anda ou dirige (empurrar até o fim faz o soldado correr), arrastar a tela mira (a **torre do tanque segue a mira**) e os botões à direita atiram com a arma principal e a secundária (ex.: canhão de 75 mm e metralhadora .50 do Sherman). Os tiros acertam o inimigo que estiver sob a mira; granadas e projéteis de artilharia explodem onde a mira aponta. PC: WASD, mouse, Q/E giram a câmera, Espaço e Shift atiram.
+
 ### ✈ Batalha aérea / modo piloto
 Selecione **um** avião e toque em **✈ Pilotar**. Joystick à esquerda é o manche (puxe para baixo para subir), à direita ficam o acelerador, **FOGO** e **💣** (no B-17). O indicador vermelho mostra o inimigo aéreo mais próximo. No PC: setas/WASD, Shift/Ctrl, Espaço e B.
 

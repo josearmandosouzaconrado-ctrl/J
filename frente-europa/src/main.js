@@ -7,6 +7,7 @@ import { Efeitos } from './efeitos.js';
 import { ALIADOS, EIXO, Jogo } from './jogo.js';
 import { IA } from './ia.js';
 import { Piloto } from './piloto.js';
+import { ControleDireto } from './controle.js';
 import { Cidades3D } from './cidades3d.js';
 import { Pintor } from './pintor.js';
 import { configOSM } from './osm.js';
@@ -68,7 +69,9 @@ const rts = new CameraRTS(camera, renderer.domElement);
 const fx = new Efeitos(cena);
 const cidades3d = new Cidades3D(cena);
 const marcos = [];
-let jogo = null, ia = null, piloto = null;
+let jogo = null, ia = null, piloto = null, controle = null;
+// modo em 1ª/3ª pessoa ativo (avião pilotado ou soldado/veículo controlado)
+const direto = () => (piloto?.ativo ? piloto : controle?.ativo ? controle : null);
 let velocidade = 5;
 let selecao = [];
 let modoConstruir = null;
@@ -125,7 +128,8 @@ function iniciar(cen) {
   jogo.carregarCenario(cen);
   jogo.selecaoMudou = () => { selecao = selecao.filter((e) => e.vivo); atualizarPainel(); };
   piloto = new Piloto(jogo, camera, fx, $('#piloto'));
-  jogo.aoMorrerPiloto = () => setTimeout(sairPiloto, 1500);
+  controle = new ControleDireto(jogo, camera, fx, $('#controle'), terreno);
+  jogo.aoMorrerPiloto = () => setTimeout(() => (controle.ativo ? sairControle() : sairPiloto()), 1500);
   const c = paraMundo(cen.camera.lat, cen.camera.lon);
   rts.irPara(c.x, c.z, cen.camera.dist);
   rts.rumo = cen.camera.rumo;
@@ -204,7 +208,7 @@ function marcar(x, y, ataque) {
 function meus() { return selecao.filter((e) => e.fac === ALIADOS && e.vivo); }
 
 rts.aoTocar = (x, y) => {
-  if (!jogo || piloto?.ativo) return;
+  if (!jogo || direto()) return;
   iniciarAudio();
   if (modoConstruir) {
     const p = chaoEm(x, y);
@@ -346,6 +350,9 @@ function atualizarPainel(forcar = true) {
   const pousados = unidades.filter((u) => u.voa && u.estado === 'pousado');
   if (pousados.length) acoes.appendChild(botao('🛫 Decolar', () => jogo.decolar(pousados)));
   if (unidades.length === 1 && unidades[0].cat === 'air') acoes.appendChild(botao('✈ Pilotar (batalha aérea)', () => entrarPiloto(unidades[0]), 'ativo'));
+  if (unidades.length === 1 && ['inf', 'veh', 'ship'].includes(unidades[0].cat)) {
+    acoes.appendChild(botao('🎮 Controlar (3ª pessoa)', () => entrarControle(unidades[0]), 'ativo'));
+  }
   const inf = unidades.filter((u) => u.cat === 'inf');
   if (inf.length) acoes.appendChild(botao('🔍 Transporte mais próximo', () => embarcarProximo(inf)));
 }
@@ -468,6 +475,27 @@ function sairPiloto() {
 }
 $('#btnSairPiloto').onclick = sairPiloto;
 
+// ------------------------------------------------------------------ controle direto (soldados e veículos)
+function entrarControle(u) {
+  if (!u || !u.vivo || u.dentro) return;
+  velAntesPiloto = velocidade;
+  velocidade = 1;
+  rts.ativo = false;
+  controle.iniciar(u);
+  ['#ferramentas', '#painel', '#minimapa'].forEach((s) => $(s).classList.add('escondido'));
+  msg(`Controlando: ${u.def.nome}. Joystick anda, arraste a tela para mirar, FOGO atira.`);
+}
+function sairControle() {
+  const u = controle.u;
+  controle.parar();
+  rts.ativo = true;
+  velocidade = velAntesPiloto;
+  if (u && u.vivo) { rts.irPara(u.x, u.z, 250); rts.inc = 0.6; rts.rumo = u.hd + Math.PI; }
+  ['#ferramentas', '#painel', '#minimapa'].forEach((s) => $(s).classList.remove('escondido'));
+  atualizarPainel();
+}
+$('#controle .ctlSair').onclick = sairControle;
+
 // ------------------------------------------------------------------ minimapa
 const mm = $('#minimapa');
 const mmCtx = mm.getContext('2d');
@@ -556,9 +584,10 @@ function sincronizar(dt, t) {
     e.obj.visible = verModelo;
     e.icone.visible = d > Math.max(350, tam * 110) || (piloto?.ativo && e.voa && e !== piloto.u && d > 500);
     if (piloto?.ativo && !e.voa && !e.est) e.icone.visible = false;
+    if (e === controle?.u) e.icone.visible = false;
     e.icone.position.set(e.x, e.y + (e.voa ? 2 : tam * 0.6 + 2), e.z);
     if (e.anel) {
-      e.anel.visible = selecao.includes(e) && verModelo;
+      e.anel.visible = selecao.includes(e) && verModelo && e !== controle?.u;
       e.anel.position.set(e.x, (e.voa && e.estado === 'voando' ? e.y : e.y) + 0.3, e.z);
       e.anel.scale.setScalar(Math.max(1.2, tam * (e.est ? 0.6 : 0.75)));
     }
@@ -583,10 +612,11 @@ function sincronizar(dt, t) {
     if (pt.Helice) pt.Helice.rotation.z += dt * (e.estado === 'voando' ? 60 : 0);
     if (pt.Torre) {
       const a = e.alvos?.find((x) => x && x.vivo);
-      const des = a ? Math.atan2(a.x - e.x, a.z - e.z) - e.hd : 0;
+      // controlado pelo jogador: a torre segue a mira
+      const des = e.torreMira !== undefined ? e.torreMira : a ? Math.atan2(a.x - e.x, a.z - e.z) - e.hd : 0;
       let da = des - pt.Torre.rotation.y;
       da = Math.atan2(Math.sin(da), Math.cos(da));
-      pt.Torre.rotation.y += Math.max(-dt * 1.2, Math.min(dt * 1.2, da));
+      pt.Torre.rotation.y += Math.max(-dt * 1.4, Math.min(dt * 1.4, da));
     }
   }
   for (const o of marcos) {
@@ -599,8 +629,8 @@ function sincronizar(dt, t) {
     c.rot.position.set(c.x, y, c.z);
     c.bandeira.position.set(c.x, y, c.z);
     const d = Math.hypot(c.x - cp.x, c.z - cp.z);
-    c.rot.visible = !piloto?.ativo && d < 900000 && (c.valor >= 30 || d < 250000);
-    c.bandeira.visible = !piloto?.ativo || d < 30000;
+    c.rot.visible = !direto() && d < 900000 && (c.valor >= 30 || d < 250000);
+    c.bandeira.visible = !direto() || d < 30000;
   }
 }
 
@@ -621,13 +651,15 @@ function laco(agora) {
       for (let i = 0; i < n; i++) jogo.passo(sim / n);
     }
     if (piloto.ativo) piloto.atualizar(dt);
+    else if (controle.ativo) controle.atualizar(dt);
     else rts.atualizar(dt);
     sincronizar(dt, agora / 1000);
     fx.atualizar(dt * Math.max(1, Math.min(velocidade, 3)), camera.position);
     if (piloto.ativo) {
       const g = chao(camera.position.x, camera.position.z, false) ?? 0;
       cidades3d.atualizar(camera.position, Math.max(200, (camera.position.y - g) * 2.5));
-    } else cidades3d.atualizar(rts.alvo, rts.dist);
+    } else if (controle.ativo) cidades3d.atualizar(camera.position, 600);
+    else cidades3d.atualizar(rts.alvo, rts.dist);
     while (jogo.msgs.length) msg(jogo.msgs.shift());
     acumUI += dt;
     if (acumUI > 0.25) {
@@ -648,7 +680,7 @@ function laco(agora) {
       }
     }
     acumMM += dt;
-    if (acumMM > 0.5 && !piloto.ativo) { acumMM = 0; desenharMinimapa(); }
+    if (acumMM > 0.5 && !direto()) { acumMM = 0; desenharMinimapa(); }
   } else {
     // menu: câmera girando sobre a França
     rts.alvo.set(0, 0, 0);
@@ -659,7 +691,8 @@ function laco(agora) {
   }
   // neblina no horizonte e alcance da câmera
   const voando = piloto?.ativo;
-  const dRef = voando ? Math.max(600, camera.position.y - (chao(camera.position.x, camera.position.z, false) ?? 0)) : rts.dist;
+  const noChao = controle?.ativo;
+  const dRef = voando ? Math.max(600, camera.position.y - (chao(camera.position.x, camera.position.z, false) ?? 0)) : noChao ? 900 : rts.dist;
   cena.fog.near = voando ? 3000 + dRef * 2 : dRef * 0.9 + 300;
   cena.fog.far = voando ? 35000 + dRef * 10 : dRef * 5 + 7000;
   camera.far = cena.fog.far * 1.03;
@@ -668,8 +701,9 @@ function laco(agora) {
   ceu.scale.setScalar(camera.far * 0.9);
   // sombra: caixa de luz em volta do que a câmera está olhando
   if (sombras) {
-    const foco = voando && piloto.u ? new THREE.Vector3(piloto.u.x, piloto.u.y, piloto.u.z) : rts.alvo;
-    const ext = THREE.MathUtils.clamp((voando ? 300 : rts.dist) * 0.9, 120, 2500);
+    const du = direto()?.u;
+    const foco = du ? new THREE.Vector3(du.x, du.y, du.z) : rts.alvo;
+    const ext = THREE.MathUtils.clamp((voando ? 300 : noChao ? 160 : rts.dist) * 0.9, 120, 2500);
     const sc = sol.shadow.camera;
     sc.left = sc.bottom = -ext; sc.right = sc.top = ext;
     sc.near = 1; sc.far = ext * 8;
@@ -684,4 +718,4 @@ function laco(agora) {
 requestAnimationFrame(laco);
 
 // depuração no navegador
-window.FE = { get jogo() { return jogo; }, cidades3d, rts, terreno, camera, cena, renderer, piloto: () => piloto, iniciar, CENARIO_NORMANDIA };
+window.FE = { get jogo() { return jogo; }, cidades3d, rts, terreno, camera, cena, renderer, piloto: () => piloto, controle: () => controle, entrarControle: (u) => entrarControle(u), iniciar, CENARIO_NORMANDIA };
