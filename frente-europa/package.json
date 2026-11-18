@@ -1,0 +1,20 @@
+{
+  "name": "frente-europa-1944",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Jogo de estratégia em tempo real na Europa/França em tamanho real com mapa de satélite",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "modelos": "python3 blender/gerar_modelos.py",
+    "apk": "npm run build && bash android/build.sh"
+  },
+  "dependencies": {
+    "three": "0.170.0"
+  },
+  "devDependencies": {
+    "vite": "5.4.11"
+  }
+}

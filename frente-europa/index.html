@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1d2418">
+  <title>Frente Europa 1944</title>
+  <link rel="stylesheet" href="./src/estilo.css">
+</head>
+<body>
+  <div id="app">
+    <div id="tela"></div>
+
+    <div id="topo" class="escondido">
+      <div class="bloco" id="dinheiro" title="Suprimentos">💰 0</div>
+      <div class="bloco pequeno" id="renda">+0/min</div>
+      <div class="bloco" id="relogio">06/06/1944 06:30</div>
+      <div class="bloco velocidades">
+        <button data-v="0">⏸</button><button data-v="1">1×</button><button data-v="5" class="ativo">5×</button><button data-v="20">20×</button><button data-v="60">60×</button>
+      </div>
+      <div class="espaco"></div>
+      <div class="bloco pequeno" id="rede"></div>
+      <button class="bloco" id="btnSom">🔊</button>
+      <button class="bloco" id="btnMenu">☰</button>
+    </div>
+
+    <div id="msgs"></div>
+
+    <div id="ferramentas" class="escondido">
+      <button id="btnConstruir">🏗<span>Construir</span></button>
+      <button id="btnCaixa">⬚<span>Área</span></button>
+      <button id="btnTela">👥<span>Na tela</span></button>
+      <button id="btnBase">⌂<span>Base</span></button>
+      <button id="btnPredios">🏢<span>Prédios</span></button>
+    </div>
+
+    <canvas id="minimapa" width="200" height="200" class="escondido"></canvas>
+
+    <div id="painel" class="escondido">
+      <div id="selInfo"></div>
+      <div id="acoes"></div>
+    </div>
+
+    <div id="menuConstruir" class="janela escondido">
+      <div class="titulo">Construir <button class="fechar">✕</button></div>
+      <div id="listaConstruir"></div>
+      <p class="dica">Toque no mapa para posicionar. Construa perto do QG (4 km), de cidades suas (3 km) ou de outras estruturas suas.</p>
+    </div>
+
+    <div id="aviso" class="escondido"></div>
+    <div id="caixaSel"></div>
+    <div id="marcador"></div>
+
+    <div id="piloto" class="escondido">
+      <div id="mira">+</div>
+      <div id="hudAlvo"></div>
+      <div id="hudInfo"><span id="hudVel"></span> · <span id="hudAlt"></span><div class="barra"><div id="hudVida"></div></div></div>
+      <div id="manche"><div id="mancheBola"></div></div>
+      <div id="direita">
+        <input id="acelerador" type="range" min="30" max="120" value="85" orient="vertical">
+        <button id="btnBomba">💣</button>
+        <button id="btnFogo">FOGO</button>
+      </div>
+      <button id="btnSairPiloto">✕ Sair do cockpit</button>
+    </div>
+
+    <div id="inicio">
+      <div class="caixaInicio">
+        <h1>FRENTE EUROPA <span>1944</span></h1>
+        <p class="sub">Estratégia em tempo real na Europa em tamanho real, com mapa de satélite e relevo verdadeiros.</p>
+        <div id="carregando"><div id="barraCarga"></div><span id="textoCarga">Carregando modelos 3D...</span></div>
+        <div id="botoesInicio" class="escondido">
+          <button data-cen="normandia">🎖 Campanha: Dia D — Normandia → Paris</button>
+          <button data-cen="aereo">✈ Batalha Aérea sobre o Canal da Mancha</button>
+          <button data-cen="livre">🌍 Europa Livre (sandbox, suprimentos infinitos)</button>
+          <label class="opc"><input type="checkbox" id="optPredios"> Prédios 3D reais (OpenStreetMap)</label>
+          <label class="opc">Detalhe do mapa <select id="optDetalhe"><option value="1.6">Baixo (celular simples)</option><option value="2.2" selected>Médio</option><option value="3.2">Alto</option></select></label>
+          <button id="btnAjuda" class="secundario">❓ Como jogar</button>
+        </div>
+        <div id="ajuda" class="escondido">
+          <h3>Como jogar</h3>
+          <ul>
+            <li><b>Mover o mapa:</b> arraste com um dedo. <b>Zoom:</b> pinça. <b>Girar/inclinar:</b> dois dedos (gire e arraste para cima/baixo).</li>
+            <li><b>Selecionar:</b> toque numa unidade. Toque duas vezes para pegar todas do mesmo tipo na tela. <b>⬚ Área</b> para arrastar um retângulo.</li>
+            <li><b>Mover/atacar:</b> com unidades selecionadas, toque no chão ou num inimigo.</li>
+            <li><b>Entrar em veículos:</b> selecione soldados e toque num jipe, caminhão, half-track, helicóptero (pousado), C-47 (no aeródromo), barco Higgins ou bunker.</li>
+            <li><b>Desembarcar / Saltar:</b> botão no painel. O C-47 em voo solta paraquedistas! O Higgins precisa chegar à praia.</li>
+            <li><b>Aviões:</b> Pousar volta ao aeródromo ou porta-aviões. Toque num porta-aviões com aviões selecionados para pousar nele. <b>Decolar</b> lança os aviões.</li>
+            <li><b>✈ Pilotar:</b> selecione UM avião e assuma o manche. Joystick à esquerda (puxe para baixo para subir), acelerador e FOGO à direita. PC: setas/WASD, Shift/Ctrl, Espaço, B = bomba.</li>
+            <li><b>Cidades reais:</b> fique perto com tropas para capturar. Cada cidade dá suprimentos por minuto. Liberte Paris para vencer!</li>
+            <li><b>Construir:</b> Quartel, Garagem, Aeródromo, Porto (na costa), Bunker e Antiaérea. Toque numa estrutura para produzir unidades.</li>
+          </ul>
+          <button class="secundario" id="fecharAjuda">Fechar</button>
+        </div>
+        <p class="creditos">Imagens de satélite: Esri, Maxar, Earthstar Geographics · Relevo: Mapzen / AWS Terrain Tiles · Prédios: © OpenStreetMap · Modelos 3D feitos no Blender</p>
+      </div>
+    </div>
+
+    <div id="fim" class="escondido"><div class="caixaInicio"><h2 id="fimTexto"></h2><button id="fimContinuar">Continuar jogando</button><button id="fimMenu" class="secundario">Menu</button></div></div>
+    <div id="creditosMapa">Imagens © Esri, Maxar, Earthstar Geographics · Relevo: AWS Terrain Tiles</div>
+  </div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

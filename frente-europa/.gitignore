@@ -1,0 +1,10 @@
+node_modules/
+dist/
+android/app/build/
+android/.gradle/
+android/build/
+android/local.properties
+blender/__pycache__/
+android/app/src/main/assets/
+android/chave/
+*.blend1

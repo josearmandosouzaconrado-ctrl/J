@@ -1,0 +1,105 @@
+:root {
+  --fundo: rgba(22, 28, 18, 0.82);
+  --borda: #6f7a4a;
+  --texto: #ece6cf;
+  --destaque: #e3c158;
+  --aliado: #3d7bd9;
+  --eixo: #d23b30;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #8fb2d3; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: var(--texto); user-select: none; -webkit-user-select: none; }
+#app, #tela { position: fixed; inset: 0; }
+#tela canvas { display: block; touch-action: none; }
+.escondido { display: none !important; }
+button { font: inherit; color: var(--texto); background: #3a4426; border: 1px solid var(--borda); border-radius: 8px; padding: 6px 10px; cursor: pointer; touch-action: manipulation; }
+button:active { filter: brightness(1.3); }
+button.ativo { background: #6b7a30; border-color: var(--destaque); color: #fff; }
+button:disabled { opacity: 0.45; }
+
+#topo { position: fixed; top: env(safe-area-inset-top, 0); left: 0; right: 0; display: flex; gap: 6px; padding: 6px; pointer-events: none; align-items: flex-start; flex-wrap: wrap; }
+#topo > * { pointer-events: auto; }
+.bloco { background: var(--fundo); border: 1px solid var(--borda); border-radius: 8px; padding: 5px 9px; font-weight: 600; font-size: 14px; }
+.bloco.pequeno { font-size: 12px; font-weight: 500; opacity: 0.9; }
+.velocidades { display: flex; gap: 2px; padding: 3px; }
+.velocidades button { padding: 3px 7px; font-size: 13px; border-radius: 6px; }
+.espaco { flex: 1; }
+
+#msgs { position: fixed; top: 52px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; z-index: 5; max-width: 90vw; }
+#msgs div { background: var(--fundo); border-left: 3px solid var(--destaque); padding: 5px 12px; border-radius: 6px; font-size: 13px; animation: some 4.5s forwards; }
+@keyframes some { 0% { opacity: 0; transform: translateY(-6px); } 8% { opacity: 1; transform: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
+
+#ferramentas { position: fixed; left: 6px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 6px; }
+#ferramentas button { width: 58px; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 19px; background: var(--fundo); padding: 2px; }
+#ferramentas button span { font-size: 10px; margin-top: 2px; }
+
+#minimapa { position: fixed; right: 6px; top: 50px; width: 150px; height: 150px; border: 2px solid var(--borda); border-radius: 8px; background: #2c3a4a; }
+
+#painel { position: fixed; left: 72px; right: 6px; bottom: calc(6px + env(safe-area-inset-bottom, 0)); background: var(--fundo); border: 1px solid var(--borda); border-radius: 10px; padding: 8px; display: flex; gap: 10px; align-items: center; max-height: 42vh; }
+#selInfo { min-width: 170px; max-width: 34%; font-size: 13px; line-height: 1.35; overflow: auto; max-height: 38vh; }
+#selInfo b { color: var(--destaque); font-size: 14px; }
+#selInfo .vida { height: 6px; background: #222; border-radius: 3px; margin: 3px 0; overflow: hidden; }
+#selInfo .vida div { height: 100%; background: #5fbf4a; }
+#acoes { flex: 1; display: flex; flex-wrap: wrap; gap: 6px; overflow-y: auto; max-height: 38vh; align-content: flex-start; }
+#acoes button { font-size: 13px; padding: 7px 10px; }
+#acoes button.prod { display: flex; flex-direction: column; align-items: flex-start; min-width: 118px; text-align: left; }
+#acoes button.prod small { opacity: 0.8; font-size: 11px; }
+#acoes button.prod .fila { color: var(--destaque); }
+
+.janela { position: fixed; left: 72px; bottom: 8px; width: min(520px, calc(100vw - 84px)); background: var(--fundo); border: 1px solid var(--borda); border-radius: 10px; padding: 10px; z-index: 6; }
+.janela .titulo { font-weight: 700; display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.janela .fechar { padding: 2px 9px; }
+#listaConstruir { display: flex; flex-wrap: wrap; gap: 6px; }
+#listaConstruir button { min-width: 140px; text-align: left; }
+.dica { font-size: 12px; opacity: 0.8; margin: 8px 0 0; }
+
+#aviso { position: fixed; top: 92px; left: 50%; transform: translateX(-50%); background: #5b4a12; border: 1px solid var(--destaque); border-radius: 8px; padding: 7px 14px; font-size: 14px; z-index: 6; }
+#caixaSel { position: fixed; border: 2px dashed var(--destaque); background: rgba(227, 193, 88, 0.12); pointer-events: none; display: none; }
+#marcador { position: fixed; width: 26px; height: 26px; margin: -13px 0 0 -13px; border: 3px solid #7fe36b; border-radius: 50%; pointer-events: none; opacity: 0; }
+#marcador.on { animation: ping 0.6s ease-out; }
+#marcador.ataque { border-color: #ff5a4a; }
+@keyframes ping { 0% { opacity: 1; transform: scale(0.4); } 100% { opacity: 0; transform: scale(1.6); } }
+
+#inicio, #fim { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at center, rgba(30,40,24,0.75), rgba(10,12,8,0.95)); z-index: 20; overflow: auto; padding: 16px; }
+.caixaInicio { max-width: 640px; width: 100%; text-align: center; }
+.caixaInicio h1 { font-size: clamp(30px, 7vw, 54px); letter-spacing: 3px; margin: 0 0 4px; color: #f0e6c0; text-shadow: 0 3px 0 #000; }
+.caixaInicio h1 span { color: var(--destaque); }
+.sub { opacity: 0.85; margin: 0 0 18px; }
+#botoesInicio { display: flex; flex-direction: column; gap: 9px; }
+#botoesInicio > button, #fim button { font-size: 17px; padding: 12px; }
+button.secundario { background: #2a301d; }
+.opc { font-size: 14px; display: flex; gap: 8px; justify-content: center; align-items: center; }
+.opc select { font: inherit; background: #2a301d; color: var(--texto); border: 1px solid var(--borda); border-radius: 6px; padding: 3px; }
+#carregando { margin: 12px auto; width: 80%; height: 22px; border: 1px solid var(--borda); border-radius: 11px; position: relative; overflow: hidden; }
+#barraCarga { height: 100%; width: 0; background: #6b7a30; transition: width 0.2s; }
+#textoCarga { position: absolute; inset: 0; font-size: 12px; line-height: 22px; }
+#ajuda { text-align: left; background: rgba(0,0,0,0.4); border-radius: 10px; padding: 8px 14px; margin-top: 10px; font-size: 14px; }
+#ajuda li { margin-bottom: 5px; }
+.creditos { font-size: 11px; opacity: 0.6; margin-top: 16px; }
+#fim .caixaInicio { display: flex; flex-direction: column; gap: 10px; }
+#creditosMapa { position: fixed; right: 4px; bottom: 0; font-size: 9px; opacity: 0.7; pointer-events: none; text-shadow: 0 0 2px #000; }
+
+/* modo piloto */
+#piloto { position: fixed; inset: 0; pointer-events: none; z-index: 4; }
+#piloto > * { pointer-events: auto; }
+#mira { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); font-size: 34px; color: #b6ff9a; text-shadow: 0 0 3px #000; pointer-events: none !important; }
+#hudAlvo { position: absolute; transform: translate(-50%, -50%); border: 2px solid #ff5a4a; border-radius: 4px; padding: 10px 2px 0; min-width: 34px; font-size: 11px; text-align: center; color: #ffb0a8; pointer-events: none !important; display: none; text-shadow: 0 0 2px #000; }
+#hudAlvo.fora { border-style: dashed; border-radius: 50%; }
+#hudInfo { position: absolute; top: 50px; left: 50%; transform: translateX(-50%); background: var(--fundo); padding: 5px 14px; border-radius: 8px; font-weight: 700; text-align: center; pointer-events: none !important; }
+#hudInfo .barra { height: 5px; background: #222; margin-top: 4px; border-radius: 3px; overflow: hidden; }
+#hudVida { height: 100%; width: 100%; background: #5fbf4a; }
+#manche { position: absolute; left: 30px; bottom: 30px; width: 170px; height: 170px; border-radius: 50%; background: rgba(0,0,0,0.25); border: 2px solid rgba(255,255,255,0.35); touch-action: none; }
+#mancheBola { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px; border-radius: 50%; background: rgba(227,193,88,0.7); border: 2px solid #fff; pointer-events: none; }
+#direita { position: absolute; right: 24px; bottom: 26px; display: flex; align-items: flex-end; gap: 14px; }
+#acelerador { writing-mode: vertical-lr; direction: rtl; width: 40px; height: 160px; accent-color: var(--destaque); }
+#btnFogo { width: 110px; height: 110px; border-radius: 50%; background: rgba(170,40,30,0.75); font-size: 20px; font-weight: 800; touch-action: none; }
+#btnBomba { width: 64px; height: 64px; border-radius: 50%; font-size: 26px; }
+#btnSairPiloto { position: absolute; top: 50px; right: 8px; background: var(--fundo); }
+
+@media (max-height: 480px) {
+  #minimapa { width: 110px; height: 110px; }
+  #painel { max-height: 46vh; padding: 5px; }
+  #ferramentas button { width: 50px; height: 44px; font-size: 16px; }
+  #manche { width: 140px; height: 140px; }
+  #btnFogo { width: 90px; height: 90px; }
+  #acelerador { height: 120px; }
+}

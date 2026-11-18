@@ -1,0 +1,30 @@
+# Publica o APK de "Frente Europa 1944" (frente-europa/FrenteEuropa1944.apk) numa Release sempre que ele muda.
+# Link fixo (sempre a versão mais nova):
+#   https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/frente-europa-ultima/FrenteEuropa1944.apk
+name: APK Frente Europa
+on:
+  push:
+    paths:
+      - 'frente-europa/FrenteEuropa1944.apk'
+      - '.github/workflows/frente-europa-apk.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Criar ou atualizar a Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER=$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' frente-europa/package.json)
+          TAG="frente-europa-ultima"
+          NOTAS="Frente Europa 1944 $VER. Baixe FrenteEuropa1944.apk no celular Android e instale (permita instalar de fontes desconhecidas). Precisa de internet para o mapa de satélite."
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "Frente Europa 1944 ($VER)" --notes "$NOTAS" --latest=false
+          else
+            gh release edit "$TAG" --title "Frente Europa 1944 ($VER)" --notes "$NOTAS"
+          fi
+          gh release upload "$TAG" frente-europa/FrenteEuropa1944.apk --clobber

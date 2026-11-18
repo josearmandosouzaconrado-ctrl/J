@@ -1,0 +1,55 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.frenteeuropa.jogo'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.frenteeuropa.jogo'
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName '1.0.0'
+    }
+
+    // Chave própria do jogo (assim cada APK novo instala por cima do anterior).
+    // A chave NÃO vai para o git (como as outras chaves deste repositório): fica em android/chave/.
+    // Sem ela, o APK é assinado com a chave de depuração do computador.
+    def temChave = file('../chave/frente-europa.jks').exists()
+    signingConfigs {
+        jogo {
+            storeFile file('../chave/frente-europa.jks')
+            storePassword 'frenteeuropa1944'
+            keyAlias 'frenteeuropa'
+            keyPassword 'frenteeuropa1944'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig temChave ? signingConfigs.jogo : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // o jogo (pasta dist/ gerada pelo Vite) entra como assets/www
+    sourceSets {
+        main {
+            assets.srcDirs = ['src/main/assets']
+        }
+    }
+    aaptOptions {
+        noCompress 'glb'
+    }
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+}

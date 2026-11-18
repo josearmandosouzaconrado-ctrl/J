@@ -1,0 +1,3 @@
+Coloque aqui fotos de referência com o nome do modelo (ex.: sherman.jpg, p51.jpg, b17.jpg, porta_avioes.jpg).
+Ao rodar blender/gerar_modelos.py elas aparecem no .blend ao lado de cada modelo.
+Fotos oficiais do Exército/Marinha dos EUA da Segunda Guerra são de domínio público.
