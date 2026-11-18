@@ -20,8 +20,8 @@ na frente e esteira de borracha T48.
 
 ## Add-on (TanqueSherman.mcaddon)
 
-Abra o `TanqueSherman.mcaddon` (instala os dois pacotes), ative no mundo com **Beta APIs** ligado
-(precisa por causa do script). Depois, no chat: `/function sherman` — aparece um Sherman na sua
+Abra o `TanqueSherman.mcaddon` (instala os dois pacotes) e ative os dois no mundo
+Depois, no chat: `/function sherman` — aparece um Sherman na sua
 frente e você ganha 32 granadas de 75 mm e a metralhadora .50.
 
 | Ação | Como |
