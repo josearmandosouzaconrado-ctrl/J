@@ -3,6 +3,7 @@
 //   obras.js    legionários constroem fortes, torres e muralhas e depois patrulham
 //   sistema.js  o Sistema estilo anime: general, missões, poderes, construir, recrutar
 //   plano.js    as plantas das construções
+//   comando.js  ordens à legião, formações e táticas (Bastão do Centurião)
 //   vida.js     fome, sede, sono, comer, beber, dormir e conversas com voz (dialogos.js)
 //
 // Comandos: /function posto_avancado (forte), /function cancelar_obras,
@@ -13,7 +14,8 @@ import {
   obterEstado, salvar, iniciarObra, avancarObras, pensarEmConstruir, cuidarDosFeridos, patrulhar,
   dimensao, ROMANO, valido, emCombate,
 } from './obras.js';
-import { iniciarSistema, seguirGeneral } from './sistema.js';
+import { iniciarSistema } from './sistema.js';
+import { iniciarComando, comandar } from './comando.js';
 import { iniciarVida } from './vida.js';
 
 let tick = 0;
@@ -48,6 +50,7 @@ system.afterEvents.scriptEventReceive.subscribe((ev) => {
 });
 
 iniciarSistema();
+iniciarComando();
 iniciarVida();
 
 system.runInterval(() => {
@@ -56,7 +59,8 @@ system.runInterval(() => {
     avancarObras(tick);
     patrulhar(tick);
     if (tick % 120 === 0) pensarEmConstruir();
-    if (tick % 8 === 0) { cuidarDosFeridos(); seguirGeneral(); }
+    comandar(tick);
+    if (tick % 8 === 0) cuidarDosFeridos();
   } catch (e) {
     console.warn(`[batalha] ${e}`);
   }

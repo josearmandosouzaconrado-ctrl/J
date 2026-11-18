@@ -55,7 +55,7 @@ function salvarVida(e, v) {
 }
 
 const emCombate = (e, t) => prop(e, `${t.ns}:em_combate`) === true;
-const ocupadoComOutra = (e) => e.hasTag('obra') || e.hasTag('guarda');
+const ocupadoComOutra = (e) => e.hasTag('obra') || e.hasTag('guarda') || e.hasTag('em_missao');
 
 function falar(e, texto, duracao = 70) {
   const v = vida(e);
@@ -100,7 +100,7 @@ function viver() {
     if (!valido(e)) continue;
     const t = TIPOS[e.typeId];
     const v = vida(e);
-    const luta = emCombate(e, t);
+    const luta = emCombate(e, t) || e.hasTag('em_missao');  // em missão larga a comida
     const k = luta ? 2.2 : 1;
     v.f = Math.max(0, v.f - 0.05 * k);
     v.s = Math.max(0, v.s - 0.08 * k);

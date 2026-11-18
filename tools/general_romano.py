@@ -256,6 +256,15 @@ ITEM_SISTEMA = {'format_version': '1.21.0', 'minecraft:item': {
     }}}
 
 
+ITEM_BASTAO = {'format_version': '1.21.0', 'minecraft:item': {
+    'description': {'identifier': 'batalha:bastao', 'menu_category': {'category': 'items'}},
+    'components': {
+        'minecraft:icon': {'textures': {'default': 'bastao'}},
+        'minecraft:display_name': {'value': '§6Bastão do Centurião §7(clique: atacar | agachado: ordens)'},
+        'minecraft:max_stack_size': 1,
+        'minecraft:hand_equipped': True,
+    }}}
+
 # =================================================================== ícones 16 x 16
 def _icone(desenho, cores):
     im = Image.new('RGBA', (16, 16), (0, 0, 0, 0))
@@ -291,6 +300,11 @@ ICONES = {
         '..coe.....coe...', '..coe.....coe...', '..ooe.....ooe...', '..coe.....coe...',
         '..coe.....coe...', '..coe.....coe...', '..mmm.....mmm...', '.mmmm....mmmm...',
         '................', '................', '................', '................'],
+    'bastao': [
+        '..............o.', '.............ce.', '............mm..', '...........mm...',
+        '..........mm....', '.........mm.....', '........mm......', '.......mm.......',
+        '......mm........', '.....mm.........', '....mm..........', '...mm...........',
+        '..rr............', '.rR.............', '................', '................'],
     'sistema': [
         '................', '...BBBBBBBBBB...', '..BbbbbbbbbbbB..', '..BbkkkkkkkkbB..',
         '..Bbklbbbbbkb B.', '..BbkbllllbkbB..', '..BbkbbbbbbkbB..', '..BbklllbbbkbB..',

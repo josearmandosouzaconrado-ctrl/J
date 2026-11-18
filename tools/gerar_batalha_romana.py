@@ -852,7 +852,7 @@ def main():
     })
     ent['component_groups']['romano:guarda'] = {'minecraft:movement': {'value': 0.0}}
     arquivos[f'{bp}/entities/{gs.NOME}.json'] = L.json_bytes(romano)
-    for js in ('main.js', 'plano.js', 'obras.js', 'sistema.js', 'vida.js', 'dialogos.js'):
+    for js in ('main.js', 'plano.js', 'obras.js', 'sistema.js', 'vida.js', 'dialogos.js', 'comando.js'):
         with open(os.path.join(AQUI, 'scripts_batalha', js), 'rb') as f:
             arquivos[f'{bp}/scripts/{js}'] = f.read()
     lang_pt += [f'entity.{gs.ID}.name=Soldado Romano', f'item.spawn_egg.entity.{gs.ID}.name=Gerar Soldado Romano']
@@ -968,6 +968,8 @@ def main():
         arquivos[f'{bp}/items/{m.nome}.json'] = L.json_bytes(GR.item_armadura(item_id, nome, slot, protecao, m.nome))
         texturas_itens[m.nome] = {'textures': f'textures/items/{m.nome}'}
     arquivos[f'{bp}/items/sistema.json'] = L.json_bytes(GR.ITEM_SISTEMA)
+    arquivos[f'{bp}/items/bastao.json'] = L.json_bytes(GR.ITEM_BASTAO)
+    texturas_itens['bastao'] = {'textures': 'textures/items/bastao'}
     texturas_itens['sistema'] = {'textures': 'textures/items/sistema'}
     for nome, png in GR.icones().items():
         arquivos[f'{rp}/textures/items/{nome}.png'] = png
@@ -993,6 +995,10 @@ def main():
     arquivos[f'{bp}/functions/batalha_grande.mcfunction'] = BATALHA_GRANDE.encode()
     arquivos[f'{bp}/functions/posto_avancado.mcfunction'] = POSTO.encode()
     arquivos[f'{bp}/functions/cancelar_obras.mcfunction'] = b'scriptevent romano:cancelar\n'
+    arquivos[f'{bp}/functions/ordens.mcfunction'] = b'# Menu de ordens da legiao\nscriptevent legiao:menu\n'
+    arquivos[f'{bp}/functions/bastao.mcfunction'] = b'give @s batalha:bastao\n'
+    for ordem in ('seguir', 'formacao', 'testudo', 'atacar', 'defender', 'aguardar', 'guarda'):
+        arquivos[f'{bp}/functions/legiao_{ordem}.mcfunction'] = f'scriptevent legiao:{ordem}\n'.encode()
     arquivos[f'{bp}/functions/sistema.mcfunction'] = b'# Abre a janela do Sistema\nscriptevent sistema:abrir\n'
     arquivos[f'{bp}/functions/familia_nobre.mcfunction'] = ('# A família nobre e Aélia aparecem perto de você\n'
         + ''.join(f'summon nobre:{n} ~{dx} ~ ~{dz}\n' for n, dx, dz in

@@ -54,7 +54,7 @@ def modelo():
     # ---- corpo no formato do jogador: tronco 8x12x4, braços de 3 (Alex) e pernas 4x12x4
     c('corpo', 'tronco', [-4, 12, -2], [4, 24, 2], 'blusa')
     c('corpo', 'gola', [-1.6, 23.2, -1.6], [1.6, 24.6, 1.6], 'renda', sem=('up', 'down'))
-    c('corpo', 'busto', [-3, 18.4, -3], [3, 21.2, -2], 'blusa', sem=('up',))
+    c('corpo', 'busto', [-3.1, 18.0, -3.5], [3.1, 21.4, -2], 'blusa', sem=('up',))
     c('corpo', 'corpete', [-4.2, 15.2, -2.6], [4.2, 18.6, 2.2], 'corpete')
     c('corpo', 'corpete_ponta', [-1.2, 14.4, -2.6], [1.2, 15.2, -2.25], 'corpete')
     c('corpo', 'saia_cintura', [-4.25, 12, -2.25], [4.25, 15.2, 2.25], 'saia')

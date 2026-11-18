@@ -43,7 +43,7 @@ Abra o Sistema **usando o item Sistema** (ou `/function sistema`). O menu tem:
 | **Poderes** | 7 poderes com recarga (veja abaixo) |
 | **Construir** | ergue um **forte** (300 den.), uma **torre de vigia** (80) ou uma **muralha com portão** (150) na direção para onde você olha. Os legionários livres por perto constroem; sem soldados, **o próprio Sistema ergue a obra** com brilho azul |
 | **Recrutar** | **legionário** (50 den.), **arqueiro romano** (60) ou **cavaleiro** (120); eles seguem você |
-| **Ordens à legião** | *Sigam-me*, *Aguardem aqui*, *Montem guarda* (vão patrulhar o forte mais perto) e *Reunir!* |
+| **Ordens à legião** | Formações e táticas por grupo (toda a legião, legionários, arqueiros ou cavalaria) — veja *Comando da legião* abaixo |
 
 **Poderes** (o primeiro vem de início, os outros pelas missões):
 
@@ -149,7 +149,7 @@ Quando uma construção fica pronta (forte, torre ou muralha), soldados livres n
 - **Rondas na passarela**: legionários andam de um lado para o outro nos trechos do adarve, com a
   animação de marcha, e dão meia-volta nas pontas.
 - Se aparece um inimigo, a sentinela larga o posto e desce para lutar; depois outro soldado assume.
-- Soldados que estão seguindo você não são chamados; use **Ordens → Montem guarda** para mandá-los.
+- Soldados que estão seguindo você não são chamados; use **Ordens → Montem guarda** (ou `/function legiao_guarda`) para mandá-los.
 
 ## Vida dos NPCs: fome, sede, sono, comida e conversas com voz
 
@@ -207,3 +207,26 @@ Gerados por `tools/gerar_batalha_romana.py` (usa `tools/mc_lib.py`, `tools/gerar
 ```bash
 python3 tools/gerar_batalha_romana.py
 ```
+
+
+## Comando da legião (Bastão do Centurião)
+
+O General recebe o **Bastão do Centurião** (quem já jogava ganha ao entrar no mundo; ou `/function bastao`).
+
+- **Clique com o bastão**: *Atacar!* para onde você está olhando. Se não houver inimigos lá, a legião avança e forma a linha naquele ponto.
+- **Agachado + clique** (ou Sistema → Ordens, ou `/function ordens`): menu de ordens. O primeiro botão troca o grupo que recebe a ordem: toda a legião, legionários, arqueiros ou cavalaria.
+- Segurando o bastão, aparece na tela quantos soldados estão em cada ordem, os feridos e os inimigos perto.
+
+| Ordem | O que fazem |
+| --- | --- |
+| Sigam-me | Marcham atrás de você em formação: legionários em fileiras, arqueiros atrás e cavalaria nos flancos. Se um inimigo chegar perto, os mais próximos entram na luta sozinhos e os outros continuam na formação |
+| Linha de batalha aqui | Formam a linha onde você está, virados para onde você olha, e seguram a posição: lutam com quem chegar, mas não saem correndo atrás |
+| Testudo! | Formação fechada de escudos: legionários com Resistência III, andando devagar |
+| Atacar! | Carga: os inimigos são divididos entre os soldados (ninguém fica sem alvo, os mais fracos primeiro), a cavalaria chega pelo flanco e os arqueiros atiram a ~12 blocos, recuando se o inimigo chegar perto. Quando a área fica limpa, aparece **VITÓRIA!** e voltam a seguir você |
+| Protejam o General | Anel de guarda-costas em volta de você; interceptam qualquer bárbaro que chegue a 12 blocos |
+| Aguardem aqui | Ficam parados |
+| Montem guarda | Vão patrulhar o forte ou a torre mais perto |
+
+Em qualquer ordem: soldado com menos de 35% de vida e inimigo perto **recua para trás do general** e se cura (volta à luta com 60%), o centurião avisa no chat. Quem trava num obstáculo dá a volta, quem fica perdido longe reaparece na formação, e em missão eles largam a comida e a cama.
+
+Atalhos: `/function legiao_seguir`, `legiao_formacao`, `legiao_testudo`, `legiao_atacar`, `legiao_defender`, `legiao_aguardar`, `legiao_guarda`.

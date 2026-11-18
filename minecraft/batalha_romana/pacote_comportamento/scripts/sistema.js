@@ -8,6 +8,7 @@ import { world, system, ItemStack, EquipmentSlot } from '@minecraft/server';
 import { ActionFormData, MessageFormData } from '@minecraft/server-ui';
 import { PLANOS, rotPara } from './plano.js';
 import { iniciarObra, aoConcluir, dimensao, emCombate, valido, ROMANOS } from './obras.js';
+import { menuOrdens, novoRecruta } from './comando.js';
 
 const BARBAROS = ['inimigo:guerreiro_gaules', 'inimigo:guerreiro_germano', 'inimigo:arqueiro_parto'];
 const AZUL = '§b', OURO = '§6', CINZA = '§7', BRANCO = '§f', VERDE = '§a', VERM = '§c';
@@ -107,7 +108,7 @@ function usarPoder(p, id) {
         const pos = { x: loc.x - (v.x / n) * 4 + (v.z / n) * i * 2.5, y: loc.y, z: loc.z - (v.z / n) * 4 - (v.x / n) * i * 2.5 };
         try {
           const c = dim.spawnEntity('romano:cavaleiro', pos);
-          c.addTag(`dono_${p.id}`); c.addTag('seguindo');
+          c.addTag(`dono_${p.id}`); novoRecruta(c);
           particulas(dim, 'minecraft:totem_particle', pos, 10, 1);
         } catch (e) { /* lugar ruim */ }
       }
@@ -325,7 +326,7 @@ async function recrutar(p) {
   const pos = { x: loc.x + (Math.random() - 0.5) * 4, y: loc.y, z: loc.z + (Math.random() - 0.5) * 4 };
   try {
     const e = p.dimension.spawnEntity(t.id, pos);
-    e.addTag(`dono_${p.id}`); e.addTag('seguindo');
+    e.addTag(`dono_${p.id}`); novoRecruta(e);
     particulas(p.dimension, 'minecraft:totem_particle', pos, 12, 1);
   } catch (e) { return p.sendMessage(`${TITULO} ${VERM}Não deu para recrutar aqui.`); }
   d.denarios -= t.custo;
@@ -336,26 +337,8 @@ async function recrutar(p) {
   return recrutar(p);
 }
 
-async function ordens(p) {
-  const legiao = minhaLegiao(p);
-  const form = new ActionFormData().title(`${TITULO} §r§fOrdens`).body(`${BRANCO}Soldados sob seu comando: ${VERM}${legiao.length}`)
-    .button(`${BRANCO}Sigam-me\n§r${CINZA}A legião acompanha você`)
-    .button(`${BRANCO}Aguardem aqui\n§r${CINZA}Ficam onde estão`)
-    .button(`${BRANCO}Montem guarda\n§r${CINZA}Patrulham o forte ou a torre mais perto`)
-    .button(`${BRANCO}Reunir!\n§r${CINZA}Todos vêm até você agora`)
-    .button('Voltar');
-  const r = await mostrar(p, form);
-  if (r.canceled) return;
-  if (r.selection === 4) return menu(p);
-  for (const e of legiao) {
-    if (r.selection === 0 || r.selection === 3) e.addTag('seguindo');
-    else e.removeTag('seguindo');
-    if (r.selection === 3) {
-      try { e.teleport({ x: p.location.x + (Math.random() - 0.5) * 6, y: p.location.y, z: p.location.z + (Math.random() - 0.5) * 6 }); } catch (err) { /* longe */ }
-    }
-  }
-  const txt = ['A legião segue você.', 'A legião aguarda.', 'Os soldados vão montar guarda.', 'Legião reunida!'][r.selection];
-  aviso(p, `${OURO}${txt}`, `${CINZA}${legiao.length} soldados`, 'random.orb');
+function ordens(p) {
+  return menuOrdens(p, menu);
 }
 
 // ------------------------------------------------------------------ chegada do general
@@ -391,6 +374,7 @@ async function despertar(p) {
   vestirGeneral(p);
   const d = dados(p);
   d.iniciado = true;
+  d.bastao = true;
   guardar(p, d);
   aviso(p, `${OURO}§lGENERAL DE ROMA`, `${BRANCO}O Sistema foi ativado. Use o item ${AZUL}Sistema${BRANCO}.`, 'random.levelup');
   particulas(p.dimension, 'minecraft:totem_particle', p.location, 30, 1.5);
@@ -417,6 +401,7 @@ function vestirGeneral(p) {
   gladio.nameTag = '§6Gládio do General';
   try { gladio.setLore(['§7Forjado em Roma.', '§7Dado pelo Sistema.']); } catch (e) { /* opcional */ }
   inv.addItem(new ItemStack('batalha:sistema'));
+  inv.addItem(new ItemStack('batalha:bastao'));
   inv.addItem(gladio);
 }
 
@@ -425,7 +410,16 @@ export function iniciarSistema() {
   world.afterEvents.playerSpawn.subscribe((ev) => {
     if (!ev.initialSpawn) return;
     const p = ev.player;
-    if (!dados(p).iniciado) system.runTimeout(() => despertar(p), 80);
+    const d = dados(p);
+    if (!d.iniciado) system.runTimeout(() => despertar(p), 80);
+    else if (!d.bastao) {  // quem já jogava antes ganha o Bastão do Centurião
+      d.bastao = true;
+      guardar(p, d);
+      system.runTimeout(() => {
+        try { p.getComponent('minecraft:inventory')?.container?.addItem(new ItemStack('batalha:bastao')); } catch (e) { /* ok */ }
+        p.sendMessage(`${TITULO} ${BRANCO}Novo item: ${OURO}Bastão do Centurião${BRANCO} — clique para atacar onde olha, agachado para dar ordens.`);
+      }, 60);
+    }
   });
 
   world.afterEvents.itemUse.subscribe((ev) => {
@@ -481,18 +475,3 @@ export function iniciarSistema() {
   });
 }
 
-// soldados com a ordem "sigam-me" acompanham o dono
-export function seguirGeneral() {
-  for (const p of world.getPlayers()) {
-    for (const e of minhaLegiao(p)) {
-      if (!e.hasTag('seguindo') || emCombate(e) || e.hasTag('obra') || e.hasTag('guarda')) continue;
-      const d2 = (e.location.x - p.location.x) ** 2 + (e.location.z - p.location.z) ** 2;
-      if (d2 < 14 * 14) continue;
-      const v = p.getViewDirection(), n = Math.hypot(v.x, v.z) || 1;
-      try {
-        e.teleport({ x: p.location.x - (v.x / n) * 3 + (Math.random() - 0.5) * 4, y: p.location.y,
-          z: p.location.z - (v.z / n) * 3 + (Math.random() - 0.5) * 4 }, { facingLocation: p.location });
-      } catch (err) { /* outra dimensão */ }
-    }
-  }
-}
