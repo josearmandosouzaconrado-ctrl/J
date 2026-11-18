@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Crônicas de Eldoria — Anime Ep. 1</title>
+<style>html,body{margin:0;background:#000}canvas{display:block;width:100vw;max-width:1280px;margin:auto}</style></head>
+<body><canvas id="c" width="1280" height="720"></canvas>
+<script src="anime.js"></script>
+<script>
+ANIME.carregar().then(() => {
+  window.PRONTO = true;
+  if (location.hash === '#play') { const t0 = performance.now(); (function f() { const t = (performance.now() - t0) / 1000; ANIME.render(t % ANIME.DURACAO); requestAnimationFrame(f); })(); }
+});
+</script></body></html>
