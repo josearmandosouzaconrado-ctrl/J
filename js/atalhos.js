@@ -4,8 +4,9 @@
 //  • 4 atalhos ao lado do livro vermelho: coloque neles bebidas, comidas,
 //    poções ou armas (na mochila, toque no item e em "📌 Atalho"). Um toque
 //    no atalho usa o item, ou troca de arma na hora. No teclado: 1, 2, 3, 4.
-//  • A arma fica guardada nas costas (ou na cintura, a adaga) quando você não
-//    está lutando, e dá para vê-la. Na hora de bater, o personagem saca.
+//  • A arma fica guardada quando você não está lutando, e dá para vê-la: espada e
+//    adaga na cintura, dentro da bainha; machado e maça pendurados no cinto; armas
+//    grandes, arcos e lanças nas costas. Na hora de bater, o personagem saca.
 // =====================================================================
 const ATALHOS_N = 4;
 
@@ -82,11 +83,49 @@ const Bainha = {
     if (P.atkT > 0 || P.swing || P.castT > 0 || P.rolling > 0 || P.thrustT > 0) return false;
     return Game.t - (P._ultimoAtk || -99) > 3;
   },
+  // espadas e adagas: na cintura, dentro da bainha (só o cabo aparece); machado e maça: pendurados no cinto;
+  // armas grandes (duas mãos), arcos e lanças continuam nas costas
+  CINTURA: { sword: 11, dagger: 7 }, CINTO: { axe: 1, mace: 1 },
+  cor(P) {
+    const it = P.equip && P.equip.weapon, d = it && ITEMS[it.id];
+    return (d && d.icon && d.icon.c) || '#c8ccd4';
+  },
+  // linha de pixels (passos inteiros, como o pixel art do jogo)
+  linha(ctx, x0, y0, x1, y1, w, cor) {
+    ctx.fillStyle = cor; const n = Math.max(1, Math.round(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))));
+    for (let i = 0; i <= n; i++) ctx.fillRect(Math.round(x0 + (x1 - x0) * i / n - w / 2), Math.round(y0 + (y1 - y0) * i / n - w / 2), w, w);
+  },
+  bainha(P, ctx, camX, camY) {
+    const d = P.dir, L = this.CINTURA[P.wclass], z = P.z || 0, h = P.h || 24;
+    // quadril de trás (o lado da mão que não segura a arma) e para onde a bainha aponta
+    let hx, hy = P.y - h * 0.2, dx, dy;
+    if (d === 'right') { hx = P.x - 2; dx = -0.62; dy = 0.78; }
+    else if (d === 'left') { hx = P.x + 2; dx = 0.62; dy = 0.78; }
+    else if (d === 'down') { hx = P.x + 5; dx = 0.25; dy = 0.97; }
+    else { hx = P.x - 5; dx = -0.25; dy = 0.97; }
+    const x = Math.round(hx - camX), y = Math.round(hy - camY - z);
+    const tx = x + dx * L, ty = y + dy * L, metal = this.cor(P);
+    ctx.save();
+    // bainha de couro com a ponteira de metal
+    this.linha(ctx, x, y, tx, ty, 3, '#2a1a10');
+    this.linha(ctx, x, y, tx, ty, 2, '#5a3820');
+    this.linha(ctx, x + (d === 'left' ? 0 : -0.5), y, tx, ty, 1, '#7a5030');
+    ctx.fillStyle = '#c8ccd4'; ctx.fillRect(Math.round(tx - 1), Math.round(ty - 1), 2, 2);
+    ctx.fillStyle = '#d8b040'; ctx.fillRect(Math.round(x - 1), Math.round(y), 2, 1);                // boca da bainha
+    // cabo saindo para cima e para a frente: guarda, punho e pomo
+    const cx = x - dx * 4, cy = y - dy * 4;
+    const px = -dy, py = dx;                                                                           // perpendicular (guarda)
+    this.linha(ctx, x - px * 2, y - py * 2, x + px * 2, y + py * 2, 1, P.wclass === 'dagger' ? '#a0a0a8' : '#d8b040');
+    this.linha(ctx, x - dx, y - dy, cx, cy, 2, '#4a2e1a');
+    ctx.fillStyle = metal; ctx.fillRect(Math.round(cx - 1), Math.round(cy - 1), 2, 2);
+    ctx.restore();
+  },
   desenhar(P, ctx, camX, camY) {
     const img = P.wimg, wc = P.wclass; if (!img) return;
+    if (this.CINTURA[wc]) return this.bainha(P, ctx, camX, camY);
     const h = P.h || 24, d = P.dir, lado = d === 'right' ? -1 : d === 'left' ? 1 : 0;
     let hx, hy, ang;
-    if (wc === 'dagger') { hx = P.x + (lado ? lado * 2 : 4); hy = P.y - 7; ang = Math.PI / 2 + 0.3; }       // na cintura
+    if (this.CINTO[wc]) { hx = P.x + (lado ? lado * 3 : 5); hy = P.y - h * 0.2; ang = Math.PI / 2 + (lado ? lado * 0.25 : 0.15); }   // pendurado no cinto, cabeça para baixo
     else if (wc === 'bow') { hx = P.x + 3 + lado * 2; hy = P.y - h * 0.78; ang = Math.PI * 0.62; }
     else { hx = P.x + 3 + lado * 2; hy = P.y - h * 0.8; ang = Math.PI * 0.72; }                       // cabo no ombro, lâmina descendo nas costas
     ctx.save();
@@ -110,9 +149,10 @@ const Bainha = {
   const db0 = Player.prototype.drawBody;
   Player.prototype.drawBody = function (ctx, camX, camY, S) {
     const g = S === this.S && Bainha.guardada(this, this.wclass) && !this.mounted;
-    if (g && this.dir !== 'up') Bainha.desenhar(this, ctx, camX, camY);
+    const naFrente = Bainha.CINTURA[this.wclass] || Bainha.CINTO[this.wclass] ? this.dir !== 'right' : this.dir === 'up';
+    if (g && !naFrente) Bainha.desenhar(this, ctx, camX, camY);
     const r = db0.apply(this, arguments);
-    if (g && this.dir === 'up') Bainha.desenhar(this, ctx, camX, camY);
+    if (g && naFrente) Bainha.desenhar(this, ctx, camX, camY);
     return r;
   };
   // sacar a arma para bater
