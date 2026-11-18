@@ -1,0 +1,42 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nobre:cornelia",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/nobre_cornelia"
+      },
+      "geometry": {
+        "default": "geometry.nobre_cornelia"
+      },
+      "animations": {
+        "parado": "animation.nobre_cornelia.parado",
+        "andar": "animation.nobre_cornelia.andar",
+        "acenar": "animation.nobre_cornelia.acenar",
+        "olhar": "animation.nobre_cornelia.olhar",
+        "comer": "animation.nobre_cornelia.comer",
+        "tomar_sopa": "animation.nobre_cornelia.tomar_sopa",
+        "beber": "animation.nobre_cornelia.beber",
+        "dormir": "animation.nobre_cornelia.dormir",
+        "conversar": "animation.nobre_cornelia.conversar",
+        "postura": "controller.animation.nobre_cornelia.postura"
+      },
+      "scripts": {
+        "animate": [
+          "postura",
+          "olhar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.nobre_cornelia"
+      ],
+      "spawn_egg": {
+        "base_color": "#ce5c76",
+        "overlay_color": "#ecc46c"
+      }
+    }
+  }
+}

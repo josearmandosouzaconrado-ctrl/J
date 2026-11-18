@@ -1,0 +1,42 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nobre:aelia",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/nobre_aelia"
+      },
+      "geometry": {
+        "default": "geometry.nobre_aelia"
+      },
+      "animations": {
+        "parado": "animation.nobre_aelia.parado",
+        "andar": "animation.nobre_aelia.andar",
+        "acenar": "animation.nobre_aelia.acenar",
+        "olhar": "animation.nobre_aelia.olhar",
+        "comer": "animation.nobre_aelia.comer",
+        "tomar_sopa": "animation.nobre_aelia.tomar_sopa",
+        "beber": "animation.nobre_aelia.beber",
+        "dormir": "animation.nobre_aelia.dormir",
+        "conversar": "animation.nobre_aelia.conversar",
+        "postura": "controller.animation.nobre_aelia.postura"
+      },
+      "scripts": {
+        "animate": [
+          "postura",
+          "olhar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.nobre_aelia"
+      ],
+      "spawn_egg": {
+        "base_color": "#f4eee2",
+        "overlay_color": "#eaa8c4"
+      }
+    }
+  }
+}

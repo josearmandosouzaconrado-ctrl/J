@@ -19,6 +19,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mc_lib import Modelo, espelho, misturar, ruido  # noqa: E402
+import vida_npc  # noqa: E402
 
 SAIDA = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'minecraft', 'nobres_romanas')
 OURO, OURO_CLARO, OURO_ESC = (236, 190, 70), (255, 228, 140), (160, 112, 34)
@@ -73,6 +74,7 @@ def nobre(nome, semente, pele, cabelo, olhos, stola, palla, cabelos, joia=(60, 1
 
     pintar(m, nome, pele, cabelo, olhos, stola, palla, joia)
     animacoes(m)
+    vida_npc.adicionar(m, hx=5.5, pele=pele, ds=D, olhos=(26.9, 28.6))
     return m
 
 

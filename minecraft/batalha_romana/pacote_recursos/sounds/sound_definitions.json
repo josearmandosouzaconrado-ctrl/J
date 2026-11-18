@@ -1,0 +1,157 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "batalha.voz.soldado": {
+      "category": "neutral",
+      "max_distance": 20,
+      "sounds": [
+        {
+          "name": "sounds/batalha/voz_soldado_0",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_soldado_1",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_soldado_2",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_soldado_3",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_soldado_4",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_soldado_5",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_soldado_6",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_soldado_7",
+          "volume": 0.9
+        }
+      ]
+    },
+    "batalha.voz.general": {
+      "category": "neutral",
+      "max_distance": 20,
+      "sounds": [
+        {
+          "name": "sounds/batalha/voz_general_0",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_general_1",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_general_2",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_general_3",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_general_4",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_general_5",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_general_6",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_general_7",
+          "volume": 0.9
+        }
+      ]
+    },
+    "batalha.voz.nobre": {
+      "category": "neutral",
+      "max_distance": 20,
+      "sounds": [
+        {
+          "name": "sounds/batalha/voz_nobre_0",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_nobre_1",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_nobre_2",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_nobre_3",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_nobre_4",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_nobre_5",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_nobre_6",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_nobre_7",
+          "volume": 0.9
+        }
+      ]
+    },
+    "batalha.voz.matrona": {
+      "category": "neutral",
+      "max_distance": 20,
+      "sounds": [
+        {
+          "name": "sounds/batalha/voz_matrona_0",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_matrona_1",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_matrona_2",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_matrona_3",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_matrona_4",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_matrona_5",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_matrona_6",
+          "volume": 0.9
+        },
+        {
+          "name": "sounds/batalha/voz_matrona_7",
+          "volume": 0.9
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,161 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "nobre:cornelia",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "properties": {
+        "nobre:acao": {
+          "type": "int",
+          "range": [
+            0,
+            5
+          ],
+          "default": 0,
+          "client_sync": true
+        }
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "nobre",
+          "mob"
+        ]
+      },
+      "minecraft:health": {
+        "value": 20,
+        "max": 20
+      },
+      "minecraft:collision_box": {
+        "width": 0.6,
+        "height": 1.9
+      },
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": true,
+        "is_pushable_by_piston": true
+      },
+      "minecraft:breathable": {
+        "total_supply": 15,
+        "suffocate_time": 0
+      },
+      "minecraft:nameable": {},
+      "minecraft:persistent": {},
+      "minecraft:movement": {
+        "value": 0.22
+      },
+      "minecraft:navigation.walk": {
+        "can_path_over_water": true,
+        "avoid_damage_blocks": true,
+        "can_open_doors": true
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:jump.static": {},
+      "minecraft:behavior.float": {
+        "priority": 0
+      },
+      "minecraft:behavior.panic": {
+        "priority": 1,
+        "speed_multiplier": 1.4
+      },
+      "minecraft:behavior.avoid_mob_type": {
+        "priority": 2,
+        "entity_types": [
+          {
+            "filters": {
+              "test": "is_family",
+              "subject": "other",
+              "value": "barbaro"
+            },
+            "max_dist": 10,
+            "walk_speed_multiplier": 1.2,
+            "sprint_speed_multiplier": 1.5
+          }
+        ]
+      },
+      "minecraft:behavior.random_stroll": {
+        "priority": 6,
+        "speed_multiplier": 0.6
+      },
+      "minecraft:behavior.look_at_player": {
+        "priority": 7,
+        "look_distance": 8,
+        "probability": 0.1
+      },
+      "minecraft:behavior.random_look_around": {
+        "priority": 8
+      }
+    },
+    "events": {
+      "nobre:acao_0": {
+        "set_property": {
+          "nobre:acao": 0
+        },
+        "remove": {
+          "component_groups": [
+            "nobre:ocupado"
+          ]
+        }
+      },
+      "nobre:acao_1": {
+        "set_property": {
+          "nobre:acao": 1
+        },
+        "add": {
+          "component_groups": [
+            "nobre:ocupado"
+          ]
+        }
+      },
+      "nobre:acao_2": {
+        "set_property": {
+          "nobre:acao": 2
+        },
+        "add": {
+          "component_groups": [
+            "nobre:ocupado"
+          ]
+        }
+      },
+      "nobre:acao_3": {
+        "set_property": {
+          "nobre:acao": 3
+        },
+        "add": {
+          "component_groups": [
+            "nobre:ocupado"
+          ]
+        }
+      },
+      "nobre:acao_4": {
+        "set_property": {
+          "nobre:acao": 4
+        },
+        "add": {
+          "component_groups": [
+            "nobre:ocupado"
+          ]
+        }
+      },
+      "nobre:acao_5": {
+        "set_property": {
+          "nobre:acao": 5
+        },
+        "add": {
+          "component_groups": [
+            "nobre:ocupado"
+          ]
+        }
+      }
+    },
+    "component_groups": {
+      "nobre:ocupado": {
+        "minecraft:movement": {
+          "value": 0.0
+        }
+      }
+    }
+  }
+}

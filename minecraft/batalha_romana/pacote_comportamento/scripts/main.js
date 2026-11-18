@@ -3,6 +3,7 @@
 //   obras.js    legionários constroem fortes, torres e muralhas e depois patrulham
 //   sistema.js  o Sistema estilo anime: general, missões, poderes, construir, recrutar
 //   plano.js    as plantas das construções
+//   vida.js     fome, sede, sono, comer, beber, dormir e conversas com voz (dialogos.js)
 //
 // Comandos: /function posto_avancado (forte), /function cancelar_obras,
 //           /function sistema (abre o Sistema)
@@ -13,6 +14,7 @@ import {
   dimensao, ROMANO, valido, emCombate,
 } from './obras.js';
 import { iniciarSistema, seguirGeneral } from './sistema.js';
+import { iniciarVida } from './vida.js';
 
 let tick = 0;
 
@@ -46,6 +48,7 @@ system.afterEvents.scriptEventReceive.subscribe((ev) => {
 });
 
 iniciarSistema();
+iniciarVida();
 
 system.runInterval(() => {
   tick++;

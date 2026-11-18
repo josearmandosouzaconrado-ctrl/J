@@ -1,0 +1,91 @@
+{
+  "format_version": "1.10.0",
+  "animation_controllers": {
+    "controller.animation.nobre_livia.postura": {
+      "initial_state": "normal",
+      "states": {
+        "normal": {
+          "animations": [
+            "parado",
+            {
+              "andar": "query.modified_move_speed > 0.05"
+            }
+          ],
+          "transitions": [
+            {
+              "acao_comer": "query.property('nobre:acao') == 1"
+            },
+            {
+              "acao_tomar_sopa": "query.property('nobre:acao') == 2"
+            },
+            {
+              "acao_beber": "query.property('nobre:acao') == 3"
+            },
+            {
+              "acao_dormir": "query.property('nobre:acao') == 4"
+            },
+            {
+              "acao_conversar": "query.property('nobre:acao') == 5"
+            }
+          ],
+          "blend_transition": 0.2
+        },
+        "acao_comer": {
+          "animations": [
+            "comer"
+          ],
+          "transitions": [
+            {
+              "normal": "query.property('nobre:acao') != 1"
+            }
+          ],
+          "blend_transition": 0.3
+        },
+        "acao_tomar_sopa": {
+          "animations": [
+            "tomar_sopa"
+          ],
+          "transitions": [
+            {
+              "normal": "query.property('nobre:acao') != 2"
+            }
+          ],
+          "blend_transition": 0.3
+        },
+        "acao_beber": {
+          "animations": [
+            "beber"
+          ],
+          "transitions": [
+            {
+              "normal": "query.property('nobre:acao') != 3"
+            }
+          ],
+          "blend_transition": 0.3
+        },
+        "acao_dormir": {
+          "animations": [
+            "dormir"
+          ],
+          "transitions": [
+            {
+              "normal": "query.property('nobre:acao') != 4"
+            }
+          ],
+          "blend_transition": 0.3
+        },
+        "acao_conversar": {
+          "animations": [
+            "conversar"
+          ],
+          "transitions": [
+            {
+              "normal": "query.property('nobre:acao') != 5"
+            }
+          ],
+          "blend_transition": 0.3
+        }
+      }
+    }
+  }
+}

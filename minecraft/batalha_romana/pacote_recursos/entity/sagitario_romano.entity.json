@@ -16,6 +16,11 @@
         "parado": "animation.sagitario_romano.parado",
         "andar": "animation.sagitario_romano.andar",
         "combate": "animation.sagitario_romano.combate",
+        "comer": "animation.sagitario_romano.comer",
+        "tomar_sopa": "animation.sagitario_romano.tomar_sopa",
+        "beber": "animation.sagitario_romano.beber",
+        "dormir": "animation.sagitario_romano.dormir",
+        "conversar": "animation.sagitario_romano.conversar",
         "olhar": "animation.sagitario_romano.olhar",
         "postura": "controller.animation.sagitario_romano.postura"
       },

@@ -20,9 +20,79 @@
             },
             {
               "guarda": "query.property('romano:de_guarda') && !query.property('romano:em_combate')"
+            },
+            {
+              "acao_comer": "query.property('romano:acao') == 1"
+            },
+            {
+              "acao_tomar_sopa": "query.property('romano:acao') == 2"
+            },
+            {
+              "acao_beber": "query.property('romano:acao') == 3"
+            },
+            {
+              "acao_dormir": "query.property('romano:acao') == 4"
+            },
+            {
+              "acao_conversar": "query.property('romano:acao') == 5"
             }
           ],
           "blend_transition": 0.2
+        },
+        "acao_comer": {
+          "animations": [
+            "comer"
+          ],
+          "transitions": [
+            {
+              "normal": "query.property('romano:acao') != 1"
+            }
+          ],
+          "blend_transition": 0.3
+        },
+        "acao_tomar_sopa": {
+          "animations": [
+            "tomar_sopa"
+          ],
+          "transitions": [
+            {
+              "normal": "query.property('romano:acao') != 2"
+            }
+          ],
+          "blend_transition": 0.3
+        },
+        "acao_beber": {
+          "animations": [
+            "beber"
+          ],
+          "transitions": [
+            {
+              "normal": "query.property('romano:acao') != 3"
+            }
+          ],
+          "blend_transition": 0.3
+        },
+        "acao_dormir": {
+          "animations": [
+            "dormir"
+          ],
+          "transitions": [
+            {
+              "normal": "query.property('romano:acao') != 4"
+            }
+          ],
+          "blend_transition": 0.3
+        },
+        "acao_conversar": {
+          "animations": [
+            "conversar"
+          ],
+          "transitions": [
+            {
+              "normal": "query.property('romano:acao') != 5"
+            }
+          ],
+          "blend_transition": 0.3
         },
         "guarda": {
           "animations": [

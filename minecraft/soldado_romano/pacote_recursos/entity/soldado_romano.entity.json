@@ -19,6 +19,11 @@
         "atacar": "animation.soldado_romano.atacar",
         "saudar": "animation.soldado_romano.saudar",
         "construir": "animation.soldado_romano.construir",
+        "comer": "animation.soldado_romano.comer",
+        "tomar_sopa": "animation.soldado_romano.tomar_sopa",
+        "beber": "animation.soldado_romano.beber",
+        "dormir": "animation.soldado_romano.dormir",
+        "conversar": "animation.soldado_romano.conversar",
         "olhar": "animation.soldado_romano.olhar",
         "postura": "controller.animation.soldado_romano.postura",
         "ataque": "controller.animation.soldado_romano.ataque"

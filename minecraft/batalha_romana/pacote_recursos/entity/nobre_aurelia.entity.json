@@ -1,0 +1,42 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nobre:aurelia",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/nobre_aurelia"
+      },
+      "geometry": {
+        "default": "geometry.nobre_aurelia"
+      },
+      "animations": {
+        "parado": "animation.nobre_aurelia.parado",
+        "andar": "animation.nobre_aurelia.andar",
+        "acenar": "animation.nobre_aurelia.acenar",
+        "olhar": "animation.nobre_aurelia.olhar",
+        "comer": "animation.nobre_aurelia.comer",
+        "tomar_sopa": "animation.nobre_aurelia.tomar_sopa",
+        "beber": "animation.nobre_aurelia.beber",
+        "dormir": "animation.nobre_aurelia.dormir",
+        "conversar": "animation.nobre_aurelia.conversar",
+        "postura": "controller.animation.nobre_aurelia.postura"
+      },
+      "scripts": {
+        "animate": [
+          "postura",
+          "olhar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.nobre_aurelia"
+      ],
+      "spawn_egg": {
+        "base_color": "#702878",
+        "overlay_color": "#e0ac40"
+      }
+    }
+  }
+}

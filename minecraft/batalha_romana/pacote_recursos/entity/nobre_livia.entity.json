@@ -1,0 +1,42 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nobre:livia",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/nobre_livia"
+      },
+      "geometry": {
+        "default": "geometry.nobre_livia"
+      },
+      "animations": {
+        "parado": "animation.nobre_livia.parado",
+        "andar": "animation.nobre_livia.andar",
+        "acenar": "animation.nobre_livia.acenar",
+        "olhar": "animation.nobre_livia.olhar",
+        "comer": "animation.nobre_livia.comer",
+        "tomar_sopa": "animation.nobre_livia.tomar_sopa",
+        "beber": "animation.nobre_livia.beber",
+        "dormir": "animation.nobre_livia.dormir",
+        "conversar": "animation.nobre_livia.conversar",
+        "postura": "controller.animation.nobre_livia.postura"
+      },
+      "scripts": {
+        "animate": [
+          "postura",
+          "olhar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.nobre_livia"
+      ],
+      "spawn_egg": {
+        "base_color": "#284696",
+        "overlay_color": "#eeeae2"
+      }
+    }
+  }
+}

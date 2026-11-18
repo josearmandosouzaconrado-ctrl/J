@@ -151,6 +151,36 @@ Quando uma construção fica pronta (forte, torre ou muralha), soldados livres n
 - Se aparece um inimigo, a sentinela larga o posto e desce para lutar; depois outro soldado assume.
 - Soldados que estão seguindo você não são chamados; use **Ordens → Montem guarda** para mandá-los.
 
+## Vida dos NPCs: fome, sede, sono, comida e conversas com voz
+
+![vida no acampamento](previa_vida.png)
+
+![ações](previa_acoes.png)
+
+Legionários, arqueiros romanos e a **família nobre** (Aurélia, Lívia, Cornélia, Júlia e Aélia, que
+agora existem no jogo: `/function familia_nobre`) têm **fome**, **sede** e **energia** de 0 a 100. Elas
+caem com o tempo, mais rápido em combate, e cada NPC decide sozinho o que fazer quando está livre:
+
+| Necessidade | O que o NPC faz |
+|---|---|
+| Fome | pega um **pão** ou uma **tigela de sopa** na mão e come, com som de mastigar |
+| Sede | pega uma **caneca** e bebe, inclinando a cabeça para trás |
+| Cansaço / noite | **deita para dormir**, fecha os olhos e aparece **"Zzz..."** em cima da cabeça; acorda de manhã |
+| Tudo em ordem | procura outro NPC livre perto e **conversa** |
+
+- **Conversas**: os dois se viram um para o outro, gesticulam e trocam falas em português que aparecem
+  **em cima da cabeça**, cada fala com **voz de personagem**. São 22 conversas: soldados falam de
+  gauleses, do pagamento, do forte e do General; as nobres falam de seda, banquetes, poesia e do General;
+  e há conversas entre soldados e nobres. Quem está com fome ou sono comenta isso na conversa.
+- **Vozes**: falas sintetizadas numa "língua de personagem", como em jogos de RPG, em 4 timbres:
+  soldado, general, nobre e matrona. Cada NPC tem um tom de voz só dele. Ouça as amostras em `amostras_voz/`.
+- **Olhe para um NPC** e aparece na tela o nome, o que ele está fazendo e as barras de **Fome**,
+  **Sede** e **Energia**.
+- Quando você chega perto, eles cumprimentam: *"Ave, General!"*, *"Que os deuses o protejam."*
+- Em combate, largam o pão, acordam ou param de conversar e vão lutar. Sentinelas e construtores só
+  param o serviço se a necessidade estiver crítica.
+- As necessidades ficam salvas em cada NPC: valem depois de sair e voltar ao mundo.
+
 ## IA mais esperta
 
 - **Legionários:** chamam os companheiros quando um é atacado; o scutum segura metade do dano das
@@ -164,6 +194,7 @@ declaradas no add-on). Precisa do Minecraft Bedrock 1.21 ou mais novo.
 ## Animações (aba Animate do Blockbench)
 
 - Legionário (`../soldado_romano/soldado_romano.bbmodel`): também `construir` (martelando)
+- Legionário, arqueiro romano e nobres: `comer` (pão), `tomar_sopa`, `beber` (caneca), `dormir` e `conversar`
 - Arqueiro romano: `parado`, `andar`, `combate`; cavaleiro: `parado`, `andar` (galope), `combate`, `atacar` (empina e estoca)
 
 - Gaulês e germânico: `parado`, `andar`, `combate`, `atacar`

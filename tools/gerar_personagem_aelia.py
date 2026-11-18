@@ -16,6 +16,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mc_lib import Modelo, espelho, misturar, ruido  # noqa: E402
 from gerar_nobres_romanas import animacoes  # noqa: E402
+import vida_npc  # noqa: E402
 
 SAIDA = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'minecraft', 'personagem_aelia')
 D = 2
@@ -113,6 +114,7 @@ def modelo():
 
     pintar(m)
     animacoes(m)
+    vida_npc.adicionar(m, hx=5.5, pele=PELE, ds=D, olhos=(26.9, 28.6))
     return m
 
 

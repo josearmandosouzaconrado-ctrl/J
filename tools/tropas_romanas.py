@@ -6,6 +6,7 @@ import math
 
 from mc_lib import Modelo, espelho, misturar, ruido, rng
 from gerar_batalha_romana import humanoide, rosto, anims_corpo_a_corpo
+import vida_npc
 
 PELE = (204, 150, 108)
 CABELO = (60, 40, 26)
@@ -163,6 +164,7 @@ def sagitario():
     aljava(m)
     arco(m)
     animacoes_arqueiro(m)
+    vida_npc.adicionar(m, hx=6, pele=PELE, olhos=(26.9, 28.1))
     return m
 
 

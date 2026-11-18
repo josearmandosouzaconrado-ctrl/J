@@ -16,6 +16,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import mc_lib as L  # noqa: E402
+import vida_npc  # noqa: E402
 from mc_lib import Modelo, espelho, misturar, ruido  # noqa: E402
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
@@ -545,8 +546,8 @@ def arqueiro():
 
 
 # =================================================================== comportamento
-def entidade_cliente(ident, nome, cores, corpo_a_corpo=True):
-    anims = {n: f'animation.{nome}.{n}' for n in ['parado', 'andar', 'combate'] + (['atacar'] if corpo_a_corpo else [])}
+def entidade_cliente(ident, nome, cores, corpo_a_corpo=True, extras=()):
+    anims = {n: f'animation.{nome}.{n}' for n in ['parado', 'andar', 'combate', *extras] + (['atacar'] if corpo_a_corpo else [])}
     anims['olhar'] = f'animation.{nome}.olhar'
     anims['postura'] = f'controller.animation.{nome}.postura'
     animate = ['postura', 'olhar']
@@ -561,13 +562,17 @@ def entidade_cliente(ident, nome, cores, corpo_a_corpo=True):
         'spawn_egg': {'base_color': cores[0], 'overlay_color': cores[1]}}}}
 
 
-def controladores(nome, corpo_a_corpo=True, ns=NS):
+def controladores(nome, corpo_a_corpo=True, ns=NS, vida=False):
     comb = f"query.property('{ns}:em_combate')"
     ctr = {f'controller.animation.{nome}.postura': {'initial_state': 'normal', 'states': {
         'normal': {'animations': ['parado', {'andar': 'query.modified_move_speed > 0.05'}],
                    'transitions': [{'combate': comb}], 'blend_transition': 0.2},
         'combate': {'animations': ['combate', {'andar': 'query.modified_move_speed > 0.05'}],
                     'transitions': [{'normal': '!' + comb}], 'blend_transition': 0.25}}}}
+    if vida:  # comer, tomar sopa, beber, dormir e conversar
+        estados, entradas = vida_npc.estados_acao(ns)
+        ctr[f'controller.animation.{nome}.postura']['states'].update(estados)
+        ctr[f'controller.animation.{nome}.postura']['states']['normal']['transitions'] += entradas
     if corpo_a_corpo:
         ctr[f'controller.animation.{nome}.ataque'] = {'initial_state': 'pronto', 'states': {
             'pronto': {'transitions': [{'atacando': 'variable.attack_time > 0'}]},
@@ -847,7 +852,7 @@ def main():
     })
     ent['component_groups']['romano:guarda'] = {'minecraft:movement': {'value': 0.0}}
     arquivos[f'{bp}/entities/{gs.NOME}.json'] = L.json_bytes(romano)
-    for js in ('main.js', 'plano.js', 'obras.js', 'sistema.js'):
+    for js in ('main.js', 'plano.js', 'obras.js', 'sistema.js', 'vida.js', 'dialogos.js'):
         with open(os.path.join(AQUI, 'scripts_batalha', js), 'rb') as f:
             arquivos[f'{bp}/scripts/{js}'] = f.read()
     lang_pt += [f'entity.{gs.ID}.name=Soldado Romano', f'item.spawn_egg.entity.{gs.ID}.name=Gerar Soldado Romano']
@@ -867,13 +872,87 @@ def main():
             'rotation': ['query.target_x_rotation', 'query.target_y_rotation', 0]}}}}
         arquivos[f'{rp}/models/entity/{m.nome}.geo.json'] = L.json_bytes(m.geo())
         arquivos[f'{rp}/animations/{m.nome}.animation.json'] = L.json_bytes(m.animacoes_bedrock(olhar))
-        arquivos[f'{rp}/animation_controllers/{m.nome}.animation_controllers.json'] = L.json_bytes(controladores(m.nome, not arq, 'romano'))
-        arquivos[f'{rp}/entity/{m.nome}.entity.json'] = L.json_bytes(entidade_cliente(ident, m.nome, cores, not arq))
+        arquivos[f'{rp}/animation_controllers/{m.nome}.animation_controllers.json'] = L.json_bytes(
+            controladores(m.nome, not arq, 'romano', vida=arq))
+        arquivos[f'{rp}/entity/{m.nome}.entity.json'] = L.json_bytes(entidade_cliente(
+            ident, m.nome, cores, not arq, extras=list(vida_npc.ACOES.values()) if arq else ()))
         arquivos[f'{rp}/render_controllers/{m.nome}.render_controllers.json'] = L.json_bytes(render(m.nome))
         arquivos[f'{rp}/textures/entity/{m.nome}.png'] = png
-        arquivos[f'{bp}/entities/{m.nome}.json'] = L.json_bytes(entidade_tropa_romana(ident, vida, dano, vel, arq, caixa))
+        ent_tropa = entidade_tropa_romana(ident, vida, dano, vel, arq, caixa)
+        if arq:  # o arqueiro também come, bebe, dorme e conversa
+            vida_npc.entidade_acoes(ent_tropa, 'romano')
+        arquivos[f'{bp}/entities/{m.nome}.json'] = L.json_bytes(ent_tropa)
         lang_pt += [f'entity.{ident}.name={pt}', f'item.spawn_egg.entity.{ident}.name=Gerar {pt}']
         lang_en += [f'entity.{ident}.name={en}', f'item.spawn_egg.entity.{ident}.name=Spawn {en}']
+
+    # ---- família nobre e Aélia: NPCs que passeiam, comem, bebem, dormem e conversam
+    import gerar_nobres_romanas as GN
+    import gerar_personagem_aelia as GA
+    acoes = list(vida_npc.ACOES.values())
+    for construtor, ident, nome_pt, cores in (
+        (GN.aurelia, 'nobre:aurelia', 'Aurélia', ('#702878', '#e0ac40')),
+        (GN.livia, 'nobre:livia', 'Lívia', ('#284696', '#eeeae2')),
+        (GN.cornelia, 'nobre:cornelia', 'Cornélia', ('#ce5c76', '#ecc46c')),
+        (GN.julia, 'nobre:julia', 'Júlia', ('#287c54', '#b84a24')),
+        (GA.modelo, 'nobre:aelia', 'Aélia', ('#f4eee2', '#eaa8c4')),
+    ):
+        m = construtor()
+        nome = f'nobre_{m.nome}'
+        png = m.montar_textura()
+        m.nome = nome  # identificadores de geometria e animação próprios do add-on
+        arquivos[f'{rp}/models/entity/{nome}.geo.json'] = L.json_bytes(m.geo())
+        olhar = {f'animation.{nome}.olhar': {'loop': True, 'bones': {'cabeca': {
+            'rotation': ['query.target_x_rotation * 0.7', 'query.target_y_rotation * 0.7', 0]}}}}
+        arquivos[f'{rp}/animations/{nome}.animation.json'] = L.json_bytes(m.animacoes_bedrock(olhar))
+        estados, entradas = vida_npc.estados_acao('nobre')
+        arquivos[f'{rp}/animation_controllers/{nome}.animation_controllers.json'] = L.json_bytes({
+            'format_version': '1.10.0', 'animation_controllers': {f'controller.animation.{nome}.postura': {
+                'initial_state': 'normal', 'states': {
+                    'normal': {'animations': ['parado', {'andar': 'query.modified_move_speed > 0.05'}],
+                               'transitions': entradas, 'blend_transition': 0.2},
+                    **estados}}}})
+        anims = {n: f'animation.{nome}.{n}' for n in ['parado', 'andar', 'acenar', 'olhar', *acoes]}
+        anims['postura'] = f'controller.animation.{nome}.postura'
+        arquivos[f'{rp}/entity/{nome}.entity.json'] = L.json_bytes({
+            'format_version': '1.10.0', 'minecraft:client_entity': {'description': {
+                'identifier': ident, 'materials': {'default': 'entity_alphatest'},
+                'textures': {'default': f'textures/entity/{nome}'}, 'geometry': {'default': f'geometry.{nome}'},
+                'animations': anims, 'scripts': {'animate': ['postura', 'olhar']},
+                'render_controllers': [f'controller.render.{nome}'],
+                'spawn_egg': {'base_color': cores[0], 'overlay_color': cores[1]}}}})
+        arquivos[f'{rp}/render_controllers/{nome}.render_controllers.json'] = L.json_bytes(render(nome))
+        arquivos[f'{rp}/textures/entity/{nome}.png'] = png
+        ent_nobre = {'format_version': '1.21.0', 'minecraft:entity': {
+            'description': {'identifier': ident, 'is_spawnable': True, 'is_summonable': True, 'properties': {}},
+            'components': {
+                'minecraft:type_family': {'family': ['nobre', 'mob']},
+                'minecraft:health': {'value': 20, 'max': 20},
+                'minecraft:collision_box': {'width': 0.6, 'height': 1.9},
+                'minecraft:physics': {}, 'minecraft:pushable': {'is_pushable': True, 'is_pushable_by_piston': True},
+                'minecraft:breathable': {'total_supply': 15, 'suffocate_time': 0},
+                'minecraft:nameable': {}, 'minecraft:persistent': {},
+                'minecraft:movement': {'value': 0.22},
+                'minecraft:navigation.walk': {'can_path_over_water': True, 'avoid_damage_blocks': True, 'can_open_doors': True},
+                'minecraft:movement.basic': {}, 'minecraft:jump.static': {},
+                'minecraft:behavior.float': {'priority': 0},
+                'minecraft:behavior.panic': {'priority': 1, 'speed_multiplier': 1.4},
+                'minecraft:behavior.avoid_mob_type': {'priority': 2, 'entity_types': [
+                    {'filters': {'test': 'is_family', 'subject': 'other', 'value': 'barbaro'},
+                     'max_dist': 10, 'walk_speed_multiplier': 1.2, 'sprint_speed_multiplier': 1.5}]},
+                'minecraft:behavior.random_stroll': {'priority': 6, 'speed_multiplier': 0.6},
+                'minecraft:behavior.look_at_player': {'priority': 7, 'look_distance': 8, 'probability': 0.1},
+                'minecraft:behavior.random_look_around': {'priority': 8},
+            }, 'events': {}}}
+        arquivos[f'{bp}/entities/{nome}.json'] = L.json_bytes(vida_npc.entidade_acoes(ent_nobre, 'nobre'))
+        lang_pt += [f'entity.{ident}.name={nome_pt}', f'item.spawn_egg.entity.{ident}.name=Gerar {nome_pt}']
+        lang_en += [f'entity.{ident}.name={nome_pt}', f'item.spawn_egg.entity.{ident}.name=Spawn {nome_pt}']
+
+    # ---- vozes dos personagens
+    import gerar_vozes
+    sons, defs_sons = gerar_vozes.gerar()
+    for rel, dados in sons.items():
+        arquivos[f'{rp}/{rel}'] = dados
+    arquivos[f'{rp}/sounds/sound_definitions.json'] = L.json_bytes(defs_sons)
 
     # ---- armadura do general (attachables), item do Sistema, ícones e skin
     import general_romano as GR
@@ -915,6 +994,9 @@ def main():
     arquivos[f'{bp}/functions/posto_avancado.mcfunction'] = POSTO.encode()
     arquivos[f'{bp}/functions/cancelar_obras.mcfunction'] = b'scriptevent romano:cancelar\n'
     arquivos[f'{bp}/functions/sistema.mcfunction'] = b'# Abre a janela do Sistema\nscriptevent sistema:abrir\n'
+    arquivos[f'{bp}/functions/familia_nobre.mcfunction'] = ('# A família nobre e Aélia aparecem perto de você\n'
+        + ''.join(f'summon nobre:{n} ~{dx} ~ ~{dz}\n' for n, dx, dz in
+                  (('aurelia', 2, 2), ('livia', -2, 2), ('cornelia', 3, -1), ('julia', -3, -1), ('aelia', 0, 3)))).encode()
     arquivos[f'{bp}/functions/reiniciar_sistema.mcfunction'] = (
         '# Apaga seu progresso no Sistema e mostra a chegada do General de novo\nscriptevent sistema:reiniciar\n').encode()
     arquivos[f'{bp}/loot_tables/batalha/inimigo.json'] = L.json_bytes(SAQUE)

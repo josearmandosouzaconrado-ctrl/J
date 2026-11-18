@@ -10,11 +10,25 @@
           "type": "bool",
           "default": false,
           "client_sync": true
+        },
+        "romano:acao": {
+          "type": "int",
+          "range": [
+            0,
+            5
+          ],
+          "default": 0,
+          "client_sync": true
         }
       }
     },
     "component_groups": {
       "romano:guarda": {
+        "minecraft:movement": {
+          "value": 0.0
+        }
+      },
+      "romano:ocupado": {
         "minecraft:movement": {
           "value": 0.0
         }
@@ -179,6 +193,66 @@
         "remove": {
           "component_groups": [
             "romano:guarda"
+          ]
+        }
+      },
+      "romano:acao_0": {
+        "set_property": {
+          "romano:acao": 0
+        },
+        "remove": {
+          "component_groups": [
+            "romano:ocupado"
+          ]
+        }
+      },
+      "romano:acao_1": {
+        "set_property": {
+          "romano:acao": 1
+        },
+        "add": {
+          "component_groups": [
+            "romano:ocupado"
+          ]
+        }
+      },
+      "romano:acao_2": {
+        "set_property": {
+          "romano:acao": 2
+        },
+        "add": {
+          "component_groups": [
+            "romano:ocupado"
+          ]
+        }
+      },
+      "romano:acao_3": {
+        "set_property": {
+          "romano:acao": 3
+        },
+        "add": {
+          "component_groups": [
+            "romano:ocupado"
+          ]
+        }
+      },
+      "romano:acao_4": {
+        "set_property": {
+          "romano:acao": 4
+        },
+        "add": {
+          "component_groups": [
+            "romano:ocupado"
+          ]
+        }
+      },
+      "romano:acao_5": {
+        "set_property": {
+          "romano:acao": 5
+        },
+        "add": {
+          "component_groups": [
+            "romano:ocupado"
           ]
         }
       }

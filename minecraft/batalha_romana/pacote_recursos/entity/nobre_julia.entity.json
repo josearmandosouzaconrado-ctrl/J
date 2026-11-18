@@ -1,0 +1,42 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "nobre:julia",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/nobre_julia"
+      },
+      "geometry": {
+        "default": "geometry.nobre_julia"
+      },
+      "animations": {
+        "parado": "animation.nobre_julia.parado",
+        "andar": "animation.nobre_julia.andar",
+        "acenar": "animation.nobre_julia.acenar",
+        "olhar": "animation.nobre_julia.olhar",
+        "comer": "animation.nobre_julia.comer",
+        "tomar_sopa": "animation.nobre_julia.tomar_sopa",
+        "beber": "animation.nobre_julia.beber",
+        "dormir": "animation.nobre_julia.dormir",
+        "conversar": "animation.nobre_julia.conversar",
+        "postura": "controller.animation.nobre_julia.postura"
+      },
+      "scripts": {
+        "animate": [
+          "postura",
+          "olhar"
+        ]
+      },
+      "render_controllers": [
+        "controller.render.nobre_julia"
+      ],
+      "spawn_egg": {
+        "base_color": "#287c54",
+        "overlay_color": "#b84a24"
+      }
+    }
+  }
+}

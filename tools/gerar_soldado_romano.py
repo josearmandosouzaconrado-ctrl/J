@@ -23,6 +23,10 @@ import zipfile
 
 from PIL import Image, ImageDraw
 
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import vida_npc  # noqa: E402  (comer, tomar sopa, beber, dormir, conversar)
+
 AQUI = os.path.dirname(os.path.abspath(__file__))
 SAIDA = os.path.join(AQUI, '..', 'minecraft', 'soldado_romano')
 TEX = 256
@@ -49,6 +53,7 @@ OSSOS = [
     ('braco_dir', 'corpo', [5, 22, 0], [0, 0, 0]),
     ('gladio', 'braco_dir', [6, 13, 0], [0, 0, 0]),
     ('martelo', 'braco_dir', [6, 13, 0], [0, 0, 0]),
+    *[(n, pai, piv, [0, 0, 0]) for n, pai, piv in vida_npc.ossos_itens(6)],
     ('braco_esq', 'corpo', [-5, 22, 0], [0, 0, 0]),
     ('escudo', 'braco_esq', [-9, 14, 0], [0, 0, 0]),
 ]
@@ -147,6 +152,9 @@ cubo('gladio', 'ponta_2', [5.8, 12.8, -13.4], [6.2, 13.2, -12.8], 'nervura')
 cubo('martelo', 'martelo_cabo', [5.6, 12.6, -7], [6.4, 13.4, 1.5], 'cabo')
 cubo('martelo', 'martelo_cabeca', [5.1, 11, -9], [6.9, 15, -6.8], 'ombreira')
 cubo('martelo', 'martelo_face', [5.3, 10.4, -8.7], [6.7, 11, -7.1], 'lorica')
+# pão, tigela de sopa, caneca e pálpebras (vida dos NPCs)
+for _o, _n, _de, _ate, _mat in vida_npc.cubos_itens(6, olhos=(26.9, 28.1)):
+    cubo(_o, _n, _de, _ate, _mat)
 # ---- scutum curvo: cinco painéis num arco, umbo em domo e bordas douradas
 R, CX = 8, -1.5
 for i, ang in enumerate((-45, -22.5, 0, 22.5, 45)):
@@ -468,6 +476,23 @@ def pintar(img, mat, face, x0, y0, w, h):
                 px(xx, yy, OURO)
                 px(xx, h - 1 - yy, OURO)
         return
+    if mat in ('pao', 'tigela', 'sopa', 'caneca'):
+        cores = {'pao': (vida_npc.PAO, vida_npc.PAO_CLARO, vida_npc.PAO_ESC),
+                 'tigela': (vida_npc.MADEIRA, (160, 116, 76), (90, 58, 30)),
+                 'sopa': (vida_npc.SOPA, (230, 170, 100), vida_npc.SOPA),
+                 'caneca': (vida_npc.CANECA, (180, 134, 94), (100, 66, 40))}[mat]
+        preencher(img, x0, y0, w, h, face, *cores, 3)
+        if mat == 'caneca' and face == 'up':
+            for yy in range(1, h - 1):
+                for xx in range(1, w - 1):
+                    px(xx, yy, (150, 40, 60))
+        return
+    if mat == 'palpebra':
+        preencher(img, x0, y0, w, h, face, PELE, PELE_CLARA, PELE_ESC, 1)
+        if face == 'north':
+            for xx in (1, 2, 5, 6):
+                px(xx, h // 2, (70, 46, 30))  # olhos fechados
+        return
     raise ValueError(mat)
 
 
@@ -604,6 +629,13 @@ ANIMACOES = {
 for _a in ANIMACOES.values():  # martelo escondido fora da obra
     _a['bones']['martelo'] = {'scale': [(0, [0, 0, 0], 'step')]}
 ANIMACOES['construir'] = anim_construir()
+for _a in ANIMACOES.values():
+    vida_npc.esconder(_a['bones'])
+for _nome, _a in vida_npc.animacoes().items():
+    _a['bones']['martelo'] = {'scale': [(0, [0, 0, 0], 'step')]}
+    if _nome != 'conversar':  # o gládio vai para a bainha enquanto come, bebe ou dorme
+        _a['bones']['gladio'] = {'scale': [(0, [0, 0, 0], 'step')]}
+    ANIMACOES[_nome] = _a
 
 
 # --------------------------------------------------------------------------
@@ -760,9 +792,10 @@ CONTROLADORES = {
                 'normal': {
                     'animations': ['parado', {'andar': 'query.modified_move_speed > 0.05'}],
                     'transitions': [{'combate': COMBATE}, {'construindo': OBRA + ' && !' + COMBATE},
-                                    {'guarda': GUARDA + ' && !' + COMBATE}],
+                                    {'guarda': GUARDA + ' && !' + COMBATE}, *vida_npc.estados_acao(NS)[1]],
                     'blend_transition': 0.2,
                 },
+                **vida_npc.estados_acao(NS)[0],
                 'guarda': {  # patrulha na passarela ou vigia nas torres
                     'animations': ['parado', {'andar': MARCHA}],
                     'transitions': [{'combate': COMBATE}, {'normal': '!' + GUARDA}],
@@ -865,6 +898,7 @@ ENTIDADE_SERVIDOR = {
         },
     },
 }
+vida_npc.entidade_acoes(ENTIDADE_SERVIDOR, NS)
 
 
 def manifesto(tipo, nome, desc, dep):
