@@ -1033,7 +1033,8 @@ def arco_triunfo():
 
 MODELOS = {
     'sherman': sherman, 'm7_priest': m7_priest, 'jeep': jeep, 'halftrack': halftrack, 'caminhao': caminhao,
-    'soldado': lambda: soldado('fuzil'), 'soldado_bazuca': lambda: soldado('bazuca'),
+    # versão leve (vista de longe). O soldado detalhado vem de blender/gerar_soldado.py (modelo do Ranger)
+    'soldado_simples': lambda: soldado('fuzil'), 'soldado_bazuca_simples': lambda: soldado('bazuca'),
     'p51': p51, 'p80': p80, 'b17': b17, 'c47': c47,
     'porta_avioes': porta_avioes, 'contratorpedeiro': contratorpedeiro, 'higgins': higgins,
     'qg': qg, 'quartel': quartel, 'garagem': garagem, 'aerodromo': aerodromo, 'porto': porto,

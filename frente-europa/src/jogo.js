@@ -57,6 +57,11 @@ export class Unidade extends Entidade {
     this.y = chao(x, z, false) ?? 0;
     if (this.estado === 'voando') this.y += this.def.alt;
     this._visual(this.def.modelo, this.cat);
+    if (this.def.lod) { // versão leve para quando a câmera está longe
+      this.lod = instanciar(this.def.lod, fac);
+      this.lod.visible = false;
+      this.obj.add(this.lod);
+    }
     if (this.cat === 'inf') this.passo = Math.random() * 6;
   }
   get nome() { return this.def.nome + (this.fac === EIXO ? ' (Eixo)' : ''); }

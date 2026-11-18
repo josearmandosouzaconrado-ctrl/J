@@ -32,7 +32,7 @@ O jogo precisa de **internet** para baixar as imagens de satélite e o relevo do
 
 | Tipo | Unidades |
 |---|---|
-| **Infantaria** | Fuzileiro (M1 Garand), Bazuca M1A1 |
+| **Infantaria** | Fuzileiro (M1 Garand), Bazuca M1A1 — modelo detalhado do Ranger dos EUA de perto (versão leve de longe) |
 | **Veículos WW2** | Jipe Willys MB, Caminhão GMC CCKW, Half-track M3, Tanque **M4A3 Sherman**, Artilharia **M7 Priest** (alcance 11 km) |
 | **Aviões** | **P-51D Mustang** (caça), **P-80 Shooting Star** (o primeiro caça a jato dos EUA, de 1944/45), **B-17G** (bombardeiro), **C-47** (transporte de paraquedistas) |
 | **Navios** | **Porta-aviões classe Essex** (12 aviões no hangar), **Contratorpedeiro Fletcher** (alcance 15 km), **Barco Higgins LCVP** (desembarque na praia) |
@@ -91,6 +91,7 @@ npm run dev        # abre em http://localhost:5173
 ### Refazer os modelos no Blender
 ```bash
 blender -b -P blender/gerar_modelos.py        # com o Blender instalado
+blender -b -P blender/gerar_soldado.py        # soldado detalhado (a partir do modelo do Ranger)
 # ou: pip install bpy && python3 blender/gerar_modelos.py
 ```
 Para refinar um modelo com uma foto da época, salve a foto em `blender/referencias/<nome>.jpg` (ex.: `sherman.jpg`, `p51.jpg`, `b17.jpg`) e rode o script: a foto aparece no `.blend` ao lado do modelo como imagem de referência. Fotos oficiais do Exército dos EUA da Segunda Guerra são de domínio público.
@@ -106,6 +107,7 @@ https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/frente-europ
 A chave de assinatura (`android/chave/frente-europa.jks`) não vai para o git, igual às outras chaves deste repositório. Sem ela o APK sai assinado com a chave de depuração, e aí o celular pede para desinstalar a versão antiga antes de instalar a nova.
 
 ## Créditos
+- Soldado de infantaria: **"WW2 US Army Ranger" por Tactical_Gamer** ([Sketchfab](https://sketchfab.com/3d-models/ww2-us-army-ranger-dcbe89cd5de243af8e4677b769a831c6)), licença [CC-BY-4.0](http://creativecommons.org/licenses/by/4.0/). Modificado no Blender por `blender/gerar_soldado.py` (pose segurando a arma, M1 Garand/bazuca, malha reduzida, textura única, versão do Eixo).
 - Imagens de satélite: **Esri, Maxar, Earthstar Geographics** (Esri World Imagery)
 - Relevo: **Mapzen / AWS Terrain Tiles** (Terrarium)
 - Prédios 3D: **© colaboradores do OpenStreetMap**

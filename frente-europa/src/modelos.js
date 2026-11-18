@@ -4,7 +4,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export const NOMES_MODELOS = [
-  'sherman', 'm7_priest', 'jeep', 'halftrack', 'caminhao', 'soldado', 'soldado_bazuca', 'p51', 'p80', 'b17',
+  'sherman', 'm7_priest', 'jeep', 'halftrack', 'caminhao', 'soldado', 'soldado_bazuca', 'soldado_eixo', 'soldado_bazuca_eixo',
+  'soldado_simples', 'soldado_bazuca_simples', 'p51', 'p80', 'b17',
   'c47', 'porta_avioes', 'contratorpedeiro', 'higgins', 'qg', 'quartel', 'garagem', 'aerodromo',
   'porto', 'bunker', 'antiaerea', 'torre_eiffel', 'arco_triunfo', 'catedral_bayeux', 'notre_dame',
   // cidade francesa (instanciadas na GPU)
@@ -33,6 +34,8 @@ export async function carregarModelos(progresso) {
           o.castShadow = true;
           o.receiveShadow = true;
           o.material.side = THREE.DoubleSide;
+          // o soldado detalhado (textura escura do uniforme) fica um pouco mais claro no campo de batalha
+          if (/^soldado(_bazuca)?(_eixo)?$/.test(nome)) o.material.color.multiplyScalar(1.4);
         }
       });
     } catch (e) {
@@ -50,6 +53,8 @@ function caixaReserva() {
 }
 
 function versaoEixo(nome) {
+  // modelo com versão própria do Eixo (ex.: soldado com uniforme cinza feito no Blender)
+  if (base[nome + '_eixo']) return base[nome + '_eixo'];
   const orig = base[nome];
   const c = orig.clone(true);
   const cache = new Map();

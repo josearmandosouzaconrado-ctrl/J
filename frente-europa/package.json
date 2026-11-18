@@ -1,7 +1,7 @@
 {
   "name": "frente-europa-1944",
   "private": true,
-  "version": "1.3.0",
+  "version": "1.4.0",
   "type": "module",
   "description": "Jogo de estratégia em tempo real na Europa/França em tamanho real com mapa de satélite",
   "scripts": {

@@ -1,0 +1,8 @@
+ww2_us_army_ranger.glb
+  "WW2 US Army Ranger" por Tactical_Gamer (https://sketchfab.com/Tactical_Beard)
+  https://sketchfab.com/3d-models/ww2-us-army-ranger-dcbe89cd5de243af8e4677b769a831c6
+  Licença: Creative Commons Atribuição 4.0 (CC-BY-4.0) — http://creativecommons.org/licenses/by/4.0/
+
+  Modificações feitas para o jogo (blender/gerar_soldado.py): braços reposicionados para segurar a arma,
+  M1 Garand e bazuca adicionados, malha reduzida para ~5 mil triângulos, texturas juntadas num atlas,
+  escala de 1,80 m e versão com uniforme cinza para o inimigo.

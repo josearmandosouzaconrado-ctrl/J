@@ -571,8 +571,13 @@ function sincronizar(dt, t) {
     if (e.cat === 'ship') { o.position.y = Math.sin(t * 0.8 + e.id) * Math.min(0.4, 20 / tam); o.rotation.z = Math.sin(t * 0.6 + e.id) * 0.02; }
     if (e.cat === 'inf') {
       e.passo += dt * (e.andando ? 9 : 0);
-      e.modelo.position.y = e.andando ? Math.abs(Math.sin(e.passo)) * 0.08 : 0;
-      e.modelo.rotation.x = e.andando ? 0.08 : 0;
+      // de perto: soldado detalhado (Ranger); de longe: versão leve
+      if (e.lod) { e.modelo.visible = d < 160; e.lod.visible = !e.modelo.visible; }
+      for (const m of [e.modelo, e.lod]) {
+        if (!m) continue;
+        m.position.y = e.andando ? Math.abs(Math.sin(e.passo)) * 0.08 : 0;
+        m.rotation.x = e.andando ? 0.08 : 0;
+      }
     }
     const pt = e.modelo.userData.partes;
     if (pt.Helice) pt.Helice.rotation.z += dt * (e.estado === 'voando' ? 60 : 0);

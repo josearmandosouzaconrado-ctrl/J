@@ -4,12 +4,12 @@
 
 export const TIPOS = {
   fuzileiro: {
-    nome: 'Fuzileiro', desc: 'Infantaria com fuzil M1 Garand', modelo: 'soldado', cat: 'inf', hp: 100, vel: 1.7,
+    nome: 'Fuzileiro', desc: 'Infantaria com fuzil M1 Garand', modelo: 'soldado', lod: 'soldado_simples', cat: 'inf', hp: 100, vel: 1.7,
     custo: 50, tempo: 8, tam: 1.8, giro: 6,
     armas: [{ n: 'M1 Garand', alc: 350, dano: 14, cad: 1.4, alvos: 'tb', prec: 0.45, som: 'tiro' }],
   },
   bazuca: {
-    nome: 'Bazuca', desc: 'Antitanque M1A1 "Bazooka"', modelo: 'soldado_bazuca', cat: 'inf', hp: 100, vel: 1.6,
+    nome: 'Bazuca', desc: 'Antitanque M1A1 "Bazooka"', modelo: 'soldado_bazuca', lod: 'soldado_bazuca_simples', cat: 'inf', hp: 100, vel: 1.6,
     custo: 90, tempo: 10, tam: 1.8, giro: 6,
     armas: [{ n: 'Bazuca M1A1', alc: 220, dano: 170, cad: 6, alvos: 'tsb', prec: 0.5, perfura: 1, som: 'canhao', fx: 'foguete' }],
   },
