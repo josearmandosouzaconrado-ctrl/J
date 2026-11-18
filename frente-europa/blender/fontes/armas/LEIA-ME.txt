@@ -1,0 +1,7 @@
+armas_ww2.obj / armas_ww2.mtl / palette.tga
+  Pacote "WW2 weapons" (M1 Garand, Thompson, BAR, MP44), enviado pelo dono do projeto (arquivo ww2-weapons.zip,
+  pasta source/Unity.zip). O pacote não trazia o nome do autor nem a licença.
+  Antes de publicar o jogo, confira a página de onde ele foi baixado e coloque aqui o autor e a licença.
+
+  Uso em blender/gerar_soldado.py: cada arma é colocada nas mãos do soldado (coronha no ombro direito,
+  mãos no punho e no guarda-mão por cinemática inversa) e entra no atlas de textura do soldado.

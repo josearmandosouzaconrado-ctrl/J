@@ -13,6 +13,16 @@ export const TIPOS = {
     custo: 90, tempo: 10, tam: 1.8, giro: 6,
     armas: [{ n: 'Bazuca M1A1', alc: 220, dano: 170, cad: 6, alvos: 'tsb', prec: 0.5, perfura: 1, som: 'canhao', fx: 'foguete' }],
   },
+  thompson: {
+    nome: 'Assalto (Thompson)', desc: 'Submetralhadora Thompson: devastadora de perto', modelo: 'soldado_thompson', lod: 'soldado_simples',
+    cat: 'inf', hp: 110, vel: 1.8, custo: 75, tempo: 10, tam: 1.8, giro: 6,
+    armas: [{ n: 'Thompson M1A1', alc: 180, dano: 9, cad: 0.09, alvos: 'tb', prec: 0.4, som: 'mg' }],
+  },
+  bar: {
+    nome: 'Metralhador (BAR)', desc: 'Fuzil-metralhador Browning M1918: fogo de supressão', modelo: 'soldado_bar', lod: 'soldado_simples',
+    cat: 'inf', hp: 110, vel: 1.5, custo: 85, tempo: 12, tam: 1.8, giro: 6,
+    armas: [{ n: 'BAR M1918', alc: 600, dano: 13, cad: 0.2, alvos: 'tab', prec: 0.35, som: 'mg' }],
+  },
   jeep: {
     nome: 'Jipe Willys MB', desc: 'Reconhecimento rápido, leva 3 soldados', modelo: 'jeep', cat: 'veh', hp: 200, vel: 20,
     custo: 120, tempo: 10, tam: 3.4, giro: 1.6, cap: 3, blind: 0,
@@ -85,9 +95,9 @@ export const TIPOS = {
 export const ESTRUTURAS = {
   qg: {
     nome: 'Quartel-General', modelo: 'qg', hp: 7000, custo: 0, tam: 30, raioBase: 4000, renda: 30,
-    produz: ['fuzileiro', 'bazuca', 'jeep'],
+    produz: ['fuzileiro', 'thompson', 'bar', 'bazuca', 'jeep'],
   },
-  quartel: { nome: 'Quartel (Quonset)', modelo: 'quartel', hp: 2600, custo: 300, tam: 26, tempo: 20, produz: ['fuzileiro', 'bazuca'] },
+  quartel: { nome: 'Quartel (Quonset)', modelo: 'quartel', hp: 2600, custo: 300, tam: 26, tempo: 20, produz: ['fuzileiro', 'thompson', 'bar', 'bazuca'] },
   garagem: {
     nome: 'Garagem de Blindados', modelo: 'garagem', hp: 3200, custo: 500, tam: 30, tempo: 30,
     produz: ['jeep', 'caminhao', 'halftrack', 'sherman', 'm7'],

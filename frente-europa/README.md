@@ -32,7 +32,7 @@ O jogo precisa de **internet** para baixar as imagens de satélite e o relevo do
 
 | Tipo | Unidades |
 |---|---|
-| **Infantaria** | Fuzileiro (M1 Garand), Bazuca M1A1 — modelo detalhado do Ranger dos EUA de perto (versão leve de longe) |
+| **Infantaria** | Fuzileiro (**M1 Garand**), Assalto (**Thompson**), Metralhador (**BAR M1918**), **Bazuca M1A1**; o Eixo usa a **MP44**. Modelo detalhado do Ranger dos EUA de perto, segurando a arma com as duas mãos (versão leve de longe) |
 | **Veículos WW2** | Jipe Willys MB, Caminhão GMC CCKW, Half-track M3, Tanque **M4A3 Sherman**, Artilharia **M7 Priest** (alcance 11 km) |
 | **Aviões** | **P-51D Mustang** (caça), **P-80 Shooting Star** (o primeiro caça a jato dos EUA, de 1944/45), **B-17G** (bombardeiro), **C-47** (transporte de paraquedistas) |
 | **Navios** | **Porta-aviões classe Essex** (12 aviões no hangar), **Contratorpedeiro Fletcher** (alcance 15 km), **Barco Higgins LCVP** (desembarque na praia) |
@@ -107,7 +107,8 @@ https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/frente-europ
 A chave de assinatura (`android/chave/frente-europa.jks`) não vai para o git, igual às outras chaves deste repositório. Sem ela o APK sai assinado com a chave de depuração, e aí o celular pede para desinstalar a versão antiga antes de instalar a nova.
 
 ## Créditos
-- Soldado de infantaria: **"WW2 US Army Ranger" por Tactical_Gamer** ([Sketchfab](https://sketchfab.com/3d-models/ww2-us-army-ranger-dcbe89cd5de243af8e4677b769a831c6)), licença [CC-BY-4.0](http://creativecommons.org/licenses/by/4.0/). Modificado no Blender por `blender/gerar_soldado.py` (pose segurando a arma, M1 Garand/bazuca, malha reduzida, textura única, versão do Eixo).
+- Soldado de infantaria: **"WW2 US Army Ranger" por Tactical_Gamer** ([Sketchfab](https://sketchfab.com/3d-models/ww2-us-army-ranger-dcbe89cd5de243af8e4677b769a831c6)), licença [CC-BY-4.0](http://creativecommons.org/licenses/by/4.0/). Modificado no Blender por `blender/gerar_soldado.py` (braços posicionados por cinemática inversa segurando a arma, malha reduzida, textura única, versão do Eixo).
+- Armas da infantaria (M1 Garand, Thompson, BAR, MP44): pacote **"WW2 weapons"** enviado pelo dono do projeto (`blender/fontes/armas/`). O arquivo não trazia o nome do autor nem a licença; confira na página de onde ele foi baixado e coloque o crédito aqui.
 - Imagens de satélite: **Esri, Maxar, Earthstar Geographics** (Esri World Imagery)
 - Relevo: **Mapzen / AWS Terrain Tiles** (Terrarium)
 - Prédios 3D: **© colaboradores do OpenStreetMap**

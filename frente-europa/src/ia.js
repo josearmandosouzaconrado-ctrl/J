@@ -3,8 +3,8 @@ import { TIPOS } from './dados.js';
 import { ALIADOS, EIXO } from './jogo.js';
 
 const PESOS = {
-  qg: { fuzileiro: 5, bazuca: 2, jeep: 1 },
-  quartel: { fuzileiro: 4, bazuca: 2 },
+  qg: { fuzileiro: 5, thompson: 2, bar: 1, bazuca: 2, jeep: 1 },
+  quartel: { fuzileiro: 4, thompson: 2, bar: 2, bazuca: 2 },
   garagem: { sherman: 4, halftrack: 2, m7: 1, jeep: 1 },
   aerodromo: { p51: 5, p80: 1, b17: 1 },
   porto: { contratorpedeiro: 1 },

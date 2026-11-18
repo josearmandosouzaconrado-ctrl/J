@@ -9,14 +9,16 @@ Arquivo original: blender/fontes/ww2_us_army_ranger.glb
 O que este script muda (para o jogo de estratégia no celular):
   1. Pose: o modelo vem em pose "A" (braços abertos). Os braços são dobrados em posição de pronto,
      segurando a arma na frente do peito.
-  2. Arma: M1 Garand (fuzileiro) ou bazuca M1A1 (antitanque), modeladas aqui.
+  2. Armas do pacote "WW2 weapons" (blender/fontes/armas): M1 Garand, Thompson, BAR e MP44 (Eixo),
+     e a bazuca M1A1 modelada aqui. A arma é posicionada primeiro (coronha no ombro direito, cano para
+     a frente) e os braços são levados até o punho e o guarda-mão por cinemática inversa (IK de 2 ossos).
   3. Leveza: malha reduzida de ~27 mil para ~5 mil triângulos e as 6 texturas juntadas numa só
      (bake) -> 1 material, 1 chamada de desenho por soldado.
   4. Escala real: 1,80 m, pés no chão (z = 0), frente em -Y.
   5. Versão do Eixo: uniforme e capacete em cinza (feldgrau), sem tocar na pele.
 
 Uso:  blender -b -P blender/gerar_soldado.py      (ou python3 com o módulo bpy)
-Saída: public/models/soldado.glb, soldado_bazuca.glb, soldado_eixo.glb, soldado_bazuca_eixo.glb
+Saída: public/models/soldado*.glb (fuzil, thompson, bar, eixo/MP44, bazuca e bazuca do Eixo)
 """
 import math
 import os
@@ -75,53 +77,152 @@ def importar():
     return corpo
 
 
-def posar(corpo):
-    """Dobra os braços (pose A -> segurando a arma). Coordenadas do original: altura -1..1, frente = -Y."""
+# ombros e mãos medidos no modelo original (altura -1..1), já convertidos para metros (x0,9, pés em z=0)
+K = 0.9
+OMBRO = {+1: np.array([0.20 * K, 0.10 * K, 0.63 * K + 0.9]), -1: np.array([-0.20 * K, 0.10 * K, 0.63 * K + 0.9])}
+# lado: -1 = braço DIREITO (o soldado olha para -Y, então a direita dele é -X); +1 = braço esquerdo
+
+
+def escala_real(corpo):
+    """2 unidades -> 1,80 m, pés em z = 0."""
+    M = Matrix.Translation((0, 0, 0.9)) @ Matrix.Scale(K, 4)
+    corpo.data.transform(M)
+    corpo.data.update()
+
+
+def medir_bracos(P):
+    """Braço reto em pose A: ombro -> cotovelo (metade) -> centro da mão."""
+    med = {}
+    for s in (+1, -1):
+        S = OMBRO[s]
+        H = P[s * P[:, 0] > 0.45].mean(0)
+        a = (H - S) / np.linalg.norm(H - S)
+        L = np.linalg.norm(H - S)
+        E = S + a * L * 0.5
+        med[s] = dict(S=S, H=H, E=E, a=a, Lu=np.linalg.norm(E - S), Lf=np.linalg.norm(H - E))
+    return med
+
+
+def ik(S, T, Lu, Lf, lado):
+    """IK de 2 ossos: devolve (cotovelo, mão). O cotovelo aponta para baixo e para fora."""
+    v = T - S
+    d = np.linalg.norm(v)
+    d = np.clip(d, abs(Lu - Lf) + 1e-3, (Lu + Lf) * 0.999)
+    u = v / np.linalg.norm(v)
+    T2 = S + u * d
+    a = (Lu * Lu - Lf * Lf + d * d) / (2 * d)
+    h = np.sqrt(max(0.0, Lu * Lu - a * a))
+    polo = np.array([lado * 0.7, 0.15, -1.0])
+    polo = polo - (polo @ u) * u
+    polo /= np.linalg.norm(polo)
+    return S + u * a + polo * h, T2
+
+
+def posar_ik(corpo, alvos):
+    """Deforma os braços para as mãos chegarem nos alvos (pegada da arma)."""
     me = corpo.data
     P = np.array([v.co[:] for v in me.vertices])
+    med = medir_bracos(P)
     novo = P.copy()
-    alvo = {
-        # o soldado olha para -Y: o lado direito dele é -X.
-        # braço direito (-X): mão na coronha, perto do peito; braço esquerdo (+X): à frente, no guarda-mão
-        -1: (np.array([-0.12, -0.25, -0.96]), np.array([0.32, -0.94, 0.1])),
-        +1: (np.array([0.02, -0.5, -0.86]), np.array([-0.12, -0.98, 0.14])),
-    }
-    maos = {}
     for s in (+1, -1):
-        S = np.array([s * 0.20, 0.10, 0.63])                       # ombro
-        mao = P[(s * P[:, 0] > 0.5)]
-        H = mao.mean(0)
-        L = np.linalg.norm(H - S)
-        a = (H - S) / L
-        Le = 0.5 * L                                                  # cotovelo
-        u1 = alvo[s][0] / np.linalg.norm(alvo[s][0])
-        u2 = alvo[s][1] / np.linalg.norm(alvo[s][1])
-        R1 = rot_entre(a, u1)
-        R2 = rot_entre(u1, u2)
-        E = S + a * Le
-        E2 = S + u1 * Le
+        m = med[s]
+        E, T = ik(m['S'], alvos[s], m['Lu'], m['Lf'], s)
+        R1 = rot_entre(m['E'] - m['S'], E - m['S'])
+        Rf = rot_entre(m['H'] - m['E'], T - E)
         x, z = s * P[:, 0], P[:, 2]
-        m = smooth(0.17, 0.27, x) * np.where(z > 0.35, 1.0, smooth(0.27, 0.36, x))
-        t = (P - S) @ a
-        braco = S + (P - S) @ R1.T
-        ante = E2 + (P - E) @ (R2 @ R1).T
-        f = smooth(Le - 0.05, Le + 0.05, t)[:, None]
+        peso = smooth(0.153, 0.243, x) * np.where(z > 1.215, 1.0, smooth(0.243, 0.324, x))
+        t = (P - m['S']) @ m['a']
+        braco = m['S'] + (P - m['S']) @ R1.T
+        ante = E + (P - m['E']) @ Rf.T
+        f = smooth(m['Lu'] - 0.045, m['Lu'] + 0.045, t)[:, None]
         trans = braco * (1 - f) + ante * f
-        novo = novo + m[:, None] * (trans - P)
-        maos[s] = E2 + (H - E) @ (R2 @ R1).T
+        novo = novo + peso[:, None] * (trans - P)
     for v, p in zip(me.vertices, novo):
         v.co = p
     me.update()
-    return maos
 
 
-def escala_real(corpo, maos):
-    # 2 unidades -> 1,80 m, pés em z = 0
-    k = 0.9
-    M = Matrix.Translation((0, 0, 0.9)) @ Matrix.Scale(k, 4)
-    corpo.data.transform(M)
-    corpo.data.update()
-    return {s: np.array(M @ Vector(p)) for s, p in maos.items()}
+# Armas do pacote (blender/fontes/armas/armas_ww2.obj), já em tamanho real.
+# cano: +1 se o cano está em +X no arquivo. pegada: distância a partir da coronha (fração do comprimento)
+ARMAS = {
+    'm1garand': dict(cano=+1, mao_dir=0.30, mao_esq=0.47),
+    'thompson': dict(cano=+1, mao_dir=0.40, mao_esq=0.63),
+    'bar': dict(cano=+1, mao_dir=0.27, mao_esq=0.44),
+    'mp44': dict(cano=-1, mao_dir=0.34, mao_esq=0.56),
+}
+
+
+def importar_arma(nome):
+    bpy.ops.wm.obj_import(filepath=os.path.join(AQUI, 'fontes', 'armas', 'armas_ww2.obj'), use_split_groups=True)
+    arma_obj = None
+    for o in list(bpy.context.selected_objects):
+        if o.type == 'MESH' and o.name.split('.')[0] == nome:
+            arma_obj = o
+        else:
+            bpy.data.objects.remove(o, do_unlink=True)
+    bpy.context.view_layer.objects.active = arma_obj
+    arma_obj.select_set(True)
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    uvs = arma_obj.data.uv_layers
+    if len(uvs):
+        uvs[0].name = 'UVMap'
+    return arma_obj
+
+
+def colocar_arma(obj, cano, butt, direcao):
+    """Move a arma: coronha em 'butt', cano apontando para 'direcao', mira para cima."""
+    P = np.array([v.co[:] for v in obj.data.vertices])
+    eixo = np.array([cano, 0.0, 0.0])
+    xs = P[:, 0] * cano
+    coronha = P[np.argmin(xs)].copy()
+    coronha[1:] = P[:, 1:].mean(0)
+    comp = xs.max() - xs.min()
+    d = direcao / np.linalg.norm(direcao)
+    cima = np.array([0, 0, 1.0]) - d[2] * d
+    cima /= np.linalg.norm(cima)
+    lado = np.cross(cima, d)
+    # base local: eixo -> d, z -> cima, y -> lado
+    Rl = np.stack([eixo, [0, 1.0, 0] if cano > 0 else [0, -1.0, 0], [0, 0, 1.0]], 1)   # colunas do sistema da arma
+    Rw = np.stack([d, lado if cano > 0 else lado, cima], 1)
+    R = Rw @ np.linalg.inv(Rl)
+    novo = (P - coronha) @ R.T + butt
+    for v, p in zip(obj.data.vertices, novo):
+        v.co = p
+    obj.data.update()
+    return comp
+
+
+def escolher_pegada(info, comp):
+    """Procura a posição da arma em que as duas mãos alcançam, com a coronha no ombro direito
+    e o cano o mais para a frente possível (posição de pronto)."""
+    SR, SL = OMBRO[-1], OMBRO[+1]
+    alcance = 0.6            # ombro -> centro da mão do modelo: 0,62 m
+    ts = np.linspace(0, 1, 11)
+    melhor, mpont = None, 1e9
+    for x0 in np.linspace(-0.24, -0.04, 6):
+        for y0 in np.linspace(-0.3, 0.04, 8):
+            for z0 in np.linspace(1.05, 1.42, 8):
+                b = np.array([x0, y0, z0])
+                for th in np.radians(np.arange(0, 64, 6)):
+                    for ph in np.radians(np.arange(-40, 6, 5)):
+                        d = np.array([np.sin(th), -np.cos(th), np.tan(ph)])
+                        d /= np.linalg.norm(d)
+                        g = b + d * comp * info['mao_dir']
+                        f = b + d * comp * info['mao_esq']
+                        dr, dl = np.linalg.norm(g - SR), np.linalg.norm(f - SL)
+                        if dr > alcance or dl > alcance or dr < 0.2 or dl < 0.25:
+                            continue
+                        # a arma não pode atravessar o peito/barriga
+                        pts = b + np.outer(ts * comp, d)
+                        dentro = (np.abs(pts[:, 0]) < 0.17) & (pts[:, 2] > 0.95) & (pts[:, 2] < 1.55) & (pts[:, 1] > -0.09)
+                        if dentro.any():
+                            continue
+                        pont = 1.5 * th + 1.0 * abs(ph + np.radians(10)) + 3.0 * np.linalg.norm(b - (SR + np.array([0.03, -0.12, -0.12])))
+                        if pont < mpont:
+                            mpont, melhor = pont, (b, d, g, f)
+    if melhor is None:
+        raise RuntimeError('nenhuma pegada alcançável')
+    return melhor
 
 
 def mat_cor(nome, cor, metal=0.0, rough=0.6):
@@ -153,28 +254,21 @@ def peca(nome, tam, centro, eixo, m, cil=False, raio=0.02):
     return o
 
 
-def arma(maos, tipo):
-    md, me_ = Vector(maos[-1]), Vector(maos[+1])   # mão direita (-X) e esquerda (+X)
-    d = (me_ - md).normalized()               # da mão direita (coronha) para a esquerda (cano)
+def bazuca():
+    """Bazuca M1A1 (1,4 m) no ombro direito, apontando para a frente. Devolve peças e alvos das mãos."""
     madeira = mat_cor('ArmaMadeira', (0.07, 0.03, 0.012), rough=0.5)
     metal = mat_cor('ArmaMetal', (0.06, 0.06, 0.06), metal=0.8, rough=0.35)
     oliva = mat_cor('ArmaOliva', (0.2, 0.22, 0.12), rough=0.6)
-    if tipo == 'fuzil':
-        # M1 Garand: 1,1 m. Coronha atrás da mão direita, cano passa da mão esquerda
-        inicio = md - d * 0.30
-        pc = [peca('Coronha', (0.04, 0.07, 0.42), inicio + d * 0.21, d, madeira),
-              peca('Guarda-mao', (0.04, 0.05, 0.45), inicio + d * 0.62, d, madeira),
-              peca('Receptor', (0.035, 0.045, 0.2), inicio + d * 0.42 + Vector((0, 0, 0.02)), d, metal),
-              peca('Cano', (0, 0, 0.4), inicio + d * 0.98, d, metal, cil=True, raio=0.011)]
-    else:
-        # bazuca M1A1: tubo de 1,4 m no ombro direito, apontando para a frente
-        ombro = Vector((-0.17, 0.02, 1.48))
-        frente = Vector((0, -1, 0.05)).normalized()
-        pc = [peca('Tubo', (0, 0, 1.4), ombro + frente * 0.25, frente, oliva, cil=True, raio=0.045),
-              peca('Boca', (0, 0, 0.12), ombro + frente * 0.95, frente, metal, cil=True, raio=0.06),
-              peca('Punho', (0.03, 0.05, 0.16), ombro + frente * 0.05 + Vector((0, 0, -0.1)), Vector((0, 0, 1)), madeira),
-              peca('Mira', (0.02, 0.06, 0.06), ombro + frente * 0.1 + Vector((0.06, 0, 0.04)), frente, metal)]
-    return pc
+    ombro = Vector((-0.15, 0.0, 1.5))
+    frente = Vector((0.06, -1, 0.0)).normalized()
+    pc = [peca('Tubo', (0, 0, 1.4), ombro + frente * 0.25, frente, oliva, cil=True, raio=0.045),
+          peca('Boca', (0, 0, 0.12), ombro + frente * 0.95, frente, metal, cil=True, raio=0.06),
+          peca('Punho', (0.03, 0.04, 0.14), ombro + frente * 0.3 + Vector((0, 0, -0.1)), Vector((0, 0, 1)), madeira),
+          peca('Apoio', (0.03, 0.04, 0.1), ombro + frente * 0.5 + Vector((0, 0, -0.08)), Vector((0, 0, 1)), madeira),
+          peca('Mira', (0.02, 0.06, 0.06), ombro + frente * 0.1 + Vector((0.06, 0, 0.04)), frente, metal)]
+    alvos = {-1: np.array(ombro + frente * 0.3 + Vector((0, 0, -0.16))),
+             +1: np.array(ombro + frente * 0.5 + Vector((0.02, 0, -0.12)))}
+    return pc, alvos
 
 
 def tingir_eixo():
@@ -297,24 +391,49 @@ def preview(nome):
     bpy.ops.render.render(write_still=True)
 
 
+VARIANTES = [
+    # (nome do arquivo, arma, uniforme do Eixo?)
+    ('soldado', 'm1garand', False),
+    ('soldado_thompson', 'thompson', False),
+    ('soldado_bar', 'bar', False),
+    ('soldado_eixo', 'mp44', True),
+    ('soldado_bazuca', 'bazuca', False),
+    ('soldado_bazuca_eixo', 'bazuca', True),
+]
+
+
 def main():
+    import sys
+    so = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
     os.makedirs(SAIDA, exist_ok=True)
-    for tipo, nome in (('fuzil', 'soldado'), ('bazuca', 'soldado_bazuca')):
-        for eixo in (False, True):
-            corpo = importar()
-            maos = escala_real(corpo, posar(corpo))
-            pecas = arma(maos, tipo)
-            if eixo:
-                tingir_eixo()
-            bpy.ops.object.select_all(action='DESELECT')
-            for o in pecas + [corpo]:
-                o.select_set(True)
-            bpy.context.view_layer.objects.active = corpo
-            bpy.ops.object.join()
-            obj = bpy.context.active_object
-            final = nome + ('_eixo' if eixo else '')
-            bake_e_exportar(obj, final)
-            preview(final)
+    for nome, tipo, eixo in VARIANTES:
+        if so and nome not in so:
+            continue
+        corpo = importar()
+        escala_real(corpo)
+        if tipo == 'bazuca':
+            pecas, alvos = bazuca()
+        else:
+            arma_obj = importar_arma(tipo)
+            info = ARMAS[tipo]
+            P = np.array([v.co[:] for v in arma_obj.data.vertices])
+            comp = P[:, 0].max() - P[:, 0].min()
+            b, d, g, f = escolher_pegada(info, comp)
+            colocar_arma(arma_obj, info['cano'], b, d)
+            pecas = [arma_obj]
+            alvos = {-1: g + np.array([0, 0, -0.02]), +1: f + np.array([0, 0, -0.03])}
+            print('PEGADA', nome, 'coronha', np.round(b, 2), 'direção', np.round(d, 2))
+        posar_ik(corpo, alvos)
+        if eixo:
+            tingir_eixo()
+        bpy.ops.object.select_all(action='DESELECT')
+        for o in pecas + [corpo]:
+            o.select_set(True)
+        bpy.context.view_layer.objects.active = corpo
+        bpy.ops.object.join()
+        obj = bpy.context.active_object
+        bake_e_exportar(obj, nome)
+        preview(nome)
 
 
 if __name__ == '__main__':
