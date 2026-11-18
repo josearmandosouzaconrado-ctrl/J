@@ -1,0 +1,10 @@
+schema_version = "1.0.0"
+id = "tanque_sherman"
+version = "1.0.0"
+name = "Tanque Sherman M4A3(75)W"
+tagline = "Gera um Sherman detalhado em escala real com materiais e animacao"
+maintainer = "J"
+type = "add-on"
+blender_version_min = "4.2.0"
+license = ["SPDX:GPL-3.0-or-later"]
+tags = ["Add Mesh"]

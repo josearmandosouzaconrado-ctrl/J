@@ -44,3 +44,29 @@ aguenta flechas; quando é destruído, explode e deixa ferro.
 
 Gerado por `tools/gerar_sherman.py` (modelo) e `tools/gerar_addon_sherman.py` (add-on);
 o script do jogo fica em `tools/scripts_sherman/main.js`.
+
+## Versão no Blender (plugin)
+
+Na pasta `blender/` está um **plugin do Blender** que gera o Sherman de verdade em 3D (malhas lisas,
+não cubos): torre fundida arredondada, mantlet M34A1, canhão M3 de 75 mm, rodas estampadas com pneu,
+molas volutas, roda motriz dentada, esteira elo por elo com garras em "V", número de registro em texto 3D,
+materiais de tinta verde-oliva desbotada com arranhões e lama (Cycles) e animação (torre girando,
+canhão subindo, rodas girando). Escala 1:1 em metros. ~28 mil faces, 126 objetos.
+
+![frente](blender/sherman_blender_frente.png)
+![lado](blender/sherman_blender_lado.png)
+![trás](blender/sherman_blender_tras.png)
+![torre](blender/sherman_blender_torre.png)
+![suspensão](blender/sherman_blender_suspensao.png)
+
+**Instalar o plugin** (Blender 4.2 ou mais novo): Editar > Preferências > Complementos > seta ⌄ no canto >
+*Instalar do disco…* > `sherman_blender_addon.zip`. Depois, na vista 3D: **Shift+A > Malha > Tanque Sherman**
+(ou a aba **Sherman** na barra lateral, tecla N). No painel que aparece dá para ligar/desligar as saias de
+areia, a estrela/número e a animação. Para mirar, gire os vazios **Torre** (eixo Z) e **Canhão** (eixo X).
+
+Arquivos prontos: `sherman.blend` (cena com chão, sol e câmera), `sherman.glb` (com animação) e `sherman.obj`.
+Para gerar tudo de novo sem abrir o Blender: `pip install bpy` e `python3 tools/renderizar_sherman_blender.py`.
+O código do plugin fica em `tools/blender_sherman/`.
+
+Obs.: o Minecraft Bedrock só aceita modelos de cubos (Blockbench), então o modelo do Blender serve para
+renders, animações e vídeos; o add-on do jogo continua usando o modelo de cubos de cima.
