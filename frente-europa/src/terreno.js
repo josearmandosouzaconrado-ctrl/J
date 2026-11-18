@@ -6,7 +6,9 @@ import { lat2ty, lon2tx, paraMundo, tx2lon, ty2lat } from './geo.js';
 import { amostrar, quandoPronto, tileRelevo, EXAGERO } from './relevo.js';
 
 // direção da luz do sol (vem do sul/sudeste, como nas fotos de satélite da Europa)
-const SOL = new THREE.Vector3(0.35, 0.75, 0.55).normalize();
+export const SOL = new THREE.Vector3(0.35, 0.75, 0.55).normalize();
+// o chão usa material com luz (para receber sombras); esta cor compensa a luz para a foto ficar com o brilho original
+export const COR_CHAO = new THREE.Color(1.05, 1.05, 1.05);
 
 const N = 16;            // segmentos por tile
 const Z_RAIZ = 5;
@@ -68,7 +70,7 @@ export class Terreno {
     this.frustum = new THREE.Frustum();
     this.mat4 = new THREE.Matrix4();
     this.esfera = new THREE.Sphere();
-    this.matFalha = new THREE.MeshBasicMaterial({ color: 0x55703f, vertexColors: true });
+    this.matFalha = new THREE.MeshLambertMaterial({ color: 0x55703f });
   }
 
   _novo(z, x, y, pai) {
@@ -98,7 +100,7 @@ export class Terreno {
         tex.anisotropy = this.maxAniso;
         tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
         tex.needsUpdate = true;
-        mat = new THREE.MeshBasicMaterial({ map: tex, vertexColors: true });
+        mat = new THREE.MeshLambertMaterial({ map: tex, color: COR_CHAO });
       } else if (t.z > Z_RAIZ + 3) {
         // sem foto neste zoom (ex.: mar aberto): não divide mais aqui
         t.estado = 3;
@@ -145,8 +147,8 @@ export class Terreno {
         uv[k * 2 + 1] = 1 - v;
       }
     }
-    // sombreamento do relevo: morros ganham luz e sombra (o chão plano fica com a cor original da foto)
-    const cor = new Float32Array(M * M * 3);
+    // normais do relevo (a luz do sol faz morros e vales aparecerem; o chão recebe as sombras)
+    const nor = new Float32Array(M * M * 3);
     const P = (i, j) => {
       i = Math.min(M - 2, Math.max(1, i)); j = Math.min(M - 2, Math.max(1, j));
       const k = j * M + i;
@@ -160,9 +162,8 @@ export class Terreno {
         const vx = d[0] - c[0], vy = d[1] - c[1], vz = d[2] - c[2];
         n.set(vy * uz - vz * uy, vz * ux - vx * uz, vx * uy - vy * ux).normalize();
         if (n.y < 0) n.negate();
-        const s = THREE.MathUtils.clamp(1 + 1.8 * (n.dot(SOL) - SOL.y), 0.4, 1.4);
         const k = j * M + i;
-        cor[k * 3] = cor[k * 3 + 1] = cor[k * 3 + 2] = s;
+        nor[k * 3] = n.x; nor[k * 3 + 1] = n.y; nor[k * 3 + 2] = n.z;
       }
     }
     const idx = [];
@@ -175,7 +176,7 @@ export class Terreno {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-    g.setAttribute('color', new THREE.BufferAttribute(cor, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
     g.setIndex(idx);
     g.computeBoundingSphere();
     g.computeBoundingBox();
@@ -183,6 +184,7 @@ export class Terreno {
     t.mar = er.dados && brutoMax < -2; // tile todo no mar: não precisa de mais detalhe
     t.centro.y = hMax / 2;
     const m = new THREE.Mesh(g, mat);
+    m.receiveShadow = true;
     m.position.set(t.centro.x, 0, t.centro.z);
     m.matrixAutoUpdate = false;
     m.updateMatrix();

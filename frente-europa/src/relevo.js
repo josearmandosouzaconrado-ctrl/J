@@ -3,8 +3,8 @@
 import { baixarImagem, URL_RELEVO } from './rede.js';
 import { lat2ty, lon2tx, paraLatLon } from './geo.js';
 
-// Exagero do relevo (1 = real). A França é bem plana; 1,5× deixa morros e vales mais visíveis.
-export let EXAGERO = 1.5;
+// Exagero do relevo (1 = real). A França é bem plana; 2× deixa morros e vales mais visíveis.
+export let EXAGERO = 2;
 export function definirExagero(v) { EXAGERO = v; }
 
 const cache = new Map(); // "z/x/y" -> { dados: Float32Array|null, estado, uso }

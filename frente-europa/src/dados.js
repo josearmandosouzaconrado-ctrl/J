@@ -155,6 +155,8 @@ export const CIDADES = [
 export const MARCOS = [
   { nome: 'Torre Eiffel', modelo: 'torre_eiffel', lat: 48.85826, lon: 2.29450, rot: 47, livre: 110 },
   { nome: 'Arco do Triunfo', modelo: 'arco_triunfo', lat: 48.87378, lon: 2.29504, rot: 63, livre: 140 },
+  { nome: 'Notre-Dame de Paris', modelo: 'notre_dame', lat: 48.85297, lon: 2.34989, rot: 290, livre: 85 },
+  { nome: 'Catedral de Bayeux', modelo: 'catedral_bayeux', lat: 49.27866, lon: -0.70360, rot: 275, livre: 70 },
 ];
 
 // Cenário principal: Dia D, 6 de junho de 1944

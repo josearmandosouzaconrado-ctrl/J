@@ -4,12 +4,13 @@ Jogo de **estratégia em tempo real (RTS)** na **Europa em tamanho real**, com f
 
 O mapa é o **mundo real**: fotos de **satélite** (Esri World Imagery) aplicadas sobre o **relevo real** (AWS Terrain Tiles), com 1 metro do jogo = 1 metro de verdade.
 
-O mundo é **construído em 3D**:
-- **Relevo**: morros, vales e montanhas reais com luz e sombra (exagero ajustável no menu: real 1×, 1,5× ou 2,5×).
-- **Cidades e vilas**: o jogo analisa as fotos de satélite e, onde há telhados e ruas, levanta **prédios e casas com telhado de duas águas**, com a cor dos telhados da própria foto. Nas cidades grandes (Paris, Lyon, Marseille...) os prédios são mais altos.
-- **Florestas e cercas vivas** (o *bocage* da Normandia) viram **árvores 3D**.
-- **Marcos**: **Torre Eiffel** (324 m) e **Arco do Triunfo** (50 m), modelados no Blender nos lugares e tamanhos reais.
-- Opcional: prédios reais do OpenStreetMap no lugar dos gerados. Dá para afastar até ver a Europa inteira e aproximar até ver os campos da Normandia, as ruas de Paris e os tanques lado a lado. As **cidades são reais** (Paris, Caen, Cherbourg, Lyon, Marseille, Bruxelas, Berlim...) e as bases ficam nos lugares históricos (praia de Omaha, RAF Tangmere, aeroporto de Orly...).
+O mundo é **construído em 3D** em volta da câmera:
+- **Prédios reais do OpenStreetMap**: cada prédio nasce exatamente em cima do contorno real (as ruas da foto ficam livres), com o tamanho real, girado igual ao prédio de verdade e com **paredes e telhados texturizados** no estilo da região em 1944: pedra de Caen e **enxaimel (colombage)** na Normandia, tijolo no Norte, reboco e ardósia no centro, ocre e telha de barro na Provence, prédios **haussmannianos** com mansarda de zinco em Paris. Tudo de um bairro vira poucas malhas (leve para o celular).
+- **Sem internet para o OSM**: entram as **casas modeladas no Blender** (7 tipos), instanciadas na GPU, só onde a foto de satélite mostra um grupo de telhados, giradas na direção das ruas da foto.
+- **Árvores do Blender** (carvalho, choupo, macieira normanda, pinheiro-manso no sul) nas matas e cercas vivas (*bocage*) da foto.
+- **Relevo** real com luz do sol (exagero no menu: 1×, 1,5×, **2×**, 3×).
+- **Sombras suaves** projetadas por prédios, árvores, tanques e aviões, e **neblina atmosférica** no horizonte com céu em degradê.
+- **Marcos** feitos no Blender, nos lugares e tamanhos reais: **Torre Eiffel** (324 m), **Arco do Triunfo** (50 m), **Notre-Dame de Paris** (flecha de 96 m) e **Catedral de Bayeux** (com a cúpula de cobre verde). Dá para afastar até ver a Europa inteira e aproximar até ver os campos da Normandia, as ruas de Paris e os tanques lado a lado. As **cidades são reais** (Paris, Caen, Cherbourg, Lyon, Marseille, Bruxelas, Berlim...) e as bases ficam nos lugares históricos (praia de Omaha, RAF Tangmere, aeroporto de Orly...).
 
 > Projeto independente: não usa código de nenhum outro jogo deste repositório.
 
@@ -64,11 +65,12 @@ frente-europa/
 │   ├── jogo.js             simulação: unidades, combate, transporte, cidades, produção
 │   ├── ia.js               inteligência do inimigo
 │   ├── piloto.js           modo piloto (batalha aérea)
-│   ├── cidades3d.js        constrói prédios, casas e árvores a partir das fotos de satélite
+│   ├── cidades3d.js        prédios reais do OSM texturizados + casas/árvores do Blender instanciadas
 │   ├── dados.js            unidades, estruturas, cidades reais, marcos e cenários (edite aqui!)
 │   └── predios.js          prédios 3D do OpenStreetMap
 ├── blender/
 │   ├── gerar_modelos.py    gera TODOS os modelos 3D no Blender
+│   ├── cidade_francesa.py  casas francesas, árvores, catedrais e as texturas pintadas (public/texturas/)
 │   ├── frente_europa_modelos.blend   todos os modelos para editar
 │   ├── previews/           renders de cada modelo (todos_os_modelos.jpg = todos juntos)
 │   └── referencias/        coloque aqui fotos de referência (ex.: sherman.jpg)

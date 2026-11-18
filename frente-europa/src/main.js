@@ -1,13 +1,12 @@
 // Frente Europa 1944 — jogo de estratégia em tempo real na Europa em tamanho real.
 import * as THREE from 'three';
-import { Terreno } from './terreno.js';
+import { Terreno, SOL } from './terreno.js';
 import { CameraRTS } from './camera.js';
 import { carregarModelos, instanciar, texturaIcone } from './modelos.js';
 import { Efeitos } from './efeitos.js';
 import { ALIADOS, EIXO, Jogo } from './jogo.js';
 import { IA } from './ia.js';
 import { Piloto } from './piloto.js';
-import { Predios } from './predios.js';
 import { Cidades3D } from './cidades3d.js';
 import { CENARIO_AEREO, CENARIO_LIVRE, CENARIO_NORMANDIA, ESTRUTURAS, MARCOS, TIPOS } from './dados.js';
 import { lat2ty, lon2tx, paraMundo, tx2lon, ty2lat, formatarDist } from './geo.js';
@@ -16,28 +15,53 @@ import { estatRede } from './rede.js';
 import { alternarSom, iniciarAudio } from './audio.js';
 
 const $ = (s) => document.querySelector(s);
-const COR_CEU = 0x9cc0e2;
+const COR_HORIZONTE = 0xc9d7e4, COR_ZENITE = 0x4a80c4;
 
 // ------------------------------------------------------------------ renderização
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+// sombras suaves projetadas pelo sol (prédios, árvores, tanques, aviões)
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 $('#tela').appendChild(renderer.domElement);
 const cena = new THREE.Scene();
-cena.background = new THREE.Color(COR_CEU);
-cena.fog = new THREE.Fog(COR_CEU, 1e5, 1e6);
+cena.background = new THREE.Color(COR_HORIZONTE);
+// neblina atmosférica: o chão se mistura com a cor do horizonte (sem corte brusco entre céu e terra)
+cena.fog = new THREE.Fog(COR_HORIZONTE, 1e5, 1e6);
 const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 1, 1e6);
 cena.add(new THREE.HemisphereLight(0xe6eeff, 0x59613d, 1.7));
 const sol = new THREE.DirectionalLight(0xfff4e0, 2.0);
-sol.position.set(0.4, 1, 0.3);
+sol.position.copy(SOL);
+sol.castShadow = true;
+sol.shadow.mapSize.set(2048, 2048);
+sol.shadow.bias = -0.0004;
+sol.shadow.normalBias = 0.5;
+sol.shadow.radius = 3;
 cena.add(sol);
 cena.add(sol.target);
+
+// céu com degradê (azul em cima, claro e enevoado no horizonte)
+const ceu = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite: false, fog: false,
+  uniforms: { topo: { value: new THREE.Color(COR_ZENITE) }, horiz: { value: new THREE.Color(COR_HORIZONTE) } },
+  vertexShader: `varying vec3 vP;
+    void main() { vP = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position.z = gl_Position.w; }`,
+  fragmentShader: `uniform vec3 topo; uniform vec3 horiz; varying vec3 vP;
+    void main() { float h = normalize(vP).y; vec3 c = mix(horiz, topo, pow(clamp(h, 0.0, 1.0), 0.5));
+      gl_FragColor = vec4(c, 1.0);
+      #include <colorspace_fragment>
+    }`,
+}));
+ceu.frustumCulled = false;
+ceu.renderOrder = -10;
+cena.add(ceu);
+let sombras = true;
 
 const terreno = new Terreno(cena, renderer);
 const rts = new CameraRTS(camera, renderer.domElement);
 const fx = new Efeitos(cena);
-const predios = new Predios(cena);
 const cidades3d = new Cidades3D(cena);
 const marcos = [];
 let jogo = null, ia = null, piloto = null;
@@ -74,14 +98,17 @@ function iniciar(cen) {
   if (jogo) location.reload();
   terreno.k = parseFloat($('#optDetalhe').value);
   definirExagero(parseFloat($('#optRelevo').value));
-  predios.ligado = $('#optPredios').checked;
-  cidades3d.semPredios = predios.ligado;
+  cidades3d.usarOSM = $('#optPredios').checked;
+  sombras = $('#optSombras').checked;
+  renderer.shadowMap.enabled = sombras;
+  sol.castShadow = sombras;
   $('#btnPredios').classList.toggle('ativo', cidades3d.ligado);
   for (const m of MARCOS) {
     const o = instanciar(m.modelo, 0);
     const p = paraMundo(m.lat, m.lon);
     o.position.set(p.x, 0, p.z);
     o.rotation.y = (180 - m.rot) * Math.PI / 180;
+    o.traverse((p) => { if (p.isMesh) { p.castShadow = true; p.receiveShadow = true; } });
     cena.add(o);
     marcos.push(o);
   }
@@ -399,8 +426,7 @@ $('#btnBase').onclick = irBase;
 $('#btnPredios').onclick = () => {
   cidades3d.ligado = !cidades3d.ligado;
   $('#btnPredios').classList.toggle('ativo', cidades3d.ligado);
-  if (!cidades3d.ligado) { cidades3d.limpar(); predios.limpar(); }
-  predios.ligado = cidades3d.ligado && $('#optPredios').checked;
+  if (!cidades3d.ligado) cidades3d.limpar();
   msg(cidades3d.ligado ? 'Cidades, casas e árvores em 3D ligadas (aproxime a câmera)' : 'Cidades 3D desligadas (só a foto de satélite)');
 };
 document.querySelectorAll('.velocidades button').forEach((b) => {
@@ -586,7 +612,6 @@ function laco(agora) {
     else rts.atualizar(dt);
     sincronizar(dt, agora / 1000);
     fx.atualizar(dt * Math.max(1, Math.min(velocidade, 3)), camera.position);
-    predios.atualizar(rts.alvo, rts.dist);
     if (piloto.ativo) {
       const g = chao(camera.position.x, camera.position.z, false) ?? 0;
       cidades3d.atualizar(camera.position, Math.max(200, (camera.position.y - g) * 2.5));
@@ -620,14 +645,31 @@ function laco(agora) {
     rts.inc = 1.0;
     rts.atualizar(dt);
   }
-  // neblina conforme a altura da câmera
-  const alt = Math.max(50, camera.position.y);
-  cena.fog.near = piloto?.ativo ? 15000 : alt * 4 + rts.dist * 1.5;
-  cena.fog.far = piloto?.ativo ? 90000 : Math.max(cena.fog.near * 3, camera.far * 0.95);
+  // neblina no horizonte e alcance da câmera
+  const voando = piloto?.ativo;
+  const dRef = voando ? Math.max(600, camera.position.y - (chao(camera.position.x, camera.position.z, false) ?? 0)) : rts.dist;
+  cena.fog.near = voando ? 3000 + dRef * 2 : dRef * 0.9 + 300;
+  cena.fog.far = voando ? 35000 + dRef * 10 : dRef * 5 + 7000;
+  camera.far = cena.fog.far * 1.03;
+  camera.updateProjectionMatrix();
+  ceu.position.copy(camera.position);
+  ceu.scale.setScalar(camera.far * 0.9);
+  // sombra: caixa de luz em volta do que a câmera está olhando
+  if (sombras) {
+    const foco = voando && piloto.u ? new THREE.Vector3(piloto.u.x, piloto.u.y, piloto.u.z) : rts.alvo;
+    const ext = THREE.MathUtils.clamp((voando ? 300 : rts.dist) * 0.9, 120, 2500);
+    const sc = sol.shadow.camera;
+    sc.left = sc.bottom = -ext; sc.right = sc.top = ext;
+    sc.near = 1; sc.far = ext * 8;
+    sc.updateProjectionMatrix();
+    sol.target.position.copy(foco);
+    sol.position.copy(foco).addScaledVector(SOL, ext * 4);
+    sol.target.updateMatrixWorld();
+  }
   terreno.atualizar(camera);
   renderer.render(cena, camera);
 }
 requestAnimationFrame(laco);
 
 // depuração no navegador
-window.FE = { get jogo() { return jogo; }, cidades3d, rts, terreno, camera, piloto: () => piloto, iniciar, CENARIO_NORMANDIA };
+window.FE = { get jogo() { return jogo; }, cidades3d, rts, terreno, camera, cena, renderer, piloto: () => piloto, iniciar, CENARIO_NORMANDIA };

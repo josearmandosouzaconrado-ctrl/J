@@ -1,11 +1,15 @@
 // Carrega os modelos .glb gerados no Blender e cria cópias (aliado = cores originais, Eixo = cinza/vermelho).
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export const NOMES_MODELOS = [
   'sherman', 'm7_priest', 'jeep', 'halftrack', 'caminhao', 'soldado', 'soldado_bazuca', 'p51', 'p80', 'b17',
   'c47', 'porta_avioes', 'contratorpedeiro', 'higgins', 'qg', 'quartel', 'garagem', 'aerodromo',
-  'porto', 'bunker', 'antiaerea', 'torre_eiffel', 'arco_triunfo',
+  'porto', 'bunker', 'antiaerea', 'torre_eiffel', 'arco_triunfo', 'catedral_bayeux', 'notre_dame',
+  // cidade francesa (instanciadas na GPU)
+  'casa_normanda', 'casa_pedra', 'fazenda', 'casa_cidade', 'casa_tijolo', 'casa_provence', 'predio_haussmann',
+  'arvore_carvalho', 'arvore_choupo', 'macieira', 'pinheiro',
 ];
 
 const base = {};
@@ -26,8 +30,8 @@ export async function carregarModelos(progresso) {
       base[nome] = g.scene;
       g.scene.traverse((o) => {
         if (o.isMesh) {
-          o.castShadow = false;
-          o.receiveShadow = false;
+          o.castShadow = true;
+          o.receiveShadow = true;
           o.material.side = THREE.DoubleSide;
         }
       });
@@ -75,6 +79,66 @@ export function instanciar(nome, faccao) {
     if (['Torre', 'Helice', 'Rotor', 'RotorCauda'].includes(p.name)) o.userData.partes[p.name] = p;
   });
   return o;
+}
+
+// ---------------- Materiais compartilhados das construções (texturas pintadas no Blender) ----------------
+const texLoader = new THREE.TextureLoader();
+const matTex = new Map();
+export function materialTextura(nome, duplo = false) {
+  const k = nome + (duplo ? '2' : '');
+  if (!matTex.has(k)) {
+    const t = texLoader.load(`./texturas/${nome.toLowerCase()}.jpg`);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 4;
+    matTex.set(k, new THREE.MeshLambertMaterial({ map: t, side: duplo ? THREE.DoubleSide : THREE.FrontSide }));
+  }
+  return matTex.get(k);
+}
+const CORES = { Chamine: 0x8a4a35 };
+export function materialCor(nome) {
+  const k = 'cor:' + nome;
+  if (!matTex.has(k)) matTex.set(k, new THREE.MeshLambertMaterial({ color: CORES[nome] ?? 0x999999 }));
+  return matTex.get(k);
+}
+const matVertice = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+
+// Prepara um modelo do Blender para GPU instancing: junta as peças em poucas geometrias
+// (1 por textura + 1 com todas as cores lisas como cor por vértice) -> poucas chamadas de desenho.
+const partesCache = new Map();
+export function partesInstancia(nome) {
+  if (partesCache.has(nome)) return partesCache.get(nome);
+  const raiz = base[nome];
+  raiz.updateMatrixWorld(true);
+  const grupos = new Map();
+  raiz.traverse((o) => {
+    if (!o.isMesh) return;
+    let g = o.geometry.clone().applyMatrix4(o.matrixWorld);
+    g = g.index ? g.toNonIndexed() : g;
+    for (const a of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(a)) g.deleteAttribute(a);
+    if (!g.attributes.normal) g.computeVertexNormals();
+    if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+    const nm = o.material.name || '';
+    const texturizado = nm.startsWith('Parede') || nm.startsWith('Telhado');
+    const k = texturizado ? nm : 'cores';
+    if (!texturizado) {
+      const c = o.material.color || new THREE.Color(0.7, 0.7, 0.7);
+      const n = g.attributes.position.count;
+      const cor = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) { cor[i * 3] = c.r; cor[i * 3 + 1] = c.g; cor[i * 3 + 2] = c.b; }
+      g.setAttribute('color', new THREE.Float32BufferAttribute(cor, 3));
+    }
+    if (!grupos.has(k)) grupos.set(k, []);
+    grupos.get(k).push(g);
+  });
+  const partes = [];
+  for (const [k, gs] of grupos) {
+    const geometria = gs.length > 1 ? mergeGeometries(gs, false) : gs[0];
+    geometria.computeBoundingSphere();
+    partes.push({ geometria, material: k === 'cores' ? matVertice : materialTextura(k, true) });
+  }
+  partesCache.set(nome, partes);
+  return partes;
 }
 
 // ---------------- Ícones táticos (estilo OTAN) para quando a câmera está longe ----------------

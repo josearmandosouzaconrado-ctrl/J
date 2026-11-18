@@ -1041,6 +1041,11 @@ MODELOS = {
     'torre_eiffel': torre_eiffel, 'arco_triunfo': arco_triunfo,
 }
 
+# casas francesas texturizadas, árvores e catedrais (blender/cidade_francesa.py)
+sys.path.insert(0, AQUI)
+import cidade_francesa  # noqa: E402
+MODELOS.update(cidade_francesa.modelos(globals()))
+
 
 # ----------------------------------------------------------------------------
 # Exportação, renders e .blend
@@ -1137,6 +1142,7 @@ def main():
     os.makedirs(SAIDA_GLB, exist_ok=True)
     os.makedirs(SAIDA_PREV, exist_ok=True)
     bpy.ops.wm.read_factory_settings(use_empty=True)
+    cidade_francesa.gerar_texturas()
     nomes = SO or list(MODELOS)
     x0 = 0.0
     for nome in nomes:
