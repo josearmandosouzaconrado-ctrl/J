@@ -35,7 +35,7 @@ class World {
     this.nE = new Simplex(seed * 7 + 1); this.nM = new Simplex(seed * 7 + 2); this.nW = new Simplex(seed * 7 + 3);
     this.nR = new Simplex(seed * 7 + 4); this.nD = new Simplex(seed * 7 + 5); this.nL = new Simplex(seed * 7 + 6);
     this.regions = REGIONS.map(r => Object.assign({}, r, { cx: r.fx * WORLD_TILES, cy: r.fy * WORLD_TILES }));
-    this.regC = [[], [], [], [], []]; this.regions.forEach((r, i) => this.regC[r.cont || 0].push(i));
+    this.regC = CONTINENTS.map(() => []); this.regions.forEach((r, i) => this.regC[r.cont || 0].push(i));
     // relevo máximo das regiões de cada continente (para reconhecer mar aberto sem calcular tudo)
     this.maxMount = this.regC.map(l => l.reduce((m, i) => Math.max(m, this.regions[i].mount), 0));
     this.volcano = { x: VOLCANO.fx * WORLD_TILES, y: VOLCANO.fy * WORLD_TILES };
@@ -74,6 +74,12 @@ class World {
       const d = Math.sqrt(nx * nx + ny * ny) * 0.72 + Math.max(Math.abs(nx), Math.abs(ny)) * 0.28 + this.nW.noise(x / 520, y / 520) * 0.07;
       if (d > 0.76) { const f = (d - 0.76) / 0.24; F.push(f * f * 0.85); }
       if (y < VALTHERIA_Y + 500) { const f = (VALTHERIA_Y + 500 - y) / 500; F.push(f * f); }   // oceano largo ao norte
+    } else if (cont === 5) {
+      // Pindorama: comprido de norte a sul, costa recortada de baías e enseadas
+      const nx = (x - PINDORAMA.x) / PINDORAMA.rx, ny = (y - PINDORAMA.y) / PINDORAMA.ry;
+      const d = Math.sqrt(nx * nx + ny * ny) * 0.72 + Math.max(Math.abs(nx), Math.abs(ny)) * 0.28 + this.nW.noise(x / 560, y / 560) * 0.09 + this.nW.noise(x / 150 - 71.1, y / 150 + 5.3) * 0.03;
+      if (d > 0.8) { const f = (d - 0.8) / 0.2; F.push(f * f * 0.9); }
+      if (x < PINDORAMA.x0 + 500) { const f = (PINDORAMA.x0 + 500 - x) / 500; F.push(f * f); }   // o Mar Verde a oeste
     } else if (cont === 4) {
       // Elyndra: o maior de todos, com costas recortadas, baías e cabos
       const nx = (x - ELYNDRA.x) / ELYNDRA.rx, ny = (y - ELYNDRA.y) / ELYNDRA.ry;
@@ -121,10 +127,11 @@ class World {
     if (e < 0.34) return b === 'snow' ? T.ICE : (b === 'volcanic' || b === 'obsidian') ? T.LAVA : b === 'reef' ? T.LUMWATER : T.WATER;
     if (e < 0.7 && b !== 'desert' && b !== 'volcanic' && b !== 'obsidian') {
       const rv = Math.abs(fbm(this.nR, x / 700, y / 700, 3));
-      if (rv < 0.011) return b === 'snow' ? T.ICE : b === 'reef' ? T.LUMWATER : T.WATER;
+      if (rv < (b === 'jungle' || b === 'wetland' ? 0.024 : 0.011)) return b === 'snow' ? T.ICE : b === 'reef' ? T.LUMWATER : T.WATER;   // os rios da grande floresta são largos
     }
     if (e > 0.73 && cont === 4) return b === 'crystal' || b === 'cosmic' ? T.CRYSTALROCK : b === 'livestone' || b === 'savanna' ? T.CANYON : b === 'obsidian' ? T.VWALL : (e > 0.84 ? T.SNOWROCK : T.ROCK);
     if (e > 0.73) return (e > 0.84 || (b === 'snow' && e > 0.77) || (b === 'mountain' && e > 0.8)) ? T.SNOWROCK : T.ROCK;
+    if (e < 0.365 && cont === 5) return b === 'wetland' ? T.MUD : b === 'caatinga' ? T.DIRT : T.SAND;
     if (e < 0.365 && cont === 4) return b === 'obsidian' ? T.ASH : b === 'dusk' ? T.DUSKSAND : b === 'mist' ? T.MUD : b === 'cosmic' ? T.STARDUST : b === 'livestone' ? T.SANDSTONE : T.SAND;
     if (e < 0.365) return b === 'desert' ? T.DESERT : b === 'snow' ? T.SNOW : b === 'swamp' ? T.MUD : (b === 'volcanic' || b === 'dead') ? T.ASH : T.SAND;
     switch (b) {
@@ -147,6 +154,13 @@ class World {
       case 'savanna': if (m > 0.86) return T.WATER; return m < 0.2 ? T.DIRT : T.SAVANNA;
       case 'cosmic': { const lv = this.nL.noise(x / 70, y / 70); return lv > 0.6 ? T.CRYSTALF : T.STARDUST; }
       case 'mist': if (m > 0.74) return T.SWAMP; return m < 0.24 ? T.MUD : T.MISTHEATH;
+      // ----- Pindorama -----
+      case 'jungle': { if (m > 0.83) return T.WATER; if (m < 0.13) return T.MUD; const g = this.nD.noise(x / 70, y / 70); return g > 0.42 ? T.LIVEMOSS : T.DGRASS; }
+      case 'wetland': if (m > 0.62) return T.WATER; if (m > 0.47) return T.SWAMP; if (m > 0.32) return T.MUD; return T.GRASS;
+      case 'caatinga': if (m > 0.88) return T.WATER; return m < 0.32 ? T.DIRT : m < 0.66 ? T.DEADGRASS : T.SAVANNA;
+      case 'tropical': if (m > 0.86) return T.WATER; return m > 0.66 ? T.DGRASS : T.GRASS;
+      case 'serraverde': return m > 0.55 ? T.DGRASS : T.GRASS;
+      case 'serra': return m < 0.35 ? T.BADLAND : m < 0.6 ? T.DIRT : T.DGRASS;
       case 'livestone': { const cn = Math.abs(this.nR.noise(x / 150, y / 150)); if (cn < 0.05 && e > 0.45 && e < 0.7) return T.CANYON; return m > 0.72 ? T.SANDSTONE : T.LIVESTONE; }
     }
     return T.GRASS;
@@ -278,7 +292,7 @@ class World {
     const c = this.canvases.get(k); if (!c) return;
     this.canvases.delete(k);
     const pool = this.cvPool || (this.cvPool = []);
-    if (pool.length < 4) pool.push(c);
+    if (pool.length < 2) pool.push(c);
   }
   genChunk(cx, cy) {
     const tiles = new Uint8Array(1024), objs = new Uint8Array(1024), reg = new Uint8Array(1024);
@@ -425,7 +439,7 @@ class World {
       ctx.drawImage(s.c, lx * 16 + 8 - (s.w >> 1), ly * 16 + 16 - s.h + s.oy);
     }
     this.canvases.set(k, c);
-    if (this.canvases.size > 20) this.dropCanvas(this.canvases.keys().next().value);
+    if (this.canvases.size > 14) this.dropCanvas(this.canvases.keys().next().value);   // a tela mostra até 4 trechos e o pré-desenho usa 9 à volta (cada trecho guardado gasta 1 MB)
     return c;
   }
   drawGround(ctx, camX, camY, vw, vh) {
@@ -584,6 +598,7 @@ class World {
     this.generateValtheria();
     this.generateIsland();
     this.generateElyndra();
+    if (this.generatePindorama) this.generatePindorama();
     // placas
     for (const s of this.settlements) {
       for (const g of s.gates) {

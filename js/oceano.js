@@ -11,24 +11,13 @@
 //  Desliga junto com o "Visual top" e no Modo leve.
 // =====================================================================
 const Oceano = {
-  T: 384, N: 24, COLS: 6, FPS: 8, ok: false, pads: [],
+  T: 384, N: 24, COLS: 6, FPS: 8, ok: false,
   carregar() {
     const im = new Image();
-    im.onload = () => {
-      for (let k = 0; k < this.N; k++) {
-        const c = document.createElement('canvas'); c.width = this.T; c.height = this.T;
-        c.getContext('2d').drawImage(im, (k % this.COLS) * this.T, Math.floor(k / this.COLS) * this.T, this.T, this.T, 0, 0, this.T, this.T);
-        this.pads.push(c);
-      }
-      this.ok = true;
-    };
+    // a folha inteira fica uma vez só na memória (sem uma cópia por quadro)
+    const pronto = f => { this.folha = f; this.ok = true; };
+    im.onload = () => { if (typeof createImageBitmap === 'function') createImageBitmap(im).then(pronto, () => pronto(im)); else pronto(im); };
     im.src = typeof imgSrc === 'function' ? imgSrc('img/oceano.webp') : 'img/oceano.webp';
-  },
-  _pad: [],
-  padrao(ctx, k) {
-    // um padrão por quadro, criado no contexto em uso
-    if (this._ctx !== ctx) { this._ctx = ctx; this._pad = []; }
-    return this._pad[k] || (this._pad[k] = ctx.createPattern(this.pads[k], 'repeat'));
   },
   // Desenha numa tela à parte: o oceano inteiro, depois uma máscara de profundidade (um pixel por
   // quadradinho, ampliada com suavização: o raso vira fundo aos poucos, sem degraus) e por fim
@@ -68,12 +57,12 @@ const Oceano = {
     const tip = this.tipos;
     // oceano na tela à parte
     const ow = nx * 16, oh = ny * 16;
-    if (!this.of || this.of.width !== ow || this.of.height !== oh) { this.of = document.createElement('canvas'); this.of.width = ow; this.of.height = oh; this._ctx = null; }
+    if (!this.of || this.of.width !== ow || this.of.height !== oh) { this.of = document.createElement('canvas'); this.of.width = ow; this.of.height = oh; }
     const o = this.of.getContext('2d');
-    const pad = this.padrao(o, k);
     const ox = -((((tx0 * 16) % T) + T) % T), oy = -((((ty0 * 16) % T) + T) % T);
-    if (pad.setTransform) pad.setTransform(new DOMMatrix([1, 0, 0, 1, ox, oy]));
-    o.globalCompositeOperation = 'source-over'; o.fillStyle = pad; o.fillRect(0, 0, ow, oh);
+    const fx = (k % this.COLS) * T, fy = Math.floor(k / this.COLS) * T;
+    o.globalCompositeOperation = 'copy';
+    for (let y = oy; y < oh; y += T) for (let x = ox; x < ow; x += T) { o.drawImage(this.folha, fx, fy, T, T, x, y, T, T); o.globalCompositeOperation = 'source-over'; }
     o.globalCompositeOperation = 'destination-in'; o.imageSmoothingEnabled = true; o.drawImage(this.mk, 0, 0, ow, oh);
     o.globalCompositeOperation = 'source-over';
     // recorte: só a água (em coordenadas da tela à parte; só muda quando a câmera troca de quadradinho)

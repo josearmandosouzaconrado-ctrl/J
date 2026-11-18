@@ -4,6 +4,14 @@ const Sprites = {};
 (function (S) {
   function cv(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
   S.cv = cv;
+  // Memória: um canvas pronto que só é desenhado (nunca mais pintado) vira ImageBitmap,
+  // que guarda só os pixels (cada canvas pequeno gasta ~20 KB a mais no navegador).
+  // Troca no lugar quando fica pronto; até lá o canvas continua valendo.
+  S.compactar = function (dono, chave, depois) {
+    const c = dono[chave];
+    if (!c || typeof createImageBitmap !== 'function' || !(c instanceof HTMLCanvasElement) || !c.width) return;
+    createImageBitmap(c).then(b => { if (dono[chave] === c) { dono[chave] = b; if (depois) depois(b); } }).catch(() => { });
+  };
   function P(ctx) { return (x, y, c, w = 1, h = 1) => { ctx.fillStyle = c; ctx.fillRect(x | 0, y | 0, w, h); }; }
   S.P = P;
   function outline(c, col = '#16101c') {
@@ -275,6 +283,7 @@ const Sprites = {};
       if (!foam) { x.fillStyle = shade(col, -0.18); if (k === 0) x.fillRect(i, dd, 1, 1); else if (k === 2) x.fillRect(i, 15 - dd, 1, 1); else if (k === 1) x.fillRect(15 - dd, i, 1, 1); else x.fillRect(dd, i, 1, 1); }
     }
     edgeCache.set(key, c);
+    if (typeof createImageBitmap === 'function') createImageBitmap(c).then(b => { if (edgeCache.get(key) === c) edgeCache.set(key, b); }).catch(() => { });
     return c;
   }
   const NB4 = [[0, -1], [1, 0], [0, 1], [-1, 0]];
@@ -805,5 +814,5 @@ const Sprites = {};
     return c;
   }
 
-  S.init = function () { Elyndra.initArt(); initTiles(); Sombra.load(); Nyxar.load(); };
+  S.init = function () { Elyndra.initArt(); initTiles(); S.tiles.forEach(a => a && a.forEach((c, i) => S.compactar(a, i))); S.wallFace.forEach(a => a && a.forEach((c, i) => S.compactar(a, i))); Sombra.load(); Nyxar.load(); };
 })(Sprites);

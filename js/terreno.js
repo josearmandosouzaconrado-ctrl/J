@@ -19,16 +19,15 @@ const Terreno = {
   ligado() { return this.ok && typeof Visual !== 'undefined' && Visual.ligado(); },
   carregar() {
     const im = new Image();
-    im.onload = () => {
-      this.ORDEM.forEach((n, i) => {
-        const c = document.createElement('canvas'); c.width = this.T; c.height = this.T;
-        c.getContext('2d').drawImage(im, (i % 4) * this.T, Math.floor(i / 4) * this.T, this.T, this.T, 0, 0, this.T, this.T);
-        this.tex[T[n]] = c;
-      });
+    // uma folha só na memória (sem cópia por terreno); cada terreno guarda onde está na folha
+    const pronto = folha => {
+      this.folha = folha;
+      this.ORDEM.forEach((n, i) => { this.tex[T[n]] = { x: (i % 4) * this.T, y: Math.floor(i / 4) * this.T }; });
       this.ok = true;
       // trechos já pintados com o chão antigo são refeitos
       try { if (Game.world && Game.world.canvases) Game.world.canvases.clear(); } catch (e) { }
     };
+    im.onload = () => { if (typeof createImageBitmap === 'function') createImageBitmap(im).then(pronto, () => pronto(im)); else pronto(im); };
     im.src = typeof imgSrc === 'function' ? imgSrc('img/terreno.webp') : 'img/terreno.webp';
   },
   borda: null,
@@ -77,7 +76,7 @@ Terreno.carregar();
     const tx = Terreno.ligado() && Terreno.tex[t];
     if (!tx) return c0.apply(this, arguments);
     const T = Terreno.T, sx = ((((x + ox) * 16) % T) + T) % T, sy = ((((y + oy) * 16) % T) + T) % T;
-    ctx.drawImage(tx, sx, sy, 16, 16, x * 16, y * 16, 16, 16);
+    ctx.drawImage(Terreno.folha, tx.x + sx, tx.y + sy, 16, 16, x * 16, y * 16, 16, 16);
   };
   // borda: o formato ondulado de antes, preenchido com a textura do vizinho
   S.pintaBorda = function (ctx, n, k, ev, x, y, ox = 0, oy = 0, img) {
@@ -86,7 +85,7 @@ Terreno.carregar();
     const c = Terreno.borda || (Terreno.borda = (() => { const q = document.createElement('canvas'); q.width = 16; q.height = 16; return q; })());
     const g = c.getContext('2d'), T = Terreno.T, sx = ((((x + ox) * 16) % T) + T) % T, sy = ((((y + oy) * 16) % T) + T) % T;
     g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, 16, 16); g.drawImage(img, 0, 0);
-    g.globalCompositeOperation = 'source-in'; g.drawImage(tx, sx, sy, 16, 16, 0, 0, 16, 16);
+    g.globalCompositeOperation = 'source-in'; g.drawImage(Terreno.folha, tx.x + sx, tx.y + sy, 16, 16, 0, 0, 16, 16);
     g.globalCompositeOperation = 'source-over';
     ctx.drawImage(c, x * 16, y * 16);
   };
