@@ -109,6 +109,7 @@ const UI = {
           ${saves.length ? `<button class="mbtn gold" ${f(() => Game.loadGame(saves[0].i))}>Continuar<br><small>${esc(saves[0].s ? saves[0].s.name + ' • Nv ' + saves[0].s.level : '')}</small></button>` : ''}
           <button class="mbtn" ${f(() => this.showCreate())}>Novo Jogo</button>
           ${saves.length ? `<button class="mbtn" ${f(() => this.slots('load'))}>Carregar</button>` : ''}
+          ${typeof Anime !== 'undefined' && Anime.caps.length ? `<button class="mbtn anime-btn" ${f(() => Anime.menu())}>📺 Anime <small>assista aos capítulos da história</small></button>` : ''}
           <button class="mbtn" ${f(() => this.multiplayer())}>Multiplayer <small>com amigos • até ${P2P_MAX} • código de convite</small></button>
           <button class="mbtn" ${f(() => this.options())}>Opções</button>
           <button class="mbtn" ${f(() => this.help())}>Como Jogar</button>

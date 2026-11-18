@@ -426,3 +426,31 @@ a.mbtn.apk small { display: block; font-size: 13px; opacity: .8; }
 .bar.hp::before { content: '❤'; color: #ff4040; font-size: 16px; }
 .bar.mp::before { content: '🔷'; font-size: 11px; }
 .bar.st::before { content: '⚡'; font-size: 12px; }
+
+/* ===== Anime: menu de capítulos e player ===== */
+.mbtn.anime-btn { background: linear-gradient(180deg, #3a2a6a, #22163f); border-color: #8a7ad8; }
+.anime-menu { max-width: 760px; }
+.anime-card { display: flex; gap: 12px; align-items: center; background: rgba(20, 16, 34, 0.85); border: 1px solid #5a4a8a; border-radius: 10px; padding: 8px; margin: 8px 0; }
+.anime-card img { width: 180px; aspect-ratio: 16/10; object-fit: cover; object-position: center 20%; border-radius: 6px; background: #000; flex: none; }
+.anime-card .ac-txt { flex: 1; min-width: 0; text-align: left; }
+.anime-card .ac-n { font-size: 20px; color: #ffd75a; }
+.anime-card .ac-t { font-size: 18px; color: #e8f0ff; }
+.anime-card .ac-d { font-size: 14px; color: #b8b0d0; line-height: 1.25; margin: 4px 0; }
+.anime-card .ac-m { font-size: 13px; color: #8a86a8; }
+.anime-card .ac-ok { font-size: 13px; color: #8affa0; }
+.anime-card .mbtn { width: auto; min-width: 130px; margin: 0; }
+.anime-card.breve { opacity: 0.55; justify-content: center; }
+@media (max-width: 640px) { .anime-card { flex-wrap: wrap; } .anime-card img { width: 100%; } }
+#anime-player { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; align-items: center; justify-content: center; touch-action: none; user-select: none; }
+#anime-player canvas { width: 100vw; height: 56.25vw; max-height: 100vh; max-width: 177.78vh; display: block; }
+#anime-player .ap-load, #anime-player .ap-fim { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: rgba(0, 0, 0, 0.82); color: #fff; }
+#anime-player .ap-lt { font-size: 30px; color: #ffd75a; }
+#anime-player .ap-dim { color: #aaa; }
+#anime-player .ap-bar { width: min(420px, 70vw); height: 10px; background: #222; border-radius: 5px; overflow: hidden; }
+#anime-player .ap-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #5ad0ff, #ffd75a); }
+#anime-player .ap-ctl { position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 10px; align-items: center; padding: 10px 14px; background: linear-gradient(0deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0)); transition: opacity 0.3s; }
+#anime-player .ap-ctl.hidden { opacity: 0; pointer-events: none; }
+#anime-player button { background: rgba(30, 24, 50, 0.9); color: #fff; border: 1px solid #8a7ad8; border-radius: 8px; padding: 8px 14px; font-size: 18px; font-family: inherit; }
+#anime-player .ap-prog { flex: 1; height: 10px; background: rgba(255, 255, 255, 0.2); border-radius: 5px; overflow: hidden; cursor: pointer; }
+#anime-player .ap-prog i { display: block; height: 100%; width: 0; background: #ffd75a; }
+#anime-player .ap-tm { color: #ddd; font-size: 15px; min-width: 96px; text-align: right; }
