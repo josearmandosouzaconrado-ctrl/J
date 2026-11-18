@@ -1,0 +1,3 @@
+entity.sherman:m4a3.name=Sherman Tank
+item.spawn_egg.entity.sherman:m4a3.name=Sherman Tank
+action.interact.sherman=Entrar no Sherman

@@ -1,0 +1,54 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Tanque Sherman (comportamento)",
+    "description": "Use /function sherman para ganhar um tanque",
+    "uuid": "aabe9104-20d2-5e7a-9466-e1fcc48b57b8",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      21,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "type": "data",
+      "uuid": "05b457c3-d139-5a29-8c9e-940d7a43e1eb",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "type": "script",
+      "language": "javascript",
+      "entry": "scripts/main.js",
+      "uuid": "14488c64-1103-5420-9ffb-8e6bfeefc7c6",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "bf2fb5f6-be89-5271-ad1b-143e9e5d8c51",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "module_name": "@minecraft/server",
+      "version": "1.11.0"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "resource_pack_name": "sherman",
+  "texture_name": "atlas.items",
+  "texture_data": {
+    "sherman_granada_75": {
+      "textures": "textures/items/granada_75"
+    },
+    "sherman_metralhadora_50": {
+      "textures": "textures/items/metralhadora_50"
+    }
+  }
+}

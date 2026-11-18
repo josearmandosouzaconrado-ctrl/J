@@ -1,0 +1,38 @@
+{
+  "format_version": "1.10.0",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "sherman:m4a3",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "textures": {
+        "default": "textures/entity/sherman"
+      },
+      "geometry": {
+        "default": "geometry.sherman"
+      },
+      "render_controllers": [
+        "controller.render.default"
+      ],
+      "animations": {
+        "andar": "animation.sherman.andar",
+        "atirar": "animation.sherman.atirar",
+        "mirar": "animation.sherman.mirar",
+        "ctrl_andar": "controller.animation.sherman.andar",
+        "ctrl_tiro": "controller.animation.sherman.tiro"
+      },
+      "scripts": {
+        "animate": [
+          "mirar",
+          "ctrl_andar",
+          "ctrl_tiro"
+        ]
+      },
+      "spawn_egg": {
+        "base_color": "#545838",
+        "overlay_color": "#eeece2"
+      }
+    }
+  }
+}

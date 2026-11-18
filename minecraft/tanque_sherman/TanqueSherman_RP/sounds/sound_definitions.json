@@ -1,0 +1,49 @@
+{
+  "format_version": "1.14.0",
+  "sound_definitions": {
+    "sherman.motor": {
+      "category": "neutral",
+      "min_distance": 4,
+      "max_distance": 48,
+      "sounds": [
+        {
+          "name": "sounds/sherman/motor",
+          "volume": 1.0
+        }
+      ]
+    },
+    "sherman.canhao": {
+      "category": "neutral",
+      "min_distance": 16,
+      "max_distance": 160,
+      "sounds": [
+        {
+          "name": "sounds/sherman/canhao",
+          "volume": 1.0
+        }
+      ]
+    },
+    "sherman.impacto": {
+      "category": "neutral",
+      "min_distance": 16,
+      "max_distance": 160,
+      "sounds": [
+        {
+          "name": "sounds/sherman/impacto",
+          "volume": 1.0
+        }
+      ]
+    },
+    "sherman.metralhadora": {
+      "category": "neutral",
+      "min_distance": 16,
+      "max_distance": 160,
+      "sounds": [
+        {
+          "name": "sounds/sherman/metralhadora",
+          "volume": 1.0
+        }
+      ]
+    }
+  }
+}

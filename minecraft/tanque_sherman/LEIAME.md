@@ -1,30 +1,46 @@
-# Tanque M4A3 Sherman (modelo para o Blockbench)
+# Tanque M4A3(75)W Sherman — modelo + add-on
 
-Modelo detalhado só para ver: Sherman M4A3 com canhão de 75 mm, casco soldado e suspensão VVSS,
-em verde-oliva com desgaste, lama na parte de baixo, estrela branca e número de série.
-São 499 peças; escala ~1 unidade = 4 cm (cerca de 5,8 m de comprimento).
+Refeito com as medidas reais do M4A3(75)W: 2,94 m de altura até a cúpula, ~2,6 m de largura,
+~5,9 m de comprimento, 2,11 m entre o centro das esteiras, 43 cm de vão livre e o canhão a 2,24 m do chão.
+Escala de verdade no Minecraft: 1 bloco = 1 metro (o tanque ocupa uns 6 × 3 × 3 blocos).
 
 ![Sherman](previa_sherman.png)
 
-![de lado e de cima](previa_sherman_lado.png)
+![de lado e de trás](previa_sherman_lado.png)
 
 ![detalhes](previa_sherman_detalhes.png)
 
-**Casco**: placa frontal inclinada com elos de esteira reserva, tampa da transmissão arredondada com
-parafusos, ganchos de reboque, metralhadora .30 em bola na frente, faróis com grade de proteção,
-sirene, escotilhas do motorista e do auxiliar com periscópios, domo de ventilação, para-lamas,
-deque do motor com tampas de inspeção e grade, tampas de combustível, pá, machado, picareta e marreta
-presos com presilhas, cabo de reboque, placa traseira com defletor de escapamento, saídas de escape,
-lanternas, ganchos e caixa de telefone para a infantaria.
+**O que mudou para parecer um Sherman de verdade**: torre fundida arredondada (feita de 120 placas
+inclinadas, mais estreita na frente e com a "bunda" atrás), mantlet M34A1 de face inteira com o escudo
+do rotor, canhão de 75 mm com o comprimento certo, placa frontal a 47° que vai até o teto,
+nariz da transmissão arredondado, sponsons sobre as esteiras, escotilhas grandes do motorista,
+cúpula de visão do comandante com blocos de vidro, escotilha oval do carregador, .50 no teto,
+suspensão VVSS (3 truques por lado, molas volutas, roletes de retorno em cima), roda dentada
+na frente e esteira de borracha T48.
 
-**Torre**: fundida e arredondada, escudo do rotor e escudo do canhão, canhão M3 de 75 mm com luva e
-reforço na boca, metralhadora coaxial, mira, escotilha dupla do comandante com periscópio, escotilha do
-carregador, porta de pistola, antena e metralhadora .50 M2 no suporte do teto com caixa de munição.
+## Add-on (TanqueSherman.mcaddon)
 
-**Suspensão**: 3 truques VVSS por lado com mola voluta, 6 rodas de pneu de borracha, roletes de
-retorno, roda dentada na frente, roda-guia atrás e esteiras com garras em "V" (elo por elo).
+Abra o `TanqueSherman.mcaddon` (instala os dois pacotes), ative no mundo com **Beta APIs** ligado
+(precisa por causa do script). Depois, no chat: `/function sherman` — aparece um Sherman na sua
+frente e você ganha 32 granadas de 75 mm e a metralhadora .50.
 
-Animações (aba **Animate**): `andar` (rodas girando e o casco balançando), `girar_torre` (torre,
-canhão e .50 se movendo) e `atirar` (recuo do canhão e do casco).
+| Ação | Como |
+| --- | --- |
+| Entrar | clique direito no tanque (2 lugares: comandante e um na traseira) |
+| Dirigir | WASD — a frente segue para onde você olha |
+| Sair | agachar |
+| Canhão de 75 mm | segure a **Granada de 75 mm** e clique direito: explosão onde mirar (recarga de 3 s) |
+| Metralhadora .50 | segure a **Metralhadora .50** e clique direito (rajada) |
 
-Gerado por `tools/gerar_sherman.py` (`python3 tools/gerar_sherman.py`).
+A torre e o canhão giram e sobem/descem seguindo a sua mira, o canhão recua no tiro, as rodas giram
+quando anda, sai fumaça do escapamento e tem som de motor, tiro e impacto. Na tela aparece a
+blindagem (400) e se o canhão está pronto. O tanque não toma dano de queda, fogo nem afogamento e
+aguenta flechas; quando é destruído, explode e deixa ferro.
+
+- `/function sherman_sem_destruicao` — o canhão para de quebrar blocos (`sherman_com_destruicao` volta).
+- Receitas: granadas (ferro + pólvora + pepita de ouro), metralhadora e o próprio tanque
+  (blocos de ferro, carrinhos e bloco de redstone).
+- Também aparece o ovo **Tanque Sherman** no inventário criativo.
+
+Gerado por `tools/gerar_sherman.py` (modelo) e `tools/gerar_addon_sherman.py` (add-on);
+o script do jogo fica em `tools/scripts_sherman/main.js`.

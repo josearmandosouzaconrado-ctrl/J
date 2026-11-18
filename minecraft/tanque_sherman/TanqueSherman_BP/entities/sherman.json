@@ -1,0 +1,164 @@
+{
+  "format_version": "1.21.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "sherman:m4a3",
+      "is_spawnable": true,
+      "is_summonable": true,
+      "properties": {
+        "sherman:torre": {
+          "type": "int",
+          "range": [
+            -180,
+            180
+          ],
+          "default": 0,
+          "client_sync": true
+        },
+        "sherman:elevacao": {
+          "type": "int",
+          "range": [
+            -10,
+            20
+          ],
+          "default": 0,
+          "client_sync": true
+        },
+        "sherman:atirando": {
+          "type": "bool",
+          "default": false,
+          "client_sync": true
+        }
+      }
+    },
+    "events": {
+      "sherman:atirar": {
+        "set_property": {
+          "sherman:atirando": true
+        }
+      },
+      "sherman:parar_tiro": {
+        "set_property": {
+          "sherman:atirando": false
+        }
+      }
+    },
+    "components": {
+      "minecraft:type_family": {
+        "family": [
+          "sherman",
+          "tanque",
+          "inanimate"
+        ]
+      },
+      "minecraft:health": {
+        "value": 400,
+        "max": 400
+      },
+      "minecraft:collision_box": {
+        "width": 2.8,
+        "height": 2.4
+      },
+      "minecraft:physics": {},
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      },
+      "minecraft:knockback_resistance": {
+        "value": 1.0
+      },
+      "minecraft:movement": {
+        "value": 0.2
+      },
+      "minecraft:movement.basic": {},
+      "minecraft:navigation.walk": {
+        "avoid_water": true
+      },
+      "minecraft:input_ground_controlled": {},
+      "minecraft:variable_max_auto_step": {
+        "base_value": 1.0625,
+        "controlled_value": 1.0625,
+        "jump_prevented_value": 1.0625
+      },
+      "minecraft:rideable": {
+        "seat_count": 2,
+        "controlling_seat": 0,
+        "crouching_skip_interact": true,
+        "family_types": [
+          "player"
+        ],
+        "interact_text": "Entrar no Sherman",
+        "pull_in_entities": false,
+        "seats": [
+          {
+            "position": [
+              0.0,
+              1.45,
+              0.25
+            ],
+            "min_rider_count": 0,
+            "max_rider_count": 2
+          },
+          {
+            "position": [
+              0.0,
+              1.9,
+              -1.6
+            ],
+            "min_rider_count": 1,
+            "max_rider_count": 2
+          }
+        ]
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "cause": "fall",
+            "deals_damage": "no"
+          },
+          {
+            "cause": "drowning",
+            "deals_damage": "no"
+          },
+          {
+            "cause": "suffocation",
+            "deals_damage": "no"
+          },
+          {
+            "cause": "fire",
+            "deals_damage": "no"
+          },
+          {
+            "cause": "fire_tick",
+            "deals_damage": "no"
+          },
+          {
+            "cause": "lava",
+            "damage_multiplier": 0.2
+          },
+          {
+            "cause": "projectile",
+            "damage_multiplier": 0.2
+          },
+          {
+            "cause": "entity_attack",
+            "damage_multiplier": 0.3
+          }
+        ]
+      },
+      "minecraft:fire_immune": {},
+      "minecraft:breathable": {
+        "total_supply": 15,
+        "suffocate_time": 0,
+        "breathes_water": true,
+        "breathes_air": true
+      },
+      "minecraft:loot": {
+        "table": "loot_tables/entities/sherman.json"
+      },
+      "minecraft:nameable": {},
+      "minecraft:persistent": {},
+      "minecraft:conditional_bandwidth_optimization": {}
+    }
+  }
+}
