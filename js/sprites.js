@@ -281,6 +281,7 @@ const Sprites = {};
   // o chão de um quadradinho e a borda de um vizinho (terreno.js troca por texturas realistas)
   S.pintaChao = (ctx, t, v, x, y) => ctx.drawImage(S.tiles[t][v], x * 16, y * 16);
   S.pintaBorda = (ctx, n, k, ev, x, y, ox, oy, img) => ctx.drawImage(img, x * 16, y * 16);
+  S.pintaParede = (ctx, t, v, x, y) => ctx.drawImage(S.wallFace[t][v % 3], x * 16, y * 16);
   S.paintTiles = function (ctx, w, h, getT, seed, ox = 0, oy = 0) {
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const t = getT(x, y);
@@ -289,7 +290,7 @@ const Sprites = {};
       const def = TILE_DEFS[t];
       if (def.wall) {
         const below = getT(x, y + 1);
-        if (!TILE_DEFS[below].wall) ctx.drawImage(S.wallFace[t][v % 3], x * 16, y * 16);
+        if (!TILE_DEFS[below].wall) S.pintaParede(ctx, t, v, x, y, ox, oy);
         else S.pintaChao(ctx, t, v, x, y, ox, oy);
         continue;
       }
