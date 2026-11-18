@@ -8,6 +8,8 @@ import { ALIADOS, EIXO, Jogo } from './jogo.js';
 import { IA } from './ia.js';
 import { Piloto } from './piloto.js';
 import { Cidades3D } from './cidades3d.js';
+import { Pintor } from './pintor.js';
+import { configOSM } from './osm.js';
 import { CENARIO_AEREO, CENARIO_LIVRE, CENARIO_NORMANDIA, ESTRUTURAS, MARCOS, TIPOS } from './dados.js';
 import { lat2ty, lon2tx, paraMundo, tx2lon, ty2lat, formatarDist } from './geo.js';
 import { chao, definirExagero, preCarregar, tickRelevo } from './relevo.js';
@@ -60,6 +62,8 @@ cena.add(ceu);
 let sombras = true;
 
 const terreno = new Terreno(cena, renderer);
+terreno.pintor = new Pintor();
+terreno.estiloJogo = false; // no menu: foto; no jogo: escolha do jogador
 const rts = new CameraRTS(camera, renderer.domElement);
 const fx = new Efeitos(cena);
 const cidades3d = new Cidades3D(cena);
@@ -99,6 +103,8 @@ function iniciar(cen) {
   terreno.k = parseFloat($('#optDetalhe').value);
   definirExagero(parseFloat($('#optRelevo').value));
   cidades3d.usarOSM = $('#optPredios').checked;
+  configOSM.ligado = $('#optPredios').checked;
+  terreno.estiloJogo = $('#optChao').value === 'jogo';
   sombras = $('#optSombras').checked;
   renderer.shadowMap.enabled = sombras;
   sol.castShadow = sombras;
@@ -601,6 +607,7 @@ function laco(agora) {
   const dt = Math.min(0.1, (agora - ultimo) / 1000);
   ultimo = agora;
   tickRelevo();
+  terreno.pintor.tick();
   if (jogo) {
     jogo.camPos.copy(camera.position);
     if (velocidade > 0) {

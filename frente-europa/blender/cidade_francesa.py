@@ -212,6 +212,164 @@ def gerar_texturas():
     }
     for nome, fn in pinturas.items():
         TEXTURAS[nome] = salvar_textura(nome.lower(), fn())
+    gerar_texturas_chao()
+
+
+# =============================================================================
+# Texturas de CHÃO (estilo jogo de estratégia da Segunda Guerra). 256 x 256, emendáveis.
+# Tamanho real de cada repetição (metros) fica em src/pintor.js.
+# =============================================================================
+S = 256
+
+
+def _rp(rng, escala, amp):
+    """Ruído periódico (emenda perfeita nas bordas)."""
+    n = rng.random((S // escala, S // escala))
+    n = np.kron(n, np.ones((escala, escala)))
+    for _ in range(max(1, escala * 2)):
+        n = (n + np.roll(n, 1, 0) + np.roll(n, -1, 0) + np.roll(n, 1, 1) + np.roll(n, -1, 1)) / 5
+    n = (n - n.mean()) / (n.std() + 1e-6)
+    return n * amp
+
+
+def _chao(rng, cor, amps=((32, 0.05), (8, 0.05), (2, 0.04))):
+    img = np.ones((S, S, 3)) * np.array(cor)
+    for esc, a in amps:
+        img += _rp(rng, esc, a)[..., None] * np.array(cor) * 2.2
+    return img
+
+
+def _pinta_circ(img, cx, cy, r, cor, mistura=1.0):
+    yy, xx = np.mgrid[-int(r) - 1:int(r) + 2, -int(r) - 1:int(r) + 2]
+    m = (xx * xx + yy * yy) <= r * r
+    ys = (cy + yy[m]).astype(int) % S
+    xs = (cx + xx[m]).astype(int) % S
+    img[ys, xs] = img[ys, xs] * (1 - mistura) + np.array(cor) * mistura
+
+
+def tex_grama(rng, cor=(0.29, 0.42, 0.17)):
+    img = _chao(rng, cor)
+    for _ in range(2600):  # folhinhas claras e escuras
+        x, y = rng.integers(0, S, 2)
+        t = rng.random()
+        c = np.array(cor) * (1.35 if t < 0.5 else 0.7)
+        for k in range(rng.integers(2, 5)):
+            img[(y - k) % S, x % S] = c
+    for _ in range(25):  # florzinhas do campo
+        x, y = rng.integers(0, S, 2)
+        _pinta_circ(img, x, y, 1, (0.9, 0.88, 0.7) if rng.random() < 0.7 else (0.85, 0.75, 0.25))
+    return img
+
+
+def tex_trigo(rng):
+    img = _chao(rng, (0.74, 0.63, 0.33))
+    for y in range(0, S, 16):  # fileiras da plantação
+        img[y:y + 3] *= 0.72
+        img[(y + 3) % S] *= 0.86
+    for _ in range(3500):
+        x, y = rng.integers(0, S, 2)
+        img[y, x] = np.array((0.86, 0.76, 0.42)) if rng.random() < 0.6 else np.array((0.55, 0.45, 0.22))
+    return img
+
+
+def tex_terra(rng):
+    img = _chao(rng, (0.42, 0.31, 0.21), ((32, 0.05), (4, 0.08), (2, 0.06)))
+    ys = np.arange(S)
+    sulco = 0.8 + 0.25 * np.sin(ys / S * 2 * math.pi * 12)  # 12 sulcos por repetição
+    img *= sulco[:, None, None]
+    for _ in range(300):
+        x, y = rng.integers(0, S, 2)
+        _pinta_circ(img, x, y, rng.integers(1, 3), np.array((0.5, 0.39, 0.27)) * (0.8 + rng.random() * 0.4))
+    return img
+
+
+def tex_mata(rng):
+    img = _chao(rng, (0.2, 0.22, 0.12), ((16, 0.08), (4, 0.06), (2, 0.05)))
+    for _ in range(900):  # folhas secas e musgo
+        x, y = rng.integers(0, S, 2)
+        c = [(0.36, 0.26, 0.13), (0.28, 0.33, 0.14), (0.14, 0.16, 0.08), (0.42, 0.33, 0.16)][rng.integers(0, 4)]
+        _pinta_circ(img, x, y, rng.integers(1, 3), c)
+    return img
+
+
+def tex_paralelepipedo(rng):
+    """Paralelepípedos de granito (ruas das cidades)."""
+    img = np.ones((S, S, 3)) * np.array((0.2, 0.19, 0.18))  # rejunte
+    lado = 16
+    for i, y in enumerate(range(0, S, lado)):
+        off = 0 if i % 2 == 0 else lado // 2
+        for x in range(-off, S, lado):
+            tom = 0.42 + rng.random() * 0.16
+            c = np.array((tom, tom * 0.97, tom * 0.92))
+            yy, xx = np.mgrid[1:lado - 1, 1:lado - 1]
+            borda = np.minimum(np.minimum(xx, lado - 1 - xx), np.minimum(yy, lado - 1 - yy))
+            luz = 0.85 + 0.15 * np.clip(borda / 4, 0, 1) + (yy < 4) * 0.08
+            img[(y + yy) % S, (x + xx) % S] = c * luz[..., None]
+    img += _rp(rng, 2, 0.02)[..., None]
+    return img
+
+
+def tex_cascalho(rng):
+    img = _chao(rng, (0.55, 0.52, 0.45), ((16, 0.04), (4, 0.05), (2, 0.06)))
+    for _ in range(1500):
+        x, y = rng.integers(0, S, 2)
+        t = 0.45 + rng.random() * 0.35
+        _pinta_circ(img, x, y, rng.integers(1, 3), (t, t * 0.96, t * 0.88))
+    return img
+
+
+def tex_estrada_terra(rng):
+    img = _chao(rng, (0.5, 0.41, 0.29), ((32, 0.05), (8, 0.06), (2, 0.05)))
+    for _ in range(400):
+        x, y = rng.integers(0, S, 2)
+        _pinta_circ(img, x, y, rng.integers(1, 4), np.array((0.4, 0.32, 0.22)) * (0.8 + rng.random() * 0.3))
+    for _ in range(120):  # tufos de mato
+        x, y = rng.integers(0, S, 2)
+        _pinta_circ(img, x, y, 2, (0.33, 0.4, 0.18))
+    return img
+
+
+def tex_calcada(rng):
+    img = _chao(rng, (0.62, 0.6, 0.55), ((16, 0.03), (2, 0.03)))
+    for i in range(0, S, 64):
+        img[i:i + 2] *= 0.7
+        img[:, i:i + 2] *= 0.7
+    return img
+
+
+def tex_areia(rng):
+    img = _chao(rng, (0.82, 0.74, 0.55), ((32, 0.04), (4, 0.03), (2, 0.04)))
+    ys, xs = np.mgrid[0:S, 0:S]
+    onda = 1 + 0.05 * np.sin((ys + 6 * np.sin(xs / S * 2 * math.pi * 2)) / S * 2 * math.pi * 10)
+    return img * onda[..., None]
+
+
+def tex_agua(rng):
+    img = _chao(rng, (0.13, 0.27, 0.33), ((64, 0.06), (16, 0.05), (4, 0.03)))
+    for _ in range(260):  # cristas de ondinhas
+        x, y = rng.integers(0, S, 2)
+        L = rng.integers(4, 12)
+        for k in range(L):
+            img[y % S, (x + k) % S] = img[y % S, (x + k) % S] * 0.5 + np.array((0.55, 0.68, 0.72)) * 0.5
+    return img
+
+
+def gerar_texturas_chao():
+    rng = np.random.default_rng(6)
+    for nome, fn in {
+        'chao_grama': lambda: tex_grama(rng),
+        'chao_grama2': lambda: tex_grama(rng, (0.24, 0.36, 0.14)),
+        'chao_trigo': lambda: tex_trigo(rng),
+        'chao_terra': lambda: tex_terra(rng),
+        'chao_mata': lambda: tex_mata(rng),
+        'chao_paralelepipedo': lambda: tex_paralelepipedo(rng),
+        'chao_calcada': lambda: tex_calcada(rng),
+        'chao_cascalho': lambda: tex_cascalho(rng),
+        'chao_estrada_terra': lambda: tex_estrada_terra(rng),
+        'chao_areia': lambda: tex_areia(rng),
+        'chao_agua': lambda: tex_agua(rng),
+    }.items():
+        salvar_textura(nome, fn())
 
 
 def mat_tex(nome):

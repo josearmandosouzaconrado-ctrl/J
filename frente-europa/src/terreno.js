@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import { baixarImagem, URL_SATELITE } from './rede.js';
 import { lat2ty, lon2tx, paraMundo, tx2lon, ty2lat } from './geo.js';
 import { amostrar, quandoPronto, tileRelevo, EXAGERO } from './relevo.js';
+import { dadosOSM } from './osm.js';
+import { tilesOSM } from './pintor.js';
 
 // direção da luz do sol (vem do sul/sudeste, como nas fotos de satélite da Europa)
 export const SOL = new THREE.Vector3(0.35, 0.75, 0.55).normalize();
@@ -87,7 +89,7 @@ export class Terreno {
     const er = tileRelevo(ze, Math.floor(t.x / s), Math.floor(t.y / s), t.z);
     const prio = t.z + Math.min(4, dist / Math.max(1, t.tamanho) * 0.5);
     const pImg = baixarImagem(URL_SATELITE(t.z, t.x, t.y), prio);
-    Promise.allSettled([pImg, quandoPronto(er)]).then(([ri]) => {
+    Promise.allSettled([pImg, quandoPronto(er)]).then(async ([ri]) => {
       if (t.descartado) return;
       let mat;
       if (ri.status === 'fulfilled' && t.z > 9 && semFoto(ri.value)) {
@@ -101,6 +103,15 @@ export class Terreno {
         tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
         tex.needsUpdate = true;
         mat = new THREE.MeshLambertMaterial({ map: tex, color: COR_CHAO });
+        // estilo jogo: perto da câmera o chão vira texturas de jogo (a foto só diz onde é campo, mata, cidade...)
+        if (this.pintor && this.estiloJogo && t.z >= 12) {
+          try {
+            const osm = t.z >= 15 ? await dadosOSM(...tilesOSM(t)) : null;
+            if (t.descartado) return;
+            mat = await this.pintor.material(t, ri.value, er, osm, mat);
+          } catch (e) { console.warn('chão', e); }
+          if (t.descartado) return;
+        }
       } else if (t.z > Z_RAIZ + 3) {
         // sem foto neste zoom (ex.: mar aberto): não divide mais aqui
         t.estado = 3;
@@ -157,7 +168,9 @@ export class Terreno {
     const n = new THREE.Vector3();
     for (let j = 0; j < M; j++) {
       for (let i = 0; i < M; i++) {
-        const a = P(i - 1, j), b = P(i + 1, j), c = P(i, j - 1), d = P(i, j + 1);
+        // a saia (borda de fora) usa a normal do vértice da borda (antes ficava com normal zero = linha preta)
+        const ii = Math.min(M - 2, Math.max(1, i)), jj = Math.min(M - 2, Math.max(1, j));
+        const a = P(ii - 1, jj), b = P(ii + 1, jj), c = P(ii, jj - 1), d = P(ii, jj + 1);
         const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2];
         const vx = d[0] - c[0], vy = d[1] - c[1], vz = d[2] - c[2];
         n.set(vy * uz - vz * uy, vz * ux - vx * uz, vx * uy - vy * ux).normalize();
@@ -257,7 +270,7 @@ export class Terreno {
       if (f.malha) {
         this.grupo.remove(f.malha);
         f.malha.geometry.dispose();
-        if (f.malha.material !== this.matFalha) { f.malha.material.map?.dispose(); f.malha.material.dispose(); }
+        if (f.malha.material !== this.matFalha) { f.malha.material.map?.dispose(); f.malha.material.userData.splats?.forEach((d) => d.dispose()); f.malha.material.dispose(); }
       }
       this.todos.delete(f.z + '/' + f.x + '/' + f.y);
       this._removerSub(f);

@@ -4,7 +4,8 @@ Jogo de **estratégia em tempo real (RTS)** na **Europa em tamanho real**, com f
 
 O mapa é o **mundo real**: fotos de **satélite** (Esri World Imagery) aplicadas sobre o **relevo real** (AWS Terrain Tiles), com 1 metro do jogo = 1 metro de verdade.
 
-O mundo é **construído em 3D** em volta da câmera:
+O mundo é **construído em 3D** em volta da câmera, com visual de jogo de estratégia da Segunda Guerra:
+- **Chão estilo jogo** (sem foto): grama, trigo, terra arada, chão de mata, **ruas de paralelepípedo com calçada** nas cidades, estradas de cascalho e de terra no campo, areia nas praias e água. As texturas são desenhadas em resolução total e misturadas por um *splat map*. A foto de satélite só é lida para saber onde fica cada tipo de chão, e as ruas, estradas e rios do OpenStreetMap são desenhados por cima. No menu dá para voltar à foto de satélite.
 - **Prédios reais do OpenStreetMap**: cada prédio nasce exatamente em cima do contorno real (as ruas da foto ficam livres), com o tamanho real, girado igual ao prédio de verdade e com **paredes e telhados texturizados** no estilo da região em 1944: pedra de Caen e **enxaimel (colombage)** na Normandia, tijolo no Norte, reboco e ardósia no centro, ocre e telha de barro na Provence, prédios **haussmannianos** com mansarda de zinco em Paris. Tudo de um bairro vira poucas malhas (leve para o celular).
 - **Sem internet para o OSM**: entram as **casas modeladas no Blender** (7 tipos), instanciadas na GPU, só onde a foto de satélite mostra um grupo de telhados, giradas na direção das ruas da foto.
 - **Árvores do Blender** (carvalho, choupo, macieira normanda, pinheiro-manso no sul) nas matas e cercas vivas (*bocage*) da foto.
@@ -66,6 +67,8 @@ frente-europa/
 │   ├── ia.js               inteligência do inimigo
 │   ├── piloto.js           modo piloto (batalha aérea)
 │   ├── cidades3d.js        prédios reais do OSM texturizados + casas/árvores do Blender instanciadas
+│   ├── pintor.js           chão estilo jogo (splat map + texturas de chão em resolução total)
+│   ├── osm.js              dados do OpenStreetMap (prédios, ruas, rios) compartilhados
 │   ├── dados.js            unidades, estruturas, cidades reais, marcos e cenários (edite aqui!)
 │   └── predios.js          prédios 3D do OpenStreetMap
 ├── blender/

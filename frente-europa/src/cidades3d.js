@@ -13,10 +13,10 @@ import { lat2ty, lon2tx, paraLatLon, paraMundo, tx2lon, ty2lat } from './geo.js'
 import { chao, ehAgua, quandoPronto, tileRelevo } from './relevo.js';
 import { CIDADES, MARCOS } from './dados.js';
 import { partesInstancia, materialTextura, materialCor } from './modelos.js';
+import { dadosOSM } from './osm.js';
 
 const Z = 15;
 const RAIO_TILES = 2;                 // 5 x 5 tiles (~4 km) em volta da câmera
-const OVERPASS = 'https://overpass-api.de/api/interpreter';
 const ESC_PAREDE = [4, 3], ESC_TELHADO = [2, 2];  // metros por repetição da textura (igual ao Blender)
 
 const cv = document.createElement('canvas');
@@ -216,26 +216,9 @@ export class Cidades3D {
   }
 
   async _osm(x, y) {
-    if (!this.usarOSM || performance.now() < this.osmPausaAte) return null;
-    const s = ty2lat(y + 1, Z), n = ty2lat(y, Z), w = tx2lon(x, Z), e = tx2lon(x + 1, Z);
-    const q = `[out:json][timeout:25];way["building"](${s.toFixed(6)},${w.toFixed(6)},${n.toFixed(6)},${e.toFixed(6)});out geom;`;
-    const ctl = new AbortController();
-    const to = setTimeout(() => ctl.abort(), 25000);
-    try {
-      const r = await fetch(OVERPASS, {
-        method: 'POST', body: 'data=' + encodeURIComponent(q), signal: ctl.signal,
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      });
-      if (!r.ok) throw new Error('overpass ' + r.status);
-      const d = await r.json();
-      this.osmFalhas = 0;
-      return d.elements || [];
-    } catch (err) {
-      if (++this.osmFalhas >= 2) this.osmPausaAte = performance.now() + 120000; // tenta de novo em 2 min
-      return null;
-    } finally {
-      clearTimeout(to);
-    }
+    if (!this.usarOSM) return null;
+    const d = await dadosOSM(x, y);
+    return d ? d.predios : null;
   }
 
   async _gerar(x, y, k) {
