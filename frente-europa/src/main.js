@@ -598,6 +598,7 @@ function sincronizar(dt, t) {
     else if (e.voa) o.rotation.set(-e.pitch, e.hd, e.bank, 'YXZ');
     else o.rotation.set(0, e.hd, 0);
     if (e.cat === 'ship') { o.position.y = Math.sin(t * 0.8 + e.id) * Math.min(0.4, 20 / tam); o.rotation.z = Math.sin(t * 0.6 + e.id) * 0.02; }
+    if (e.lod && e.cat !== 'inf') { e.modelo.visible = d < 450; e.lod.visible = !e.modelo.visible; }
     if (e.cat === 'inf') {
       e.passo += dt * (e.andando ? 9 : 0);
       // de perto: soldado detalhado (Ranger); de longe: versão leve
@@ -617,6 +618,8 @@ function sincronizar(dt, t) {
       let da = des - pt.Torre.rotation.y;
       da = Math.atan2(Math.sin(da), Math.cos(da));
       pt.Torre.rotation.y += Math.max(-dt * 1.4, Math.min(dt * 1.4, da));
+      const tl = e.lod?.userData.partes.Torre;   // a versão leve gira junto
+      if (tl) tl.rotation.y = pt.Torre.rotation.y;
     }
   }
   for (const o of marcos) {

@@ -1032,7 +1032,8 @@ def arco_triunfo():
 
 
 MODELOS = {
-    'sherman': sherman, 'm7_priest': m7_priest, 'jeep': jeep, 'halftrack': halftrack, 'caminhao': caminhao,
+    # versão leve (vista de longe); o Sherman detalhado vem de blender/gerar_sherman.py
+    'sherman_simples': sherman, 'm7_priest': m7_priest, 'jeep': jeep, 'halftrack': halftrack, 'caminhao': caminhao,
     # versão leve (vista de longe). O soldado detalhado vem de blender/gerar_soldado.py (modelo do Ranger)
     'soldado_simples': lambda: soldado('fuzil'), 'soldado_bazuca_simples': lambda: soldado('bazuca'),
     'p51': p51, 'p80': p80, 'b17': b17, 'c47': c47,

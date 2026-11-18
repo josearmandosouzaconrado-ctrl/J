@@ -38,7 +38,7 @@ export const TIPOS = {
     armas: [{ n: 'Browning .50 M2', alc: 850, dano: 16, cad: 0.12, alvos: 'tab', prec: 0.3, som: 'mg' }],
   },
   sherman: {
-    nome: 'M4A3 Sherman', desc: 'Tanque médio, canhão de 75 mm', modelo: 'sherman', cat: 'veh', hp: 1300, vel: 11,
+    nome: 'M4A3 Sherman', desc: 'Tanque médio, canhão de 75 mm', modelo: 'sherman', lod: 'sherman_simples', cat: 'veh', hp: 1300, vel: 11,
     custo: 500, tempo: 25, tam: 5.9, giro: 0.7, blind: 2, torre: true,
     armas: [
       { n: 'Canhão 75 mm M3', alc: 1500, dano: 230, cad: 4, alvos: 'tsb', prec: 0.55, perfura: 1, area: 6, som: 'canhao', fx: 'granada' },

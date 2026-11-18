@@ -95,6 +95,7 @@ npm run dev        # abre em http://localhost:5173
 ```bash
 blender -b -P blender/gerar_modelos.py        # com o Blender instalado
 blender -b -P blender/gerar_soldado.py        # soldado detalhado (a partir do modelo do Ranger)
+blender -b -P blender/gerar_sherman.py        # Sherman detalhado (a partir do M4_Sherman.usdz)
 # ou: pip install bpy && python3 blender/gerar_modelos.py
 ```
 Para refinar um modelo com uma foto da época, salve a foto em `blender/referencias/<nome>.jpg` (ex.: `sherman.jpg`, `p51.jpg`, `b17.jpg`) e rode o script: a foto aparece no `.blend` ao lado do modelo como imagem de referência. Fotos oficiais do Exército dos EUA da Segunda Guerra são de domínio público.
@@ -111,6 +112,7 @@ A chave de assinatura (`android/chave/frente-europa.jks`) não vai para o git, i
 
 ## Créditos
 - Soldado de infantaria: **"WW2 US Army Ranger" por Tactical_Gamer** ([Sketchfab](https://sketchfab.com/3d-models/ww2-us-army-ranger-dcbe89cd5de243af8e4677b769a831c6)), licença [CC-BY-4.0](http://creativecommons.org/licenses/by/4.0/). Modificado no Blender por `blender/gerar_soldado.py` (braços posicionados por cinemática inversa segurando a arma, malha reduzida, textura única, versão do Eixo).
+- Tanque **M4 Sherman** detalhado: arquivo `M4_Sherman.usdz` enviado pelo dono do projeto (veio do Sketchfab; o arquivo não trazia autor nem licença — confira e coloque o crédito aqui). Convertido por `blender/gerar_sherman.py`: torre separada (gira), escala real, de 279 mil para 12 mil triângulos, textura única e versão cinza do Eixo.
 - Armas da infantaria (M1 Garand, Thompson, BAR, MP44): pacote **"WW2 weapons"** enviado pelo dono do projeto (`blender/fontes/armas/`). O arquivo não trazia o nome do autor nem a licença; confira na página de onde ele foi baixado e coloque o crédito aqui.
 - Imagens de satélite: **Esri, Maxar, Earthstar Geographics** (Esri World Imagery)
 - Relevo: **Mapzen / AWS Terrain Tiles** (Terrarium)

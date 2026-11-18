@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export const NOMES_MODELOS = [
-  'sherman', 'm7_priest', 'jeep', 'halftrack', 'caminhao', 'soldado', 'soldado_thompson', 'soldado_bar', 'soldado_bazuca', 'soldado_eixo', 'soldado_bazuca_eixo',
+  'sherman', 'sherman_eixo', 'sherman_simples', 'm7_priest', 'jeep', 'halftrack', 'caminhao', 'soldado', 'soldado_thompson', 'soldado_bar', 'soldado_bazuca', 'soldado_eixo', 'soldado_bazuca_eixo',
   'soldado_simples', 'soldado_bazuca_simples', 'p51', 'p80', 'b17',
   'c47', 'porta_avioes', 'contratorpedeiro', 'higgins', 'qg', 'quartel', 'garagem', 'aerodromo',
   'porto', 'bunker', 'antiaerea', 'torre_eiffel', 'arco_triunfo', 'catedral_bayeux', 'notre_dame',

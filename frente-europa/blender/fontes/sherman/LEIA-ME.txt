@@ -1,0 +1,9 @@
+scene.usdc + 0/ (texturas)
+  Modelo "M4 Sherman" (arquivo M4_Sherman.usdz) enviado pelo dono do projeto.
+  Pelos nomes internos (Sketchfab_model, GLTF_SceneRootNode) ele foi baixado do Sketchfab.
+  O arquivo não trazia o nome do autor nem a licença. Antes de publicar o jogo, confira a página
+  de onde ele foi baixado e coloque aqui (e no README) o autor e a licença.
+
+  Uso em blender/gerar_sherman.py: torre separada do casco (gira no jogo), escala real (2,62 m de
+  largura, 5,9 m de comprimento), malha reduzida para ~12 mil triângulos, texturas num único atlas
+  e versão do Eixo em cinza.
