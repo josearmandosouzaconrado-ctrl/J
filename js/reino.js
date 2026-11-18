@@ -660,14 +660,14 @@ const Fronteiras = {
   CEL: 32,     // tamanho de cada célula em tiles (1 célula = 2 pixels do mapa)
   chave() {
     const S = War.st(), R = Game.player && Game.player.reino;
-    return JSON.stringify(S.owner) + JSON.stringify(S.extintos || {}) + (Reino.ativo() ? Vila.st().id + R.cor : '') + Game.world.settlements.length + Game.world.seed;
+    return JSON.stringify(S.owner) + JSON.stringify(S.extintos || {}) + (Reino.ativo() ? Vila.st().id + R.cor : '') + Game.world.settlements.length + Game.world.seed + WORLD_W;
   },
   terra() {
     const W = Game.world, C = this.CEL, gw = Math.ceil(WORLD_W / C), gh = Math.ceil(WORLD_H / C);
-    if (this._terra && this._tSeed === W.seed) return this._terra;
+    if (this._terra && this._tSeed === W.seed && this._tW === W) return this._terra;
     const t = new Uint8Array(gw * gh);
     for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) { const b = W.baseTile(x * C + (C >> 1), y * C + (C >> 1)); t[y * gw + x] = TWATER[b] || b === T.DEEP ? 0 : 1; }
-    this._terra = t; this._tSeed = W.seed;
+    this._terra = t; this._tSeed = W.seed; this._tW = W;
     return t;
   },
   canvas() {

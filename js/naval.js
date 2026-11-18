@@ -153,7 +153,7 @@ const Naval = {
   // ---------- Grade de navegação (mar) ----------
   grid() {
     const W = Game.world;
-    if (this._grid && this._grid.seed === W.seed) return this._grid;
+    if (this._grid && this._grid.seed === W.seed && this._grid.W === W) return this._grid;
     if (!W.mapDone || !W.navWater) return null;
     const w = MAP_W, h = MAP_H, water = W.navWater, comp = new Int32Array(w * h).fill(-1), sizes = [];
     const q = new Int32Array(w * h);
@@ -163,7 +163,7 @@ const Naval = {
       while (head < tail) { const j = q[head++]; n++; const x = j % w, y = (j / w) | 0; for (const [ax, ay] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]) { if (ax < 0 || ay < 0 || ax >= w || ay >= h) continue; const k = ay * w + ax; if (water[k] && comp[k] < 0) { comp[k] = id; q[tail++] = k; } } }
       sizes.push(n);
     }
-    this._grid = { seed: W.seed, w, h, water, comp, sizes, par: new Int32Array(w * h), seen: new Uint8Array(w * h), q };
+    this._grid = { seed: W.seed, W, w, h, water, comp, sizes, par: new Int32Array(w * h), seen: new Uint8Array(w * h), q };
     return this._grid;
   },
   isOcean(i) { const G = this._grid; return G && G.water[i] && G.sizes[G.comp[i]] > 2500; },

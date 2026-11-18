@@ -34,7 +34,8 @@ class World {
     this.isWorld = true;
     this.nE = new Simplex(seed * 7 + 1); this.nM = new Simplex(seed * 7 + 2); this.nW = new Simplex(seed * 7 + 3);
     this.nR = new Simplex(seed * 7 + 4); this.nD = new Simplex(seed * 7 + 5); this.nL = new Simplex(seed * 7 + 6);
-    this.regions = REGIONS.map(r => Object.assign({}, r, { cx: r.fx * WORLD_TILES, cy: r.fy * WORLD_TILES }));
+    this.regions = REGIONS.map(r => { const [dx, dy] = contOff(r.cont || 0); return Object.assign({}, r, { cx: r.fx * WORLD_TILES + dx, cy: r.fy * WORLD_TILES + dy }); });
+    this.layout = LAYOUT_N;
     this.regC = CONTINENTS.map(() => []); this.regions.forEach((r, i) => this.regC[r.cont || 0].push(i));
     // relevo máximo das regiões de cada continente (para reconhecer mar aberto sem calcular tudo)
     this.maxMount = this.regC.map(l => l.reduce((m, i) => Math.max(m, this.regions[i].mount), 0));
@@ -70,7 +71,7 @@ class World {
       if (d > 0.8) { const f = (d - 0.8) / 0.2; F.push(f * f * 0.75); }
     } else if (cont === 2) {
       // Valtheria: o Grande Continente do sul, maior que Eldoria
-      const nx = (x - 4600) / 4400, ny = (y - 8250) / 3900;
+      const nx = (x - 4600) / 4400, ny = (y - 8250 - LAYOUT.vy) / 3900;
       const d = Math.sqrt(nx * nx + ny * ny) * 0.72 + Math.max(Math.abs(nx), Math.abs(ny)) * 0.28 + this.nW.noise(x / 520, y / 520) * 0.07;
       if (d > 0.76) { const f = (d - 0.76) / 0.24; F.push(f * f * 0.85); }
       if (y < VALTHERIA_Y + 500) { const f = (VALTHERIA_Y + 500 - y) / 500; F.push(f * f); }   // oceano largo ao norte
@@ -93,7 +94,7 @@ class World {
       if (d > 0.6) { const f = (d - 0.6) / 0.4; F.push(f * f * 0.9 + (d > 1 ? 1 : 0)); }
     } else {
       // Kaeloria: continente alongado do outro lado do Mar das Brumas
-      const nx = (x - 5180) / 760, ny = (y - 2048) / 1780;
+      const nx = (x - 5180 - LAYOUT.kx) / 760, ny = (y - 2048) / 1780;
       const d = Math.sqrt(nx * nx + ny * ny) * 0.75 + Math.max(Math.abs(nx), Math.abs(ny)) * 0.25 + this.nW.noise(x / 300, y / 300) * 0.08;
       if (d > 0.72) { const f = (d - 0.72) / 0.28; F.push(f * f * 0.85); }
     }
@@ -763,7 +764,7 @@ class World {
     // portos nas costas: sul de Eldoria e de Kaeloria, norte de Valtheria
     const before = this.ports.length;
     const specs = [
-      [0, 1700, 'Porto do Sul'], [0, 2900, 'Porto das Gaivotas'], [1, 5150, 'Porto da Âncora'],
+      [0, 1700, 'Porto do Sul'], [0, 2900, 'Porto das Gaivotas'], [1, 5150 + LAYOUT.kx, 'Porto da Âncora'],
       [2, 2700, 'Porto do Norte'], [2, 4400, 'Porto Imperial'], [2, 6200, 'Porto Leste de Valtheria']
     ];
     specs.forEach(([cont, x0, name], n) => this.placePortV(cont, x0, name, n, rng));
@@ -851,7 +852,7 @@ class World {
     }
     // portos novos na costa oeste, de frente para o Mar do Amanhecer
     const before = this.ports.length;
-    [[2600, 'Porto do Amanhecer'], [5000, 'Porto das Lagoas'], [7400, 'Porto da Bruma'], [9600, 'Porto dos Cânions']].forEach(([y0, name], n) => this.placePortH(4, y0, name, n, rng));
+    [[2600, 'Porto do Amanhecer'], [5000, 'Porto das Lagoas'], [7400, 'Porto da Bruma'], [9600, 'Porto dos Cânions']].forEach(([y0, name], n) => this.placePortH(4, y0 + LAYOUT.ey, name, n, rng));
     const nv = this.ports.slice(before);
     this.buildRoads(rng, made.concat(nv), false);
   }
@@ -927,9 +928,9 @@ class World {
         let found = null;
         for (let dy = 0; dy < 900 && !found; dy += 10) for (const yy of [y0 + dy, y0 - dy]) {
           if (found) break;
-          let x = cont ? 4300 : 4060;
-          while (cont ? x < 5700 : x > 2600) { if (this.isLand(x, yy)) break; x -= dir; }
-          if (cont ? x >= 5700 : x <= 2600) continue;
+          let x = cont ? 4300 + LAYOUT.kx : 4060;
+          while (cont ? x < 5700 + LAYOUT.kx : x > 2600) { if (this.isLand(x, yy)) break; x -= dir; }
+          if (cont ? x >= 5700 + LAYOUT.kx : x <= 2600) continue;
           // terra firme atrás, mar aberto à frente
           let land = 0, sea = 0;
           for (let k = 1; k <= 12; k++) { if (this.isLand(x - dir * k, yy) && this.isLand(x - dir * k, yy - 3) && this.isLand(x - dir * k, yy + 3)) land++; if (seaAt(x + dir * k, yy) && seaAt(x + dir * k, yy - 3) && seaAt(x + dir * k, yy + 4)) sea++; }

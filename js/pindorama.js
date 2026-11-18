@@ -431,6 +431,7 @@ World.prototype.generatePindorama = function () {
   // portos na costa oeste, de frente para o Mar Verde (a viagem vem de Elyndra e dos outros continentes)
   const before = this.ports.length;
   [[2400, 'Porto do Tucano'], [5200, 'Porto das Sumaúmas'], [8200, 'Porto das Águas Verdes'], [10400, 'Porto Seguro da Cruz']].forEach(([y0, name], n) => {
+    y0 += LAYOUT.py;
     const seaAt = (x, y) => { const t = this.baseTile(x, y); return TWATER[t] || t === T.DEEP; };
     for (let dy = 0; dy < 1000; dy += 10) for (const yy of [y0 + dy, y0 - dy]) {
       let x = PINDORAMA.x0 + 60;

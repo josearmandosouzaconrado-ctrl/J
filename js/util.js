@@ -1,6 +1,6 @@
 'use strict';
 // rodando dentro do aplicativo Android (APK)?
-const GAME_VERSION = '0.53.0';
+const GAME_VERSION = '0.54.0';
 const IS_APK = /EldoriaAPK/.test(navigator.userAgent);
 // versão ADM (painel de testes): APK 'Eldoria ADM' ou o endereço com ?adm
 const IS_ADM = /EldoriaADM/.test(navigator.userAgent) || /[?&]adm\b/.test(location.search);
@@ -9,17 +9,33 @@ const TILE = 16;
 const CHUNK = 32;
 const CHUNK_PX = TILE * CHUNK;
 const WORLD_TILES = 4096; // altura do mundo e largura do continente de Eldoria
-const WORLD_W = 25600;     // largura total: Eldoria + Mar das Brumas + Kaeloria (Valtheria embaixo) + Mar do Amanhecer + Elyndra + Mar Verde + Pindorama
-const WORLD_H = 12288;     // altura total: Eldoria/Kaeloria no norte + Oceano do Sul + Valtheria
-const MAP_W = WORLD_W / 16; // largura do mapa-múndi / névoa (células de 16 tiles)
-const MAP_H = WORLD_H / 16;
-const VALTHERIA_Y = 4400;  // abaixo desta linha começa o continente de Valtheria
+// ---------- disposição dos continentes no mundo ----------
+// Layout 1: os continentes perto uns dos outros (saves antigos continuam nele).
+// Layout 2: mares bem mais largos entre os continentes (jogos novos).
+// Cada continente é desenhado nas suas coordenadas de sempre e deslocado (kx, vy, ...).
+const LAYOUTS = {
+  1: { W: 25600, H: 12288, kx: 0, nx: 0, vy: 0, ex: 0, ey: 0, px: 0, py: 0 },
+  2: { W: 31232, H: 14336, kx: 1100, nx: 2000, vy: 1500, ex: 3200, ey: 300, px: 5200, py: 900 }
+};
+const LAYOUT_NOVO = 2;
+let LAYOUT = LAYOUTS[LAYOUT_NOVO], LAYOUT_N = LAYOUT_NOVO;
+let WORLD_W, WORLD_H, MAP_W, MAP_H, VALTHERIA_Y;   // largura/altura do mundo, do mapa-múndi (células de 16 tiles) e a linha onde começa Valtheria
 // Ilha de Nyxhal: ilha pequena no oceano a leste de Kaeloria, só do povo Nyxar (continente 3)
 const ISLE = { x: 7350, y: 1500, rx: 300, ry: 240 };
 // Elyndra: o continente do leste, o maior de todos (continente 4), além do Mar do Amanhecer
 const ELYNDRA = { x: 14450, y: 6144, rx: 4750, ry: 5750, x0: 9700 };
 // Pindorama: o continente da grande floresta (continente 5), a leste de Elyndra, além do Mar Verde
 const PINDORAMA = { x: 22700, y: 6144, rx: 2650, ry: 5550, x0: 19900 };
+// deslocamento de cada continente (0 Eldoria, 1 Kaeloria, 2 Valtheria, 3 Nyxhal, 4 Elyndra, 5 Pindorama)
+const contOff = c => c === 1 ? [LAYOUT.kx, 0] : c === 2 ? [0, LAYOUT.vy] : c === 3 ? [LAYOUT.nx, 0] : c === 4 ? [LAYOUT.ex, LAYOUT.ey] : c === 5 ? [LAYOUT.px, LAYOUT.py] : [0, 0];
+function setLayout(n) {
+  LAYOUT_N = LAYOUTS[n] ? n : 1; LAYOUT = LAYOUTS[LAYOUT_N];
+  WORLD_W = LAYOUT.W; WORLD_H = LAYOUT.H; MAP_W = WORLD_W / 16; MAP_H = WORLD_H / 16; VALTHERIA_Y = 4400 + LAYOUT.vy;
+  Object.assign(ISLE, { x: 7350 + LAYOUT.nx, y: 1500 });
+  Object.assign(ELYNDRA, { x: 14450 + LAYOUT.ex, y: 6144 + LAYOUT.ey, x0: 9700 + LAYOUT.ex });
+  Object.assign(PINDORAMA, { x: 22700 + LAYOUT.px, y: 6144 + LAYOUT.py, x0: 19900 + LAYOUT.px });
+}
+setLayout(LAYOUT_NOVO);
 function contAt(x, y) { return x >= PINDORAMA.x0 ? 5 : x >= ELYNDRA.x0 ? 4 : Math.abs(x - ISLE.x) < 540 && Math.abs(y - ISLE.y) < 470 ? 3 : y >= VALTHERIA_Y ? 2 : x >= WORLD_TILES ? 1 : 0; }
 
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;

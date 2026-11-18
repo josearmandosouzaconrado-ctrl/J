@@ -74,10 +74,11 @@ const Game = {
   newMods() {
     return { opened: new Set(), harvested: {}, cleared: {}, dopened: {}, camps: {}, runes: new Set(), shrines: {}, discovered: new Set(), explored: new Uint8Array(MAP_W * MAP_H), uniques: new Set(), treasures: [], homes: [], day: 1 };
   },
-  buildWorld(seed, cb) {
+  buildWorld(seed, cb, layout) {
     UI.showLoading('Forjando o mundo de Eldoria...');
     setTimeout(() => {
       try {
+        setLayout(layout || LAYOUT_NOVO);   // jogos novos: mares largos; saves antigos ficam como eram
         this.world = new World(seed);
         this.world.startMapImage();
         cb();
@@ -153,7 +154,7 @@ const Game = {
     const exp = M.explored, runs = []; let cur = 0, n = 0; for (let i = 0; i < exp.length; i++) { const v = exp[i] ? 1 : 0; if (v === cur) n++; else { runs.push(n.toString(36)); cur = v; n = 1; } } runs.push(n.toString(36));
     const pj = P.toJSON(); pj.x = px; pj.y = py;
     const s = {
-      v: 4, seed: this.world.seed, time: this.time, day: this.day, track: this.track, player: pj,
+      v: 4, seed: this.world.seed, layout: this.world.layout || 1, time: this.time, day: this.day, track: this.track, player: pj,
       mods: { opened: [...M.opened], harvested: M.harvested, cleared: M.cleared, dopened: M.dopened, camps: M.camps, runes: [...M.runes], shrines: M.shrines, discovered: [...M.discovered], exrle: runs.join(','), exw: MAP_W, uniques: [...M.uniques], treasures: M.treasures, evol: M.evol || {}, homes: M.homes.map(h => { const o = Object.assign({}, h); delete o._b; delete o._s; return o; }), war: M.war || null },
       summary: { name: P.name, level: P.level, race: RACES[P.race].name, cls: P.style || 'Aventureiro', loc: this.locationName(), date: Date.now(), time: Math.floor(P.stats.playTime) }
     };
@@ -190,8 +191,8 @@ const Game = {
       this.startPlay();
       this.toast('Jogo carregado.', '#80ff80');
     };
-    if (this.world && this.world.seed === s.seed) { UI.showLoading('Carregando...'); setTimeout(go, 30); }
-    else this.buildWorld(s.seed, go);
+    if (this.world && this.world.seed === s.seed && (this.world.layout || 1) === (s.layout || 1)) { UI.showLoading('Carregando...'); setTimeout(go, 30); }
+    else this.buildWorld(s.seed, go, s.layout || 1);
   },
   toTitle() {
     Rede.sair();
