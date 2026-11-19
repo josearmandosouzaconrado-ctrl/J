@@ -7,6 +7,9 @@
 // Provedores de IA
 // ======================================================================
 const PROVEDORES = {
+  local: { nome: 'Nexo Local — sem chave, no celular', tipo: 'local', modelo: 'equilibrado',
+    atalhos: [['leve', 'Leve ≈0,5 GB'], ['equilibrado', 'Equilibrado ≈1,1 GB'], ['forte', 'Forte ≈1,1 GB']],
+    dica: 'Não precisa de chave nem de conta. O cérebro (um modelo aberto Qwen) é baixado uma vez e roda dentro do celular, até sem internet. É bem mais simples que o Claude ou o Gemini e fica lento em celular fraco: escolha "Leve" se travar. No campo Modelo também dá para colar o link de qualquer arquivo .gguf.' },
   gemini: { nome: 'Google Gemini (grátis)', tipo: 'gemini', modelo: 'gemini-flash-latest',
     dica: 'Grátis: crie a chave em aistudio.google.com/apikey (entre com sua conta Google e toque em "Create API key"). Também libera a pesquisa no Google.' },
   openrouter: { nome: 'OpenRouter (centenas de modelos)', tipo: 'openai', base: 'https://openrouter.ai/api/v1', modelo: 'openrouter/auto',
@@ -26,10 +29,12 @@ const PROVEDORES = {
     dica: 'Qualquer API compatível com OpenAI. Para rodar um modelo aberto no seu PC, use o Ollama ou o LM Studio e coloque o IP do PC na rede Wi-Fi (ex.: http://192.168.0.10:11434/v1). Chave pode ficar vazia.' },
 };
 
-const CFG_PADRAO = { prov: 'gemini', chaves: {}, modelos: {}, base: '', gemini: '', youtube: '', livre: true, persona: '',
+const CFG_PADRAO = { prov: 'local', pesquisaLocal: true, chaves: {}, modelos: {}, base: '', gemini: '', youtube: '', livre: true, persona: '',
   esforco: 'high', github: '', repoJogos: 'nexo-jogos', repoPrivado: false, plugins: [] };
 let cfg = carregar('nexo_cfg', CFG_PADRAO);
 cfg = Object.assign({}, CFG_PADRAO, cfg);
+// quem estava num provedor sem chave passa para o Nexo Local (que não precisa de chave)
+if (cfg.prov !== 'local' && cfg.prov !== 'custom' && !(cfg.chaves[cfg.prov] || '').trim()) cfg.prov = 'local';
 let conversas = carregar('nexo_conversas', []);
 let atual = null;          // conversa aberta
 let ocupado = null;        // AbortController da resposta em andamento
@@ -130,7 +135,7 @@ const FERRAMENTAS = [
 const ferramentasAtivas = () => FERRAMENTAS.filter(f => !f.github || (cfg.github || '').trim());
 
 const ROTULOS = {
-  pesquisar_web: a => '🔎 Pesquisando no Google: ' + a.consulta,
+  pesquisar_web: a => (chaveGemini() ? '🔎 Pesquisando no Google: ' : '🔎 Pesquisando na internet: ') + a.consulta,
   pesquisar_youtube: a => '▶️ Procurando no YouTube: ' + a.consulta,
   buscar_anime: a => '🎌 MyAnimeList: ' + a.nome,
   animes_da_temporada: a => '📅 Animes da temporada' + (a.ano ? ' ' + (a.estacao || '') + ' ' + a.ano : ''),
@@ -512,13 +517,56 @@ async function responder(conv, aoPasso, sinal, aoVivo) {
     }
   };
   let texto;
-  if (tipo === 'gemini') texto = await laçoGemini(msgs, rodar, sinal);
+  if (tipo === 'local') texto = await laçoLocal(msgs, rodar, sinal, aoVivo || (() => {}), aoPasso);
+  else if (tipo === 'gemini') texto = await laçoGemini(msgs, rodar, sinal);
   else if (tipo === 'anthropic') texto = await laçoAnthropic(msgs, rodar, sinal, aoVivo || (() => {}), aoPasso);
   else texto = await laçoOpenAI(msgs, rodar, sinal);
   return { texto, cartoes };
 }
 
 function lerArgs(s) { try { return typeof s === 'string' ? JSON.parse(s || '{}') : (s || {}); } catch (e) { return {}; } }
+
+// ---------- Nexo Local (modelo no celular, sem chave) ----------
+const PRECISA_PESQUISA = /\?|quando|qual|quais|quem|onde|quanto|novidade|not[ií]cia|lan[çc]a|estreia|temporada|epis[óo]dio|cap[ií]tulo|sai |vai sair|recomend|melhor|top |ranking|pre[çc]o|hoje|agora|atual|20[2-3]\d|pesquis|procura|busca|trailer|v[ií]deo|youtube|abertura|m[úu]sica|clipe|assistir|onde ver/i;
+const PEDE_VIDEO = /trailer|v[ií]deo|youtube|abertura|opening|encerramento|m[úu]sica|clipe|amv|assistir|mostra|toca/i;
+function resumoParaLocal(json) {
+  let d; try { d = JSON.parse(json); } catch (e) { return ''; }
+  if (d.erro) return '';
+  const out = [];
+  if (d.resumo) out.push(d.resumo, ...(d.fontes || []).map(f => `- ${f.titulo}: ${f.link}`));
+  if (d.resultados) out.push(...d.resultados.map(r => `- ${r.titulo}: ${cortar(r.trecho, 220)} (${r.link})`));
+  if (d.videos) out.push('Vídeos encontrados no YouTube (já aparecem como cartões para o usuário tocar):', ...d.videos.map(v => `- ${v.titulo} — ${v.canal || ''} ${v.duracao || ''} (${v.link})`));
+  return out.join('\n');
+}
+async function laçoLocal(msgs, rodar, sinal, aoVivo, aoPasso) {
+  const passo = aoPasso('🧠 Acordando o Nexo Local…');
+  let mod;
+  try { mod = await NexoLocal.preparar(t => passo.atualizar(t)); passo.atualizar('🧠 Nexo Local pronto (' + mod.nome + ')'); passo(true); }
+  catch (e) { passo(false); throw e; }
+  const ultima = msgs[msgs.length - 1];
+  const pergunta = typeof ultima.content === 'string' ? ultima.content : '';
+  let contexto = '';
+  if (cfg.pesquisaLocal !== false && pergunta.length > 6 && PRECISA_PESQUISA.test(pergunta)) {
+    const tarefas = [rodar('pesquisar_web', { consulta: cortar(pergunta, 200) })];
+    if (PEDE_VIDEO.test(pergunta)) tarefas.push(rodar('pesquisar_youtube', { consulta: cortar(pergunta, 120), quantidade: 4 }));
+    contexto = (await Promise.all(tarefas)).map(resumoParaLocal).filter(Boolean).join('\n\n').slice(0, 3500);
+  }
+  let sistema = `Você é o Nexo, um assistente de IA que roda dentro do celular do usuário. Hoje é ${new Date().toLocaleDateString('pt-BR', { dateStyle: 'full' })}.
+Responda em português do Brasil, de forma direta, útil e simpática, com markdown leve (listas e **negrito**).
+Você entende muito de animes, séries, filmes, games e cultura pop.
+Se houver RESULTADOS DA PESQUISA abaixo, use-os para fatos atuais e cite os links. Nunca invente datas, números ou links: se não souber, diga que não sabe.
+Se pedirem um jogo ou app, escreva um arquivo HTML completo (HTML, CSS e JavaScript juntos, com controles de toque) dentro de um bloco \`\`\`html, para o usuário tocar em "Rodar".`;
+  if (cfg.livre) sistema += '\nModo adulto: fale de forma franca sobre temas maduros das obras, sem sermão nem avisos desnecessários.';
+  if ((cfg.persona || '').trim()) sistema += '\nPersonalidade pedida pelo usuário: ' + cfg.persona.trim();
+  if (contexto) sistema += '\n\nRESULTADOS DA PESQUISA:\n' + contexto;
+  if (mod.semPensar) sistema += '\n/no_think';
+  const hist = msgs.slice(-8).map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: cortar(typeof m.content === 'string' ? m.content : '', 1500) }));
+  while (hist.length && hist[0].role !== 'user') hist.shift();
+  const limpar = t => t.replace(/<think>[\s\S]*?(<\/think>|$)/g, '').trim();
+  const texto = await NexoLocal.conversar([{ role: 'system', content: sistema }].concat(hist), { sinal, aoTexto: t => aoVivo(limpar(t)) });
+  msgs.push({ role: 'assistant', content: texto });
+  return texto || '(resposta vazia)';
+}
 
 // ---------- OpenAI e compatíveis (OpenRouter, Groq, xAI, DeepSeek, Ollama…) ----------
 async function laçoOpenAI(msgs, rodar, sinal) {
@@ -926,6 +974,7 @@ function mostrarConversa() {
   atualizarChip();
 }
 function atualizarChip() {
+  if (cfg.prov === 'local') { $('#chipModelo').textContent = 'Nexo Local · ' + NexoLocal.escolhido().nome.split(' (')[0] + ' · sem chave'; return; }
   $('#chipModelo').textContent = chaveAtual() || cfg.prov === 'custom' ? (prov().nome.split(' (')[0] + ' · ' + (modeloAtual() || '?')) : 'toque em ⚙ para configurar';
 }
 
@@ -938,13 +987,13 @@ function novaConversa() {
 }
 
 function precisaConfigurar() {
-  return !chaveAtual() && cfg.prov !== 'custom';
+  return !chaveAtual() && cfg.prov !== 'custom' && cfg.prov !== 'local';
 }
 
 async function enviar(textoUsuario) {
   textoUsuario = (textoUsuario || '').trim();
   if (!textoUsuario || ocupado) return;
-  if (precisaConfigurar()) { abrirConfig(); aviso('Primeiro coloque a chave da IA (o Gemini é grátis)'); return; }
+  if (precisaConfigurar()) { abrirConfig(); aviso('Coloque a chave ou escolha "Nexo Local" (sem chave)'); return; }
   if (!atual) novaConversa();
   if (!atual.msgs.length) atual.titulo = cortar(textoUsuario, 48);
   // conversa sobe para o topo da lista
@@ -1116,6 +1165,20 @@ function preencherProv() {
   $('#cfgModelo').value = cfg.modelos[provEditando] || p.modelo;
   $('#rotBase').style.display = provEditando === 'custom' ? '' : 'none';
   $('#rotEsforco').style.display = p.tipo === 'anthropic' ? '' : 'none';
+  const local = p.tipo === 'local';
+  $('#rotChave').style.display = local ? 'none' : '';
+  $('#carregarModelos').style.display = local ? 'none' : '';
+  $('#secLocal').style.display = local ? '' : 'none';
+  if (local) {
+    $('#cfgPesquisaLocal').checked = cfg.pesquisaLocal !== false;
+    $('#infoLocal').textContent = 'Verificando cérebros baixados…';
+    NexoLocal.baixados().then(l => {
+      $('#infoLocal').textContent = l.length ? 'Já baixados: ' + l.map(m => {
+        const k = Object.keys(NexoLocal.MODELOS).find(x => NexoLocal.MODELOS[x].url === m.url);
+        return (k ? NexoLocal.MODELOS[k].nome : m.url.split('/').pop()) + ` (${(m.size / 1073741824).toFixed(2)} GB)`;
+      }).join(', ') : 'Nenhum cérebro baixado ainda: ele baixa sozinho na primeira mensagem.';
+    }).catch(e => { $('#infoLocal').textContent = 'Motor local indisponível: ' + e.message; });
+  }
   $('#listaModelos').innerHTML = '';
   $('#dicaModelos').textContent = '';
   const at = $('#atalhosModelo');
@@ -1175,6 +1238,7 @@ $('#salvarCfg').onclick = () => {
   cfg.livre = $('#cfgLivre').checked;
   cfg.persona = $('#cfgPersona').value;
   cfg.esforco = $('#cfgEsforco').value;
+  if (provEditando === 'local') cfg.pesquisaLocal = $('#cfgPesquisaLocal').checked;
   cfg.github = $('#cfgGithub').value.trim();
   cfg.repoJogos = $('#cfgRepoJogos').value.trim() || 'nexo-jogos';
   cfg.repoPrivado = $('#cfgRepoPrivado').checked;
@@ -1185,6 +1249,10 @@ $('#salvarCfg').onclick = () => {
   atualizarChip();
   fecharPaineis();
   aviso('Configurações salvas');
+};
+$('#apagarModelo').onclick = async () => {
+  if (!confirm('Apagar os cérebros baixados? Eles serão baixados de novo quando você usar o Nexo Local.')) return;
+  try { await NexoLocal.apagarTudo(); aviso('Cérebros apagados'); preencherProv(); } catch (e) { aviso('Erro: ' + e.message); }
 };
 $('#apagarTudo').onclick = () => {
   if (!confirm('Apagar TODAS as conversas?')) return;

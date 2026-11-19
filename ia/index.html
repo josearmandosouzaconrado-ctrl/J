@@ -26,7 +26,7 @@
       <section id="boasVindas">
         <img src="icon-192.png" alt="" class="logo">
         <h1>O que vamos descobrir hoje?</h1>
-        <p>Pesquiso no Google, YouTube, MyAnimeList, TVmaze e Wikipédia, crio jogos que viram APK e mexo no seu GitHub.</p>
+        <p>Funciono sem chave, com uma IA que roda no seu celular. Pesquiso na internet, YouTube, MyAnimeList e TVmaze, e crio jogos.</p>
         <div id="sugestoes"></div>
       </section>
       <div id="mensagens"></div>
@@ -102,7 +102,7 @@
     <label id="rotBase">Endereço da API (compatível com OpenAI)
       <input id="cfgBase" placeholder="http://192.168.0.10:11434/v1" autocomplete="off">
     </label>
-    <label>Chave da API
+    <label id="rotChave">Chave da API
       <div class="linha"><input id="cfgChave" type="password" placeholder="cole sua chave aqui" autocomplete="off"><button class="botao mini" id="verChave">👁</button></div>
     </label>
     <label>Modelo
@@ -111,6 +111,11 @@
     </label>
     <div class="chips" id="atalhosModelo"></div>
     <p class="dica" id="dicaModelos"></p>
+    <div id="secLocal">
+      <label class="interruptor"><input type="checkbox" id="cfgPesquisaLocal"> <span>Pesquisar na internet antes de responder (DuckDuckGo, Bing e YouTube; sem chave)</span></label>
+      <p class="dica" id="infoLocal"></p>
+      <button class="botao largo" id="apagarModelo">🗑 Apagar os cérebros baixados (libera espaço)</button>
+    </div>
     <label id="rotEsforco">Esforço do Claude (quanto ele pensa)
       <select id="cfgEsforco">
         <option value="low">Baixo — rápido e barato</option>
@@ -162,6 +167,8 @@
 <div id="veu"></div>
 <div id="aviso"></div>
 <script src="apk.js"></script>
+<script src="wllama.js"></script>
+<script src="local.js"></script>
 <script src="app.js"></script>
 <script src="animes.js"></script>
 <script src="jogos.js"></script>

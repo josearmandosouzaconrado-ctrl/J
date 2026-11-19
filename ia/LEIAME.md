@@ -17,6 +17,16 @@ Baixe o **`NexoIA.apk`** no celular e instale (permita "instalar apps de fontes 
 Link fixo da versão mais nova:
 https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/nexo-ultima/NexoIA.apk
 
+## Novidades da versão 1.2: sem chave
+
+- **Nexo Local** (padrão): uma IA que roda **dentro do celular**, sem chave, sem conta e sem pagar. Na primeira mensagem ele baixa o "cérebro" uma única vez (≈1,1 GB; use Wi-Fi) e guarda no aparelho. Se a internet cair, o download continua de onde parou. Depois funciona até sem internet.
+  - Tamanhos em ⚙: **Leve** (≈0,5 GB, para celular fraco), **Equilibrado** (≈1,1 GB) e **Forte** (Qwen 3, ≈1,1 GB). Também aceita o link de qualquer modelo `.gguf`.
+  - Antes de responder ele pesquisa sozinho na internet (DuckDuckGo/Bing) e no YouTube, sem chave.
+  - Motor: llama.cpp em WebAssembly (biblioteca wllama, licença MIT). Modelos abertos Qwen (Apache 2.0).
+- Quem estava num provedor sem chave passa automaticamente para o Nexo Local. Os outros provedores (Gemini, Claude Fable/Opus, ChatGPT, Grok, Groq…) continuam disponíveis para quem tiver chave.
+
+**Sobre "criar um modelo igual ao Opus ou Fable do zero":** não é possível num app ou num computador comum. Esses modelos são treinados em milhares de placas de vídeo durante meses, com custo de centenas de milhões de dólares. Um modelo treinado do zero aqui sairia sem sentido. Por isso o Nexo Local usa um modelo aberto já treinado (Qwen) rodando no seu celular. Ele é seu e funciona sem chave, mas é bem mais simples que o Claude ou o Gemini.
+
 ## Novidades da versão 1.1
 
 - **Logo nova** (gatinho com olhos de estrela).
