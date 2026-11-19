@@ -118,6 +118,10 @@ const FERRAMENTAS = [
     params: { titulo: { type: 'string', description: 'nome do jogo' }, emoji: { type: 'string', description: 'um emoji que represente o jogo' },
       orientacao: { type: 'string', enum: ['paisagem', 'retrato', 'livre'], description: 'orientação da tela no APK' },
       html: { type: 'string', description: 'arquivo HTML completo, com CSS e JavaScript embutidos, sem arquivos externos' } }, obrig: ['titulo', 'html'] },
+  { nome: 'jogo_pronto', desc: 'Cria NA HORA um jogo completo e testado a partir dos modelos do Nexo Motor (plataforma, nave, cobrinha, aventura, corrida), personalizado com tema, nomes e dificuldade. Use quando o pedido couber num desses tipos e a pessoa quiser rápido; para jogos diferentes, use criar_jogo.',
+    params: { tipo: { type: 'string', enum: ['plataforma', 'nave', 'cobrinha', 'aventura', 'corrida'] }, tema: { type: 'string', enum: ['neon', 'floresta', 'deserto', 'gelo', 'inferno', 'espaco', 'gameboy', 'doce'] },
+      titulo: { type: 'string', description: 'nome do jogo' }, heroi: { type: 'string' }, inimigo: { type: 'string' }, item: { type: 'string', description: 'o que o jogador coleta' },
+      dificuldade: { type: 'integer', description: '1 a 3' } }, obrig: ['tipo'] },
   { nome: 'ler_jogo', desc: 'Lê o HTML de um jogo já salvo na aba Jogos (para corrigir ou melhorar). Sem título, lista os jogos.',
     params: { titulo: { type: 'string', description: 'nome do jogo (opcional)' } }, obrig: [] },
   { nome: 'github_repos', github: true, desc: 'Lista os repositórios do GitHub do usuário.', params: {}, obrig: [] },
@@ -142,7 +146,8 @@ const ROTULOS = {
   buscar_serie: a => '📺 TVmaze: ' + a.nome,
   wikipedia: a => '📚 Wikipédia: ' + a.termo,
   ler_pagina: a => '📄 Lendo ' + (a.url || '').replace(/^https?:\/\//, '').slice(0, 50),
-  criar_jogo: a => '🎮 Salvando o jogo: ' + (a.titulo || ''),
+  criar_jogo: a => '🎮 Salvando e testando o jogo: ' + (a.titulo || ''),
+  jogo_pronto: a => '⚡ Montando jogo de ' + (a.tipo || '') + ': ' + (a.titulo || ''),
   ler_jogo: a => '🎮 Abrindo o jogo ' + (a.titulo || ''),
   github_repos: () => '🐙 GitHub: listando repositórios',
   github_ler: a => '🐙 GitHub: lendo ' + a.repo + '/' + (a.caminho || ''),
@@ -263,8 +268,18 @@ const EXECUTAR = {
   async criar_jogo({ titulo, emoji, orientacao, html }) {
     if (!html || html.length < 50) return { ia: { erro: 'HTML vazio ou incompleto' } };
     const j = Jogos.salvar({ titulo, emoji, orientacao, html });
-    return { ia: { ok: true, titulo: j.titulo, versao: j.versao, tamanho: html.length + ' caracteres',
+    const erros = await Jogos.testar(html);
+    if (erros.length) return { ia: { ok: false, titulo: j.titulo, versao: j.versao, erros,
+      aviso: 'O jogo foi salvo, mas o teste automático encontrou estes erros de JavaScript. Corrija e chame criar_jogo de novo com o mesmo título e o HTML completo.' },
+      cartoes: [{ tipo: 'jogo', id: j.id, titulo: j.titulo, emoji: j.emoji, versao: j.versao }] };
+    return { ia: { ok: true, titulo: j.titulo, versao: j.versao, tamanho: html.length + ' caracteres', teste: 'rodou 3 segundos sem erros',
       aviso: 'O jogo está na aba Jogos e num cartão no chat. Diga ao usuário para tocar em Jogar e, se quiser, em APK.' },
+      cartoes: [{ tipo: 'jogo', id: j.id, titulo: j.titulo, emoji: j.emoji, versao: j.versao }] };
+  },
+
+  async jogo_pronto(a) {
+    const j = Jogos.criarDeModelo(a);
+    return { ia: { ok: true, titulo: j.titulo, tipo: j.config.tipo, tema: j.config.tema, aviso: 'Jogo pronto e testado na aba Jogos. O usuário pode editar com ✏️.' },
       cartoes: [{ tipo: 'jogo', id: j.id, titulo: j.titulo, emoji: j.emoji, versao: j.versao }] };
   },
 
@@ -455,6 +470,8 @@ Criar jogos e apps (você é um game designer e programador de elite):
 - Capriche: menu inicial, tutorial curto, pontuação, recorde, dificuldade crescente, efeitos (partículas, tremida de tela, animações), tela de fim de jogo e reiniciar. Código organizado e sem erros.
 - Salve progresso com localStorage dentro de try/catch (pode não estar disponível no teste).
 - Entregue SEMPRE chamando a ferramenta criar_jogo (não cole o código inteiro no chat). Depois explique em poucas linhas como jogar.
+- criar_jogo roda o jogo escondido por 3 segundos e devolve os erros de JavaScript: se vier "erros", corrija e chame criar_jogo de novo até passar.
+- Se o pedido for um jogo clássico simples (plataforma, nave, cobrinha, aventura, corrida) e a pessoa quiser rápido, pode usar jogo_pronto.
 - Para melhorar ou corrigir um jogo existente, use ler_jogo e depois criar_jogo com o mesmo título e o HTML completo novo.
 - O usuário transforma o jogo em APK na aba Jogos (botão APK).`;
   if ((cfg.github || '').trim()) s += `
@@ -547,6 +564,7 @@ async function laçoLocal(msgs, rodar, sinal, aoVivo, aoPasso, cartoes) {
   const ultima = msgs[msgs.length - 1];
   const pergunta = typeof ultima.content === 'string' ? ultima.content : '';
   const jogo = PEDE_JOGO.test(pergunta);
+  if (jogo) return jogoLocal(pergunta, msgs, sinal, aoVivo, aoPasso, cartoes, mod);
   let contexto = '';
   if (!jogo && cfg.pesquisaLocal !== false && pergunta.length > 6 && PRECISA_PESQUISA.test(pergunta)) {
     const tarefas = [rodar('pesquisar_web', { consulta: cortar(pergunta, 200) })];
@@ -582,6 +600,62 @@ O usuário pediu um JOGO. Regras:
     cartoes.push({ tipo: 'jogo', id: j.id, titulo: j.titulo, emoji: j.emoji, versao: j.versao });
   }
   return texto || '(resposta vazia)';
+}
+
+// o Nexo Local cria jogos: pelos modelos prontos (sempre funcionam) ou escrevendo o código e testando
+async function jogoLocal(pergunta, msgs, sinal, aoVivo, aoPasso, cartoes, mod) {
+  const tipoJogo = Modelos.detectarTipo(pergunta);
+  if (tipoJogo) {
+    const passo = aoPasso('🎨 Planejando o jogo (' + Modelos.TIPOS[tipoJogo].nome + ')…');
+    let ideia = {};
+    try {
+      const resp = await NexoLocal.conversar([
+        { role: 'system', content: 'Você cria configurações de jogos. Responda SOMENTE com um JSON válido, sem nenhum texto antes ou depois.' + (mod.semPensar ? ' /no_think' : '') },
+        { role: 'user', content: `Pedido: "${pergunta}"\nTipo de jogo: ${tipoJogo}\nResponda neste formato (em português):\n{"titulo":"nome curto e criativo","heroi":"nome do personagem","inimigo":"nome do inimigo","item":"o que coletar","tema":"neon|floresta|deserto|gelo|inferno|espaco|gameboy|doce","dificuldade":2,"emoji":"🎮"}` },
+      ], { sinal, maxTokens: 220, aoTexto: () => {} });
+      const m = resp.match(/\{[\s\S]*\}/);
+      if (m) ideia = JSON.parse(m[0]);
+      passo(true);
+    } catch (e) { if (e.name === 'AbortError') throw e; passo(false); }
+    const tema = Modelos.detectarTema(pergunta) || (Modelos.TEMAS[ideia.tema] ? ideia.tema : null);
+    const j = Jogos.criarDeModelo(Object.assign({}, ideia, { tipo: tipoJogo, tema: tema || undefined }));
+    const pTeste = aoPasso('🧪 Testando o jogo…');
+    const erros = await Jogos.testar(j.html, 2000);
+    pTeste(!erros.length);
+    cartoes.push({ tipo: 'jogo', id: j.id, titulo: j.titulo, emoji: j.emoji, versao: j.versao });
+    const c = j.config;
+    const texto = `Pronto! Criei **${c.titulo}** ${c.emoji}\n\n- Tipo: ${Modelos.TIPOS[c.tipo].nome}\n- Tema: ${Modelos.TEMAS[c.tema].nome}\n- Herói: ${c.heroi} · Inimigos: ${c.inimigo} · Coletar: ${c.item}\n- Dificuldade: ${['', 'fácil', 'normal', 'difícil'][c.dificuldade]}\n\nToque em **▶ Jogar** no cartão abaixo. Para mudar nomes, tema ou dificuldade, toque em **✏️ Editar** na aba Jogos. Para virar app, toque em **📦 APK**.`;
+    msgs.push({ role: 'assistant', content: texto });
+    return texto;
+  }
+  // jogo livre: a IA escreve o código, o app testa e pede correção se der erro
+  const sistema = `Você é um programador de jogos. Escreva UM arquivo HTML completo (<!doctype html> … </html>) com CSS e JavaScript juntos, dentro de um bloco \`\`\`html, sem explicações longas.
+Use <canvas>, JavaScript puro, sem bibliotecas nem imagens externas. Controles de toque na tela e teclado. requestAnimationFrame. Tela inicial, pontuação, game over e reiniciar. Código curto e sem erros.${mod.semPensar ? '\n/no_think' : ''}`;
+  const limpar = t => t.replace(/<think>[\s\S]*?(<\/think>|$)/g, '').trim();
+  const extrair = t => { const m = t.match(/```(?:html)?\s*\n([\s\S]*?)(?:```|$)/i); return m && /<(canvas|script)/i.test(m[1]) ? m[1].trim() : null; };
+  let texto = await NexoLocal.conversar([{ role: 'system', content: sistema }, { role: 'user', content: pergunta }], { sinal, aoTexto: t => aoVivo(limpar(t)), maxTokens: 3500 });
+  let codigo = extrair(texto);
+  if (codigo) {
+    const pTeste = aoPasso('🧪 Testando o jogo…');
+    let erros = await Jogos.testar(codigo);
+    pTeste(!erros.length);
+    if (erros.length && mod.ctx >= 8192) {
+      const pCor = aoPasso('🔧 Corrigindo: ' + cortar(erros[0], 60));
+      const novo = await NexoLocal.conversar([{ role: 'system', content: sistema },
+        { role: 'user', content: `Este jogo tem erros:\n${erros.join('\n')}\n\nReescreva o arquivo HTML COMPLETO corrigido, num bloco \`\`\`html.\n\n\`\`\`html\n${codigo}\n\`\`\`` }],
+        { sinal, aoTexto: t => aoVivo(limpar(t)), maxTokens: 3500 });
+      const cod2 = extrair(novo);
+      if (cod2) { const e2 = await Jogos.testar(cod2); if (e2.length <= erros.length) { codigo = cod2; texto = novo; erros = e2; } }
+      pCor(!erros.length);
+    }
+    const tit = (pergunta.match(/jogo\s+(?:de|do|da|estilo)?\s*([^.,!?\n]{3,40})/i) || [])[1];
+    const j = Jogos.salvar({ titulo: tit ? 'Jogo ' + tit.trim() : 'Jogo ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), emoji: '🎮', html: codigo });
+    cartoes.push({ tipo: 'jogo', id: j.id, titulo: j.titulo, emoji: j.emoji, versao: j.versao });
+    if (erros.length) texto += `\n\n⚠️ O teste automático ainda achou erro: \`${cortar(erros[0], 120)}\`. Tente **✨ Melhorar** na aba Jogos, ou use um dos jogos prontos (⚡ Criar jogo agora).`;
+  }
+  texto = limpar(texto);
+  msgs.push({ role: 'assistant', content: texto });
+  return texto;
 }
 
 // ---------- OpenAI e compatíveis (OpenRouter, Groq, xAI, DeepSeek, Ollama…) ----------
@@ -1367,6 +1441,44 @@ addEventListener('resize', () => {
 // o botão de enviar não tira o foco da caixa de texto (o teclado fica aberto e o botão não muda de lugar)
 elEnviar.addEventListener('mousedown', e => e.preventDefault());
 elEnviar.addEventListener('pointerdown', e => e.preventDefault());
+
+// ---------- versão, novidades e aviso de atualização ----------
+const VERSAO = (window.NOVIDADES || [{ versao: '?', codigo: 0, nome: '' }])[0];
+const URL_ATUALIZACAO = 'https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/nexo-ultima/';
+function textoNovidades(lista) {
+  return lista.map(v => `${v.versao} — "${v.nome}"${v.data ? ' (' + v.data + ')' : ''}\n` + v.itens.map(i => '• ' + i).join('\n')).join('\n\n');
+}
+async function procurarAtualizacao(mostrarSempre) {
+  const est = $('#estadoAtualizacao');
+  if (est) est.textContent = 'Procurando…';
+  try {
+    const r = await rede(URL_ATUALIZACAO + 'novidades.js?t=' + Date.now(), {}, 15000);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const txt = await r.text();
+    const remoto = JSON.parse(txt.slice(txt.indexOf('['), txt.lastIndexOf(']') + 1));
+    const novas = remoto.filter(v => v.codigo > VERSAO.codigo);
+    guardar('nexo_ultima_checagem', Date.now());
+    if (!novas.length) { if (est) est.textContent = '✔ Você já está na versão mais nova.'; if (mostrarSempre) aviso('Você já está na versão mais nova'); return; }
+    const n = novas[0];
+    const b = $('#bannerAtualizacao');
+    b.innerHTML = `<b>🎁 Atualização ${esc(n.versao)} — "${esc(n.nome)}"</b><span>${esc(n.itens.slice(0, 2).join(' · '))}</span>
+      <div class="botoes"><a class="botao forte" href="${URL_ATUALIZACAO}NexoIA.apk">⬇ Baixar e instalar</a><button class="botao" id="verNovas">O que mudou</button><button class="botao" id="fecharBanner">Depois</button></div>`;
+    b.style.display = '';
+    $('#verNovas').onclick = () => avisar(textoNovidades(novas) + '\n\nToque em "Baixar e instalar" e abra o arquivo NexoIA.apk baixado. Ele instala por cima, sem perder nada.');
+    $('#fecharBanner').onclick = () => { b.style.display = 'none'; };
+    if (est) est.innerHTML = `🎁 Nova versão: <b>${esc(n.versao)} "${esc(n.nome)}"</b> — <a href="${URL_ATUALIZACAO}NexoIA.apk">baixar</a>`;
+  } catch (e) { if (est) est.textContent = 'Não consegui verificar agora (' + e.message + ').'; }
+}
+$('#versaoAtual').textContent = `Você está na versão ${VERSAO.versao} — "${VERSAO.nome}"`;
+$('#verNovidades').onclick = () => avisar(textoNovidades(window.NOVIDADES || []));
+$('#checarAtualizacao').onclick = () => procurarAtualizacao(true);
+// mostra uma vez as novidades depois de atualizar
+(function () {
+  const vista = carregar('nexo_versao_vista', 0);
+  if (vista && vista < VERSAO.codigo) setTimeout(() => avisar(`Atualizado para ${VERSAO.versao} — "${VERSAO.nome}"!\n\n` + VERSAO.itens.map(i => '• ' + i).join('\n')), 800);
+  guardar('nexo_versao_vista', VERSAO.codigo);
+})();
+if (Date.now() - carregar('nexo_ultima_checagem', 0) > 6 * 3600e3) setTimeout(() => procurarAtualizacao(false), 2500);
 
 // ---------- início ----------
 montarSugestoes();

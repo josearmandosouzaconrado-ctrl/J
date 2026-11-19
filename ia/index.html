@@ -22,6 +22,7 @@
 <div id="vistas">
   <!-- ===== CHAT ===== -->
   <section class="vista ativa" id="vChat">
+    <div id="bannerAtualizacao" style="display:none"></div>
     <main id="chat">
       <section id="boasVindas">
         <img src="icon-192.png" alt="" class="logo">
@@ -45,10 +46,20 @@
     </div>
     <div class="chips" id="chipsAnime">
       <button data-l="temporada" class="ativo">🔥 Temporada</button>
-      <button data-l="top_em_exibicao">📡 Em exibição</button>
-      <button data-l="top_geral">🏆 Top</button>
-      <button data-l="proximos">⏳ Em breve</button>
+      <button data-l="alta">📈 Em alta</button>
+      <button data-l="exibicao">📡 Lançando</button>
+      <button data-l="top">🏆 Top</button>
+      <button data-l="breve">⏳ Em breve</button>
       <button data-l="favoritos">❤️ Minha lista</button>
+      <select id="generoAnime">
+        <option value="">Todos os gêneros</option>
+        <option value="Action">Ação</option><option value="Adventure">Aventura</option><option value="Comedy">Comédia</option>
+        <option value="Drama">Drama</option><option value="Fantasy">Fantasia</option><option value="Horror">Terror</option>
+        <option value="Mystery">Mistério</option><option value="Psychological">Psicológico</option><option value="Romance">Romance</option>
+        <option value="Sci-Fi">Ficção científica</option><option value="Slice of Life">Slice of life</option><option value="Sports">Esportes</option>
+        <option value="Supernatural">Sobrenatural</option><option value="Thriller">Suspense</option><option value="Mecha">Mecha</option>
+        <option value="Music">Música</option><option value="Mahou Shoujo">Garota mágica</option><option value="Ecchi">Ecchi</option>
+      </select>
     </div>
     <div id="gradeAnimes" class="grade"></div>
   </section>
@@ -60,6 +71,17 @@
         <b>🎮 Seus jogos</b>
         <p>Peça no chat: <i>"crie um jogo de nave estilo arcade"</i>. O jogo aparece aqui. Toque em <b>Jogar</b> para testar e em <b>APK</b> para virar um app instalável (precisa do plugin do GitHub).</p>
         <p class="dica">Para os melhores jogos use o Claude Fable 5.2 ou o Opus 5.5 (⚙ → Anthropic).</p>
+      </div>
+      <button class="botao largo forte" id="cjAbrir">⚡ Criar jogo agora (na hora, sem esperar a IA)</button>
+      <div class="cartaoInfo" id="criadorJogo" style="display:none">
+        <label>Tipo de jogo<select id="cjTipo"></select></label>
+        <label>Tema / cores<select id="cjTema"></select></label>
+        <label>Nome do jogo<input id="cjTitulo" placeholder="ex.: Ninja das Sombras" autocomplete="off"></label>
+        <label>Herói<input id="cjHeroi" placeholder="ex.: Ninja" autocomplete="off"></label>
+        <label>Inimigo<input id="cjInimigo" placeholder="ex.: Robô" autocomplete="off"></label>
+        <label>O que coletar<input id="cjItem" placeholder="ex.: Moeda" autocomplete="off"></label>
+        <label>Dificuldade<select id="cjDif"><option value="1">Fácil</option><option value="2" selected>Normal</option><option value="3">Difícil</option></select></label>
+        <button class="botao largo forte" id="cjCriar">🎮 Criar e jogar</button>
       </div>
       <div id="listaJogos"></div>
     </div>
@@ -158,6 +180,11 @@
       <textarea id="cfgPersona" rows="4" placeholder="Ex.: me chame de mestre, fale como um otaku, use gírias, seja sarcástico…"></textarea>
     </label>
 
+    <h3>Versão e atualizações</h3>
+    <p id="versaoAtual" class="dica" style="font-size:14px;color:var(--texto)"></p>
+    <div class="botoes"><button class="botao" id="verNovidades">📋 Ver novidades</button><button class="botao" id="checarAtualizacao">🔄 Procurar atualização</button></div>
+    <p class="dica" id="estadoAtualizacao"></p>
+
     <button class="botao largo forte" id="salvarCfg">Salvar</button>
     <button class="botao largo perigo" id="apagarTudo">Apagar todas as conversas</button>
     <p class="dica">Suas chaves ficam só neste celular. Elas vão direto para o serviço de cada uma.</p>
@@ -172,6 +199,9 @@
 <div id="veu"></div>
 <div id="aviso"></div>
 <script src="apk.js"></script>
+<script src="novidades.js"></script>
+<script src="motor.js"></script>
+<script src="modelos.js"></script>
 <script src="wllama.js"></script>
 <script src="local.js"></script>
 <script src="app.js"></script>

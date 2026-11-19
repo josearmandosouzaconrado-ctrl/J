@@ -29,8 +29,13 @@ WWW = os.path.join(ROOT, 'ia')
 OUT = os.path.join(ROOT, 'NexoIA.apk')
 PACKAGE = 'com.nexo.ia'
 APP_NAME = 'Nexo IA'
-VERSION_CODE = 4
-VERSION_NAME = '1.2.1'
+# a versão vem de ia/novidades.js (a primeira entrada é a atual)
+def _versao():
+    import json
+    t = open(os.path.join(WWW, 'novidades.js'), encoding='utf-8').read()
+    v = json.loads(t[t.index('['):t.rindex(']') + 1])[0]
+    return v['codigo'], v['versao']
+VERSION_CODE, VERSION_NAME = _versao()
 ACTIVITY = PACKAGE + '.MainActivity'
 MIN_SDK, TARGET_SDK = 24, 34
 
@@ -319,7 +324,9 @@ def main():
         B.add(z, 'classes.dex', build_dex())
         B.add(z, 'resources.arsc', B.build_arsc('res/drawable/icon.png'), store=True)
         B.add(z, 'res/drawable/icon.png', open(os.path.join(WWW, 'icon-192.png'), 'rb').read(), store=True)
-        for nome in ('index.html', 'style.css', 'app.js', 'apk.js', 'animes.js', 'jogos.js', 'local.js', 'wllama.js', 'wllama.wasm', 'LICENCA-wllama.txt', 'icon-192.png'):
+        for nome in sorted(os.listdir(WWW)):
+            if nome in ('LEIAME.md', 'icon-512.png') or nome.startswith('.'):
+                continue
             B.add(z, 'assets/' + nome, open(os.path.join(WWW, nome), 'rb').read(), store=nome.endswith('.png'))
     apk = B.sign_v2(buf.getvalue())
     open(OUT, 'wb').write(apk)

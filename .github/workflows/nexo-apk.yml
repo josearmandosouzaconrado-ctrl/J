@@ -1,6 +1,8 @@
 # Publica o APK do Nexo IA numa Release do GitHub sempre que ele muda.
 # Link fixo (sempre a versão mais nova):
 #   https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/nexo-ultima/NexoIA.apk
+# O app lê .../nexo-ultima/novidades.js para avisar que existe atualização (com o nome dela).
+# Cada versão também ganha a sua Release: nexo-v<versão>, com o nome da atualização no título.
 name: Publicar APK Nexo IA
 on:
   push:
@@ -15,16 +17,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Criar ou atualizar a Release
+      - name: Criar ou atualizar as Releases
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VER=$(sed -n "s/^VERSION_NAME = '\([^']*\)'.*/\1/p" android/build_apk_ia.py)
+          python3 - <<'PY' > info.env
+          import json
+          t = open('ia/novidades.js', encoding='utf-8').read()
+          v = json.loads(t[t.index('['):t.rindex(']') + 1])[0]
+          print('VER=' + v['versao'])
+          print('NOME=' + v['nome'].replace('"', ''))
+          open('notas.md', 'w', encoding='utf-8').write(
+              f'## Atualização {v["versao"]} — "{v["nome"]}"\n\n' + '\n'.join('- ' + i for i in v['itens']) +
+              '\n\nBaixe **NexoIA.apk** no celular Android e abra para instalar (instala por cima, sem perder nada).\n')
+          PY
+          . ./info.env
           FIXA="nexo-ultima"
-          NOTAS="Nexo IA $VER: chat com IA que pesquisa no Google, YouTube, MyAnimeList, TVmaze e Wikipédia. Baixe NexoIA.apk no celular Android e instale (permita instalar de fontes desconhecidas)."
+          TITULO="Nexo IA $VER — \"$NOME\" (versão mais nova)"
           if ! gh release view "$FIXA" >/dev/null 2>&1; then
-            gh release create "$FIXA" --target "$GITHUB_SHA" --title "Nexo IA (versão mais nova: $VER)" --notes "$NOTAS" --latest=false
+            gh release create "$FIXA" --target "$GITHUB_SHA" --title "$TITULO" --notes-file notas.md --latest=false
           else
-            gh release edit "$FIXA" --title "Nexo IA (versão mais nova: $VER)" --notes "$NOTAS"
+            gh release edit "$FIXA" --title "$TITULO" --notes-file notas.md
           fi
-          gh release upload "$FIXA" NexoIA.apk --clobber
+          gh release upload "$FIXA" NexoIA.apk ia/novidades.js --clobber
+          TAG="nexo-v$VER"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "Nexo IA $VER — \"$NOME\"" --notes-file notas.md --latest=false
+          fi
+          cp NexoIA.apk "NexoIA-$VER.apk"
+          gh release upload "$TAG" "NexoIA-$VER.apk" --clobber

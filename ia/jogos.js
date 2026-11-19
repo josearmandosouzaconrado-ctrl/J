@@ -6,17 +6,19 @@ const Jogos = (() => {
   const slug = t => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'jogo';
   const achar = t => { const s = slug(t); return lista.find(j => j.id === t || slug(j.titulo) === s); };
 
-  function salvar({ titulo, emoji, orientacao, html }) {
+  function salvar({ titulo, emoji, orientacao, html, config }) {
     titulo = String(titulo || 'Jogo').trim().slice(0, 60);
     let j = achar(titulo);
     if (j) {
       Object.assign(j, { html, versao: (j.versao || 1) + 1, atualizado: Date.now() });
       if (emoji) j.emoji = emoji;
       if (orientacao) j.orientacao = orientacao;
+      if (config) j.config = config; else delete j.config;
       delete j.apk;
       lista = [j].concat(lista.filter(x => x !== j));
     } else {
       j = { id: Date.now().toString(36), titulo, emoji: emoji || '🎮', orientacao: orientacao || 'livre', html, versao: 1, criado: Date.now(), atualizado: Date.now() };
+      if (config) j.config = config;
       lista.unshift(j);
     }
     salvarLista();
@@ -43,7 +45,7 @@ const Jogos = (() => {
       el.className = 'jogo';
       el.innerHTML = `<div class="ic"></div><div class="i"><b></b><small></small>
         <div class="botoes"><button class="botao" data-a="jogar">▶ Jogar</button><button class="botao" data-a="apk">📦 APK</button>
-        <button class="botao" data-a="melhorar">✨ Melhorar</button><button class="botao" data-a="apagar">🗑</button></div>
+        ${j.config ? '<button class="botao" data-a="editar">✏️ Editar</button>' : ''}<button class="botao" data-a="melhorar">✨ Melhorar</button><button class="botao" data-a="apagar">🗑</button></div>
         ${j.apk ? `<div class="botoes"><a class="botao forte" href="${esc(j.apk)}">⬇ Baixar APK v${esc(j.versaoApk || j.versao)}</a></div>` : ''}</div>`;
       el.querySelector('.ic').textContent = j.emoji || '🎮';
       el.querySelector('b').textContent = j.titulo;
@@ -54,6 +56,7 @@ const Jogos = (() => {
         const pedido = await pedirTexto(`O que mudar em "${j.titulo}"?`, 'Deixe mais bonito, com mais fases e efeitos');
         if (pedido) perguntarNoChat(`Melhore o jogo "${j.titulo}" (use ler_jogo e depois criar_jogo com o mesmo título): ${pedido}`);
       };
+      if (j.config) el.querySelector('[data-a=editar]').onclick = () => abrirCriador(j.config);
       el.querySelector('[data-a=apagar]').onclick = async () => {
         if (!await confirmar(`Apagar o jogo "${j.titulo}"?`, 'Apagar')) return;
         lista = lista.filter(x => x !== j); salvarLista(); desenhar();
@@ -123,5 +126,63 @@ const Jogos = (() => {
     } finally { gerando = false; }
   }
 
-  return { salvar, achar, todos: () => lista, jogar, jogarHtml, desenhar, slug };
+  // ---------- teste automático: roda o jogo escondido e devolve os erros de JavaScript ----------
+  function testar(html, ms = 3000) {
+    return new Promise(res => {
+      const f = document.createElement('iframe');
+      f.setAttribute('sandbox', 'allow-scripts');
+      f.style.cssText = 'position:fixed;left:-9999px;top:0;width:360px;height:640px;opacity:0;pointer-events:none';
+      const erros = new Set();
+      const ouvir = e => { if (e.source === f.contentWindow && e.data && e.data.nexoErro) erros.add(String(e.data.nexoErro).slice(0, 300)); };
+      addEventListener('message', ouvir);
+      const espiao = '<script>(function(){var P=function(m){parent.postMessage({nexoErro:String(m)},"*")};' +
+        'window.onerror=function(m,s,l){P(m+(l?" (linha "+l+")":""))};' +
+        'addEventListener("unhandledrejection",function(e){P("Promise: "+(e.reason&&e.reason.message||e.reason))});' +
+        'var ce=console.error;console.error=function(){P("console.error: "+[].map.call(arguments,String).join(" "));ce.apply(console,arguments)};' +
+        // aperta teclas e toca na tela para o jogo sair do menu e rodar um pouco
+        'function K(t,c){var ev=new KeyboardEvent(t,{code:c,key:c=="Space"?" ":c,bubbles:true});document.dispatchEvent(ev);window.dispatchEvent(ev)}' +
+        'function T(t){var c=document.querySelector("canvas")||document.body;try{c.dispatchEvent(new PointerEvent(t,{bubbles:true,clientX:60,clientY:60}));c.dispatchEvent(new MouseEvent(t=="pointerdown"?"mousedown":"mouseup",{bubbles:true,clientX:60,clientY:60}))}catch(e){}}' +
+        'setTimeout(function(){K("keydown","Space");T("pointerdown");setTimeout(function(){K("keyup","Space");T("pointerup");K("keydown","ArrowRight")},120);setTimeout(function(){K("keyup","ArrowRight");K("keydown","Space")},900);setTimeout(function(){K("keyup","Space")},1000)},500)' +
+        '})()<' + '/script>';
+      f.srcdoc = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, m => m + espiao) : espiao + html;
+      document.body.appendChild(f);
+      setTimeout(() => { removeEventListener('message', ouvir); f.remove(); res([...erros].slice(0, 6)); }, ms);
+    });
+  }
+
+  // ---------- criar jogo na hora (modelos prontos, sem IA) ----------
+  function criarDeModelo(config) {
+    const r = Modelos.gerar(config);
+    return salvar({ titulo: r.config.titulo, emoji: r.config.emoji, orientacao: r.orientacao, html: r.html, config: r.config });
+  }
+  function abrirCriador(c) {
+    c = c || {};
+    const box = $('#criadorJogo');
+    box.style.display = '';
+    $('#cjTipo').value = c.tipo || 'plataforma';
+    $('#cjTema').value = c.tema || Modelos.TIPOS[$('#cjTipo').value].tema;
+    $('#cjTitulo').value = c.titulo || '';
+    $('#cjHeroi').value = c.heroi || '';
+    $('#cjInimigo').value = c.inimigo || '';
+    $('#cjItem').value = c.item || '';
+    $('#cjDif').value = c.dificuldade || 2;
+    irPara('vJogos');
+    box.scrollIntoView({ behavior: 'smooth' });
+  }
+  (function montarCriador() {
+    const tipo = $('#cjTipo'), tema = $('#cjTema');
+    for (const k in Modelos.TIPOS) tipo.insertAdjacentHTML('beforeend', `<option value="${k}">${Modelos.TIPOS[k].emoji} ${Modelos.TIPOS[k].nome}</option>`);
+    for (const k in Modelos.TEMAS) tema.insertAdjacentHTML('beforeend', `<option value="${k}">${Modelos.TEMAS[k].nome}</option>`);
+    tipo.onchange = () => { tema.value = Modelos.TIPOS[tipo.value].tema; };
+    $('#cjAbrir').onclick = () => { const b = $('#criadorJogo'); b.style.display = b.style.display === 'none' ? '' : 'none'; };
+    $('#cjCriar').onclick = () => {
+      const j = criarDeModelo({ tipo: tipo.value, tema: tema.value, titulo: $('#cjTitulo').value, heroi: $('#cjHeroi').value,
+        inimigo: $('#cjInimigo').value, item: $('#cjItem').value, dificuldade: +$('#cjDif').value });
+      $('#criadorJogo').style.display = 'none';
+      aviso('Jogo criado: ' + j.titulo);
+      jogarHtml(j.html);
+    };
+  })();
+
+  return { salvar, achar, todos: () => lista, jogar, jogarHtml, desenhar, slug, testar, criarDeModelo, abrirCriador };
 })();

@@ -17,6 +17,21 @@ Baixe o **`NexoIA.apk`** no celular e instale (permita "instalar apps de fontes 
 Link fixo da versão mais nova:
 https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/nexo-ultima/NexoIA.apk
 
+## Como saber qual atualização instalar
+
+Cada versão tem um **número e um nome**, por exemplo **1.3.0 "Criador de Jogos"**.
+- Dentro do app: ⚙ → **Versão e atualizações** mostra a sua versão. Quando sai uma nova, aparece no topo do chat o aviso **🎁 Atualização X — "Nome"** com o botão **⬇ Baixar e instalar**.
+- No GitHub: a página https://github.com/josearmandosouzaconrado-ctrl/J/releases mostra cada versão com o nome. Baixe sempre o **NexoIA.apk** da release **"versão mais nova"**. Ele instala por cima, sem perder nada.
+
+## Novidades da versão 1.3: "Criador de Jogos"
+
+- **Nexo Motor**: um motor de jogos próprio (pixel art, controles de toque, sons, partículas, colisões).
+- **5 jogos prontos** feitos com ele: plataforma, nave, cobrinha, aventura com espada e corrida, com 8 temas de cores.
+- **⚡ Criar jogo agora** (aba Jogos): escolha o tipo, o tema e os nomes. O jogo sai na hora, sem IA e sem esperar.
+- **A IA própria cria jogos**: no Nexo Local, um pedido como "jogo em pixel art de ninja" vira um jogo completo (a IA escolhe o nome, os personagens e o tema). Para jogos diferentes, ela escreve o código, **testa sozinha** e corrige se der erro.
+- **Teste automático igual ao do Claude Code**: todo jogo criado pela IA (local ou nuvem) roda escondido por 3 segundos. Se der erro de JavaScript, a IA recebe o erro e corrige.
+- **Aba Animes refeita**: dados do AniList (com o MyAnimeList de reserva). Tem temporada, em alta, lançando, top, em breve, 18 gêneros, "carregar mais", próximo episódio com data, **link oficial de cada episódio** (Crunchyroll etc.) quando existe, parecidos, relacionados e capítulos lidos dos mangás.
+
 ## Novidades da versão 1.2: sem chave
 
 - **Nexo Local** (padrão): uma IA que roda **dentro do celular**, sem chave, sem conta e sem pagar. Na primeira mensagem ele baixa o "cérebro" uma única vez (≈1,1 GB; use Wi-Fi) e guarda no aparelho. Se a internet cair, o download continua de onde parou. Depois funciona até sem internet.

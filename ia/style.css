@@ -208,3 +208,13 @@ body.teclado #abas{display:none}
 #dialogo input{margin-top:12px}
 #dialogo .botoes{justify-content:flex-end;margin:14px 0 0}
 #dialogo .botoes .botao{min-width:96px;font-size:15px;padding:10px 14px}
+
+#generoAnime{width:auto;margin:0;flex:none;border-radius:20px;padding:6px 10px;font-size:13.5px}
+.poster .capa em{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,#000d);font-style:normal;font-size:11px;padding:10px 5px 3px;color:#86efac}
+.banner{height:90px;margin:-14px -16px 12px;background:#111 center/cover no-repeat;opacity:.85}
+
+#bannerAtualizacao{margin:8px 10px 0;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,#4c1d95,#155e75);font-size:13.5px;flex:none}
+#bannerAtualizacao b{display:block;font-size:15px}
+#bannerAtualizacao span{color:#e0e7ff}
+#bannerAtualizacao .botoes{margin:8px 0 0}
+#bannerAtualizacao .botao{padding:7px 11px;font-size:13px}

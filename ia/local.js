@@ -4,9 +4,9 @@
 'use strict';
 const NexoLocal = (() => {
   const MODELOS = {
-    leve: { nome: 'Leve (Qwen 2.5 0.5B)', tamanho: '≈ 0,5 GB', url: 'https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf' },
-    equilibrado: { nome: 'Equilibrado (Qwen 2.5 1.5B)', tamanho: '≈ 1,1 GB', url: 'https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf' },
-    forte: { nome: 'Forte (Qwen 3 1.7B)', tamanho: '≈ 1,1 GB', url: 'https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/main/Qwen3-1.7B-Q4_K_M.gguf', semPensar: true },
+    leve: { nome: 'Leve (Qwen 2.5 0.5B)', tamanho: '≈ 0,5 GB', url: 'https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf', ctx: 8192 },
+    equilibrado: { nome: 'Equilibrado (Qwen 2.5 1.5B)', tamanho: '≈ 1,1 GB', url: 'https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf', ctx: 8192 },
+    forte: { nome: 'Forte (Qwen 3 1.7B)', tamanho: '≈ 1,1 GB', url: 'https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/main/Qwen3-1.7B-Q4_K_M.gguf', semPensar: true, ctx: 4096 },
   };
   const WASM_CDN = 'https://cdn.jsdelivr.net/npm/@wllama/wllama@3.13.0/esm/wasm/wllama.wasm';
   let w = null, carregadoUrl = null, wasmUrl = null;
@@ -14,7 +14,7 @@ const NexoLocal = (() => {
   const escolhido = () => {
     const m = (cfg.modelos.local || 'equilibrado').trim();
     if (MODELOS[m]) return Object.assign({ chave: m }, MODELOS[m]);
-    if (/^https?:\/\/.+\.gguf(\?.*)?$/i.test(m)) return { chave: m, nome: m.split('/').pop(), tamanho: '?', url: m };
+    if (/^https?:\/\/.+\.gguf(\?.*)?$/i.test(m)) return { chave: m, nome: m.split('/').pop(), tamanho: '?', url: m, ctx: 4096 };
     return Object.assign({ chave: 'equilibrado' }, MODELOS.equilibrado);
   };
 
@@ -128,7 +128,7 @@ const NexoLocal = (() => {
     }
     if (m.isModelLoaded()) { try { await m.exit(); } catch (e) { /* já fechado */ } w = null; await motor(); }
     aoProgresso('🧠 Carregando o cérebro na memória…');
-    await w.loadModel([await abrir(mod.url)], { n_ctx: 4096, n_batch: 256 });
+    await w.loadModel([await abrir(mod.url)], { n_ctx: mod.ctx || 4096, n_batch: 256 });
     carregadoUrl = mod.url;
     return mod;
   }
