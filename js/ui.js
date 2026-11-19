@@ -112,6 +112,7 @@ const UI = {
           ${typeof Anime !== 'undefined' && Anime.caps.length ? `<button class="mbtn anime-btn" ${f(() => Anime.menu())}>📺 Anime <small>assista aos capítulos da história</small></button>` : ''}
           <button class="mbtn" ${f(() => this.multiplayer())}>Multiplayer <small>com amigos • até ${P2P_MAX} • código de convite</small></button>
           <button class="mbtn" ${f(() => this.options())}>Opções</button>
+          <button class="mbtn" ${f(() => Idioma.escolher())}>🌐 Idioma / Language</button>
           <button class="mbtn" ${f(() => this.help())}>Como Jogar</button>
           ${IS_APK ? '' : `<a class="mbtn apk hidden" id="apk-dl" href="CronicasDeEldoria.apk" download="CronicasDeEldoria.apk">📱 Baixar para Android (APK)<small>joga com a tela deitada</small></a>`}
         </div>
