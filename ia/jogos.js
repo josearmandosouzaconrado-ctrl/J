@@ -50,12 +50,12 @@ const Jogos = (() => {
       el.querySelector('small').textContent = `versão ${j.versao} · ${Math.max(1, Math.round(j.html.length / 1024))} KB · ${({ paisagem: 'deitado', retrato: 'em pé', livre: 'gira a tela' })[j.orientacao] || ''}`;
       el.querySelector('[data-a=jogar]').onclick = () => jogarHtml(j.html);
       el.querySelector('[data-a=apk]').onclick = e => gerarApk(j, e.target);
-      el.querySelector('[data-a=melhorar]').onclick = () => {
-        const pedido = prompt(`O que mudar em "${j.titulo}"?`, 'Deixe mais bonito, com mais fases e efeitos');
+      el.querySelector('[data-a=melhorar]').onclick = async () => {
+        const pedido = await pedirTexto(`O que mudar em "${j.titulo}"?`, 'Deixe mais bonito, com mais fases e efeitos');
         if (pedido) perguntarNoChat(`Melhore o jogo "${j.titulo}" (use ler_jogo e depois criar_jogo com o mesmo título): ${pedido}`);
       };
-      el.querySelector('[data-a=apagar]').onclick = () => {
-        if (!confirm(`Apagar o jogo "${j.titulo}"?`)) return;
+      el.querySelector('[data-a=apagar]').onclick = async () => {
+        if (!await confirmar(`Apagar o jogo "${j.titulo}"?`, 'Apagar')) return;
         lista = lista.filter(x => x !== j); salvarLista(); desenhar();
       };
       box.appendChild(el);
@@ -83,7 +83,7 @@ const Jogos = (() => {
   async function gerarApk(j, botao) {
     if (gerando) return;
     if (!(cfg.github || '').trim()) {
-      alert('Para baixar o APK, configure o Plugin do GitHub em ⚙ (token).\n\nO app monta o APK aqui no celular, envia para um repositório seu e abre o link de download.');
+      await avisar('Para baixar o APK, configure o Plugin do GitHub em ⚙ (token).\n\nO app monta o APK aqui no celular, envia para um repositório seu e abre o link de download.');
       return abrirConfig();
     }
     gerando = true;
@@ -97,7 +97,7 @@ const Jogos = (() => {
       try { info = await gh('/repos/' + repo); }
       catch (e) {
         if (e.status !== 404) throw e;
-        if (!confirm(`Vou criar o repositório "${nomeRepo}" (${cfg.repoPrivado ? 'privado' : 'público'}) no seu GitHub para guardar os APKs. Continuar?`)) throw new Error('cancelado');
+        if (!await confirmar(`Vou criar o repositório "${nomeRepo}" (${cfg.repoPrivado ? 'privado' : 'público'}) no seu GitHub para guardar os APKs. Continuar?`)) throw new Error('cancelado');
         await gh('/user/repos', { method: 'POST', body: JSON.stringify({ name: nomeRepo, description: 'Jogos criados com o Nexo IA', private: !!cfg.repoPrivado, auto_init: true }) });
         await new Promise(r => setTimeout(r, 2000));
         info = await gh('/repos/' + repo);
@@ -118,7 +118,7 @@ const Jogos = (() => {
       desenhar();
       aviso('APK pronto! Toque em "Baixar APK"');
     } catch (e) {
-      if (e.message !== 'cancelado') alert('Não consegui gerar o APK: ' + e.message + (e.status === 403 || e.status === 404 ? '\n\nConfira se o token do GitHub tem permissão de "Contents" (escrita) e "Administration" para criar o repositório.' : ''));
+      if (e.message !== 'cancelado') avisar('Não consegui gerar o APK: ' + e.message + (e.status === 403 || e.status === 404 ? '\n\nConfira se o token do GitHub tem permissão de "Contents" (escrita) e "Administration" para criar o repositório.' : ''));
       botao.textContent = txt;
     } finally { gerando = false; }
   }

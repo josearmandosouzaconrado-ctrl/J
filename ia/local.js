@@ -121,7 +121,7 @@ const NexoLocal = (() => {
     if (carregadoUrl === mod.url && m.isModelLoaded()) return mod;
     const meta = await lerMeta(mod.url).catch(() => null);
     if (!meta || !meta.completo) {
-      if (!(meta && meta.salvos) && !confirm(`Para conversar sem chave, o Nexo vai baixar o cérebro "${mod.nome}" (${mod.tamanho}) UMA VEZ e guardar no celular.\n\nUse Wi-Fi. Continuar?`)) {
+      if (!(meta && meta.salvos) && !await dialogo(`Para conversar sem chave, o Nexo vai baixar o cérebro "${mod.nome}" (${mod.tamanho}) UMA VEZ e guardar no celular.\n\nDepois funciona até sem internet. Use Wi-Fi.`, { sim: 'Baixar', nao: 'Agora não' })) {
         throw Object.assign(new Error('Download cancelado. Você pode escolher outro tamanho em ⚙ → Nexo Local.'), { status: 0, local: true });
       }
       await baixar(mod.url, aoProgresso);

@@ -199,3 +199,12 @@ body.teclado #abas{display:none}
 .plugin .topo input[type=checkbox]{width:20px;height:20px;margin:0;accent-color:var(--roxo);flex:none}
 .plugin .topo b{flex:1}
 .plugin .topo button{background:none;border:0;color:var(--fraco);font-size:16px}
+
+/* ===== diálogo próprio (o WebView do APK não mostra confirm/prompt/alert) ===== */
+#dialogo{position:fixed;inset:0;z-index:50;background:#000a;display:none;align-items:center;justify-content:center;padding:20px}
+#dialogo.aberto{display:flex}
+#dialogo .caixa{background:var(--fundo2);border:1px solid var(--borda);border-radius:18px;padding:18px;width:100%;max-width:420px;box-shadow:0 10px 40px #000}
+#dlgTexto{white-space:pre-wrap;font-size:15.5px;line-height:1.45}
+#dialogo input{margin-top:12px}
+#dialogo .botoes{justify-content:flex-end;margin:14px 0 0}
+#dialogo .botoes .botao{min-width:96px;font-size:15px;padding:10px 14px}

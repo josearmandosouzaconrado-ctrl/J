@@ -29,8 +29,8 @@ WWW = os.path.join(ROOT, 'ia')
 OUT = os.path.join(ROOT, 'NexoIA.apk')
 PACKAGE = 'com.nexo.ia'
 APP_NAME = 'Nexo IA'
-VERSION_CODE = 3
-VERSION_NAME = '1.2.0'
+VERSION_CODE = 4
+VERSION_NAME = '1.2.1'
 ACTIVITY = PACKAGE + '.MainActivity'
 MIN_SDK, TARGET_SDK = 24, 34
 

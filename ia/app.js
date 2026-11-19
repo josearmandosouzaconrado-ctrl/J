@@ -293,14 +293,14 @@ const EXECUTAR = {
 
   async github_salvar({ repo, caminho, conteudo, mensagem, branch }) {
     repo = await nomeRepo(repo);
-    if (!confirm(`A IA quer salvar o arquivo\n${repo}/${caminho}\n(${(conteudo || '').length} caracteres) no GitHub.\n\nPermitir?`)) return { ia: { erro: 'o usuário não permitiu' } };
+    if (!await confirmar(`A IA quer salvar o arquivo\n${repo}/${caminho}\n(${(conteudo || '').length} caracteres) no GitHub.\n\nPermitir?`)) return { ia: { erro: 'o usuário não permitiu' } };
     const r = await ghSalvar(repo, caminho, new TextEncoder().encode(conteudo || ''), mensagem || ('Atualiza ' + caminho + ' (Nexo IA)'), branch);
     return { ia: { ok: true, commit: r.commit && r.commit.html_url, link: r.content && r.content.html_url } };
   },
 
   async github_issue({ repo, titulo, corpo }) {
     repo = await nomeRepo(repo);
-    if (!confirm(`A IA quer abrir a issue "${titulo}" em ${repo}.\n\nPermitir?`)) return { ia: { erro: 'o usuário não permitiu' } };
+    if (!await confirmar(`A IA quer abrir a issue "${titulo}" em ${repo}.\n\nPermitir?`)) return { ia: { erro: 'o usuário não permitiu' } };
     const r = await gh(`/repos/${repo}/issues`, { method: 'POST', body: JSON.stringify({ title: titulo, body: corpo || '' }) });
     return { ia: { ok: true, numero: r.number, link: r.html_url } };
   },
@@ -517,7 +517,7 @@ async function responder(conv, aoPasso, sinal, aoVivo) {
     }
   };
   let texto;
-  if (tipo === 'local') texto = await laçoLocal(msgs, rodar, sinal, aoVivo || (() => {}), aoPasso);
+  if (tipo === 'local') texto = await laçoLocal(msgs, rodar, sinal, aoVivo || (() => {}), aoPasso, cartoes);
   else if (tipo === 'gemini') texto = await laçoGemini(msgs, rodar, sinal);
   else if (tipo === 'anthropic') texto = await laçoAnthropic(msgs, rodar, sinal, aoVivo || (() => {}), aoPasso);
   else texto = await laçoOpenAI(msgs, rodar, sinal);
@@ -538,15 +538,17 @@ function resumoParaLocal(json) {
   if (d.videos) out.push('Vídeos encontrados no YouTube (já aparecem como cartões para o usuário tocar):', ...d.videos.map(v => `- ${v.titulo} — ${v.canal || ''} ${v.duracao || ''} (${v.link})`));
   return out.join('\n');
 }
-async function laçoLocal(msgs, rodar, sinal, aoVivo, aoPasso) {
+const PEDE_JOGO = /\b(cri[ae]r?|fa[çz]a|fazer|gera|gerar|monta|montar|programa|desenvolv\w*|quero)\b[\s\S]{0,60}\b(jogo|game|app|aplicativo)\b|\b(jogo|game)\b[\s\S]{0,40}\b(pixel ?art|2d|3d|plataforma|nave|cobrinha|snake|rpg|corrida|tiro|puzzle)/i;
+async function laçoLocal(msgs, rodar, sinal, aoVivo, aoPasso, cartoes) {
   const passo = aoPasso('🧠 Acordando o Nexo Local…');
   let mod;
   try { mod = await NexoLocal.preparar(t => passo.atualizar(t)); passo.atualizar('🧠 Nexo Local pronto (' + mod.nome + ')'); passo(true); }
   catch (e) { passo(false); throw e; }
   const ultima = msgs[msgs.length - 1];
   const pergunta = typeof ultima.content === 'string' ? ultima.content : '';
+  const jogo = PEDE_JOGO.test(pergunta);
   let contexto = '';
-  if (cfg.pesquisaLocal !== false && pergunta.length > 6 && PRECISA_PESQUISA.test(pergunta)) {
+  if (!jogo && cfg.pesquisaLocal !== false && pergunta.length > 6 && PRECISA_PESQUISA.test(pergunta)) {
     const tarefas = [rodar('pesquisar_web', { consulta: cortar(pergunta, 200) })];
     if (PEDE_VIDEO.test(pergunta)) tarefas.push(rodar('pesquisar_youtube', { consulta: cortar(pergunta, 120), quantidade: 4 }));
     contexto = (await Promise.all(tarefas)).map(resumoParaLocal).filter(Boolean).join('\n\n').slice(0, 3500);
@@ -556,6 +558,13 @@ Responda em português do Brasil, de forma direta, útil e simpática, com markd
 Você entende muito de animes, séries, filmes, games e cultura pop.
 Se houver RESULTADOS DA PESQUISA abaixo, use-os para fatos atuais e cite os links. Nunca invente datas, números ou links: se não souber, diga que não sabe.
 Se pedirem um jogo ou app, escreva um arquivo HTML completo (HTML, CSS e JavaScript juntos, com controles de toque) dentro de um bloco \`\`\`html, para o usuário tocar em "Rodar".`;
+  if (jogo) sistema += `
+
+O usuário pediu um JOGO. Regras:
+- Responda com UMA frase curta e depois UM bloco \`\`\`html com o arquivo completo (<!doctype html> … </html>), sem explicações longas.
+- Use <canvas> e JavaScript puro, sem bibliotecas nem imagens externas. Para pixel art: desenhe os sprites com fillRect a partir de matrizes de cores, ctx.imageSmoothingEnabled=false e escala inteira.
+- Tela cheia, botões de toque na tela (esquerda, direita, pular/atirar) e também teclado (setas/espaço). Loop com requestAnimationFrame.
+- Tenha: tela inicial, pontuação, colisão, game over e reiniciar. Código curto, completo e sem erros.`;
   if (cfg.livre) sistema += '\nModo adulto: fale de forma franca sobre temas maduros das obras, sem sermão nem avisos desnecessários.';
   if ((cfg.persona || '').trim()) sistema += '\nPersonalidade pedida pelo usuário: ' + cfg.persona.trim();
   if (contexto) sistema += '\n\nRESULTADOS DA PESQUISA:\n' + contexto;
@@ -563,8 +572,15 @@ Se pedirem um jogo ou app, escreva um arquivo HTML completo (HTML, CSS e JavaScr
   const hist = msgs.slice(-8).map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: cortar(typeof m.content === 'string' ? m.content : '', 1500) }));
   while (hist.length && hist[0].role !== 'user') hist.shift();
   const limpar = t => t.replace(/<think>[\s\S]*?(<\/think>|$)/g, '').trim();
-  const texto = await NexoLocal.conversar([{ role: 'system', content: sistema }].concat(hist), { sinal, aoTexto: t => aoVivo(limpar(t)) });
+  const texto = await NexoLocal.conversar([{ role: 'system', content: sistema }].concat(hist), { sinal, aoTexto: t => aoVivo(limpar(t)), maxTokens: jogo ? 3500 : 1500 });
   msgs.push({ role: 'assistant', content: texto });
+  // se veio um jogo em HTML, guarda na aba Jogos e mostra o cartão para jogar
+  const m = texto.match(/```(?:html)?\s*\n([\s\S]*?<\/html>|[\s\S]*?<script[\s\S]*?<\/script>[\s\S]*?)(?:```|$)/i);
+  if (jogo && m && /<(canvas|script)/i.test(m[1])) {
+    const tit = (pergunta.match(/jogo\s+(?:de|do|da|estilo)?\s*([^.,!?\n]{3,40})/i) || [])[1];
+    const j = Jogos.salvar({ titulo: tit ? 'Jogo ' + tit.trim() : 'Jogo ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }), emoji: /pixel/i.test(pergunta) ? '👾' : '🎮', html: m[1] });
+    cartoes.push({ tipo: 'jogo', id: j.id, titulo: j.titulo, emoji: j.emoji, versao: j.versao });
+  }
   return texto || '(resposta vazia)';
 }
 
@@ -861,6 +877,31 @@ function aviso(t) {
   a.textContent = t; a.classList.add('ver');
   clearTimeout(aviso.t); aviso.t = setTimeout(() => a.classList.remove('ver'), 2600);
 }
+// janela própria no lugar de confirm/prompt/alert (que o WebView do APK não mostra)
+let filaDialogo = Promise.resolve();
+function dialogo(texto, { sim = 'OK', nao = 'Cancelar', entrada = null } = {}) {
+  const vez = filaDialogo.then(() => new Promise(fim => {
+    const d = $('#dialogo'), inp = $('#dlgEntrada');
+    $('#dlgTexto').textContent = texto;
+    $('#dlgSim').textContent = sim;
+    $('#dlgNao').textContent = nao || '';
+    $('#dlgNao').style.display = nao ? '' : 'none';
+    inp.style.display = entrada === null ? 'none' : '';
+    inp.value = entrada === null ? '' : entrada;
+    d.classList.add('aberto');
+    if (entrada !== null) setTimeout(() => inp.focus(), 50);
+    const fechar = v => { d.classList.remove('aberto'); $('#dlgSim').onclick = $('#dlgNao').onclick = inp.onkeydown = null; fim(v); };
+    $('#dlgSim').onclick = () => fechar(entrada === null ? true : inp.value.trim());
+    $('#dlgNao').onclick = () => fechar(entrada === null ? false : null);
+    inp.onkeydown = e => { if (e.key === 'Enter') $('#dlgSim').click(); };
+  }));
+  filaDialogo = vez.catch(() => {});
+  return vez;
+}
+const confirmar = (t, sim, nao) => dialogo(t, { sim: sim || 'Sim', nao: nao || 'Cancelar' });
+const pedirTexto = (t, padrao) => dialogo(t, { sim: 'OK', nao: 'Cancelar', entrada: padrao || '' });
+const avisar = t => dialogo(t, { sim: 'OK', nao: null });
+
 function rolarFim() { requestAnimationFrame(() => { elChat.scrollTop = elChat.scrollHeight; }); }
 
 const SUGESTOES = [
@@ -930,7 +971,7 @@ function desenharMsg(m) {
       bt.className = 'botoes rodarCodigo';
       bt.innerHTML = '<button class="botao">▶ Rodar</button><button class="botao">💾 Salvar como jogo</button>';
       bt.children[0].onclick = () => Jogos.jogarHtml(html);
-      bt.children[1].onclick = () => { const t = prompt('Nome do jogo:', 'Meu jogo'); if (t) { Jogos.salvar({ titulo: t, html }); aviso('Salvo na aba Jogos'); } };
+      bt.children[1].onclick = async () => { const t = await pedirTexto('Nome do jogo:', 'Meu jogo'); if (t) { Jogos.salvar({ titulo: t, html }); aviso('Salvo na aba Jogos'); } };
       cod.parentNode.after(bt);
     });
     b.appendChild(corpo);
@@ -1069,6 +1110,7 @@ async function enviar(textoUsuario) {
 
 function explicarErro(e) {
   if (e.name === 'AbortError') return '⏹ Resposta interrompida.';
+  if (e.local) return '**' + (e.message || String(e)) + '**';
   const s = e.status, msg = e.message || String(e);
   let dica = '';
   if (s === 400 && /api key|API_KEY/i.test(msg)) dica = 'A chave parece inválida. Confira nas configurações (⚙).';
@@ -1121,6 +1163,7 @@ window.addEventListener('popstate', () => {
 });
 function pararJogo() { const q = $('#quadroJogo'); if (q.srcdoc) { q.srcdoc = ''; q.removeAttribute('srcdoc'); } }
 window.androidBack = () => fecharPaineis();
+window.addEventListener('popstate', () => { if ($('#dialogo').classList.contains('aberto')) $('#dlgNao').click(); });
 document.querySelectorAll('[data-fechar]').forEach(b => b.onclick = () => fecharPaineis());
 $('#veu').onclick = () => fecharPaineis();
 
@@ -1140,8 +1183,8 @@ function desenharLista() {
     el.innerHTML = '<span class="t"></span><button aria-label="Apagar">🗑</button>';
     el.querySelector('.t').textContent = c.titulo;
     el.querySelector('.t').onclick = () => { atual = c; fecharPaineis(); mostrarConversa(); };
-    el.querySelector('button').onclick = () => {
-      if (!confirm('Apagar "' + c.titulo + '"?')) return;
+    el.querySelector('button').onclick = async () => {
+      if (!await confirmar('Apagar "' + c.titulo + '"?', 'Apagar')) return;
       conversas = conversas.filter(x => x !== c);
       if (atual === c) { atual = null; mostrarConversa(); }
       salvarConversas(); desenharLista();
@@ -1251,11 +1294,11 @@ $('#salvarCfg').onclick = () => {
   aviso('Configurações salvas');
 };
 $('#apagarModelo').onclick = async () => {
-  if (!confirm('Apagar os cérebros baixados? Eles serão baixados de novo quando você usar o Nexo Local.')) return;
+  if (!await confirmar('Apagar os cérebros baixados? Eles serão baixados de novo quando você usar o Nexo Local.', 'Apagar')) return;
   try { await NexoLocal.apagarTudo(); aviso('Cérebros apagados'); preencherProv(); } catch (e) { aviso('Erro: ' + e.message); }
 };
-$('#apagarTudo').onclick = () => {
-  if (!confirm('Apagar TODAS as conversas?')) return;
+$('#apagarTudo').onclick = async () => {
+  if (!await confirmar('Apagar TODAS as conversas?', 'Apagar')) return;
   conversas = []; atual = null; salvarConversas(); mostrarConversa(); aviso('Conversas apagadas');
 };
 
