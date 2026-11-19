@@ -49,7 +49,7 @@ if MIAMI:
 ACTIVITY = PACKAGE + '.MainActivity'
 MIN_SDK, TARGET_SDK = 24, 34
 # img/ não entra: as imagens vão embutidas em js/imgdata.js (tools/gerar_imgdata.py)
-WEB_FILES = ['index.html', 'manifest.json', 'css', 'js', 'icons', 'anime/arte', 'img/oceano.webp', 'img/terreno.webp']
+WEB_FILES = ['index.html', 'manifest.json', 'css', 'js', 'icons', 'anime/arte', 'img/oceano.webp', 'img/terreno.webp', 'img/serpente.webp']
 ADM_SO = ['js/eramoderna_arte.js', 'js/eramoderna.js', 'js/batalhas_deco.js', 'js/batalhas.js', 'js/batalhas2.js']   # arquivos que só vão no APK ADM
 
 
