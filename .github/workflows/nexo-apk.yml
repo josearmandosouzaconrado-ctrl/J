@@ -22,11 +22,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY' > info.env
-          import json
+          import json, shlex
           t = open('ia/novidades.js', encoding='utf-8').read()
           v = json.loads(t[t.index('['):t.rindex(']') + 1])[0]
-          print('VER=' + v['versao'])
-          print('NOME=' + v['nome'].replace('"', ''))
+          print('VER=' + shlex.quote(v['versao']))
+          print('NOME=' + shlex.quote(v['nome'].replace('"', '')))
           open('notas.md', 'w', encoding='utf-8').write(
               f'## Atualização {v["versao"]} — "{v["nome"]}"\n\n' + '\n'.join('- ' + i for i in v['itens']) +
               '\n\nBaixe **NexoIA.apk** no celular Android e abra para instalar (instala por cima, sem perder nada).\n')
