@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#0d0f14">
+<title>Nexo IA</title>
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="topo">
+  <button class="icone" id="btnMenu" aria-label="Conversas">☰</button>
+  <div class="titulo">
+    <div class="nome">Nexo <span>IA</span></div>
+    <div class="modelo" id="chipModelo">sem modelo</div>
+  </div>
+  <button class="icone" id="btnNovo" aria-label="Nova conversa">✚</button>
+  <button class="icone" id="btnConfig" aria-label="Configurações">⚙</button>
+</header>
+
+<main id="chat">
+  <section id="boasVindas">
+    <img src="icon-192.png" alt="" class="logo">
+    <h1>O que vamos descobrir hoje?</h1>
+    <p>Pergunto ao Google, YouTube, MyAnimeList, TVmaze e Wikipédia por você — e converso sobre qualquer série, anime ou assunto.</p>
+    <div id="sugestoes"></div>
+  </section>
+  <div id="mensagens"></div>
+</main>
+
+<footer id="entrada">
+  <textarea id="texto" rows="1" placeholder="Pergunte qualquer coisa…" enterkeyhint="send"></textarea>
+  <button id="btnEnviar" aria-label="Enviar">➤</button>
+</footer>
+
+<!-- gaveta de conversas -->
+<aside id="gaveta" class="painel-lateral">
+  <div class="cab"><b>Conversas</b><button class="icone" data-fechar>✕</button></div>
+  <button class="botao largo" id="btnNovo2">✚ Nova conversa</button>
+  <div id="listaConversas"></div>
+</aside>
+
+<!-- configurações -->
+<section id="config" class="painel">
+  <div class="cab"><b>Configurações</b><button class="icone" data-fechar>✕</button></div>
+  <div class="corpo">
+    <label>Cérebro da IA (provedor)
+      <select id="cfgProv"></select>
+    </label>
+    <p class="dica" id="dicaProv"></p>
+    <label id="rotBase">Endereço da API (compatível com OpenAI)
+      <input id="cfgBase" placeholder="http://192.168.0.10:11434/v1" autocomplete="off">
+    </label>
+    <label>Chave da API
+      <div class="linha"><input id="cfgChave" type="password" placeholder="cole sua chave aqui" autocomplete="off"><button class="botao mini" id="verChave">👁</button></div>
+    </label>
+    <label>Modelo
+      <div class="linha"><input id="cfgModelo" list="listaModelos" autocomplete="off"><button class="botao mini" id="carregarModelos">Listar</button></div>
+      <datalist id="listaModelos"></datalist>
+    </label>
+    <p class="dica" id="dicaModelos"></p>
+
+    <h3>Pesquisas</h3>
+    <label>Chave do Gemini para pesquisar no Google <small>(grátis, opcional se o provedor já é o Gemini)</small>
+      <input id="cfgGemini" type="password" placeholder="mesma chave do aistudio.google.com" autocomplete="off">
+    </label>
+    <label>Chave da API do YouTube <small>(opcional — sem ela eu pesquiso direto no site)</small>
+      <input id="cfgYoutube" type="password" placeholder="opcional" autocomplete="off">
+    </label>
+
+    <h3>Personalidade</h3>
+    <label class="interruptor"><input type="checkbox" id="cfgLivre"> <span>Modo livre: conversa adulta e direta, sem sermão e sem filtro extra do app (no Gemini também desliga os filtros ajustáveis do Google)</span></label>
+    <label>Instruções extras para a IA
+      <textarea id="cfgPersona" rows="4" placeholder="Ex.: me chame de mestre, fale como um otaku, use gírias, seja sarcástico…"></textarea>
+    </label>
+
+    <button class="botao largo forte" id="salvarCfg">Salvar</button>
+    <button class="botao largo perigo" id="apagarTudo">Apagar todas as conversas</button>
+    <p class="dica">Suas chaves ficam só neste celular. Elas vão direto para o provedor que você escolheu.</p>
+  </div>
+</section>
+
+<div id="veu"></div>
+<div id="aviso"></div>
+<script src="app.js"></script>
+</body>
+</html>

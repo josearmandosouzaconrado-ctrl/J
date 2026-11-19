@@ -8,3 +8,4 @@ miami/node_modules/
 __pycache__/
 # estado da Sala Oficial (gerado pelo servidor)
 rede/sala.json
+android/signing_nexo/key.pem

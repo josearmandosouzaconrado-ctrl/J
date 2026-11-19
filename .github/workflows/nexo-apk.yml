@@ -1,0 +1,30 @@
+# Publica o APK do Nexo IA numa Release do GitHub sempre que ele muda.
+# Link fixo (sempre a versão mais nova):
+#   https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/nexo-ultima/NexoIA.apk
+name: Publicar APK Nexo IA
+on:
+  push:
+    paths:
+      - 'NexoIA.apk'
+      - '.github/workflows/nexo-apk.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Criar ou atualizar a Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER=$(sed -n "s/^VERSION_NAME = '\([^']*\)'.*/\1/p" android/build_apk_ia.py)
+          FIXA="nexo-ultima"
+          NOTAS="Nexo IA $VER: chat com IA que pesquisa no Google, YouTube, MyAnimeList, TVmaze e Wikipédia. Baixe NexoIA.apk no celular Android e instale (permita instalar de fontes desconhecidas)."
+          if ! gh release view "$FIXA" >/dev/null 2>&1; then
+            gh release create "$FIXA" --target "$GITHUB_SHA" --title "Nexo IA (versão mais nova: $VER)" --notes "$NOTAS" --latest=false
+          else
+            gh release edit "$FIXA" --title "Nexo IA (versão mais nova: $VER)" --notes "$NOTAS"
+          fi
+          gh release upload "$FIXA" NexoIA.apk --clobber
