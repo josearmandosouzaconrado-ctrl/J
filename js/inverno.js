@@ -87,13 +87,56 @@ const Inverno = {
     const G = Game, P = G.player, L = [P];
     for (const a of G.actors) if (a.moving && !a.dead && !a.fly && dist(a.x, a.y, P.x, P.y) < 260) L.push(a);
     for (const a of L) {
-      const u = a._pg; if (u && dist(u.x, u.y, a.x, a.y) < 7) continue;
+      const k = a === P ? (P.mounted ? 'casco' : 'bota') : a.montado ? 'casco' : this.tipoPe(a);
+      const passo = k === 'casco' ? 9 : k === 'pata' || k === 'patona' ? 8 : k === 'cervo' ? 9 : 7;
+      const u = a._pg; if (u && dist(u.x, u.y, a.x, a.y) < passo) continue;
       a._pg = { x: a.x, y: a.y, lado: u ? -u.lado : 1 };
       if (!u || !this.naNeve(a.x, a.y)) continue;
-      const ang = Math.atan2(a.y - u.y, a.x - u.x), cav = a === P ? P.mounted : a.montado;
-      this.pegadas.push({ x: a.x - Math.sin(ang) * 2 * a._pg.lado, y: a.y + Math.cos(ang) * 2 * a._pg.lado, ang, t: G.t, cav });
+      const ang = Math.atan2(a.y - u.y, a.x - u.x), lado = a._pg.lado, abre = k === 'bota' ? 2 : 3;
+      const funda = Game.world.tileAt(Math.floor(a.x / 16), Math.floor(a.y / 16)) === T.SNOW || Estacoes.nivelPintado > 0.75;
+      this.pegadas.push({ x: a.x - Math.sin(ang) * abre * lado, y: a.y + Math.cos(ang) * abre * lado, ang, t: G.t, k, lado, funda, px: u.x - Math.sin(ang) * abre * lado, py: u.y + Math.cos(ang) * abre * lado });
+      // bichos de quatro patas deixam um par (as patas de trás quase em cima das da frente)
+      if (k !== 'bota') this.pegadas.push({ x: a.x + Math.sin(ang) * abre * lado - Math.cos(ang) * 3, y: a.y - Math.cos(ang) * abre * lado - Math.sin(ang) * 3, ang, t: G.t, k, lado: -lado, funda });
+      // neve fofa espirra um pouco a cada passo
+      if (funda && dist(a.x, a.y, P.x, P.y) < 160 && Math.random() < 0.5) G.particle(a.x + (Math.random() - 0.5) * 4, a.y, Math.cos(ang) * 10 + (Math.random() - 0.5) * 14, -10 - Math.random() * 10, 'rgba(245,250,255,0.9)', 0.35, 1, 90);
     }
-    if (this.pegadas.length > 360) this.pegadas.splice(0, this.pegadas.length - 360);
+    if (this.pegadas.length > 420) this.pegadas.splice(0, this.pegadas.length - 420);
+  },
+  tipoPe(a) {
+    const k = a.look && a.look.k;
+    if (k === 'wolf' || k === 'rabbit' || k === 'spider' || k === 'lizard' || k === 'scorpion') return 'pata';
+    if (k === 'bear' || k === 'golem' || k === 'dragon') return 'patona';
+    if (k === 'deer' || k === 'boar') return 'cervo';
+    return 'bota';
+  },
+  // cada marca é desenhada uma vez (16 direções) e guardada: uma cova na neve com sombra do lado do sol
+  // (noroeste), a borda de neve empurrada clara do outro lado e o fundo azulado da neve compactada
+  _sprPe: {},
+  sprPe(k, dir, lado) {
+    const key = k + dir + lado; let c = this._sprPe[key]; if (c) return c;
+    const S = 14; c = document.createElement('canvas'); c.width = S; c.height = S; const x = c.getContext('2d');
+    const forma = (g) => {
+      g.beginPath();
+      if (k === 'bota') { g.ellipse(2.2, 0, 2.3, 1.5, 0, 0, Math.PI * 2); g.moveTo(-1.2, 0); g.ellipse(-2.5, 0, 1.4, 1.25, 0, 0, Math.PI * 2); g.rect(-1.5, -0.95, 3.6, 1.9); }
+      else if (k === 'casco') { g.ellipse(0, 0, 2.6, 2.4, 0, 0, Math.PI * 2); }
+      else if (k === 'cervo') { g.ellipse(1, -0.9, 1.9, 0.75, 0.15, 0, Math.PI * 2); g.ellipse(1, 0.9, 1.9, 0.75, -0.15, 0, Math.PI * 2); }
+      else { const r = k === 'patona' ? 1.4 : 1; g.ellipse(-0.6, 0, 1.6 * r, 1.5 * r, 0, 0, Math.PI * 2); for (const [dx, dy] of [[1.8, -1.5], [2.4, -0.5], [2.4, 0.6], [1.8, 1.6]]) { g.moveTo(dx * r + 0.7 * r, dy * r); g.ellipse(dx * r, dy * r, 0.7 * r, 0.6 * r, 0, 0, Math.PI * 2); } }
+    };
+    const ang = dir / 16 * Math.PI * 2, esc = k === 'bota' ? 1.35 : k === 'casco' ? 1.15 : 1.1;
+    // cada camada é desenhada à parte e "endurecida" (alfa 0 ou 1): pixels nítidos como o resto do jogo
+    const tmp = document.createElement('canvas'); tmp.width = S; tmp.height = S; const t = tmp.getContext('2d');
+    const camada = (ox, oy, rgb, a, extra) => {
+      t.clearRect(0, 0, S, S); t.save(); t.translate(S / 2 + ox, S / 2 + oy); t.rotate(ang); if (lado < 0) t.scale(1, -1); t.scale(esc, esc); t.fillStyle = '#fff'; forma(t); t.fill(); if (extra) extra(t); t.restore();
+      const d = t.getImageData(0, 0, S, S), q = d.data;
+      for (let i = 0; i < q.length; i += 4) { const on = q[i + 3] > 110; q[i] = rgb[0]; q[i + 1] = rgb[1]; q[i + 2] = rgb[2]; q[i + 3] = on ? a : 0; }
+      t.putImageData(d, 0, 0); x.drawImage(tmp, 0, 0);
+    };
+    camada(0.9, 0.9, [252, 253, 255], 235);                 // borda de neve empurrada (lado da luz)
+    camada(0, 0, [84, 98, 138], 240);                      // sombra dentro da cova
+    camada(0.6, 0.7, [168, 182, 214], 250);                  // fundo de neve compactada
+    if (k === 'bota') camada(0.6, 0.7, [140, 156, 196], 250, g => { g.fillStyle = '#fff'; for (const sx of [-2.6, -1.6, 0.6, 1.8, 3]) { g.beginPath(); g.rect(sx, -1.1, 0.5, 2.2); g.fill(); } });   // ranhuras da sola
+    if (k === 'casco') camada(0.6, 0.7, [214, 224, 244], 255, g => { g.beginPath(); g.ellipse(-0.6, 0, 1.3, 1.1, 0, 0, Math.PI * 2); g.fill(); });   // a ranilha do casco
+    this._sprPe[key] = c; return c;
   },
   // ---------- folhas no outono e vaga-lumes nas noites quentes ----------
   ambiente(dt) {
@@ -112,15 +155,24 @@ const Inverno = {
   // ---------- desenho ----------
   drawables(D, camX, camY, vw, vh) {
     if (!this.pegadas.length) return;
-    const t = Game.t;
+    const t = Game.t, w = Game.weather.kind, enche = w === 'nevasca' ? 4 : w === 'snow' ? 2 : 1;   // nevando, as pegadas se enchem de neve mais rápido
     D.push({ y: -1e9, fn: (ctx) => {
+      // sulco: em neve funda o pé arrasta e deixa um caminho afundado entre os passos
+      ctx.lineCap = 'round';
       for (const p of this.pegadas) {
-        const age = t - p.t; if (age > 50) continue;
+        if (!p.funda || p.px === undefined) continue;
+        const age = (t - p.t) * enche; if (age > 70) continue;
+        const x = p.x - camX, y = p.y - camY; if (x < -20 || y < -20 || x > vw + 20 || y > vh + 20) continue;
+        ctx.globalAlpha = Math.max(0, 0.22 * (1 - age / 70));
+        ctx.strokeStyle = '#7a90c0'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(p.px - camX, p.py - camY); ctx.lineTo(x, y); ctx.stroke();
+      }
+      for (const p of this.pegadas) {
+        const age = (t - p.t) * enche; if (age > 90) continue;
         const x = Math.round(p.x - camX), y = Math.round(p.y - camY); if (x < -8 || y < -8 || x > vw + 8 || y > vh + 8) continue;
-        ctx.globalAlpha = Math.max(0, 0.5 * (1 - age / 50));
-        ctx.fillStyle = '#8a9ab8';
-        if (p.cav) { ctx.fillRect(x - 2, y - 1, 3, 3); ctx.fillRect(x + 3, y - 1, 3, 3); }
-        else if (Math.abs(Math.cos(p.ang)) > 0.7) ctx.fillRect(x - 2, y, 4, 2); else ctx.fillRect(x, y - 2, 2, 4);
+        // recém-feita bem marcada; depois a neve vai alisando e enchendo a marca
+        ctx.globalAlpha = Math.max(0, (p.funda ? 0.95 : 0.75) * (age < 20 ? 1 : 1 - (age - 20) / 70));
+        const dir = ((Math.round(p.ang / (Math.PI * 2) * 16) % 16) + 16) % 16;
+        ctx.drawImage(this.sprPe(p.k || 'bota', dir, p.lado || 1), x - 7, y - 7);
       }
       ctx.globalAlpha = 1;
     } });

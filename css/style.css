@@ -454,3 +454,16 @@ a.mbtn.apk small { display: block; font-size: 13px; opacity: .8; }
 #anime-player .ap-prog { flex: 1; height: 10px; background: rgba(255, 255, 255, 0.2); border-radius: 5px; overflow: hidden; cursor: pointer; }
 #anime-player .ap-prog i { display: block; height: 100%; width: 0; background: #ffd75a; }
 #anime-player .ap-tm { color: #ddd; font-size: 15px; min-width: 96px; text-align: right; }
+
+/* atividades: roda de capoeira e desafio dos tambores */
+#ritmo { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 60; background: rgba(14,10,20,.94); border: 3px solid var(--border, #8a6a3a); padding: 12px 18px; text-align: center; color: #f2e6cc; font-family: VT323, monospace; min-width: 260px; }
+#ritmo .rt-t { font-size: 24px; color: var(--gold, #f0c040); }
+#ritmo .rt-seta { font-size: 72px; line-height: 80px; transition: transform .1s; }
+#ritmo .rt-seta.ok { color: #80ff80; transform: scale(1.25); }
+#ritmo .rt-seta.erro { color: #ff6060; transform: rotate(8deg); }
+#ritmo .rt-nome { font-size: 22px; min-height: 24px; }
+#ritmo .rt-barra { height: 8px; background: #2a2030; margin: 6px 0; }
+#ritmo .rt-barra i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #e04040, #f0c040, #60e060); }
+#ritmo .rt-pts { font-size: 18px; color: #c8b8a0; }
+#ritmo .rt-bts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+#ritmo .rt-bts button { font-size: 30px; padding: 6px 0; background: #3a2a1a; color: #f2e6cc; border: 2px solid #8a6a3a; font-family: inherit; }
