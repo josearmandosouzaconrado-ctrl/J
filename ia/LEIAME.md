@@ -17,6 +17,21 @@ Baixe o **`NexoIA.apk`** no celular e instale (permita "instalar apps de fontes 
 Link fixo da versão mais nova:
 https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/nexo-ultima/NexoIA.apk
 
+## Novidades da versão 1.1
+
+- **Logo nova** (gatinho com olhos de estrela).
+- **Claude Fable 5.2 e Opus 5.5**: atalhos em ⚙ → Anthropic. A resposta aparece ao vivo, com ajuste de **esforço** (de "baixo" a "máximo") e troca automática de modelo se o Claude recusar.
+- **Criador de jogos**: peça *"crie um jogo de…"*. A IA escreve o jogo inteiro (HTML5 para celular), ele aparece num cartão e na aba **Jogos**. Lá você **joga na hora**, pede melhorias e toca em **📦 APK**. O próprio app monta e assina o APK no celular, envia para o repositório `nexo-jogos` no seu GitHub e mostra o botão **⬇ Baixar APK**.
+- **Plugin do GitHub**: com um token, a IA lista seus repositórios, lê arquivos, salva arquivos (commit) e abre issues. Ela pede sua confirmação antes de gravar.
+- **Plugins MCP**: conecte qualquer servidor MCP (GitHub oficial e Figma já vêm prontos; "Outro" aceita qualquer endereço e token). Funciona com o Claude.
+- **Aba Animes**: temporada atual, em exibição, top, em breve e busca de animes e mangás. O detalhe mostra a nota, o estúdio, a sinopse, as aberturas, as continuações e **todos os episódios**: título, data, filler/recap, botão para marcar como visto (com barra de progresso) e busca do episódio no YouTube. Também tem os links **oficiais** de onde assistir ou ler e a **Minha lista** de favoritos.
+
+### Sobre os plugins do Claude.ai
+Os conectores que você usa dentro do Claude (Docs, Figma, Picsart, partituras, GitHub) ficam presos à sua conta do claude.ai e não podem ser copiados para outro app. No Nexo você adiciona cada serviço pelo **endereço MCP + token** dele (ou pelo plugin do GitHub nativo).
+
+### Sobre "todos os episódios"
+O app lista todos os episódios e leva até onde assistir **oficialmente** (Crunchyroll, Netflix e outros cadastrados no MyAnimeList) ou procura no YouTube. Ele não embute sites piratas de streaming.
+
 ## Primeiro uso: escolher o "cérebro"
 
 O app não tem um modelo de IA dentro dele (um modelo bom tem dezenas de GB). Ele usa o modelo que você escolher, com a sua chave:
@@ -44,6 +59,6 @@ Os provedores ainda aplicam as próprias regras deles; quem quiser o mínimo de 
 
 ## Para desenvolvedores
 
-- Código do app: `ia/index.html`, `ia/style.css`, `ia/app.js` (sem dependências).
+- Código do app: `ia/index.html`, `ia/style.css`, `ia/app.js` (chat, IA e plugins), `ia/animes.js`, `ia/jogos.js` e `ia/apk.js` (gera e assina APKs dentro do app; produz exatamente os mesmos bytes que `android/build_apk_ia.py`).
 - Gerar o APK (sem Android SDK): `python3 android/build_apk_ia.py` → `NexoIA.apk`.
 - Testar no PC: abra `ia/index.html` no Chrome iniciado com `--disable-web-security` (no APK isso é feito por `setAllowUniversalAccessFromFileURLs`).

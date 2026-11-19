@@ -19,20 +19,58 @@
   <button class="icone" id="btnConfig" aria-label="Configurações">⚙</button>
 </header>
 
-<main id="chat">
-  <section id="boasVindas">
-    <img src="icon-192.png" alt="" class="logo">
-    <h1>O que vamos descobrir hoje?</h1>
-    <p>Pergunto ao Google, YouTube, MyAnimeList, TVmaze e Wikipédia por você — e converso sobre qualquer série, anime ou assunto.</p>
-    <div id="sugestoes"></div>
+<div id="vistas">
+  <!-- ===== CHAT ===== -->
+  <section class="vista ativa" id="vChat">
+    <main id="chat">
+      <section id="boasVindas">
+        <img src="icon-192.png" alt="" class="logo">
+        <h1>O que vamos descobrir hoje?</h1>
+        <p>Pesquiso no Google, YouTube, MyAnimeList, TVmaze e Wikipédia, crio jogos que viram APK e mexo no seu GitHub.</p>
+        <div id="sugestoes"></div>
+      </section>
+      <div id="mensagens"></div>
+    </main>
+    <footer id="entrada">
+      <textarea id="texto" rows="1" placeholder="Pergunte ou peça um jogo…" enterkeyhint="send"></textarea>
+      <button id="btnEnviar" aria-label="Enviar">➤</button>
+    </footer>
   </section>
-  <div id="mensagens"></div>
-</main>
 
-<footer id="entrada">
-  <textarea id="texto" rows="1" placeholder="Pergunte qualquer coisa…" enterkeyhint="send"></textarea>
-  <button id="btnEnviar" aria-label="Enviar">➤</button>
-</footer>
+  <!-- ===== ANIMES ===== -->
+  <section class="vista" id="vAnimes">
+    <div class="barraBusca">
+      <input id="buscaAnime" type="search" placeholder="Buscar anime ou mangá…" enterkeyhint="search">
+      <select id="tipoAnime"><option value="anime">Anime</option><option value="manga">Mangá</option></select>
+    </div>
+    <div class="chips" id="chipsAnime">
+      <button data-l="temporada" class="ativo">🔥 Temporada</button>
+      <button data-l="top_em_exibicao">📡 Em exibição</button>
+      <button data-l="top_geral">🏆 Top</button>
+      <button data-l="proximos">⏳ Em breve</button>
+      <button data-l="favoritos">❤️ Minha lista</button>
+    </div>
+    <div id="gradeAnimes" class="grade"></div>
+  </section>
+
+  <!-- ===== JOGOS ===== -->
+  <section class="vista" id="vJogos">
+    <div class="corpo">
+      <div class="cartaoInfo">
+        <b>🎮 Seus jogos</b>
+        <p>Peça no chat: <i>"crie um jogo de nave estilo arcade"</i>. O jogo aparece aqui. Toque em <b>Jogar</b> para testar e em <b>APK</b> para virar um app instalável (precisa do plugin do GitHub).</p>
+        <p class="dica">Para os melhores jogos use o Claude Fable 5.2 ou o Opus 5.5 (⚙ → Anthropic).</p>
+      </div>
+      <div id="listaJogos"></div>
+    </div>
+  </section>
+</div>
+
+<nav id="abas">
+  <button data-v="vChat" class="ativo"><b>💬</b>Chat</button>
+  <button data-v="vAnimes"><b>🎌</b>Animes</button>
+  <button data-v="vJogos"><b>🎮</b>Jogos</button>
+</nav>
 
 <!-- gaveta de conversas -->
 <aside id="gaveta" class="painel-lateral">
@@ -40,6 +78,18 @@
   <button class="botao largo" id="btnNovo2">✚ Nova conversa</button>
   <div id="listaConversas"></div>
 </aside>
+
+<!-- detalhes do anime -->
+<section id="detalheAnime" class="painel">
+  <div class="cab"><b id="detTitulo">Anime</b><button class="icone" data-fechar>✕</button></div>
+  <div class="corpo" id="detCorpo"></div>
+</section>
+
+<!-- jogar -->
+<section id="telaJogo" class="painel">
+  <button id="fecharJogo" data-fechar aria-label="Fechar">✕</button>
+  <iframe id="quadroJogo" sandbox="allow-scripts allow-modals allow-pointer-lock" title="Jogo"></iframe>
+</section>
 
 <!-- configurações -->
 <section id="config" class="painel">
@@ -59,7 +109,17 @@
       <div class="linha"><input id="cfgModelo" list="listaModelos" autocomplete="off"><button class="botao mini" id="carregarModelos">Listar</button></div>
       <datalist id="listaModelos"></datalist>
     </label>
+    <div class="chips" id="atalhosModelo"></div>
     <p class="dica" id="dicaModelos"></p>
+    <label id="rotEsforco">Esforço do Claude (quanto ele pensa)
+      <select id="cfgEsforco">
+        <option value="low">Baixo — rápido e barato</option>
+        <option value="medium">Médio</option>
+        <option value="high">Alto (recomendado)</option>
+        <option value="xhigh">Muito alto — jogos grandes</option>
+        <option value="max">Máximo</option>
+      </select>
+    </label>
 
     <h3>Pesquisas</h3>
     <label>Chave do Gemini para pesquisar no Google <small>(grátis, opcional se o provedor já é o Gemini)</small>
@@ -69,6 +129,24 @@
       <input id="cfgYoutube" type="password" placeholder="opcional" autocomplete="off">
     </label>
 
+    <h3>Plugin: GitHub</h3>
+    <p class="dica">Com um token, a IA lê e salva arquivos nos seus repositórios, abre issues e publica os APKs dos jogos. Crie em github.com → Settings → Developer settings → Personal access tokens → Fine-grained (permissão "Contents" e "Issues": leitura e escrita; para criar o repositório dos jogos, "Administration").</p>
+    <label>Token do GitHub
+      <input id="cfgGithub" type="password" placeholder="github_pat_…" autocomplete="off">
+    </label>
+    <label>Repositório dos jogos <small>(criado sozinho se não existir)</small>
+      <input id="cfgRepoJogos" placeholder="nexo-jogos" autocomplete="off">
+    </label>
+    <label class="interruptor"><input type="checkbox" id="cfgRepoPrivado"> <span>Repositório dos jogos privado (aí o link do APK só baixa com o GitHub logado no navegador)</span></label>
+
+    <h3>Plugins MCP <small>(conectores; funcionam com o Claude)</small></h3>
+    <p class="dica">Qualquer servidor MCP remoto: cole o endereço e o token. O Claude usa as ferramentas dele direto do servidor da Anthropic.</p>
+    <div id="listaPlugins"></div>
+    <div class="linha">
+      <select id="presetPlugin"></select>
+      <button class="botao mini" id="addPlugin">Adicionar</button>
+    </div>
+
     <h3>Personalidade</h3>
     <label class="interruptor"><input type="checkbox" id="cfgLivre"> <span>Modo livre: conversa adulta e direta, sem sermão e sem filtro extra do app (no Gemini também desliga os filtros ajustáveis do Google)</span></label>
     <label>Instruções extras para a IA
@@ -77,12 +155,15 @@
 
     <button class="botao largo forte" id="salvarCfg">Salvar</button>
     <button class="botao largo perigo" id="apagarTudo">Apagar todas as conversas</button>
-    <p class="dica">Suas chaves ficam só neste celular. Elas vão direto para o provedor que você escolheu.</p>
+    <p class="dica">Suas chaves ficam só neste celular. Elas vão direto para o serviço de cada uma.</p>
   </div>
 </section>
 
 <div id="veu"></div>
 <div id="aviso"></div>
+<script src="apk.js"></script>
 <script src="app.js"></script>
+<script src="animes.js"></script>
+<script src="jogos.js"></script>
 </body>
 </html>

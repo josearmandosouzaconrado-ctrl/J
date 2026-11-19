@@ -29,8 +29,8 @@ WWW = os.path.join(ROOT, 'ia')
 OUT = os.path.join(ROOT, 'NexoIA.apk')
 PACKAGE = 'com.nexo.ia'
 APP_NAME = 'Nexo IA'
-VERSION_CODE = 1
-VERSION_NAME = '1.0.0'
+VERSION_CODE = 2
+VERSION_NAME = '1.1.0'
 ACTIVITY = PACKAGE + '.MainActivity'
 MIN_SDK, TARGET_SDK = 24, 34
 
@@ -319,7 +319,7 @@ def main():
         B.add(z, 'classes.dex', build_dex())
         B.add(z, 'resources.arsc', B.build_arsc('res/drawable/icon.png'), store=True)
         B.add(z, 'res/drawable/icon.png', open(os.path.join(WWW, 'icon-192.png'), 'rb').read(), store=True)
-        for nome in ('index.html', 'style.css', 'app.js', 'icon-192.png'):
+        for nome in ('index.html', 'style.css', 'app.js', 'apk.js', 'animes.js', 'jogos.js', 'icon-192.png'):
             B.add(z, 'assets/' + nome, open(os.path.join(WWW, nome), 'rb').read(), store=nome.endswith('.png'))
     apk = B.sign_v2(buf.getvalue())
     open(OUT, 'wb').write(apk)

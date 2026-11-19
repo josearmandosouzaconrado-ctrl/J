@@ -15,8 +15,9 @@ const PROVEDORES = {
     dica: 'Grátis: chave em console.groq.com/keys. Modelos abertos com respostas instantâneas.' },
   openai: { nome: 'OpenAI (ChatGPT)', tipo: 'openai', base: 'https://api.openai.com/v1', modelo: 'gpt-5-mini',
     dica: 'Pago: chave em platform.openai.com/api-keys.' },
-  anthropic: { nome: 'Anthropic (Claude)', tipo: 'anthropic', modelo: 'claude-opus-5-5',
-    dica: 'Pago: chave em platform.claude.com. Para gastar menos, use claude-sonnet-5-5 ou claude-haiku-5-5.' },
+  anthropic: { nome: 'Anthropic (Claude Fable / Opus)', tipo: 'anthropic', modelo: 'claude-opus-5-5',
+    atalhos: [['claude-fable-5-2', 'Fable 5.2 — o mais capaz'], ['claude-opus-5-5', 'Opus 5.5'], ['claude-sonnet-5-5', 'Sonnet 5.5'], ['claude-haiku-5-5', 'Haiku 5.5 — barato']],
+    dica: 'Pago: chave em platform.claude.com. Fable 5.2 e Opus 5.5 são os melhores para criar jogos e programar; respondem ao vivo e podem usar plugins MCP. Sonnet 5.5 e Haiku 5.5 gastam menos.' },
   xai: { nome: 'xAI (Grok)', tipo: 'openai', base: 'https://api.x.ai/v1', modelo: 'grok-4',
     dica: 'Pago: chave em console.x.ai.' },
   deepseek: { nome: 'DeepSeek', tipo: 'openai', base: 'https://api.deepseek.com/v1', modelo: 'deepseek-chat',
@@ -25,7 +26,8 @@ const PROVEDORES = {
     dica: 'Qualquer API compatível com OpenAI. Para rodar um modelo aberto no seu PC, use o Ollama ou o LM Studio e coloque o IP do PC na rede Wi-Fi (ex.: http://192.168.0.10:11434/v1). Chave pode ficar vazia.' },
 };
 
-const CFG_PADRAO = { prov: 'gemini', chaves: {}, modelos: {}, base: '', gemini: '', youtube: '', livre: true, persona: '' };
+const CFG_PADRAO = { prov: 'gemini', chaves: {}, modelos: {}, base: '', gemini: '', youtube: '', livre: true, persona: '',
+  esforco: 'high', github: '', repoJogos: 'nexo-jogos', repoPrivado: false, plugins: [] };
 let cfg = carregar('nexo_cfg', CFG_PADRAO);
 cfg = Object.assign({}, CFG_PADRAO, cfg);
 let conversas = carregar('nexo_conversas', []);
@@ -107,7 +109,25 @@ const FERRAMENTAS = [
     params: { termo: { type: 'string', description: 'assunto' }, idioma: { type: 'string', description: 'pt (padrão) ou en' } }, obrig: ['termo'] },
   { nome: 'ler_pagina', desc: 'Abre um link e lê o texto da página (para aprofundar um resultado de pesquisa).',
     params: { url: { type: 'string', description: 'endereço completo da página' } }, obrig: ['url'] },
+  { nome: 'criar_jogo', desc: 'Salva um jogo (ou app) na aba Jogos, onde o usuário joga na hora e pode gerar o APK. Mande o HTML COMPLETO em um único arquivo. Para alterar um jogo, chame de novo com o mesmo título e o HTML completo atualizado.',
+    params: { titulo: { type: 'string', description: 'nome do jogo' }, emoji: { type: 'string', description: 'um emoji que represente o jogo' },
+      orientacao: { type: 'string', enum: ['paisagem', 'retrato', 'livre'], description: 'orientação da tela no APK' },
+      html: { type: 'string', description: 'arquivo HTML completo, com CSS e JavaScript embutidos, sem arquivos externos' } }, obrig: ['titulo', 'html'] },
+  { nome: 'ler_jogo', desc: 'Lê o HTML de um jogo já salvo na aba Jogos (para corrigir ou melhorar). Sem título, lista os jogos.',
+    params: { titulo: { type: 'string', description: 'nome do jogo (opcional)' } }, obrig: [] },
+  { nome: 'github_repos', github: true, desc: 'Lista os repositórios do GitHub do usuário.', params: {}, obrig: [] },
+  { nome: 'github_ler', github: true, desc: 'Lê um arquivo ou lista uma pasta de um repositório do GitHub.',
+    params: { repo: { type: 'string', description: 'dono/nome ou só o nome (repositório do usuário)' }, caminho: { type: 'string', description: 'caminho do arquivo ou pasta ("" para a raiz)' },
+      ref: { type: 'string', description: 'branch (opcional)' } }, obrig: ['repo'] },
+  { nome: 'github_salvar', github: true, desc: 'Cria ou atualiza um arquivo de texto num repositório do GitHub (faz um commit). O usuário confirma antes.',
+    params: { repo: { type: 'string', description: 'dono/nome ou só o nome' }, caminho: { type: 'string', description: 'caminho do arquivo' },
+      conteudo: { type: 'string', description: 'conteúdo completo do arquivo' }, mensagem: { type: 'string', description: 'mensagem do commit' },
+      branch: { type: 'string', description: 'branch (opcional)' } }, obrig: ['repo', 'caminho', 'conteudo'] },
+  { nome: 'github_issue', github: true, desc: 'Abre uma issue num repositório do GitHub. O usuário confirma antes.',
+    params: { repo: { type: 'string', description: 'dono/nome ou só o nome' }, titulo: { type: 'string', description: 'título' }, corpo: { type: 'string', description: 'texto em markdown' } },
+    obrig: ['repo', 'titulo'] },
 ];
+const ferramentasAtivas = () => FERRAMENTAS.filter(f => !f.github || (cfg.github || '').trim());
 
 const ROTULOS = {
   pesquisar_web: a => '🔎 Pesquisando no Google: ' + a.consulta,
@@ -117,6 +137,12 @@ const ROTULOS = {
   buscar_serie: a => '📺 TVmaze: ' + a.nome,
   wikipedia: a => '📚 Wikipédia: ' + a.termo,
   ler_pagina: a => '📄 Lendo ' + (a.url || '').replace(/^https?:\/\//, '').slice(0, 50),
+  criar_jogo: a => '🎮 Salvando o jogo: ' + (a.titulo || ''),
+  ler_jogo: a => '🎮 Abrindo o jogo ' + (a.titulo || ''),
+  github_repos: () => '🐙 GitHub: listando repositórios',
+  github_ler: a => '🐙 GitHub: lendo ' + a.repo + '/' + (a.caminho || ''),
+  github_salvar: a => '🐙 GitHub: salvando ' + a.repo + '/' + a.caminho,
+  github_issue: a => '🐙 GitHub: abrindo issue em ' + a.repo,
 };
 
 // cada ferramenta devolve { ia: dados para a IA, cartoes: [...] para mostrar }
@@ -228,7 +254,80 @@ const EXECUTAR = {
     const t = (corpo ? corpo.innerText || corpo.textContent : '').replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n').trim();
     return { ia: { titulo: (doc.title || '').trim(), link: url, texto: cortar(t, 9000) } };
   },
+
+  async criar_jogo({ titulo, emoji, orientacao, html }) {
+    if (!html || html.length < 50) return { ia: { erro: 'HTML vazio ou incompleto' } };
+    const j = Jogos.salvar({ titulo, emoji, orientacao, html });
+    return { ia: { ok: true, titulo: j.titulo, versao: j.versao, tamanho: html.length + ' caracteres',
+      aviso: 'O jogo está na aba Jogos e num cartão no chat. Diga ao usuário para tocar em Jogar e, se quiser, em APK.' },
+      cartoes: [{ tipo: 'jogo', id: j.id, titulo: j.titulo, emoji: j.emoji, versao: j.versao }] };
+  },
+
+  async ler_jogo({ titulo }) {
+    const lista = Jogos.todos();
+    const j = titulo && Jogos.achar(titulo);
+    if (!j) return { ia: { jogos: lista.map(x => ({ titulo: x.titulo, versao: x.versao, tamanho: x.html.length })), aviso: titulo ? 'jogo não encontrado' : undefined } };
+    return { ia: { titulo: j.titulo, orientacao: j.orientacao, versao: j.versao, html: j.html } };
+  },
+
+  async github_repos() {
+    const d = await gh('/user/repos?per_page=60&sort=updated');
+    return { ia: d.map(r => ({ repo: r.full_name, privado: r.private, descricao: r.description, branch: r.default_branch, atualizado: r.pushed_at, link: r.html_url })) };
+  },
+
+  async github_ler({ repo, caminho, ref }) {
+    repo = await nomeRepo(repo);
+    const d = await gh(`/repos/${repo}/contents/${caminhoUrl(caminho)}${ref ? '?ref=' + enc(ref) : ''}`);
+    if (Array.isArray(d)) return { ia: { pasta: caminho || '/', itens: d.map(x => (x.type === 'dir' ? '📁 ' : '') + x.path + (x.type === 'file' ? ` (${x.size} bytes)` : '')) } };
+    if (d.encoding !== 'base64') return { ia: { erro: 'arquivo grande demais para ler pela API', link: d.html_url } };
+    let txt;
+    try { txt = new TextDecoder('utf-8', { fatal: true }).decode(NexoAPK.b64dec(d.content.replace(/\n/g, ''))); }
+    catch (e) { return { ia: { erro: 'arquivo binário', tamanho: d.size, link: d.html_url } }; }
+    return { ia: { arquivo: d.path, link: d.html_url, conteudo: cortar(txt, 30000) } };
+  },
+
+  async github_salvar({ repo, caminho, conteudo, mensagem, branch }) {
+    repo = await nomeRepo(repo);
+    if (!confirm(`A IA quer salvar o arquivo\n${repo}/${caminho}\n(${(conteudo || '').length} caracteres) no GitHub.\n\nPermitir?`)) return { ia: { erro: 'o usuário não permitiu' } };
+    const r = await ghSalvar(repo, caminho, new TextEncoder().encode(conteudo || ''), mensagem || ('Atualiza ' + caminho + ' (Nexo IA)'), branch);
+    return { ia: { ok: true, commit: r.commit && r.commit.html_url, link: r.content && r.content.html_url } };
+  },
+
+  async github_issue({ repo, titulo, corpo }) {
+    repo = await nomeRepo(repo);
+    if (!confirm(`A IA quer abrir a issue "${titulo}" em ${repo}.\n\nPermitir?`)) return { ia: { erro: 'o usuário não permitiu' } };
+    const r = await gh(`/repos/${repo}/issues`, { method: 'POST', body: JSON.stringify({ title: titulo, body: corpo || '' }) });
+    return { ia: { ok: true, numero: r.number, link: r.html_url } };
+  },
 };
+
+// ---------- GitHub (REST, com o token do usuário) ----------
+async function gh(caminho, opcoes = {}) {
+  const tok = (cfg.github || '').trim();
+  if (!tok) throw new Error('Configure o token do GitHub em ⚙ → Plugin: GitHub');
+  const headers = Object.assign({ Accept: 'application/vnd.github+json', Authorization: 'Bearer ' + tok, 'X-GitHub-Api-Version': '2022-11-28' },
+    opcoes.body ? { 'Content-Type': 'application/json' } : {});
+  return json('https://api.github.com' + caminho, Object.assign({}, opcoes, { headers }), 120000);
+}
+let loginGithub = null;
+async function usuarioGithub() {
+  if (!loginGithub || loginGithub.tok !== cfg.github) loginGithub = { tok: cfg.github, login: (await gh('/user')).login };
+  return loginGithub.login;
+}
+async function nomeRepo(repo) {
+  repo = String(repo || '').trim().replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, '').replace(/\/+$/, '');
+  return repo.includes('/') ? repo : (await usuarioGithub()) + '/' + repo;
+}
+const caminhoUrl = c => String(c || '').replace(/^\/+/, '').split('/').map(enc).join('/');
+async function ghSalvar(repo, caminho, bytes, mensagem, branch) {
+  let sha;
+  try { sha = (await gh(`/repos/${repo}/contents/${caminhoUrl(caminho)}${branch ? '?ref=' + enc(branch) : ''}`)).sha; }
+  catch (e) { if (e.status !== 404) throw e; }
+  const corpo = { message: mensagem, content: NexoAPK.b64enc(bytes) };
+  if (sha) corpo.sha = sha;
+  if (branch) corpo.branch = branch;
+  return gh(`/repos/${repo}/contents/${caminhoUrl(caminho)}`, { method: 'PUT', body: JSON.stringify(corpo) });
+}
 
 function resumoMal(a, completo) {
   const r = { titulo: a.title, ingles: a.title_english, japones: a.title_japanese, tipo: a.type, nota: a.score, rank: a.rank,
@@ -332,7 +431,7 @@ function decodificar(s) { const t = document.createElement('textarea'); t.innerH
 function instrucoes() {
   const agora = new Date();
   let s = `Você é o Nexo, um assistente de IA brilhante, curioso e divertido, dentro de um app de celular.
-Data e hora de agora: ${agora.toLocaleString('pt-BR', { dateStyle: 'full', timeStyle: 'short' })}.
+Data de hoje: ${agora.toLocaleDateString('pt-BR', { dateStyle: 'full' })}.
 
 Como você trabalha:
 - Você é especialista em séries, animes, mangás, filmes, games, doramas, cultura pop e cultura geral, mas ajuda com qualquer assunto.
@@ -343,7 +442,21 @@ Como você trabalha:
 - Nunca invente datas, números de episódios, nomes ou links. Se não achar, diga que não achou.
 - Responda no idioma do usuário (padrão: português do Brasil), com markdown leve: títulos curtos, listas e **negrito** quando ajudar. Sem enrolação.
 - Spoilers: avise antes de contar spoilers grandes, a menos que o usuário peça. Para esconder um trecho use ||assim||.
-- Dê opinião própria quando pedirem (melhores animes, ranking de personagens, teorias, power scaling), justificando.`;
+- Dê opinião própria quando pedirem (melhores animes, ranking de personagens, teorias, power scaling), justificando.
+
+Criar jogos e apps (você é um game designer e programador de elite):
+- Quando pedirem um jogo, app ou ferramenta, faça um único arquivo HTML completo (HTML + CSS + JavaScript embutidos), sem arquivos externos, sem CDN e sem imagens de fora: desenhe com canvas/SVG/CSS e gere sons com WebAudio.
+- Feito para celular: controles de toque (botões na tela ou gestos) e também teclado, tela cheia, responsivo, requestAnimationFrame com tempo delta, sem rolagem da página (touch-action:none).
+- Capriche: menu inicial, tutorial curto, pontuação, recorde, dificuldade crescente, efeitos (partículas, tremida de tela, animações), tela de fim de jogo e reiniciar. Código organizado e sem erros.
+- Salve progresso com localStorage dentro de try/catch (pode não estar disponível no teste).
+- Entregue SEMPRE chamando a ferramenta criar_jogo (não cole o código inteiro no chat). Depois explique em poucas linhas como jogar.
+- Para melhorar ou corrigir um jogo existente, use ler_jogo e depois criar_jogo com o mesmo título e o HTML completo novo.
+- O usuário transforma o jogo em APK na aba Jogos (botão APK).`;
+  if ((cfg.github || '').trim()) s += `
+
+Plugin GitHub ativo: você pode listar repositórios, ler arquivos, salvar arquivos (commit) e abrir issues com as ferramentas github_*. O usuário confirma cada gravação.`;
+  const mcps = (cfg.plugins || []).filter(p => p.ativo && p.url);
+  if (mcps.length && prov().tipo === 'anthropic') s += '\n\nPlugins MCP conectados: ' + mcps.map(p => p.nome).join(', ') + '. Use as ferramentas deles quando fizer sentido.';
   if (cfg.livre) s += `
 
 Modo livre ATIVADO pelo usuário (adulto):
@@ -363,7 +476,7 @@ const MAX_RODADAS = 8;
 function historicoApi(conv) {
   const tipo = prov().tipo;
   const chave = cfg.prov + '|' + tipo;
-  const grande = conv.api && JSON.stringify(conv.api.msgs).length > 150000;
+  const grande = conv.api && JSON.stringify(conv.api.msgs).length > 300000;
   if (conv.api && conv.api.prov === chave && !grande) return conv.api.msgs;
   // trocou de provedor (ou ficou grande demais): recria só com os textos
   const msgs = [];
@@ -379,7 +492,7 @@ function historicoApi(conv) {
   return msgs;
 }
 
-async function responder(conv, aoPasso, sinal) {
+async function responder(conv, aoPasso, sinal, aoVivo) {
   const msgs = historicoApi(conv);
   const tipo = prov().tipo;
   const cartoes = [];
@@ -390,7 +503,9 @@ async function responder(conv, aoPasso, sinal) {
       const r = await EXECUTAR[nome](args || {});
       if (r.cartoes) cartoes.push(...r.cartoes);
       passo(true);
-      return cortar(JSON.stringify(r.ia), 12000);
+      const limite = /^(ler_jogo|github_ler)$/.test(nome) ? 150000 : 12000;
+      const txt = JSON.stringify(r.ia === undefined ? { ok: true } : r.ia);
+      return txt.length > limite ? JSON.stringify({ parcial: true, dados: txt.slice(0, limite) }) : txt;
     } catch (e) {
       passo(false);
       return JSON.stringify({ erro: e.message || String(e) });
@@ -398,7 +513,7 @@ async function responder(conv, aoPasso, sinal) {
   };
   let texto;
   if (tipo === 'gemini') texto = await laçoGemini(msgs, rodar, sinal);
-  else if (tipo === 'anthropic') texto = await laçoAnthropic(msgs, rodar, sinal);
+  else if (tipo === 'anthropic') texto = await laçoAnthropic(msgs, rodar, sinal, aoVivo || (() => {}), aoPasso);
   else texto = await laçoOpenAI(msgs, rodar, sinal);
   return { texto, cartoes };
 }
@@ -410,7 +525,7 @@ async function laçoOpenAI(msgs, rodar, sinal) {
   const p = prov();
   const base = (cfg.prov === 'custom' ? cfg.base : p.base).replace(/\/+$/, '');
   if (!base) throw new Error('Coloque o endereço da API nas configurações.');
-  const tools = FERRAMENTAS.map(f => ({ type: 'function', function: { name: f.nome, description: f.desc,
+  const tools = ferramentasAtivas().map(f => ({ type: 'function', function: { name: f.nome, description: f.desc,
     parameters: { type: 'object', properties: f.params, required: f.obrig } } }));
   let comFerramentas = true;
   for (let i = 0; i < MAX_RODADAS; i++) {
@@ -421,7 +536,7 @@ async function laçoOpenAI(msgs, rodar, sinal) {
     if (cfg.prov === 'openrouter') { headers['X-Title'] = 'Nexo IA'; headers['HTTP-Referer'] = 'https://nexo-ia.app'; }
     let d;
     try {
-      d = await json(base + '/chat/completions', { method: 'POST', headers, body: JSON.stringify(corpo), signal: sinal }, 120000);
+      d = await json(base + '/chat/completions', { method: 'POST', headers, body: JSON.stringify(corpo), signal: sinal }, 600000);
     } catch (e) {
       // modelo sem suporte a ferramentas: tenta de novo sem elas
       if (comFerramentas && e.status >= 400 && e.status < 500 && /tool|function/i.test(e.message)) { comFerramentas = false; i--; continue; }
@@ -448,8 +563,11 @@ function esquemaGemini(o) {
   return r;
 }
 async function laçoGemini(msgs, rodar, sinal) {
-  const decl = FERRAMENTAS.map(f => ({ name: f.nome, description: f.desc,
-    parameters: esquemaGemini({ type: 'object', properties: f.params, required: f.obrig }) }));
+  const decl = ferramentasAtivas().map(f => {
+    const d = { name: f.nome, description: f.desc };
+    if (Object.keys(f.params).length) d.parameters = esquemaGemini({ type: 'object', properties: f.params, required: f.obrig });
+    return d;
+  });
   if (!chaveAtual()) throw Object.assign(new Error('Falta a chave do Gemini'), { status: 401 });
   for (let i = 0; i < MAX_RODADAS; i++) {
     const corpo = {
@@ -461,7 +579,7 @@ async function laçoGemini(msgs, rodar, sinal) {
     if (cfg.livre) corpo.safetySettings = ['HARM_CATEGORY_HARASSMENT', 'HARM_CATEGORY_HATE_SPEECH', 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'HARM_CATEGORY_DANGEROUS_CONTENT']
       .map(category => ({ category, threshold: 'BLOCK_NONE' }));
     const d = await json(`https://generativelanguage.googleapis.com/v1beta/models/${enc(modeloAtual())}:generateContent`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': chaveAtual() }, body: JSON.stringify(corpo), signal: sinal }, 120000);
+      { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': chaveAtual() }, body: JSON.stringify(corpo), signal: sinal }, 600000);
     const c = (d.candidates || [])[0];
     if (!c || !c.content) {
       const motivo = (c && c.finishReason) || (d.promptFeedback && d.promptFeedback.blockReason) || 'desconhecido';
@@ -481,32 +599,125 @@ async function laçoGemini(msgs, rodar, sinal) {
   return 'Fiz pesquisas demais nesta pergunta. Pode reformular?';
 }
 
-// ---------- Anthropic (Claude) — Messages API ----------
-async function laçoAnthropic(msgs, rodar, sinal) {
-  const tools = FERRAMENTAS.map(f => ({ name: f.nome, description: f.desc,
-    input_schema: { type: 'object', properties: f.params, required: f.obrig } }));
-  const modelo = modeloAtual();
-  // modelos que aceitam a troca automática de modelo quando recusam (fallback no servidor)
-  const comFallback = /^claude-(opus-5-5|opus-5$|sonnet-5-5|fable-5)/.test(modelo);
-  for (let i = 0; i < MAX_RODADAS; i++) {
-    const corpo = { model: modelo, max_tokens: 16000, system: instrucoes(), messages: msgs, tools };
-    if (i === MAX_RODADAS - 1) corpo.tool_choice = { type: 'none' };
-    const headers = { 'Content-Type': 'application/json', 'x-api-key': chaveAtual(), 'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true' };
-    if (comFallback) { corpo.fallbacks = 'default'; headers['anthropic-beta'] = 'server-side-fallback-2026-07-01'; }
-    const d = await json('https://api.anthropic.com/v1/messages', { method: 'POST', headers, body: JSON.stringify(corpo), signal: sinal }, 180000);
-    const blocos = d.content || [];
-    const textoFinal = blocos.filter(b => b.type === 'text').map(b => b.text).join('');
-    if (d.stop_reason === 'refusal') {
-      return textoFinal + '\n\n⚠️ O Claude recusou esta pergunta' + (d.stop_details && d.stop_details.explanation ? ': ' + d.stop_details.explanation : '.');
+// ---------- Anthropic (Claude) — Messages API com streaming ----------
+const CLAUDE_EFFORT = /^claude-(fable|mythos|opus-5|opus-4-[5678]|sonnet-5|haiku-5)/;
+const CLAUDE_FALLBACK = /^claude-(opus-5-5|opus-5$|sonnet-5-5|fable-5)/;
+const COM_ENTRADA = { tool_use: 1, server_tool_use: 1, mcp_tool_use: 1 };
+
+// lê o fluxo SSE e remonta a mensagem; aoEvento(blocos) é chamado a cada pedaço
+async function claudeStream(corpo, headers, sinal, aoEvento) {
+  const r = await rede('https://api.anthropic.com/v1/messages', { method: 'POST', headers, body: JSON.stringify(Object.assign({ stream: true }, corpo)), signal: sinal }, 1800000);
+  if (!r.ok) {
+    const txt = await r.text();
+    let d = null; try { d = JSON.parse(txt); } catch (e) { /* texto */ }
+    throw Object.assign(new Error((d && d.error && d.error.message) || txt.slice(0, 300) || r.statusText), { status: r.status });
+  }
+  const leitor = r.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '', msg = { content: [] };
+  const blocos = [];
+  const tratar = d => {
+    switch (d.type) {
+      case 'message_start': msg = d.message; (msg.content || []).forEach((b, i) => { blocos[i] = b; }); break;
+      case 'content_block_start': blocos[d.index] = d.content_block; if (COM_ENTRADA[d.content_block.type]) d.content_block._json = ''; break;
+      case 'content_block_delta': {
+        const b = blocos[d.index], x = d.delta;
+        if (!b) break;
+        if (x.type === 'text_delta') b.text = (b.text || '') + x.text;
+        else if (x.type === 'input_json_delta') b._json = (b._json || '') + x.partial_json;
+        else if (x.type === 'thinking_delta') b.thinking = (b.thinking || '') + x.thinking;
+        else if (x.type === 'signature_delta') b.signature = (b.signature || '') + x.signature;
+        else if (x.type === 'citations_delta') (b.citations = b.citations || []).push(x.citation);
+        break;
+      }
+      case 'content_block_stop': {
+        const b = blocos[d.index];
+        if (b && b._json !== undefined) {
+          if (b._json) { try { b.input = JSON.parse(b._json); } catch (e) { b._invalido = b._json; b.input = {}; } }
+          delete b._json;
+        }
+        break;
+      }
+      case 'message_delta': Object.assign(msg, d.delta); if (d.usage) msg.usage = Object.assign(msg.usage || {}, d.usage); break;
+      case 'error': throw Object.assign(new Error((d.error && d.error.message) || 'erro no fluxo'), { status: d.error && d.error.type === 'overloaded_error' ? 529 : 500 });
     }
-    msgs.push({ role: 'assistant', content: blocos });
-    const usos = blocos.filter(b => b.type === 'tool_use');
-    if (d.stop_reason !== 'tool_use' || !usos.length) return textoFinal || '(resposta vazia)';
-    const res = await Promise.all(usos.map(b => rodar(b.name, b.input)));
+  };
+  for (;;) {
+    const { done, value } = await leitor.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let i;
+    while ((i = buf.indexOf('\n\n')) >= 0) {
+      const ev = buf.slice(0, i); buf = buf.slice(i + 2);
+      const dados = ev.split('\n').filter(l => l.startsWith('data:')).map(l => l.slice(5).trim()).join('');
+      if (!dados) continue;
+      tratar(JSON.parse(dados));
+    }
+    aoEvento(blocos);
+  }
+  msg.content = blocos.filter(Boolean);
+  return msg;
+}
+
+async function laçoAnthropic(msgs, rodar, sinal, aoVivo, aoPasso) {
+  const modelo = modeloAtual();
+  const tools = ferramentasAtivas().map(f => ({ name: f.nome, description: f.desc, eager_input_streaming: true,
+    input_schema: { type: 'object', properties: f.params, required: f.obrig } }));
+  const mcps = (cfg.plugins || []).filter(p => p.ativo && p.url);
+  const betas = [];
+  const extras = {};
+  if (CLAUDE_FALLBACK.test(modelo)) { extras.fallbacks = 'default'; betas.push('server-side-fallback-2026-07-01'); }
+  if (CLAUDE_EFFORT.test(modelo)) extras.output_config = { effort: cfg.esforco || 'high' };
+  if (mcps.length) {
+    betas.push('mcp-client-2025-11-20');
+    extras.mcp_servers = mcps.map(p => {
+      const s = { type: 'url', url: p.url, name: p.nome.replace(/[^a-zA-Z0-9_-]/g, '_') };
+      const tok = (p.token || (p.usaGithub ? cfg.github : '') || '').trim();
+      if (tok) s.authorization_token = tok;
+      return s;
+    });
+    extras.mcp_servers.forEach(s => tools.push({ type: 'mcp_toolset', mcp_server_name: s.name }));
+  }
+  const headers = { 'Content-Type': 'application/json', 'x-api-key': chaveAtual(), 'anthropic-version': '2023-06-01',
+    'anthropic-dangerous-direct-browser-access': 'true' };
+  if (betas.length) headers['anthropic-beta'] = betas.join(',');
+  let todoTexto = '';
+  let rodadasPausa = 0;
+  for (let i = 0; i < MAX_RODADAS; i++) {
+    const corpo = Object.assign({ model: modelo, max_tokens: 64000, system: instrucoes(), messages: msgs, tools,
+      cache_control: { type: 'ephemeral' } }, extras);
+    if (i === MAX_RODADAS - 1) corpo.tool_choice = { type: 'none' };
+    const progresso = {};
+    const d = await claudeStream(corpo, headers, sinal, blocos => {
+      aoVivo(todoTexto + blocos.filter(b => b && b.type === 'text').map(b => b.text).join(''));
+      blocos.forEach((b, k) => {
+        if (!b || !COM_ENTRADA[b.type] || b._json === undefined) return;
+        if (!progresso[k]) progresso[k] = { fim: aoPasso((b.type === 'tool_use' ? '✍️ Preparando ' : '🔌 Plugin: ') + b.name), n: 0 };
+        progresso[k].n = b._json.length;
+        aoVivo(null, progresso[k].fim, b.name, progresso[k].n);
+      });
+    });
+    Object.values(progresso).forEach(p => p.fim(true));
+    for (const b of d.content) if (b.type === 'mcp_tool_use') aoPasso('🔌 ' + (b.server_name || 'plugin') + ': ' + b.name)(true);
+    const textoRodada = d.content.filter(b => b.type === 'text').map(b => b.text).join('');
+    if (d.stop_reason === 'refusal') {
+      return (todoTexto + textoRodada) + '\n\n⚠️ O Claude recusou esta pergunta' + (d.stop_details && d.stop_details.explanation ? ': ' + d.stop_details.explanation : '.');
+    }
+    const invalidos = d.content.filter(b => b._invalido !== undefined);
+    d.content.forEach(b => { delete b._invalido; });
+    msgs.push({ role: 'assistant', content: d.content });
+    if (textoRodada) todoTexto += textoRodada + '\n\n';
+    if (d.stop_reason === 'pause_turn' && rodadasPausa++ < 5) { i--; continue; }
+    const usos = d.content.filter(b => b.type === 'tool_use');
+    if (!usos.length) return todoTexto.trim() || '(resposta vazia)';
+    let res;
+    if (d.stop_reason === 'max_tokens' || invalidos.length) {
+      // a resposta foi cortada no meio da ferramenta: avisa o Claude para tentar de novo, mais enxuto
+      res = usos.map(() => JSON.stringify({ INVALID_JSON: 'a entrada da ferramenta veio cortada (limite de tamanho). Tente de novo com um código mais enxuto.' }));
+    } else res = await Promise.all(usos.map(b => rodar(b.name, b.input)));
     msgs.push({ role: 'user', content: usos.map((b, k) => ({ type: 'tool_result', tool_use_id: b.id, content: res[k] })) });
   }
-  return 'Fiz pesquisas demais nesta pergunta. Pode reformular?';
+  return todoTexto.trim() || 'Fiz pesquisas demais nesta pergunta. Pode reformular?';
 }
 
 // ---------- lista de modelos do provedor ----------
@@ -609,8 +820,8 @@ const SUGESTOES = [
   ['▶️', 'Mostra o trailer mais recente de One Piece'],
   ['📺', 'Quando sai o próximo episódio de The Boys?'],
   ['🎌', 'Me recomende animes parecidos com Attack on Titan'],
-  ['🕵️', 'Explica as teorias mais malucas sobre Chainsaw Man'],
-  ['🎵', 'Toca as melhores aberturas de anime de todos os tempos'],
+  ['🎮', 'Crie um jogo de nave estilo arcade com chefões para celular'],
+  ['🐙', 'Quais são os meus repositórios no GitHub?'],
 ];
 function montarSugestoes() {
   $('#sugestoes').innerHTML = '';
@@ -629,7 +840,13 @@ function desenharCartoes(lista) {
   for (const c of lista) {
     const a = document.createElement('a');
     a.href = linkSeguro(c.url || '');
-    if (c.tipo === 'video') {
+    if (c.tipo === 'jogo') {
+      a.className = 'cartao jogoCard';
+      a.href = '#';
+      a.onclick = e => { e.preventDefault(); Jogos.jogar(c.id); };
+      a.innerHTML = `<div class="capa">${esc(c.emoji || '🎮')}<div class="play" style="font-size:20px;place-items:end center;padding-bottom:8px">▶ Jogar</div></div>
+        <div class="info"><b>${esc(c.titulo)}</b><span>versão ${esc(c.versao || 1)} · toque para jogar · APK na aba Jogos</span></div>`;
+    } else if (c.tipo === 'video') {
       a.className = 'cartao';
       a.innerHTML = `<div class="capa" style="background-image:url('${esc(c.img)}')"><div class="play">▶</div>${c.duracao ? `<span class="dur">${esc(c.duracao)}</span>` : ''}</div>
         <div class="info"><b>${esc(c.titulo)}</b><span>${esc([c.canal, c.views].filter(Boolean).join(' · '))}</span></div>`;
@@ -658,6 +875,16 @@ function desenharMsg(m) {
     }
     const corpo = document.createElement('div');
     corpo.innerHTML = markdown(m.texto);
+    corpo.querySelectorAll('pre code').forEach(cod => {
+      const html = cod.textContent;
+      if (!/<(html|canvas|body|script)[\s>]/i.test(html)) return;
+      const bt = document.createElement('div');
+      bt.className = 'botoes rodarCodigo';
+      bt.innerHTML = '<button class="botao">▶ Rodar</button><button class="botao">💾 Salvar como jogo</button>';
+      bt.children[0].onclick = () => Jogos.jogarHtml(html);
+      bt.children[1].onclick = () => { const t = prompt('Nome do jogo:', 'Meu jogo'); if (t) { Jogos.salvar({ titulo: t, html }); aviso('Salvo na aba Jogos'); } };
+      cod.parentNode.after(bt);
+    });
     b.appendChild(corpo);
     if (m.cartoes && m.cartoes.length) b.appendChild(desenharCartoes(m.cartoes));
     if (!m.erro) {
@@ -743,7 +970,30 @@ async function enviar(textoUsuario) {
     el.lastChild.textContent = rotulo;
     linha.querySelector('.passos').appendChild(el);
     rolarFim();
-    return ok => { el.firstChild.outerHTML = ok ? '<span>✔</span>' : '<span>✖</span>'; passos.push((ok ? '✔ ' : '✖ ') + rotulo); };
+    let feito = false;
+    const fim = ok => {
+      if (feito) return; feito = true;
+      el.firstChild.outerHTML = ok ? '<span>✔</span>' : '<span>✖</span>';
+      passos.push((ok ? '✔ ' : '✖ ') + el.lastChild.textContent);
+    };
+    fim.atualizar = t => { el.lastChild.textContent = t; };
+    return fim;
+  };
+  let vivo = null, pendente = null;
+  const aoVivo = (txt, passo, nome, n) => {
+    if (txt === null) { passo.atualizar((nome === 'criar_jogo' ? '✍️ Escrevendo o jogo: ' : '✍️ Preparando ' + nome + ': ') + n.toLocaleString('pt-BR') + ' caracteres'); return; }
+    if (!txt) return;
+    if (!vivo) {
+      vivo = document.createElement('div');
+      const dig = linha.querySelector('.digitando');
+      dig.before(vivo);
+    }
+    if (pendente === null) requestAnimationFrame(() => {
+      vivo.innerHTML = markdown(pendente); pendente = null;
+      const perto = elChat.scrollHeight - elChat.scrollTop - elChat.clientHeight < 160;
+      if (perto) elChat.scrollTop = elChat.scrollHeight;
+    });
+    pendente = txt;
   };
 
   const conv = atual;
@@ -755,7 +1005,7 @@ async function enviar(textoUsuario) {
     const msgsApi = conv.api.msgs;
     if (prov().tipo === 'gemini') msgsApi.push({ role: 'user', parts: [{ text: textoUsuario }] });
     else msgsApi.push({ role: 'user', content: textoUsuario });
-    const r = await responder(conv, aoPasso, ocupado.signal);
+    const r = await responder(conv, aoPasso, ocupado.signal, aoVivo);
     resposta = { papel: 'ia', texto: r.texto, cartoes: r.cartoes.slice(0, 20), passos };
   } catch (e) {
     conv.api = apiAntes ? JSON.parse(apiAntes) : undefined;   // desfaz a rodada que falhou
@@ -812,12 +1062,15 @@ function fecharPaineis(semHistorico) {
   const aberto = document.querySelector('.painel.aberto,.painel-lateral.aberto');
   document.querySelectorAll('.painel,.painel-lateral').forEach(p => p.classList.remove('aberto'));
   $('#veu').classList.remove('aberto');
+  pararJogo();
   if (aberto && !semHistorico && history.state && history.state.painel) history.back();
 }
 window.addEventListener('popstate', () => {
   document.querySelectorAll('.painel,.painel-lateral').forEach(p => p.classList.remove('aberto'));
   $('#veu').classList.remove('aberto');
+  pararJogo();
 });
+function pararJogo() { const q = $('#quadroJogo'); if (q.srcdoc) { q.srcdoc = ''; q.removeAttribute('srcdoc'); } }
 window.androidBack = () => fecharPaineis();
 document.querySelectorAll('[data-fechar]').forEach(b => b.onclick = () => fecharPaineis());
 $('#veu').onclick = () => fecharPaineis();
@@ -862,8 +1115,18 @@ function preencherProv() {
   $('#cfgChave').value = cfg.chaves[provEditando] || '';
   $('#cfgModelo').value = cfg.modelos[provEditando] || p.modelo;
   $('#rotBase').style.display = provEditando === 'custom' ? '' : 'none';
+  $('#rotEsforco').style.display = p.tipo === 'anthropic' ? '' : 'none';
   $('#listaModelos').innerHTML = '';
   $('#dicaModelos').textContent = '';
+  const at = $('#atalhosModelo');
+  at.innerHTML = '';
+  for (const [id, rot] of (p.atalhos || [])) {
+    const b = document.createElement('button');
+    b.textContent = rot;
+    b.className = $('#cfgModelo').value === id ? 'ativo' : '';
+    b.onclick = () => { $('#cfgModelo').value = id; at.querySelectorAll('button').forEach(x => x.classList.toggle('ativo', x === b)); };
+    at.appendChild(b);
+  }
 }
 function lerCampos() {
   cfg.chaves[provEditando] = $('#cfgChave').value.trim();
@@ -878,6 +1141,12 @@ function abrirConfig() {
   $('#cfgYoutube').value = cfg.youtube || '';
   $('#cfgLivre').checked = !!cfg.livre;
   $('#cfgPersona').value = cfg.persona || '';
+  $('#cfgEsforco').value = cfg.esforco || 'high';
+  $('#cfgGithub').value = cfg.github || '';
+  $('#cfgRepoJogos').value = cfg.repoJogos || '';
+  $('#cfgRepoPrivado').checked = !!cfg.repoPrivado;
+  pluginsEditando = JSON.parse(JSON.stringify(cfg.plugins || []));
+  desenharPlugins();
   abrirPainel('#config');
 }
 sel.onchange = () => { lerCampos(); provEditando = sel.value; preencherProv(); };
@@ -905,6 +1174,12 @@ $('#salvarCfg').onclick = () => {
   cfg.youtube = $('#cfgYoutube').value.trim();
   cfg.livre = $('#cfgLivre').checked;
   cfg.persona = $('#cfgPersona').value;
+  cfg.esforco = $('#cfgEsforco').value;
+  cfg.github = $('#cfgGithub').value.trim();
+  cfg.repoJogos = $('#cfgRepoJogos').value.trim() || 'nexo-jogos';
+  cfg.repoPrivado = $('#cfgRepoPrivado').checked;
+  lerPlugins();
+  cfg.plugins = pluginsEditando;
   guardar('nexo_cfg', cfg);
   if (trocou && atual) delete atual.api;
   atualizarChip();
@@ -915,6 +1190,72 @@ $('#apagarTudo').onclick = () => {
   if (!confirm('Apagar TODAS as conversas?')) return;
   conversas = []; atual = null; salvarConversas(); mostrarConversa(); aviso('Conversas apagadas');
 };
+
+// ---------- plugins MCP ----------
+const PRESETS_MCP = [
+  { nome: 'GitHub', url: 'https://api.githubcopilot.com/mcp/', usaGithub: true, dica: 'usa o token do GitHub acima' },
+  { nome: 'Figma', url: 'https://mcp.figma.com/mcp', dica: 'precisa de um token de acesso do Figma' },
+  { nome: 'Outro', url: '', dica: 'cole o endereço do servidor MCP e o token' },
+];
+let pluginsEditando = [];
+(function () {
+  const ps = $('#presetPlugin');
+  PRESETS_MCP.forEach((p, i) => { const o = document.createElement('option'); o.value = i; o.textContent = p.nome; ps.appendChild(o); });
+  $('#addPlugin').onclick = () => {
+    lerPlugins();
+    const p = PRESETS_MCP[ps.value];
+    pluginsEditando.push({ nome: p.nome === 'Outro' ? 'plugin' + (pluginsEditando.length + 1) : p.nome, url: p.url, token: '', usaGithub: !!p.usaGithub, ativo: true, dica: p.dica });
+    desenharPlugins();
+  };
+})();
+function desenharPlugins() {
+  const box = $('#listaPlugins');
+  box.innerHTML = pluginsEditando.length ? '' : '<p class="dica">Nenhum plugin MCP ainda.</p>';
+  pluginsEditando.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = 'plugin';
+    el.innerHTML = `<div class="topo"><input type="checkbox" data-k="ativo"><b></b><button data-del>🗑</button></div>
+      <input type="text" data-k="nome" placeholder="nome">
+      <input type="text" data-k="url" placeholder="https://servidor/mcp">
+      <input type="password" data-k="token" placeholder="${p.usaGithub ? 'vazio = usa o token do GitHub' : 'token (se o servidor pedir)'}">
+      <p class="dica">${esc(p.dica || '')}</p>`;
+    el.querySelector('b').textContent = p.nome;
+    el.querySelector('[data-k=ativo]').checked = !!p.ativo;
+    ['nome', 'url', 'token'].forEach(k => { el.querySelector(`[data-k=${k}]`).value = p[k] || ''; });
+    el.querySelector('[data-del]').onclick = () => { lerPlugins(); pluginsEditando.splice(i, 1); desenharPlugins(); };
+    box.appendChild(el);
+  });
+}
+function lerPlugins() {
+  document.querySelectorAll('#listaPlugins .plugin').forEach((el, i) => {
+    const p = pluginsEditando[i];
+    p.ativo = el.querySelector('[data-k=ativo]').checked;
+    ['nome', 'url', 'token'].forEach(k => { p[k] = el.querySelector(`[data-k=${k}]`).value.trim(); });
+    p.nome = p.nome || 'plugin' + (i + 1);
+  });
+}
+
+// ---------- abas ----------
+function irPara(id) {
+  document.querySelectorAll('.vista').forEach(v => v.classList.toggle('ativa', v.id === id));
+  document.querySelectorAll('#abas button').forEach(b => b.classList.toggle('ativo', b.dataset.v === id));
+  const chat = id === 'vChat';
+  $('#btnNovo').style.visibility = chat ? '' : 'hidden';
+  if (id === 'vJogos' && typeof Jogos !== 'undefined') Jogos.desenhar();
+  if (id === 'vAnimes' && typeof Animes !== 'undefined') Animes.abrir();
+}
+document.querySelectorAll('#abas button').forEach(b => b.onclick = () => irPara(b.dataset.v));
+function perguntarNoChat(t) { irPara('vChat'); fecharPaineis(); setTimeout(() => enviar(t), 60); }
+// esconde as abas enquanto o teclado está aberto (com adjustResize a janela encolhe)
+let alturaCheia = innerHeight, larguraAntes = innerWidth;
+addEventListener('resize', () => {
+  if (innerWidth !== larguraAntes) { larguraAntes = innerWidth; alturaCheia = innerHeight; }   // girou a tela
+  alturaCheia = Math.max(alturaCheia, innerHeight);
+  document.body.classList.toggle('teclado', innerHeight < alturaCheia * 0.78);
+});
+// o botão de enviar não tira o foco da caixa de texto (o teclado fica aberto e o botão não muda de lugar)
+elEnviar.addEventListener('mousedown', e => e.preventDefault());
+elEnviar.addEventListener('pointerdown', e => e.preventDefault());
 
 // ---------- início ----------
 montarSugestoes();
