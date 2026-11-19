@@ -1,6 +1,6 @@
 'use strict';
 // rodando dentro do aplicativo Android (APK)?
-const GAME_VERSION = '0.58.0';
+const GAME_VERSION = '0.59.0';
 const IS_APK = /EldoriaAPK/.test(navigator.userAgent);
 // versão ADM (painel de testes): APK 'Eldoria ADM' ou o endereço com ?adm
 const IS_ADM = /EldoriaADM/.test(navigator.userAgent) || /[?&]adm\b/.test(location.search);
@@ -14,8 +14,8 @@ const WORLD_TILES = 4096; // altura do mundo e largura do continente de Eldoria
 // Layout 2: mares bem mais largos entre os continentes (jogos novos).
 // Cada continente é desenhado nas suas coordenadas de sempre e deslocado (kx, vy, ...).
 const LAYOUTS = {
-  1: { W: 25600, H: 12288, kx: 0, nx: 0, vy: 0, ex: 0, ey: 0, px: 0, py: 0 },
-  2: { W: 31232, H: 14336, kx: 1100, nx: 2000, vy: 1500, ex: 3200, ey: 300, px: 5200, py: 900 }
+  1: { W: 48128, H: 14336, kx: 0, nx: 0, vy: 0, ex: 0, ey: 0, px: 0, py: 0, ax0: 25600, ax: 26800 },
+  2: { W: 54336, H: 14336, kx: 1100, nx: 2000, vy: 1500, ex: 3200, ey: 300, px: 5200, py: 900, ax0: 31232, ax: 33032 }
 };
 const LAYOUT_NOVO = 2;
 let LAYOUT = LAYOUTS[LAYOUT_NOVO], LAYOUT_N = LAYOUT_NOVO;
@@ -26,17 +26,21 @@ const ISLE = { x: 7350, y: 1500, rx: 300, ry: 240 };
 const ELYNDRA = { x: 14450, y: 6144, rx: 4750, ry: 5750, x0: 9700 };
 // Pindorama: o continente da grande floresta (continente 5), a leste de Elyndra, além do Mar Verde
 const PINDORAMA = { x: 22700, y: 6144, rx: 2650, ry: 5550, x0: 19900 };
-// deslocamento de cada continente (0 Eldoria, 1 Kaeloria, 2 Valtheria, 3 Nyxhal, 4 Elyndra, 5 Pindorama)
-const contOff = c => c === 1 ? [LAYOUT.kx, 0] : c === 2 ? [0, LAYOUT.vy] : c === 3 ? [LAYOUT.nx, 0] : c === 4 ? [LAYOUT.ex, LAYOUT.ey] : c === 5 ? [LAYOUT.px, LAYOUT.py] : [0, 0];
+// Aurévia: o continente gigante (continente 6) no extremo leste, além do Mar das Rosas.
+// O formato e os biomas vêm do mapa de referência (js/aurevia_mapa.js): cada pixel do mapa vale SC tiles.
+const AUREVIA = { x0: 31232, ox: 33032, oy: 308, sc: 28, w: 735 * 28, h: 490 * 28 };
+// deslocamento de cada continente (0 Eldoria, 1 Kaeloria, 2 Valtheria, 3 Nyxhal, 4 Elyndra, 5 Pindorama, 6 Aurévia)
+const contOff = c => c === 1 ? [LAYOUT.kx, 0] : c === 2 ? [0, LAYOUT.vy] : c === 3 ? [LAYOUT.nx, 0] : c === 4 ? [LAYOUT.ex, LAYOUT.ey] : c === 5 ? [LAYOUT.px, LAYOUT.py] : c === 6 ? [AUREVIA.ox, AUREVIA.oy] : [0, 0];
 function setLayout(n) {
   LAYOUT_N = LAYOUTS[n] ? n : 1; LAYOUT = LAYOUTS[LAYOUT_N];
   WORLD_W = LAYOUT.W; WORLD_H = LAYOUT.H; MAP_W = WORLD_W / 16; MAP_H = WORLD_H / 16; VALTHERIA_Y = 4400 + LAYOUT.vy;
   Object.assign(ISLE, { x: 7350 + LAYOUT.nx, y: 1500 });
   Object.assign(ELYNDRA, { x: 14450 + LAYOUT.ex, y: 6144 + LAYOUT.ey, x0: 9700 + LAYOUT.ex });
   Object.assign(PINDORAMA, { x: 22700 + LAYOUT.px, y: 6144 + LAYOUT.py, x0: 19900 + LAYOUT.px });
+  Object.assign(AUREVIA, { x0: LAYOUT.ax0, ox: LAYOUT.ax });
 }
 setLayout(LAYOUT_NOVO);
-function contAt(x, y) { return x >= PINDORAMA.x0 ? 5 : x >= ELYNDRA.x0 ? 4 : Math.abs(x - ISLE.x) < 540 && Math.abs(y - ISLE.y) < 470 ? 3 : y >= VALTHERIA_Y ? 2 : x >= WORLD_TILES ? 1 : 0; }
+function contAt(x, y) { return x >= AUREVIA.x0 ? 6 : x >= PINDORAMA.x0 ? 5 : x >= ELYNDRA.x0 ? 4 : Math.abs(x - ISLE.x) < 540 && Math.abs(y - ISLE.y) < 470 ? 3 : y >= VALTHERIA_Y ? 2 : x >= WORLD_TILES ? 1 : 0; }
 
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;

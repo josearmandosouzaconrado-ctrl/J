@@ -65,7 +65,18 @@ class World {
     const wx = x + 150 * this.nW.noise(x / 520, y / 520), wy = y + 150 * this.nW.noise(x / 520 + 91.3, y / 520 + 47.1);
     // quedas do relevo nas bordas de cada continente (aplicadas na mesma ordem de sempre)
     const F = this._F || (this._F = []); F.length = 0;
-    if (!cont) {
+    let aL = 0, aU = 0, aV = 0;
+    if (cont === 6) {
+      // Aurévia: o formato vem do mapa de referência (campo suavizado de terra + ruído fino na costa)
+      const A = Aurevia.campo();
+      aU = (x + (wx - x) * 0.35 - AUREVIA.ox) / AUREVIA.sc; aV = (y + (wy - y) * 0.35 - AUREVIA.oy) / AUREVIA.sc;
+      aL = Aurevia.amostra(A.L, aU, aV);
+      if (aL < 0.22) {
+        let best = 0, bd = Infinity;
+        for (const i of this.regC[6]) { const r = this.regions[i], dx = wx - r.cx, dy = wy - r.cy, dd = dx * dx + dy * dy; if (dd < bd) { bd = dd; best = i; } }
+        this._r = best; this._e = 0.1 + aL; this._m = 0.5; return T.DEEP;
+      }
+    } else if (!cont) {
       const nx = x / W * 2 - 1, ny = y / W * 2 - 1;
       const d = Math.max(Math.abs(nx), Math.abs(ny)) * 0.65 + Math.sqrt(nx * nx + ny * ny) * 0.35;
       if (d > 0.8) { const f = (d - 0.8) / 0.2; F.push(f * f * 0.75); }
@@ -116,14 +127,21 @@ class World {
     }
     mb = ws > 1e-6 ? mb / ws : 0;
     const reg = R[best]; this._r = best;
-    let e = 0.5 + 0.6 * fbm(this.nE, x / 820, y / 820, 6) + mb;
+    let e = cont === 6 ? 0 : 0.5 + 0.6 * fbm(this.nE, x / 820, y / 820, 6) + mb;
     for (const f of F) e -= f;
+    let b = reg.biome;
+    if (cont === 6) {
+      const lv = aL + this.nW.noise(x / 150 - 71.1, y / 150 + 5.3) * 0.1 + this.nW.noise(x / 45 + 3.3, y / 45 - 8.1) * 0.04;
+      const serra = Aurevia.amostra(Aurevia._c.S, aU, aV);
+      e = lv < 0.5 ? 0.34 - (0.5 - lv) * 0.6 : 0.345 + Math.min(lv - 0.5, 0.22) * 1.05 + 0.22 * fbm(this.nE, x / 820, y / 820, 6) + serra * 0.42;
+      b = Aurevia.BIOMA[Aurevia.classe((x + (wx - x) * 0.6 - AUREVIA.ox) / AUREVIA.sc, (y + (wy - y) * 0.6 - AUREVIA.oy) / AUREVIA.sc)] || 'plains';
+      this._ab = b;
+    }
     if (vd < 150) { const k = 1 - vd / 150; e += k * k * 0.6; }
     this._e = e;
     if (vd < 9) return T.LAVA;
     const m = fbm(this.nM, x / 420, y / 420, 4) * 0.5 + 0.5;
     this._m = m;
-    const b = reg.biome;
     if (e < 0.3) return T.DEEP;
     if (e < 0.34) return b === 'snow' ? T.ICE : (b === 'volcanic' || b === 'obsidian') ? T.LAVA : b === 'reef' ? T.LUMWATER : T.WATER;
     if (e < 0.7 && b !== 'desert' && b !== 'volcanic' && b !== 'obsidian') {
@@ -131,6 +149,7 @@ class World {
       if (rv < (b === 'jungle' || b === 'wetland' ? 0.024 : 0.011)) return b === 'snow' ? T.ICE : b === 'reef' ? T.LUMWATER : T.WATER;   // os rios da grande floresta são largos
     }
     if (e > 0.73 && cont === 4) return b === 'crystal' || b === 'cosmic' ? T.CRYSTALROCK : b === 'livestone' || b === 'savanna' ? T.CANYON : b === 'obsidian' ? T.VWALL : (e > 0.84 ? T.SNOWROCK : T.ROCK);
+    if (e > 0.73 && cont === 6 && b !== 'snow' && b !== 'forest') return b === 'volcanic' ? (e > 0.8 ? T.VWALL : T.ROCK) : T.ROCK;   // serras de Aurévia: pedra nua (neve só no norte)
     if (e > 0.73) return (e > 0.84 || (b === 'snow' && e > 0.77) || (b === 'mountain' && e > 0.8)) ? T.SNOWROCK : T.ROCK;
     if (e < 0.365 && cont === 5) return b === 'wetland' ? T.MUD : b === 'caatinga' ? T.DIRT : T.SAND;
     if (e < 0.365 && cont === 4) return b === 'obsidian' ? T.ASH : b === 'dusk' ? T.DUSKSAND : b === 'mist' ? T.MUD : b === 'cosmic' ? T.STARDUST : b === 'livestone' ? T.SANDSTONE : T.SAND;
@@ -162,6 +181,9 @@ class World {
       case 'tropical': if (m > 0.86) return T.WATER; return m > 0.66 ? T.DGRASS : T.GRASS;
       case 'serraverde': return m > 0.55 ? T.DGRASS : T.GRASS;
       case 'serra': return m < 0.35 ? T.BADLAND : m < 0.6 ? T.DIRT : T.DGRASS;
+      // ----- Aurévia -----
+      case 'estepe': return m > 0.64 ? T.GRASS : m > 0.4 ? T.SAVANNA : T.DEADGRASS;
+      case 'rubra': return m < 0.45 ? T.BADLAND : m < 0.7 ? T.DIRT : T.DESERT;
       case 'livestone': { const cn = Math.abs(this.nR.noise(x / 150, y / 150)); if (cn < 0.05 && e > 0.45 && e < 0.7) return T.CANYON; return m > 0.72 ? T.SANDSTONE : T.LIVESTONE; }
     }
     return T.GRASS;
@@ -600,6 +622,7 @@ class World {
     this.generateIsland();
     this.generateElyndra();
     if (this.generatePindorama) this.generatePindorama();
+    if (this.generateAurevia) this.generateAurevia();
     // placas
     for (const s of this.settlements) {
       for (const g of s.gates) {
