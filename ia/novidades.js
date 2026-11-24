@@ -1,4 +1,11 @@
 window.NOVIDADES = [
+  {"versao": "1.4.0", "codigo": 6, "nome": "Assistente de Voz", "data": "24/11/2026", "itens": [
+    "Modo assistente de voz (🎙️): você fala, ele responde em voz alta e volta a ouvir, como um assistente pessoal",
+    "Nome do assistente e palavra para chamar configuráveis (ex.: Jarvis)",
+    "🎤 Ditado: fale a pergunta em vez de digitar",
+    "Ações no celular por voz: ligar, WhatsApp, SMS, alarme, timer, mapa, YouTube e e-mail (você toca no botão para confirmar)",
+    "Nexo também como site: abre no Google Chrome sem instalar nada e pode ir para a tela inicial (a voz funciona no site)"
+  ]},
   {"versao": "1.3.0", "codigo": 5, "nome": "Criador de Jogos", "data": "19/11/2026", "itens": [
     "Motor de jogos próprio do Nexo (pixel art, controles de toque, sons, partículas)",
     "5 jogos prontos: plataforma, nave, cobrinha, aventura com espada e corrida",

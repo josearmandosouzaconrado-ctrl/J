@@ -218,3 +218,35 @@ body.teclado #abas{display:none}
 #bannerAtualizacao span{color:#e0e7ff}
 #bannerAtualizacao .botoes{margin:8px 0 0}
 #bannerAtualizacao .botao{padding:7px 11px;font-size:13px}
+
+/* ===== voz ===== */
+.botaoRedondo{width:42px;height:46px;border:0;background:none;font-size:20px;flex:none;border-radius:50%}
+.botaoRedondo:active{background:var(--fundo3)}
+#btnMic.gravando{background:#ef4444;animation:pulsar 1s infinite}
+#btnMic.semVoz,#btnJarvis.semVoz{opacity:.45}
+@keyframes pulsar{50%{box-shadow:0 0 0 8px #ef444433}}
+.acaoCelular{flex:none;display:block;padding:14px 18px;border-radius:16px;background:linear-gradient(135deg,var(--roxo),#0891b2);color:#fff;text-decoration:none;font-weight:700;font-size:15px;max-width:100%}
+#assistente{position:fixed;inset:0;z-index:30;background:radial-gradient(circle at 50% 35%,#1e1b4b 0%,#05060a 70%);display:none;flex-direction:column;align-items:center;padding:12px 18px calc(18px + env(safe-area-inset-bottom));overflow-y:auto}
+#assistente.aberto{display:flex}
+.asTopo{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:520px}
+.asTopo b{font-size:18px;letter-spacing:3px;text-transform:uppercase;color:#7dd3fc}
+#asOrbe{position:relative;width:190px;height:190px;margin:28px 0 18px;border:0;background:none;flex:none}
+#asOrbe span{position:absolute;inset:55px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#e0f2fe,#38bdf8 40%,#0c4a6e 100%);box-shadow:0 0 40px #38bdf8aa,0 0 90px #0ea5e955}
+#asOrbe i{position:absolute;inset:0;border-radius:50%;border:2px solid #38bdf866}
+#asOrbe i:nth-child(2){inset:18px;border-style:dashed;border-color:#7dd3fc88}
+#asOrbe i:nth-child(3){inset:36px;border-color:#a78bfa77}
+#assistente[data-estado=ouvindo] #asOrbe i{animation:girar 6s linear infinite}
+#assistente[data-estado=ouvindo] #asOrbe span{animation:respirar 1.6s ease-in-out infinite}
+#assistente[data-estado=pensando] #asOrbe i{animation:girar 1.2s linear infinite}
+#assistente[data-estado=pensando] #asOrbe span{filter:hue-rotate(60deg)}
+#assistente[data-estado=falando] #asOrbe span{animation:falar .35s ease-in-out infinite alternate}
+#assistente[data-estado=pausado] #asOrbe span{filter:grayscale(1);opacity:.6}
+@keyframes girar{to{transform:rotate(360deg)}}
+@keyframes respirar{50%{transform:scale(1.08)}}
+@keyframes falar{to{transform:scale(1.15)}}
+#asEstado{font-size:15px;color:#bae6fd;letter-spacing:1px;margin-bottom:10px;text-align:center}
+#asFalado{font-size:18px;color:#fff;text-align:center;min-height:26px;max-width:520px}
+#asResposta{font-size:15px;color:#cbd5e1;text-align:center;margin-top:14px;max-width:520px;white-space:pre-wrap}
+#asAcoes{margin-top:12px;width:100%;max-width:520px}
+#asAcoes .cartoes{justify-content:center;flex-wrap:wrap}
+.asDica{margin-top:auto;font-size:12.5px;color:#64748b;text-align:center}

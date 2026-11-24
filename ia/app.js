@@ -30,7 +30,12 @@ const PROVEDORES = {
 };
 
 const CFG_PADRAO = { prov: 'local', pesquisaLocal: true, chaves: {}, modelos: {}, base: '', gemini: '', youtube: '', livre: true, persona: '',
-  esforco: 'high', github: '', repoJogos: 'nexo-jogos', repoPrivado: false, plugins: [] };
+  esforco: 'high', github: '', repoJogos: 'nexo-jogos', repoPrivado: false, plugins: [],
+  nomeAssistente: 'Nexo', vozPalavra: '', vozResponder: true, vozVelocidade: 1.05, vozMudo: false };
+// no APK a página abre de file:// (com acesso liberado a qualquer site); no site, só APIs com CORS funcionam
+const NO_APK = location.protocol === 'file:';
+let modoVoz = false;
+const nomeIA = () => (cfg.nomeAssistente || 'Nexo').trim() || 'Nexo';
 let cfg = carregar('nexo_cfg', CFG_PADRAO);
 cfg = Object.assign({}, CFG_PADRAO, cfg);
 // quem estava num provedor sem chave passa para o Nexo Local (que não precisa de chave)
@@ -124,6 +129,10 @@ const FERRAMENTAS = [
       dificuldade: { type: 'integer', description: '1 a 3' } }, obrig: ['tipo'] },
   { nome: 'ler_jogo', desc: 'Lê o HTML de um jogo já salvo na aba Jogos (para corrigir ou melhorar). Sem título, lista os jogos.',
     params: { titulo: { type: 'string', description: 'nome do jogo (opcional)' } }, obrig: [] },
+  { nome: 'acao_celular', desc: 'Prepara uma ação no celular do usuário: ligar, mandar SMS ou WhatsApp, abrir o mapa, criar alarme ou timer, abrir YouTube, site ou e-mail. Aparece um botão grande e o usuário toca nele para confirmar.',
+    params: { acao: { type: 'string', enum: ['ligar', 'sms', 'whatsapp', 'mapa', 'alarme', 'timer', 'youtube', 'site', 'email'] },
+      numero: { type: 'string', description: 'telefone com DDD (ligar, sms, whatsapp)' }, texto: { type: 'string', description: 'mensagem, busca, endereço, link ou nome do alarme' },
+      hora: { type: 'string', description: 'HH:MM para alarme' }, minutos: { type: 'integer', description: 'duração do timer em minutos' } }, obrig: ['acao'] },
   { nome: 'github_repos', github: true, desc: 'Lista os repositórios do GitHub do usuário.', params: {}, obrig: [] },
   { nome: 'github_ler', github: true, desc: 'Lê um arquivo ou lista uma pasta de um repositório do GitHub.',
     params: { repo: { type: 'string', description: 'dono/nome ou só o nome (repositório do usuário)' }, caminho: { type: 'string', description: 'caminho do arquivo ou pasta ("" para a raiz)' },
@@ -147,6 +156,7 @@ const ROTULOS = {
   wikipedia: a => '📚 Wikipédia: ' + a.termo,
   ler_pagina: a => '📄 Lendo ' + (a.url || '').replace(/^https?:\/\//, '').slice(0, 50),
   criar_jogo: a => '🎮 Salvando e testando o jogo: ' + (a.titulo || ''),
+  acao_celular: a => '📱 Preparando: ' + (a.acao || ''),
   jogo_pronto: a => '⚡ Montando jogo de ' + (a.tipo || '') + ': ' + (a.titulo || ''),
   ler_jogo: a => '🎮 Abrindo o jogo ' + (a.titulo || ''),
   github_repos: () => '🐙 GitHub: listando repositórios',
@@ -162,7 +172,8 @@ const EXECUTAR = {
     if (chaveGemini()) {
       try { return await googleViaGemini(consulta); } catch (e) { erros.push('Google/Gemini: ' + e.message); }
     }
-    for (const [nome, fn] of [['DuckDuckGo', duckduckgo], ['Bing', bing]]) {
+    for (const [nome, fn] of [['DuckDuckGo', duckduckgo], ['Bing', bing], ['Wikipédia', wikiBusca]]) {
+      if (!NO_APK && nome !== 'Wikipédia') continue;   // no site o navegador bloqueia ler essas páginas
       try {
         const r = await fn(consulta);
         if (r.length) return { ia: { fonte: nome, resultados: r }, cartoes: [] };
@@ -177,7 +188,9 @@ const EXECUTAR = {
     if ((cfg.youtube || '').trim()) {
       try { videos = await youtubeApi(consulta, n); } catch (e) { /* cai para o site */ }
     }
-    if (!videos.length) videos = await youtubeSite(consulta, n);
+    if (!videos.length && NO_APK) videos = await youtubeSite(consulta, n);
+    if (!videos.length && !NO_APK) return { ia: { aviso: 'no site, a busca de vídeos precisa da chave da API do YouTube; mostrei um botão de busca', link_busca: 'https://www.youtube.com/results?search_query=' + enc(consulta) },
+      cartoes: [{ tipo: 'acao', rotulo: '▶️ Ver no YouTube: ' + cortar(consulta, 30), url: 'https://www.youtube.com/results?search_query=' + enc(consulta) }] };
     if (!videos.length) return { ia: { erro: 'nenhum vídeo encontrado', link_busca: 'https://www.youtube.com/results?search_query=' + enc(consulta) } };
     return {
       ia: { videos: videos.map(v => ({ titulo: v.titulo, canal: v.canal, duracao: v.duracao, visualizacoes: v.views, publicado: v.quando, link: v.url })) },
@@ -275,6 +288,31 @@ const EXECUTAR = {
     return { ia: { ok: true, titulo: j.titulo, versao: j.versao, tamanho: html.length + ' caracteres', teste: 'rodou 3 segundos sem erros',
       aviso: 'O jogo está na aba Jogos e num cartão no chat. Diga ao usuário para tocar em Jogar e, se quiser, em APK.' },
       cartoes: [{ tipo: 'jogo', id: j.id, titulo: j.titulo, emoji: j.emoji, versao: j.versao }] };
+  },
+
+  async acao_celular({ acao, numero, texto, hora, minutos }) {
+    const num = String(numero || '').replace(/[^\d+]/g, '');
+    const t = String(texto || '');
+    let url, rotulo;
+    switch (acao) {
+      case 'ligar': url = 'tel:' + num; rotulo = '📞 Ligar para ' + (num || '?'); break;
+      case 'sms': url = 'sms:' + num + '?body=' + enc(t); rotulo = '💬 SMS para ' + (num || '?'); break;
+      case 'whatsapp': url = 'https://wa.me/' + num.replace(/^\+/, '') + '?text=' + enc(t); rotulo = '🟢 WhatsApp' + (num ? ' para ' + num : ''); break;
+      case 'mapa': url = 'https://www.google.com/maps/search/?api=1&query=' + enc(t); rotulo = '🗺️ Abrir no mapa: ' + cortar(t, 30); break;
+      case 'alarme': {
+        const [h, m] = String(hora || '07:00').split(':').map(x => parseInt(x, 10) || 0);
+        url = `intent:#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${h};i.android.intent.extra.alarm.MINUTES=${m};S.android.intent.extra.alarm.MESSAGE=${enc(t || 'Nexo')};end`;
+        rotulo = `⏰ Criar alarme ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`; break;
+      }
+      case 'timer': { const seg = Math.max(1, Math.round((+minutos || 5) * 60));
+        url = `intent:#Intent;action=android.intent.action.SET_TIMER;i.android.intent.extra.alarm.LENGTH=${seg};S.android.intent.extra.alarm.MESSAGE=${enc(t || 'Nexo')};end`;
+        rotulo = `⏱️ Timer de ${+minutos || 5} min`; break; }
+      case 'youtube': url = 'https://www.youtube.com/results?search_query=' + enc(t); rotulo = '▶️ YouTube: ' + cortar(t, 30); break;
+      case 'email': url = 'mailto:?body=' + enc(t); rotulo = '✉️ Escrever e-mail'; break;
+      default: url = /^https?:\/\//i.test(t) ? t : 'https://www.google.com/search?q=' + enc(t); rotulo = '🌐 Abrir ' + cortar(t.replace(/^https?:\/\//, ''), 30);
+    }
+    return { ia: { ok: true, botao: rotulo, aviso: 'O botão apareceu na tela; o usuário precisa tocar nele para confirmar (o celular não deixa a IA fazer sozinha).' },
+      cartoes: [{ tipo: 'acao', rotulo, url }] };
   },
 
   async jogo_pronto(a) {
@@ -402,6 +440,10 @@ async function duckduckgo(q) {
     return { titulo: a.textContent.trim(), link, trecho: s ? s.textContent.trim() : '' };
   }).filter(Boolean).slice(0, 8);
 }
+async function wikiBusca(q) {
+  const d = await json(`https://pt.wikipedia.org/w/api.php?origin=*&format=json&action=query&list=search&srlimit=6&srsearch=${enc(q)}`);
+  return ((d.query && d.query.search) || []).map(r => ({ titulo: r.title, link: 'https://pt.wikipedia.org/wiki/' + enc(r.title.replace(/ /g, '_')), trecho: semHtml(r.snippet) }));
+}
 async function bing(q) {
   const html = await texto('https://www.bing.com/search?setlang=pt-br&q=' + enc(q));
   const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -450,7 +492,7 @@ function decodificar(s) { const t = document.createElement('textarea'); t.innerH
 // ======================================================================
 function instrucoes() {
   const agora = new Date();
-  let s = `Você é o Nexo, um assistente de IA brilhante, curioso e divertido, dentro de um app de celular.
+  let s = `Você é ${nomeIA()}, um assistente de IA brilhante, curioso e divertido, no celular do usuário.
 Data de hoje: ${agora.toLocaleDateString('pt-BR', { dateStyle: 'full' })}.
 
 Como você trabalha:
@@ -474,6 +516,12 @@ Criar jogos e apps (você é um game designer e programador de elite):
 - Se o pedido for um jogo clássico simples (plataforma, nave, cobrinha, aventura, corrida) e a pessoa quiser rápido, pode usar jogo_pronto.
 - Para melhorar ou corrigir um jogo existente, use ler_jogo e depois criar_jogo com o mesmo título e o HTML completo novo.
 - O usuário transforma o jogo em APK na aba Jogos (botão APK).`;
+  s += `
+
+Ações no celular: para ligar, mandar mensagem, WhatsApp, abrir mapa, criar alarme ou timer, use acao_celular (aparece um botão que o usuário toca para confirmar).`;
+  if (modoVoz) s += `
+
+MODO VOZ ATIVO: sua resposta será FALADA em voz alta. Responda curto (1 a 4 frases), em linguagem falada natural, como um assistente pessoal elegante e prestativo. Sem markdown, sem listas, sem links, sem emojis. Detalhes longos e links ficam nos cartões da tela.`;
   if ((cfg.github || '').trim()) s += `
 
 Plugin GitHub ativo: você pode listar repositórios, ler arquivos, salvar arquivos (commit) e abrir issues com as ferramentas github_*. O usuário confirma cada gravação.`;
@@ -571,7 +619,7 @@ async function laçoLocal(msgs, rodar, sinal, aoVivo, aoPasso, cartoes) {
     if (PEDE_VIDEO.test(pergunta)) tarefas.push(rodar('pesquisar_youtube', { consulta: cortar(pergunta, 120), quantidade: 4 }));
     contexto = (await Promise.all(tarefas)).map(resumoParaLocal).filter(Boolean).join('\n\n').slice(0, 3500);
   }
-  let sistema = `Você é o Nexo, um assistente de IA que roda dentro do celular do usuário. Hoje é ${new Date().toLocaleDateString('pt-BR', { dateStyle: 'full' })}.
+  let sistema = `Você é ${nomeIA()}, um assistente de IA que roda dentro do celular do usuário. Hoje é ${new Date().toLocaleDateString('pt-BR', { dateStyle: 'full' })}.
 Responda em português do Brasil, de forma direta, útil e simpática, com markdown leve (listas e **negrito**).
 Você entende muito de animes, séries, filmes, games e cultura pop.
 Se houver RESULTADOS DA PESQUISA abaixo, use-os para fatos atuais e cite os links. Nunca invente datas, números ou links: se não souber, diga que não sabe.
@@ -583,6 +631,7 @@ O usuário pediu um JOGO. Regras:
 - Use <canvas> e JavaScript puro, sem bibliotecas nem imagens externas. Para pixel art: desenhe os sprites com fillRect a partir de matrizes de cores, ctx.imageSmoothingEnabled=false e escala inteira.
 - Tela cheia, botões de toque na tela (esquerda, direita, pular/atirar) e também teclado (setas/espaço). Loop com requestAnimationFrame.
 - Tenha: tela inicial, pontuação, colisão, game over e reiniciar. Código curto, completo e sem erros.`;
+  if (modoVoz) sistema += '\nMODO VOZ: sua resposta será falada em voz alta. Responda em 1 a 3 frases curtas, linguagem falada, sem markdown, sem listas e sem links.';
   if (cfg.livre) sistema += '\nModo adulto: fale de forma franca sobre temas maduros das obras, sem sermão nem avisos desnecessários.';
   if ((cfg.persona || '').trim()) sistema += '\nPersonalidade pedida pelo usuário: ' + cfg.persona.trim();
   if (contexto) sistema += '\n\nRESULTADOS DA PESQUISA:\n' + contexto;
@@ -590,7 +639,7 @@ O usuário pediu um JOGO. Regras:
   const hist = msgs.slice(-8).map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: cortar(typeof m.content === 'string' ? m.content : '', 1500) }));
   while (hist.length && hist[0].role !== 'user') hist.shift();
   const limpar = t => t.replace(/<think>[\s\S]*?(<\/think>|$)/g, '').trim();
-  const texto = await NexoLocal.conversar([{ role: 'system', content: sistema }].concat(hist), { sinal, aoTexto: t => aoVivo(limpar(t)), maxTokens: jogo ? 3500 : 1500 });
+  const texto = await NexoLocal.conversar([{ role: 'system', content: sistema }].concat(hist), { sinal, aoTexto: t => aoVivo(limpar(t)), maxTokens: jogo ? 3500 : modoVoz ? 300 : 1500 });
   msgs.push({ role: 'assistant', content: texto });
   // se veio um jogo em HTML, guarda na aba Jogos e mostra o cartão para jogar
   const m = texto.match(/```(?:html)?\s*\n([\s\S]*?<\/html>|[\s\S]*?<script[\s\S]*?<\/script>[\s\S]*?)(?:```|$)/i);
@@ -1002,8 +1051,12 @@ function desenharCartoes(lista) {
   box.className = 'cartoes';
   for (const c of lista) {
     const a = document.createElement('a');
-    a.href = linkSeguro(c.url || '');
-    if (c.tipo === 'jogo') {
+    a.href = c.tipo === 'acao' ? '#' : linkSeguro(c.url || '');
+    if (c.tipo === 'acao') {
+      a.className = 'acaoCelular';
+      a.href = c.url;
+      a.textContent = c.rotulo;
+    } else if (c.tipo === 'jogo') {
       a.className = 'cartao jogoCard';
       a.href = '#';
       a.onclick = e => { e.preventDefault(); Jogos.jogar(c.id); };
@@ -1105,10 +1158,11 @@ function precisaConfigurar() {
   return !chaveAtual() && cfg.prov !== 'custom' && cfg.prov !== 'local';
 }
 
-async function enviar(textoUsuario) {
+async function enviar(textoUsuario, opcoes = {}) {
   textoUsuario = (textoUsuario || '').trim();
-  if (!textoUsuario || ocupado) return;
-  if (precisaConfigurar()) { abrirConfig(); aviso('Coloque a chave ou escolha "Nexo Local" (sem chave)'); return; }
+  if (!textoUsuario || ocupado) return null;
+  if (precisaConfigurar()) { abrirConfig(); aviso('Coloque a chave ou escolha "Nexo Local" (sem chave)'); return null; }
+  modoVoz = !!opcoes.voz;
   if (!atual) novaConversa();
   if (!atual.msgs.length) atual.titulo = cortar(textoUsuario, 48);
   // conversa sobe para o topo da lista
@@ -1180,6 +1234,8 @@ async function enviar(textoUsuario) {
   conv.msgs.push(resposta);
   salvarConversas();
   if (conv === atual) { linha.replaceWith(desenharMsg(resposta)); rolarFim(); }
+  modoVoz = false;
+  return resposta;
 }
 
 function explicarErro(e) {
@@ -1322,6 +1378,10 @@ function abrirConfig() {
   $('#cfgLivre').checked = !!cfg.livre;
   $('#cfgPersona').value = cfg.persona || '';
   $('#cfgEsforco').value = cfg.esforco || 'high';
+  $('#cfgNome').value = cfg.nomeAssistente || 'Nexo';
+  $('#cfgPalavra').value = cfg.vozPalavra || '';
+  $('#cfgVozResponder').checked = cfg.vozResponder !== false;
+  $('#cfgVozVel').value = cfg.vozVelocidade || 1.05;
   $('#cfgGithub').value = cfg.github || '';
   $('#cfgRepoJogos').value = cfg.repoJogos || '';
   $('#cfgRepoPrivado').checked = !!cfg.repoPrivado;
@@ -1355,6 +1415,10 @@ $('#salvarCfg').onclick = () => {
   cfg.livre = $('#cfgLivre').checked;
   cfg.persona = $('#cfgPersona').value;
   cfg.esforco = $('#cfgEsforco').value;
+  cfg.nomeAssistente = $('#cfgNome').value.trim() || 'Nexo';
+  cfg.vozPalavra = $('#cfgPalavra').value.trim();
+  cfg.vozResponder = $('#cfgVozResponder').checked;
+  cfg.vozVelocidade = +$('#cfgVozVel').value || 1.05;
   if (provEditando === 'local') cfg.pesquisaLocal = $('#cfgPesquisaLocal').checked;
   cfg.github = $('#cfgGithub').value.trim();
   cfg.repoJogos = $('#cfgRepoJogos').value.trim() || 'nexo-jogos';
@@ -1450,6 +1514,7 @@ function textoNovidades(lista) {
 }
 async function procurarAtualizacao(mostrarSempre) {
   const est = $('#estadoAtualizacao');
+  if (!NO_APK) { if (est) est.textContent = 'No site você sempre usa a versão mais nova (ela atualiza sozinha).'; return; }
   if (est) est.textContent = 'Procurando…';
   try {
     const r = await rede(URL_ATUALIZACAO + 'novidades.js?t=' + Date.now(), {}, 15000);
@@ -1469,6 +1534,10 @@ async function procurarAtualizacao(mostrarSempre) {
     if (est) est.innerHTML = `🎁 Nova versão: <b>${esc(n.versao)} "${esc(n.nome)}"</b> — <a href="${URL_ATUALIZACAO}NexoIA.apk">baixar</a>`;
   } catch (e) { if (est) est.textContent = 'Não consegui verificar agora (' + e.message + ').'; }
 }
+$('#dicaVoz').textContent = (window.SpeechRecognition || window.webkitSpeechRecognition)
+  ? 'Toque em 🎙️ (ao lado da caixa de texto) para conversar falando, como um assistente pessoal. O 🎤 dita uma frase.'
+  : 'A voz funciona no site do Nexo aberto no Google Chrome (o app em APK não tem reconhecimento de voz). Site: https://josearmandosouzaconrado-ctrl.github.io/J/';
+if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) $('#btnJarvis').classList.add('semVoz');
 $('#versaoAtual').textContent = `Você está na versão ${VERSAO.versao} — "${VERSAO.nome}"`;
 $('#verNovidades').onclick = () => avisar(textoNovidades(window.NOVIDADES || []));
 $('#checarAtualizacao').onclick = () => procurarAtualizacao(true);

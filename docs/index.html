@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#0d0f14">
+<title>Nexo IA</title>
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="topo">
+  <button class="icone" id="btnMenu" aria-label="Conversas">☰</button>
+  <div class="titulo">
+    <div class="nome">Nexo <span>IA</span></div>
+    <div class="modelo" id="chipModelo">sem modelo</div>
+  </div>
+  <button class="icone" id="btnNovo" aria-label="Nova conversa">✚</button>
+  <button class="icone" id="btnConfig" aria-label="Configurações">⚙</button>
+</header>
+
+<div id="vistas">
+  <!-- ===== CHAT ===== -->
+  <section class="vista ativa" id="vChat">
+    <div id="bannerAtualizacao" style="display:none"></div>
+    <main id="chat">
+      <section id="boasVindas">
+        <img src="icon-192.png" alt="" class="logo">
+        <h1>O que vamos descobrir hoje?</h1>
+        <p>Funciono sem chave, com uma IA que roda no seu celular. Pesquiso na internet, YouTube, MyAnimeList e TVmaze, e crio jogos.</p>
+        <div id="sugestoes"></div>
+      </section>
+      <div id="mensagens"></div>
+    </main>
+    <footer id="entrada">
+      <button id="btnJarvis" class="botaoRedondo" aria-label="Modo assistente de voz">🎙️</button>
+      <textarea id="texto" rows="1" placeholder="Pergunte algo…" enterkeyhint="send"></textarea>
+      <button id="btnMic" class="botaoRedondo" aria-label="Ditar por voz">🎤</button>
+      <button id="btnEnviar" aria-label="Enviar">➤</button>
+    </footer>
+  </section>
+
+  <!-- ===== ANIMES ===== -->
+  <section class="vista" id="vAnimes">
+    <div class="barraBusca">
+      <input id="buscaAnime" type="search" placeholder="Buscar anime ou mangá…" enterkeyhint="search">
+      <select id="tipoAnime"><option value="anime">Anime</option><option value="manga">Mangá</option></select>
+    </div>
+    <div class="chips" id="chipsAnime">
+      <button data-l="temporada" class="ativo">🔥 Temporada</button>
+      <button data-l="alta">📈 Em alta</button>
+      <button data-l="exibicao">📡 Lançando</button>
+      <button data-l="top">🏆 Top</button>
+      <button data-l="breve">⏳ Em breve</button>
+      <button data-l="favoritos">❤️ Minha lista</button>
+      <select id="generoAnime">
+        <option value="">Todos os gêneros</option>
+        <option value="Action">Ação</option><option value="Adventure">Aventura</option><option value="Comedy">Comédia</option>
+        <option value="Drama">Drama</option><option value="Fantasy">Fantasia</option><option value="Horror">Terror</option>
+        <option value="Mystery">Mistério</option><option value="Psychological">Psicológico</option><option value="Romance">Romance</option>
+        <option value="Sci-Fi">Ficção científica</option><option value="Slice of Life">Slice of life</option><option value="Sports">Esportes</option>
+        <option value="Supernatural">Sobrenatural</option><option value="Thriller">Suspense</option><option value="Mecha">Mecha</option>
+        <option value="Music">Música</option><option value="Mahou Shoujo">Garota mágica</option><option value="Ecchi">Ecchi</option>
+      </select>
+    </div>
+    <div id="gradeAnimes" class="grade"></div>
+  </section>
+
+  <!-- ===== JOGOS ===== -->
+  <section class="vista" id="vJogos">
+    <div class="corpo">
+      <div class="cartaoInfo">
+        <b>🎮 Seus jogos</b>
+        <p>Peça no chat: <i>"crie um jogo de nave estilo arcade"</i>. O jogo aparece aqui. Toque em <b>Jogar</b> para testar e em <b>APK</b> para virar um app instalável (precisa do plugin do GitHub).</p>
+        <p class="dica">Para os melhores jogos use o Claude Fable 5.2 ou o Opus 5.5 (⚙ → Anthropic).</p>
+      </div>
+      <button class="botao largo forte" id="cjAbrir">⚡ Criar jogo agora (na hora, sem esperar a IA)</button>
+      <div class="cartaoInfo" id="criadorJogo" style="display:none">
+        <label>Tipo de jogo<select id="cjTipo"></select></label>
+        <label>Tema / cores<select id="cjTema"></select></label>
+        <label>Nome do jogo<input id="cjTitulo" placeholder="ex.: Ninja das Sombras" autocomplete="off"></label>
+        <label>Herói<input id="cjHeroi" placeholder="ex.: Ninja" autocomplete="off"></label>
+        <label>Inimigo<input id="cjInimigo" placeholder="ex.: Robô" autocomplete="off"></label>
+        <label>O que coletar<input id="cjItem" placeholder="ex.: Moeda" autocomplete="off"></label>
+        <label>Dificuldade<select id="cjDif"><option value="1">Fácil</option><option value="2" selected>Normal</option><option value="3">Difícil</option></select></label>
+        <button class="botao largo forte" id="cjCriar">🎮 Criar e jogar</button>
+      </div>
+      <div id="listaJogos"></div>
+    </div>
+  </section>
+</div>
+
+<nav id="abas">
+  <button data-v="vChat" class="ativo"><b>💬</b>Chat</button>
+  <button data-v="vAnimes"><b>🎌</b>Animes</button>
+  <button data-v="vJogos"><b>🎮</b>Jogos</button>
+</nav>
+
+<!-- gaveta de conversas -->
+<aside id="gaveta" class="painel-lateral">
+  <div class="cab"><b>Conversas</b><button class="icone" data-fechar>✕</button></div>
+  <button class="botao largo" id="btnNovo2">✚ Nova conversa</button>
+  <div id="listaConversas"></div>
+</aside>
+
+<!-- detalhes do anime -->
+<section id="detalheAnime" class="painel">
+  <div class="cab"><b id="detTitulo">Anime</b><button class="icone" data-fechar>✕</button></div>
+  <div class="corpo" id="detCorpo"></div>
+</section>
+
+<!-- jogar -->
+<section id="telaJogo" class="painel">
+  <button id="fecharJogo" data-fechar aria-label="Fechar">✕</button>
+  <iframe id="quadroJogo" sandbox="allow-scripts allow-modals allow-pointer-lock" title="Jogo"></iframe>
+</section>
+
+<!-- configurações -->
+<section id="config" class="painel">
+  <div class="cab"><b>Configurações</b><button class="icone" data-fechar>✕</button></div>
+  <div class="corpo">
+    <label>Cérebro da IA (provedor)
+      <select id="cfgProv"></select>
+    </label>
+    <p class="dica" id="dicaProv"></p>
+    <label id="rotBase">Endereço da API (compatível com OpenAI)
+      <input id="cfgBase" placeholder="http://192.168.0.10:11434/v1" autocomplete="off">
+    </label>
+    <label id="rotChave">Chave da API
+      <div class="linha"><input id="cfgChave" type="password" placeholder="cole sua chave aqui" autocomplete="off"><button class="botao mini" id="verChave">👁</button></div>
+    </label>
+    <label>Modelo
+      <div class="linha"><input id="cfgModelo" list="listaModelos" autocomplete="off"><button class="botao mini" id="carregarModelos">Listar</button></div>
+      <datalist id="listaModelos"></datalist>
+    </label>
+    <div class="chips" id="atalhosModelo"></div>
+    <p class="dica" id="dicaModelos"></p>
+    <div id="secLocal">
+      <label class="interruptor"><input type="checkbox" id="cfgPesquisaLocal"> <span>Pesquisar na internet antes de responder (DuckDuckGo, Bing e YouTube; sem chave)</span></label>
+      <p class="dica" id="infoLocal"></p>
+      <button class="botao largo" id="apagarModelo">🗑 Apagar os cérebros baixados (libera espaço)</button>
+    </div>
+    <label id="rotEsforco">Esforço do Claude (quanto ele pensa)
+      <select id="cfgEsforco">
+        <option value="low">Baixo — rápido e barato</option>
+        <option value="medium">Médio</option>
+        <option value="high">Alto (recomendado)</option>
+        <option value="xhigh">Muito alto — jogos grandes</option>
+        <option value="max">Máximo</option>
+      </select>
+    </label>
+
+    <h3>Assistente de voz</h3>
+    <p class="dica" id="dicaVoz"></p>
+    <label>Nome do assistente <small>(ele se apresenta assim; ex.: Jarvis, Sexta-feira, Nexo)</small>
+      <input id="cfgNome" placeholder="Nexo" autocomplete="off">
+    </label>
+    <label>Palavra para chamar <small>(opcional; se preencher, no modo voz ele só responde quando você começar a frase com ela)</small>
+      <input id="cfgPalavra" placeholder="ex.: Jarvis" autocomplete="off">
+    </label>
+    <label class="interruptor"><input type="checkbox" id="cfgVozResponder"> <span>Quando eu ditar pelo 🎤, responder também em voz alta</span></label>
+    <label>Velocidade da voz
+      <select id="cfgVozVel"><option value="0.9">Devagar</option><option value="1.05">Normal</option><option value="1.25">Rápida</option><option value="1.5">Muito rápida</option></select>
+    </label>
+
+    <h3>Pesquisas</h3>
+    <label>Chave do Gemini para pesquisar no Google <small>(grátis, opcional se o provedor já é o Gemini)</small>
+      <input id="cfgGemini" type="password" placeholder="mesma chave do aistudio.google.com" autocomplete="off">
+    </label>
+    <label>Chave da API do YouTube <small>(opcional — sem ela eu pesquiso direto no site)</small>
+      <input id="cfgYoutube" type="password" placeholder="opcional" autocomplete="off">
+    </label>
+
+    <h3>Plugin: GitHub</h3>
+    <p class="dica">Com um token, a IA lê e salva arquivos nos seus repositórios, abre issues e publica os APKs dos jogos. Crie em github.com → Settings → Developer settings → Personal access tokens → Fine-grained (permissão "Contents" e "Issues": leitura e escrita; para criar o repositório dos jogos, "Administration").</p>
+    <label>Token do GitHub
+      <input id="cfgGithub" type="password" placeholder="github_pat_…" autocomplete="off">
+    </label>
+    <label>Repositório dos jogos <small>(criado sozinho se não existir)</small>
+      <input id="cfgRepoJogos" placeholder="nexo-jogos" autocomplete="off">
+    </label>
+    <label class="interruptor"><input type="checkbox" id="cfgRepoPrivado"> <span>Repositório dos jogos privado (aí o link do APK só baixa com o GitHub logado no navegador)</span></label>
+
+    <h3>Plugins MCP <small>(conectores; funcionam com o Claude)</small></h3>
+    <p class="dica">Qualquer servidor MCP remoto: cole o endereço e o token. O Claude usa as ferramentas dele direto do servidor da Anthropic.</p>
+    <div id="listaPlugins"></div>
+    <div class="linha">
+      <select id="presetPlugin"></select>
+      <button class="botao mini" id="addPlugin">Adicionar</button>
+    </div>
+
+    <h3>Personalidade</h3>
+    <label class="interruptor"><input type="checkbox" id="cfgLivre"> <span>Modo livre: conversa adulta e direta, sem sermão e sem filtro extra do app (no Gemini também desliga os filtros ajustáveis do Google)</span></label>
+    <label>Instruções extras para a IA
+      <textarea id="cfgPersona" rows="4" placeholder="Ex.: me chame de mestre, fale como um otaku, use gírias, seja sarcástico…"></textarea>
+    </label>
+
+    <h3>Versão e atualizações</h3>
+    <p id="versaoAtual" class="dica" style="font-size:14px;color:var(--texto)"></p>
+    <div class="botoes"><button class="botao" id="verNovidades">📋 Ver novidades</button><button class="botao" id="checarAtualizacao">🔄 Procurar atualização</button></div>
+    <p class="dica" id="estadoAtualizacao"></p>
+
+    <button class="botao largo forte" id="salvarCfg">Salvar</button>
+    <button class="botao largo perigo" id="apagarTudo">Apagar todas as conversas</button>
+    <p class="dica">Suas chaves ficam só neste celular. Elas vão direto para o serviço de cada uma.</p>
+  </div>
+</section>
+
+<!-- modo assistente de voz -->
+<section id="assistente" aria-label="Assistente de voz">
+  <div class="asTopo"><button class="icone" id="asMudo" aria-label="Som">🔊</button><b id="asNome">Nexo</b><button class="icone" id="asFechar" aria-label="Fechar">✕</button></div>
+  <button id="asOrbe" aria-label="Toque para falar ou interromper"><i></i><i></i><i></i><span></span></button>
+  <div id="asEstado">Ouvindo…</div>
+  <div id="asFalado"></div>
+  <div id="asResposta"></div>
+  <div id="asAcoes"></div>
+  <p class="asDica">Fale normalmente. Diga "tchau" para sair. Toque no círculo para interromper a fala.</p>
+</section>
+
+<div id="dialogo" role="dialog" aria-modal="true"><div class="caixa">
+  <div id="dlgTexto"></div>
+  <input id="dlgEntrada" type="text" autocomplete="off">
+  <div class="botoes"><button class="botao" id="dlgNao">Cancelar</button><button class="botao forte" id="dlgSim">OK</button></div>
+</div></div>
+<div id="veu"></div>
+<div id="aviso"></div>
+<script src="apk.js"></script>
+<script src="novidades.js"></script>
+<script src="motor.js"></script>
+<script src="modelos.js"></script>
+<script src="wllama.js"></script>
+<script src="local.js"></script>
+<script src="app.js"></script>
+<script src="voz.js"></script>
+<script src="animes.js"></script>
+<script src="jogos.js"></script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
+</body>
+</html>

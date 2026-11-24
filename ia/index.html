@@ -33,7 +33,9 @@
       <div id="mensagens"></div>
     </main>
     <footer id="entrada">
-      <textarea id="texto" rows="1" placeholder="Pergunte ou peça um jogo…" enterkeyhint="send"></textarea>
+      <button id="btnJarvis" class="botaoRedondo" aria-label="Modo assistente de voz">🎙️</button>
+      <textarea id="texto" rows="1" placeholder="Pergunte algo…" enterkeyhint="send"></textarea>
+      <button id="btnMic" class="botaoRedondo" aria-label="Ditar por voz">🎤</button>
       <button id="btnEnviar" aria-label="Enviar">➤</button>
     </footer>
   </section>
@@ -148,6 +150,19 @@
       </select>
     </label>
 
+    <h3>Assistente de voz</h3>
+    <p class="dica" id="dicaVoz"></p>
+    <label>Nome do assistente <small>(ele se apresenta assim; ex.: Jarvis, Sexta-feira, Nexo)</small>
+      <input id="cfgNome" placeholder="Nexo" autocomplete="off">
+    </label>
+    <label>Palavra para chamar <small>(opcional; se preencher, no modo voz ele só responde quando você começar a frase com ela)</small>
+      <input id="cfgPalavra" placeholder="ex.: Jarvis" autocomplete="off">
+    </label>
+    <label class="interruptor"><input type="checkbox" id="cfgVozResponder"> <span>Quando eu ditar pelo 🎤, responder também em voz alta</span></label>
+    <label>Velocidade da voz
+      <select id="cfgVozVel"><option value="0.9">Devagar</option><option value="1.05">Normal</option><option value="1.25">Rápida</option><option value="1.5">Muito rápida</option></select>
+    </label>
+
     <h3>Pesquisas</h3>
     <label>Chave do Gemini para pesquisar no Google <small>(grátis, opcional se o provedor já é o Gemini)</small>
       <input id="cfgGemini" type="password" placeholder="mesma chave do aistudio.google.com" autocomplete="off">
@@ -191,6 +206,17 @@
   </div>
 </section>
 
+<!-- modo assistente de voz -->
+<section id="assistente" aria-label="Assistente de voz">
+  <div class="asTopo"><button class="icone" id="asMudo" aria-label="Som">🔊</button><b id="asNome">Nexo</b><button class="icone" id="asFechar" aria-label="Fechar">✕</button></div>
+  <button id="asOrbe" aria-label="Toque para falar ou interromper"><i></i><i></i><i></i><span></span></button>
+  <div id="asEstado">Ouvindo…</div>
+  <div id="asFalado"></div>
+  <div id="asResposta"></div>
+  <div id="asAcoes"></div>
+  <p class="asDica">Fale normalmente. Diga "tchau" para sair. Toque no círculo para interromper a fala.</p>
+</section>
+
 <div id="dialogo" role="dialog" aria-modal="true"><div class="caixa">
   <div id="dlgTexto"></div>
   <input id="dlgEntrada" type="text" autocomplete="off">
@@ -205,6 +231,7 @@
 <script src="wllama.js"></script>
 <script src="local.js"></script>
 <script src="app.js"></script>
+<script src="voz.js"></script>
 <script src="animes.js"></script>
 <script src="jogos.js"></script>
 </body>

@@ -23,6 +23,19 @@ Cada versão tem um **número e um nome**, por exemplo **1.3.0 "Criador de Jogos
 - Dentro do app: ⚙ → **Versão e atualizações** mostra a sua versão. Quando sai uma nova, aparece no topo do chat o aviso **🎁 Atualização X — "Nome"** com o botão **⬇ Baixar e instalar**.
 - No GitHub: a página https://github.com/josearmandosouzaconrado-ctrl/J/releases mostra cada versão com o nome. Baixe sempre o **NexoIA.apk** da release **"versão mais nova"**. Ele instala por cima, sem perder nada.
 
+## Novidades da versão 1.4: "Assistente de Voz"
+
+- **Nexo como site, sem instalar nada:** https://josearmandosouzaconrado-ctrl.github.io/J/ (abra no **Google Chrome**). No menu ⋮ do Chrome, toque em **"Adicionar à tela inicial"** para ele ganhar ícone.
+- **Modo assistente (🎙️):** você fala, ele responde em voz alta e volta a ouvir, no estilo de um assistente pessoal. Diga "tchau" para sair e toque no círculo para interromper.
+  - Em ⚙ → **Assistente de voz** dá para mudar o **nome** (ex.: Jarvis) e a **palavra para chamar**: com ela preenchida, ele só responde quando a frase começa com ela.
+  - **🎤** dita uma frase no lugar de digitar.
+- **Ações no celular:** "coloca um alarme às 7", "liga para…", "manda no WhatsApp…", "timer de 10 minutos", "abre no mapa…". Aparece um botão e você toca para confirmar (o celular não deixa um site fazer isso sozinho).
+- A voz funciona **só no site pelo Chrome**. O APK não tem reconhecimento de voz (o Android não dá isso a um app feito como o Nexo).
+- No site, a busca na internet usa a Wikipédia (e o Google, se você colocar a chave grátis do Gemini). A busca de vídeos mostra um botão para o YouTube, ou lista os vídeos se você colocar a chave da API do YouTube.
+
+### Para o site funcionar (uma vez só)
+No GitHub: **Settings → Pages → Build and deployment → Source: "Deploy from a branch" → Branch: `ccr-8adf1d6e-xt6jt2`, pasta `/docs` → Save.** Em 1 ou 2 minutos o site fica no endereço acima. (Se você já usa o GitHub Pages deste repositório para outro site, trocar a branch tira o outro do ar.)
+
 ## Novidades da versão 1.3: "Criador de Jogos"
 
 - **Nexo Motor**: um motor de jogos próprio (pixel art, controles de toque, sons, partículas, colisões).
