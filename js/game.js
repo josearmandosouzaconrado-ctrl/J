@@ -1296,6 +1296,8 @@ const Game = {
       if (!o || OBJ_BAKED[o] || o === O.BLOCK) continue;
       const nv = OBJ_VARIANTS[o] || 1;
       const s = Sprites.obj(o, nv > 1 ? Math.floor(hash2(tx, ty, 5) * nv) : 0, OBJ_ANIM[o] ? anim : 0);
+      // tocha de masmorra encostada na parede: desenhada na face da parede, atrás de quem passa
+      if (o === O.TORCH && L instanceof Dungeon && TSOLID[L.tileAt(tx, ty - 1)]) { D.push({ y: ty * 16 - 8, img: s.c, x: tx * 16 + 8 - (s.w >> 1), yy: ty * 16 - s.h + 1 }); continue; }
       D.push({ y: ty * 16 + 15, img: s.c, x: tx * 16 + 8 - (s.w >> 1), yy: ty * 16 + 16 - s.h + s.oy });
     }
     if (L.isWorld) {

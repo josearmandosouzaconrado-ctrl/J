@@ -169,7 +169,7 @@ class Dungeon {
     const opened = this.state.opened || new Set();
     const floors = [];
     for (let i = 0; i < S * S; i++) if (D[i] > 0) floors.push(i);
-    // tochas nas paredes
+    // tochas penduradas nas paredes (ficam na face da parede e não bloqueiam a passagem)
     for (const i of floors) {
       const x = i % S, y = (i / S) | 0;
       if (TSOLID[this.tiles[i - S]] && !TSOLID[this.tiles[i + S]] && (x * 7 + y * 13) % 9 === 0 && D[i] > 2) this.objs[i] = O.TORCH;
@@ -182,6 +182,7 @@ class Dungeon {
       const h = r.next();
       if (h < 0.035) {
         const o = r.pick(deco);
+        if (o === O.TORCH) continue;               // tocha só na parede, nunca no meio do chão
         if (OSOLID[o] && !this.openAround(x, y)) continue;
         this.objs[i] = o;
       } else if (h < 0.05 && (T_.gen === 'cave' || T_.gen === 'rooms')) {
@@ -229,7 +230,7 @@ class Dungeon {
   objAt(tx, ty) { return this.inb(tx, ty) ? this.objs[ty * this.w + tx] : 0; }
   regAt() { return this.regIndex; }
   setObj(tx, ty, o) { if (!this.inb(tx, ty)) return; const i = ty * this.w + tx; const old = this.objs[i]; this.objs[i] = o; if (OBJ_BAKED[old] || OBJ_BAKED[o]) this.canvas = null; }
-  solidAt(tx, ty) { if (!this.inb(tx, ty)) return true; const i = ty * this.w + tx; return TSOLID[this.tiles[i]] || OSOLID[this.objs[i]]; }
+  solidAt(tx, ty) { if (!this.inb(tx, ty)) return true; const i = ty * this.w + tx; const o = this.objs[i]; return TSOLID[this.tiles[i]] || (OSOLID[o] && o !== O.TORCH); }
   render() {
     const c = Sprites.cv(this.w * 16, this.h * 16), ctx = c.getContext('2d');
     Sprites.paintTiles(ctx, this.w, this.h, (x, y) => this.tileAt(x, y), this.def.uid * 13 + 5);
