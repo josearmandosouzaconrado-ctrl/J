@@ -126,6 +126,7 @@ const Rotina = {
         const R = a.rot; if (!R || a.isFollower || a.visiting || a.vilaNPC) continue;
         const D = this.desejo(a);
         if (!D.p) continue;
+        if (!R.posto) { R.posto = true; this.colocar(a, D); continue; }
         if (R.ativ !== D.ativ || !R.alvo || R.alvo.x !== D.p.x || R.alvo.y !== D.p.y) {
           if (cota <= 0) continue; cota--;
           R.ativ = D.ativ; R.alvo = { x: D.p.x, y: D.p.y }; R.entrar = !!D.entra; R.roda = D.roda || 0;
@@ -135,6 +136,22 @@ const Rotina = {
         }
       }
     }
+  },
+  // morador recém-criado (o jogador chegou na cidade ou saiu de um prédio): já começa onde a rotina manda,
+  // em vez de aparecer no ponto de nascimento e atravessar a cidade. Quem acabou de sair de um prédio
+  // enquanto o jogador estava lá dentro aparece na porta e segue andando.
+  colocar(a, D) {
+    const R = a.rot, agora = (Game.day || 1) * 1440 + Game.time, sd = this.saidos && this.saidos[a.name];
+    if (sd && agora - sd.t < 40) {
+      a.x = sd.x; a.y = sd.y; Game.findFree(a); delete this.saidos[a.name];
+      R.ativ = null; R.alvo = null;           // o próximo relógio traça o caminho até o destino
+      return;
+    }
+    R.ativ = D.ativ; R.alvo = { x: D.p.x, y: D.p.y }; R.entrar = !!D.entra; R.roda = D.roda || 0; R.cam = []; R.ci = 0; R.chegou = true;
+    const px = D.p.x * 16 + 8, py = D.p.y * 16 + 10;
+    if (D.entra) { R.dentro = true; R.porta = { x: px, y: py }; a.x = px; a.y = py; return; }
+    const ang = Math.random() * 6.28, rr = Math.random() * (R.roda || 1) * 16;
+    a.x = px + Math.cos(ang) * rr; a.y = py + Math.sin(ang) * rr; Game.findFree(a);
   },
   // ---------- andar ----------
   mover(a, dt) {
@@ -204,8 +221,71 @@ const Rotina = {
     }
   }
 };
+// ---------- quem está dentro dos prédios ----------
+// Quem entra num prédio some da rua. Se o jogador entrar atrás (ou já estiver lá), encontra o mesmo
+// morador lá dentro, com o mesmo nome, rosto e rotina. Quando a rotina manda ir para outro lugar,
+// ele caminha até a saída e vai embora (e o jogador pode sair atrás e continuar seguindo).
+Object.assign(Rotina, {
+  destinoE(a, b) { const R = a.rot; return R && R.entrar && R.alvo && b.door && R.alvo.x === b.door.x && R.alvo.y === b.door.y + 1; },
+  // antes de entrar: quem está lá dentro ou chegando na porta (até ~6 passos)
+  quemEstaEm(b) {
+    const W = Game.world, L = [];
+    for (const s of W.settlements.concat(W.fazendas || [])) {
+      if (!s.active || !s.npcs) continue;
+      for (const a of s.npcs) {
+        if (!(a instanceof NPC) || a.dead || !this.destinoE(a, b)) continue;
+        const perto = dist(a.x, a.y, b.door.x * 16 + 8, (b.door.y + 1) * 16 + 8) < 16 * 6;
+        if (a.rot.dentro || perto) L.push({ s, role: a.role, name: a.name, race: a.race, sex: a.sex, look: a.look, rid: a.rid, rot: Object.assign({}, a.rot, { dentro: false, cam: null, ci: 0, chegou: true }) });
+      }
+    }
+    return L.slice(0, 8);
+  },
+  // depois de entrar: põe cada um num canto livre do cômodo
+  porDentro(Lv, lista) {
+    const G = Game, P = G.player, rng = new RNG((G.day || 1) * 31 + lista.length);
+    for (const v of lista) {
+      const a = new NPC({ role: v.role === 'merchant' ? 'citizen' : v.role, x: Lv.entry.x, y: Lv.entry.y - 2 }, v.s, rng);
+      a.name = v.name; a.race = v.race; a.sex = v.sex; a.look = v.look; a.S = Sprites.actor(v.look); a.h = a.S.h; if (v.rid) a.rid = v.rid;
+      a.rot = v.rot; a.indoor = true; a.rotVisita = Lv.b;
+      // um lugar livre longe da porta (cama, se for hora de dormir)
+      let pos = null;
+      if (v.rot.ativ === 'dormir' && Lv.bedSpots && Lv.bedSpots.length) { const bs = Lv.bedSpots[rng.int(0, Lv.bedSpots.length - 1)]; pos = { x: bs.x, y: bs.y }; }
+      for (let t = 0; t < 60 && !pos; t++) { const x = rng.int(1, Lv.w - 2), y = rng.int(1, Lv.h - 3); if (!Lv.solidAt(x, y) && Math.abs(x - Lv.entry.x) + Math.abs(y - Lv.entry.y) > 2) pos = { x, y }; }
+      if (!pos) pos = { x: Lv.entry.x, y: Lv.entry.y - 1 };
+      a.x = pos.x * 16 + 8; a.y = pos.y * 16 + 12; G.findFree(a); a.home = { x: a.x, y: a.y };
+      G.actors.push(a);
+    }
+  },
+  // dentro do prédio: na hora de ir para outro lugar, vai até a porta e sai
+  vT: 0,
+  visitas(dt) {
+    const G = Game, Lv = G.level; if (!Lv || Lv === G.world || !Lv.b || !Lv.entry) return;
+    this.vT -= dt;
+    const checar = this.vT <= 0; if (checar) this.vT = 1;
+    for (const a of G.actors) {
+      if (!a.rotVisita || a.dead) continue;
+      if (checar && !a.saindo) { const D = this.desejo(a); if (!(D.entra && D.p && a.rotVisita.door && D.p.x === a.rotVisita.door.x && D.p.y === a.rotVisita.door.y + 1)) { a.saindo = { t: 0 }; a.rot.ativ = D.ativ; } }
+      if (!a.saindo) continue;
+      const ex = Lv.entry.x * 16 + 8, ey = Lv.entry.y * 16 + 14, ang = angleTo(a.x, a.y, ex, ey);
+      a.saindo.t += dt; a.wp = null;
+      moveActor(a, Math.cos(ang) * a.spd * dt, Math.sin(ang) * a.spd * dt); a.moving = true; a.anim += dt; a.setDir(ang);
+      if (dist(a.x, a.y, ex, ey) < 10 || a.saindo.t > 12) {
+        a.dead = true; a.removido = true; G.actors = G.actors.filter(x => x !== a);
+        const d = a.rotVisita.door; if (d) (this.saidos || (this.saidos = {}))[a.name] = { t: (G.day || 1) * 1440 + G.time, x: d.x * 16 + 8, y: (d.y + 1) * 16 + 10 };
+      }
+    }
+  }
+});
 // ---------- ganchos ----------
 (function () {
+  const e0 = Game.enterInterior.bind(Game);
+  Game.enterInterior = function (b) {
+    let lista = [];
+    try { if (b && b.door && this.level === this.world) lista = Rotina.quemEstaEm(b); } catch (e) { lista = []; }
+    const r = e0(b);
+    try { if (lista.length && this.level && this.level.b === b) Rotina.porDentro(this.level, lista); } catch (e) { console.warn('Rotina dentro', e); }
+    return r;
+  };
   const u0 = NPC.prototype.update;
   NPC.prototype.update = function (dt) {
     if (!this.rot || this.talkT > 0 || this.chatT > 0 || this.visiting || this.isFollower || Game.level !== Game.world) return u0.call(this, dt);
@@ -215,7 +295,7 @@ const Rotina = {
   const hid = Object.getOwnPropertyDescriptor(NPC.prototype, 'hidden');
   Object.defineProperty(NPC.prototype, 'hidden', { configurable: true, get() { if (this.rot) return !!this.rot.dentro && Game.level === Game.world; return hid.get.call(this); } });
   const t0 = Inverno.tick.bind(Inverno);
-  Inverno.tick = function (dt) { t0(dt); try { Rotina.tick(dt); } catch (e) { if (!Rotina._err) { Rotina._err = 1; console.warn('Rotina', e); } } };
+  Inverno.tick = function (dt) { t0(dt); try { Rotina.tick(dt); Rotina.visitas(dt); } catch (e) { if (!Rotina._err) { Rotina._err = 1; console.warn('Rotina', e); } } };
   const d0 = Inverno.drawables.bind(Inverno);
   Inverno.drawables = function (D, camX, camY, vw, vh) { d0(D, camX, camY, vw, vh); try { Rotina.drawables(D, camX, camY, vw, vh); } catch (e) { } };
 })();
