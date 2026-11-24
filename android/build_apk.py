@@ -30,8 +30,9 @@ ADM = '--adm' in sys.argv
 MIAMI = '--miami' in sys.argv
 OUT = os.path.join(ROOT, 'CronicasDeEldoria-ADM.apk' if ADM else 'CronicasDeEldoria.apk')
 
-PACKAGE = 'com.eldoria.cronicas.adm' if ADM else 'com.eldoria.cronicas'
-APP_NAME = 'Eldoria ADM' if ADM else 'Crônicas de Eldoria'
+# o pacote mudou na 0.60 (a chave de assinatura antiga se perdeu): o app novo instala ao lado do antigo
+PACKAGE = 'com.eldoria.cronicas2.adm' if ADM else 'com.eldoria.cronicas2'
+APP_NAME = 'Eldoria ADM (novo)' if ADM else 'Eldoria (novo)'
 UA_TAG = ' EldoriaAPK EldoriaADM' if ADM else ' EldoriaAPK'
 VERSION_CODE = 91
 VERSION_NAME = '0.60.0-beta'
