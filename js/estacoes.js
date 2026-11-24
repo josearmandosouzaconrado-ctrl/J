@@ -17,6 +17,7 @@ const INICIO_ANO = 5;   // o dia 1 do jogo cai no 6º dia do inverno (já com ne
 const SEM_NEVE = new Set(['desert', 'volcanic', 'savanna', 'dusk', 'obsidian', 'reef', 'cosmic', 'dead', 'crystal']);
 // chão que fica coberto (e quanto: estradas e pisos de cidade são pisoteados)
 const CHAO_NEVE = new Map([[T.GRASS, 1], [T.DGRASS, 1], [T.TUNDRA, 1], [T.DEADGRASS, 1], [T.ELFGRASS, 1], [T.DIRT, 0.9], [T.MUD, 0.8], [T.WINDGRASS, 1], [T.LIVEMOSS, 1], [T.MISTHEATH, 1], [T.FARM, 1]]);   // a estrada fica limpa: é o caminho pisado
+const CHAO_QUENTE = new Set([T.DESERT, T.SAND, T.BADLAND, T.SANDSTONE, T.ASH].filter(x => x !== undefined));
 const MIUDOS = new Set([O.FLOWERS, O.TALLGRASS, O.CROP]);   // somem debaixo da neve funda (nada cresce no inverno)
 
 const Estacoes = {
@@ -36,6 +37,15 @@ const Estacoes = {
   },
   nivel() { return Math.round(this.cobertura() * 5) / 5; },
   quente(ri) { const R = Game.world && Game.world.regions[ri]; return !R || SEM_NEVE.has(R.biome); },
+  // o terreno natural deste ponto é areia, deserto ou terra vermelha? (cidades, fazendas e mansões construídas
+  // em cima de um deserto dentro de uma região fria não ganham neve)
+  areia(tx, ty) { const W = Game.world; return !!W && CHAO_QUENTE.has(W.baseTile(tx, ty)); },
+  // igual, guardando a resposta (os objetos são desenhados a cada quadro)
+  areiaC(tx, ty) {
+    const C = this._areiaMap || (this._areiaMap = new Map()), k = tx * 65536 + ty;
+    let v = C.get(k); if (v === undefined) { if (C.size > 30000) C.clear(); v = this.areia(tx, ty); C.set(k, v); }
+    return v;
+  },
   // este tile está debaixo de neve agora?
   neveEm(tx, ty, t, ri, cob) {
     if (t === T.SNOW) return true;
@@ -44,6 +54,7 @@ const Estacoes = {
     if (cob <= 0) return false;
     if (ri === undefined) ri = Game.world.regAt(tx, ty);
     if (this.quente(ri) || (typeof Mar !== 'undefined' && Mar.ilhaDe(tx, ty))) return false;
+    if (this.areia(tx, ty)) return false;
     return hash2(tx, ty, 977) < cob * f * (cob >= 1 ? 1.02 : 0.92);
   },
   // ---------- movimento ----------
@@ -100,6 +111,7 @@ const Estacoes = {
   objeto(o, v, f, tx, ty) {
     const s = Sprites.obj(o, v, f), cob = this.nivelPintado;
     if (cob < 0.3 || !Game.world || this.quente(Game.world.regAt(tx, ty)) || (typeof Mar !== 'undefined' && Mar.ilhaDe(tx, ty))) return s;
+    if (this.areiaC(tx, ty)) return s;
     if (MIUDOS.has(o) && cob >= 0.6) return null;
     const k = cob >= 0.75 ? 2 : 1;
     this._obj = this._obj || new Map();
@@ -129,6 +141,8 @@ const Estacoes = {
   predio(b) {
     if (this.nivelPintado < 0.4 || b.spec.snow) return b.spec;
     if (this.quente(Game.world.regAt(b.tx, b.ty + b.h - 1))) return b.spec;
+    if (b._areia === undefined) b._areia = this.areia(b.tx + (b.w >> 1), b.ty + b.h) && this.areia(b.tx, b.ty + b.h) && this.areia(b.tx + b.w - 1, b.ty + b.h);
+    if (b._areia) return b.spec;
     if (!b._specNeve) b._specNeve = Object.assign({}, b.spec, { snow: true });
     return b._specNeve;
   },

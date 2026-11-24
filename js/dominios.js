@@ -116,7 +116,8 @@ const Dominios = {
     const set = (x, y, t, o) => { if (x < 0 || y < 0 || x >= FW || y >= FH) return; const j = y * FW + x; if (t !== null) tiles[j] = t; if (o !== undefined) objs[j] = o; };
     const gx = 13;    // o portão e o caminho ficam no meio
     // gramado, muro e portão
-    for (let y = 0; y < FH; y++) for (let x = 0; x < FW; x++) set(x, y, T.GRASS, 0);
+    // o chão fica o natural do lugar (areia no deserto, grama no campo): só some o mato e as árvores
+    for (let y = 0; y < FH; y++) for (let x = 0; x < FW; x++) set(x, y, null, 0);
     for (let x = 0; x < FW; x++) { set(x, 0, null, O.FENCE); if (x !== gx && x !== gx - 1) set(x, FH - 1, null, O.FENCE); }
     for (let y = 0; y < FH; y++) { set(0, y, null, O.FENCE); set(FW - 1, y, null, O.FENCE); }
     set(gx - 2, FH - 1, T.COBBLE, O.BANNER); set(gx + 1, FH - 1, T.COBBLE, O.BANNER);
