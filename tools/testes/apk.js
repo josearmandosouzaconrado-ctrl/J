@@ -10,7 +10,7 @@ execSync(`unzip -q "${apk}" -d "${dir}"`);
   const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.addInitScript(() => { try { localStorage.setItem('eldoria_lang', 'pt'); } catch (e) { } });
   await p.goto('file://' + dir + '/assets/index.html'); await p.waitForTimeout(4000);
-  console.log('abriu', await p.evaluate(() => JSON.stringify({ v: GAME_VERSION, apk: IS_APK, adm: IS_ADM, cont: CONTINENTS.length, mods: typeof Mods, rotina: typeof Rotina, fazendas: typeof Fazendas })));
+  console.log('abriu', await p.evaluate(() => JSON.stringify({ v: GAME_VERSION, apk: IS_APK, adm: IS_ADM, cont: CONTINENTS.length, mods: typeof Mods, galeria: typeof ModsGaleria, oficiais: typeof MODS_OFICIAIS !== 'undefined' ? MODS_OFICIAIS.length : 0, rotina: typeof Rotina, fazendas: typeof Fazendas })));
   await p.evaluate(() => Game.newGame({ name: 'Apk', race: 'humano', cls: 'guerreiro', app: { skin: '#e0ac69', hair: '#5a3a1a', hairStyle: 0, sex: 'm' }, seed: 55 }));
   await p.waitForTimeout(5000);
   await p.evaluate(() => { try { Abertura.fim(true); } catch (e) { } UI.close(); Game.saveGame(1, true); });
