@@ -108,7 +108,7 @@ def main():
     chave = serialization.load_pem_private_key(open(os.path.join(ASSINATURA, 'key.pem'), 'rb').read(), None)
     open(chave_der, 'wb').write(chave.private_bytes(serialization.Encoding.DER, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
     sh('java', '-jar', os.path.join(bt, 'lib', 'apksigner.jar'), 'sign', '--key', chave_der, '--cert', os.path.join(ASSINATURA, 'cert.pem'),
-       '--min-sdk-version', '24', '--out', OUT, os.path.join(TMP, 'alinhado.apk'))
+       '--min-sdk-version', '24', '--v4-signing-enabled', 'false', '--out', OUT, os.path.join(TMP, 'alinhado.apk'))
     os.remove(chave_der)
     sh('java', '-jar', os.path.join(bt, 'lib', 'apksigner.jar'), 'verify', '--min-sdk-version', '24', OUT)
     print(f'APK nativo gerado: {OUT} ({os.path.getsize(OUT) // 1024} KB), versão {nome_versao} ({codigo})')
