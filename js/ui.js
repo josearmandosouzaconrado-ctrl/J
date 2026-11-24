@@ -113,10 +113,11 @@ const UI = {
           <button class="mbtn" ${f(() => this.multiplayer())}>Multiplayer <small>com amigos • até ${P2P_MAX} • código de convite</small></button>
           <button class="mbtn" ${f(() => this.options())}>Opções</button>
           <button class="mbtn" ${f(() => Idioma.escolher())}>🌐 Idioma / Language</button>
+          ${typeof Mods !== 'undefined' ? `<button class="mbtn" ${f(() => Mods.menu())}>🧩 Mods <small>${Mods.lista.filter(m => m.ativo).length ? Mods.lista.filter(m => m.ativo).length + ' ligado(s)' : 'crie ou instale mods'}</small></button>` : ''}
           <button class="mbtn" ${f(() => this.help())}>Como Jogar</button>
           ${IS_APK ? '' : `<a class="mbtn apk hidden" id="apk-dl" href="CronicasDeEldoria.apk" download="CronicasDeEldoria.apk">📱 Baixar para Android (APK)<small>joga com a tela deitada</small></a>`}
         </div>
-        <div class="ver">Versão Beta ${GAME_VERSION} • 3 continentes e uma ilha • 19 reinos • 15 raças • guerras em terra e no mar</div>
+        <div class="ver">Versão Beta ${GAME_VERSION} • 7 continentes • reinos, impérios e cavaleiros • moradores com rotina • mods</div>
       </div>`, { cls: 'transparent' });
     this.bind(el, f);
     // só mostra o botão do APK se o arquivo existir neste servidor
@@ -239,6 +240,8 @@ const UI = {
         <div class="opts">
           ${tog('sfx', 'Efeitos sonoros')} ${tog('music', 'Música')} ${tog('weather', 'Clima')} ${tog('needs', 'Fome, sede e sono')} ${tog('showFps', 'Mostrar FPS')}
           <button class="sbtn ${S.lite ? 'on' : ''}" ${f(() => { S.lite = !S.lite; Game.saveSettings(); Game.resize(); render(); })}>Modo leve (celular fraco): ${S.lite ? 'SIM' : 'NÃO'}</button>
+          ${typeof Mods !== 'undefined' ? `<button class="sbtn" ${f(() => Mods.menu())}>🧩 Mods (${Mods.lista.length} instalado(s))</button>` : ''}
+          ${typeof Backup !== 'undefined' ? `<button class="sbtn" ${f(() => { if (Game.started) Game.saveGame(0, true); Backup.menu(); })}>💾 Copiar o progresso (exportar / importar)</button>` : ''}
           <button class="sbtn on" ${f(() => { Dificuldade.proxima(); render(); })}>Dificuldade: ${Dificuldade.cfg().nome}</button>
           <button class="sbtn ${S.visual !== false ? 'on' : ''}" ${f(() => { S.visual = S.visual === false; Game.saveSettings(); render(); })}>Visual top (sombras do sol e luz dourada): ${S.visual !== false ? 'SIM' : 'NÃO'}</button>
           <div class="row"><span>Tamanho dos botões</span>${[0.8, 1, 1.2, 1.4].map(v => `<button class="sbtn small ${S.btnScale === v ? 'on' : ''}" ${f(() => { S.btnScale = v; Game.saveSettings(); render(); })}>${Math.round(v * 100)}%</button>`).join('')}</div>
@@ -331,9 +334,10 @@ const UI = {
     if (a.role === 'child' || a.role === 'kid') { this.childNPC(a); return; }
     if (a.role === 'merchant') { this.shop({ settlement: s, tx: Math.round(a.home.x), ty: Math.round(a.home.y), role: 'stall', name: 'Barraca de ' + a.name.split(' ')[0], owner: { name: a.name } }, 'stall'); return; }
     if (a.role === 'quest') { this.questGiver(a); return; }
-    const greet = Reino.saudacaoRei(a) || GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
+    const greet = Reino.saudacaoRei(a) || (typeof Rotina !== 'undefined' && Rotina.fala(a)) || GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
     const rum = RUMORS[s.region.id];
     const opts = [
+      ...(a.rot ? [{ label: 'Como é o seu dia?', fn: () => this.dialog(a.name, a.look, Rotina.agenda(a), [{ label: 'Boa vida. Tchau.' }]) }] : []),
       { label: 'Ouviu algum boato?', fn: () => this.dialog(a.name, a.look, esc(rum[Math.floor(Math.random() * rum.length)]), [{ label: 'Interessante. Tchau.' }]) },
       { label: 'Onde fica a guilda?', fn: () => { const b = s.buildings.find(b => b.role === 'guild'); this.dialog(a.name, a.look, b ? `A ${esc(b.name)} fica ${this.dirText(a, b.door)} daqui.` : 'Não temos guilda aqui. Procure numa cidade maior.', [{ label: 'Obrigado.' }]); } },
       { label: 'Tchau' }
