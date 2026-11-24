@@ -185,7 +185,7 @@ const Adm = {
   },
   navalHere() {
     const [a, b] = this.pair(); if (!a) return;
-    if (!Game.world.mapDone) while (!Game.world.mapDone) Game.world.stepMapImage(64);
+    if (!Game.world.mapDone) return UI.esperarMapa('Batalha naval', () => this.navalHere());
     const G = Naval.grid(); if (!G) return this.msg('mapa do mar ainda não está pronto');
     this.ensureWar(a, b);
     const P = this.P(), cx = Math.floor(P.x / 256), cy = Math.floor(P.y / 256);

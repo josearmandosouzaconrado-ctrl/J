@@ -626,7 +626,7 @@ const Mar = {
     UI.dialog('Carta náutica', null, 'Para qual porto o imediato deve traçar a rota? O navio segue sozinho com as velas cheias; mexa no joystick para retomar o leme.', opts);
   },
   tracarRota(L, pt) {
-    { const W = Game.world; let n = 0; while (!W.mapDone && n++ < 400) W.stepMapImage(64); }
+    if (!Game.world.mapDone) return UI.esperarMapa('🧭 Carta náutica', () => this.tracarRota(L, pt));
     const G = Naval.grid(); if (!G) return Game.toast('A carta náutica ainda está sendo desenhada. Tente de novo em instantes.', '#ffd080');
     const cel = (x, y) => { const mx = Math.floor(x / 256), my = Math.floor(y / 256); let best = null, bd = Infinity; for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) { const cx = mx + dx, cy = my + dy; if (cx < 0 || cy < 0 || cx >= G.w || cy >= G.h) continue; const i = cy * G.w + cx; if (!G.water[i]) continue; const d = dx * dx + dy * dy; if (d < bd) { bd = d; best = i; } } return best; };
     const a = cel(L.x, L.y), b = Naval.seaOf(pt);

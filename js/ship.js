@@ -424,6 +424,7 @@ const Ship = {
   },
   board(from, to, cap) {
     const G = Game, P = G.player, W = G.world;
+    if (!W.mapDone) { UI.esperarMapa('⚓ Preparando a viagem', () => G.voyage(from, to, cap)); return true; }
     const route = this.route(from, to);
     if (!route) return false;
     const own = War.ownerOf(from), iron = !!(own && Naval.shipTypeOf(own) === 'encouracado');

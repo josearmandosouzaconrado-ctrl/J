@@ -271,6 +271,22 @@ const UI = {
     const el = this.show('confirm', `<div class="panel small"><div class="ctext">${html}</div><div class="row end"><button class="mbtn small" ${f(() => { if (no) no(); else this.close(); })}>Não</button><button class="mbtn small gold" ${f(() => { this.close(); yes(); })}>Sim</button></div></div>`, { onBack: () => { if (no) no(); else this.close(); } });
     this.bind(el, f);
   },
+  // espera o mapa-múndi (e a carta náutica dos navios) ficar pronto sem travar: monta aos poucos
+  // (~25 ms por quadro) com uma barra de progresso e então chama fn. Já pronto: chama fn na hora.
+  esperarMapa(titulo, fn) {
+    const W = Game.world;
+    if (!W || W.mapDone) return fn();
+    this.dialog(titulo, null, `<div id="esp-mapa">Preparando a carta náutica... 0%</div><div style="height:10px;border:1px solid #c8a050;background:#000;margin-top:6px"><div id="esp-barra" style="height:100%;width:0;background:#e0b040"></div></div><div class="small dim" style="margin-top:6px">Só na primeira vez: depois fica guardada no aparelho.</div>`, []);
+    const passo = () => {
+      if (Game.world !== W) return;
+      W.stepMapImage(100000, 25);
+      const k = Math.floor(W.mapRow / MAP_H * 100), a = document.getElementById('esp-mapa'), b = document.getElementById('esp-barra');
+      if (!a && !W.mapDone) return;          // o jogador fechou a janela: desiste (o mapa continua sendo montado aos poucos no jogo)
+      if (a) a.textContent = 'Preparando a carta náutica... ' + k + '%'; if (b) b.style.width = k + '%';
+      if (W.mapDone) { this.close(); fn(); } else requestAnimationFrame(passo);
+    };
+    requestAnimationFrame(passo);
+  },
   dialog(name, look, html, options) {
     const f = this.reg();
     const el = this.show('dialog', `<div class="dialog">
