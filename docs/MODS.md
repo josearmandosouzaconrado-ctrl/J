@@ -16,6 +16,17 @@ Se um mod quebrar o jogo, abra o endereço do jogo com `?semmods` no final para 
 
 > Instale só mods de quem você confia: um mod roda dentro do jogo e pode mudar qualquer coisa nele.
 
+## 🌍 Galeria de Mods
+
+Na tela **🧩 Mods** há dois botões novos:
+
+- **🌍 Galeria de Mods**: lista os mods **oficiais** (vêm com o jogo e funcionam sem internet) e os mods que **outros jogadores publicaram**. Toque em **▶ Ativar** e o mod é baixado, instalado e ligado. Dá para procurar pelo nome, **ver o código** antes de ativar e **🚩 denunciar** mods ruins: com 3 denúncias de jogadores diferentes o mod sai da galeria.
+- **📤 Publicar meu mod**: manda um mod seu (um que você instalou, um arquivo .js ou o código colado) para a galeria. O aparelho guarda uma **chave** do mod: só com ela dá para atualizar ou retirar o mod da galeria. Use **💾 Copiar o progresso** para levar a chave para outro aparelho.
+
+Regras da galeria: o mod precisa chamar `Eldoria.registrar({ id, nome, autor, descricao, ... })`, ter um `id` que ninguém usou ainda e no máximo 120 KB. Cada aparelho pode publicar até 6 mods por hora.
+
+A galeria da comunidade fica no servidor da Sala Oficial (`rede/servidor.js`), que só guarda o texto dos mods e nunca os executa. Os mods publicados ficam no arquivo `mods_publicados.json`, ao lado do `sala.json` (variável `MODS` muda o lugar).
+
 ## O mod mais simples
 
 ```js

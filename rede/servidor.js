@@ -25,9 +25,87 @@ function salvar() { clearTimeout(salvarT); salvarT = setTimeout(() => { try { fs
 const chave = (a, b) => a < b ? a + '|' + b : b + '|' + a;
 const emGuerra = (a, b) => sala.guerras.some(g => g.k === chave(a, b));
 
+// ---------- GALERIA DE MODS DA COMUNIDADE ----------
+// Qualquer jogador publica um mod (só o texto do código; o servidor nunca o executa,
+// apenas confere se é JavaScript válido) e os outros ativam pela tela 🧩 Mods.
+// Quem publica recebe uma chave secreta: só com ela o mesmo mod pode ser atualizado ou retirado.
+// Mods com 3 denúncias de jogadores diferentes saem da lista.
+const vm = require('vm');
+const MODS_ARQ = process.env.MODS || path.join(path.dirname(DADOS), 'mods_publicados.json');
+const MODS_MAX = 400, MODS_TAM = 120000, DENUNCIAS_MAX = 3;
+let galeria = {};
+try { galeria = JSON.parse(fs.readFileSync(MODS_ARQ, 'utf8')) || {}; } catch (e) { galeria = {}; }
+let galT = null;
+function salvarGaleria() { clearTimeout(galT); galT = setTimeout(() => { try { fs.writeFileSync(MODS_ARQ, JSON.stringify(galeria)); } catch (e) { } }, 1000); }
+const hashK = k => crypto.createHash('sha256').update(String(k)).digest('hex');
+const ipDe = req => String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',').pop().trim();   // o último é o que o proxy do Render acrescenta
+const limites = new Map();          // ip -> [tempos das publicações]
+const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET, POST, OPTIONS', 'access-control-allow-headers': 'content-type' };
+function json(res, cod, o) { res.writeHead(cod, Object.assign({ 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }, CORS)); res.end(JSON.stringify(o)); }
+const campo = (cod, nome, max) => { const m = new RegExp('\\b' + nome + '\\s*:\\s*([\'"`])((?:(?!\\1)[^\\\\\\n]|\\\\.){1,' + max + '})\\1').exec(cod); return m ? m[2].replace(/\\(.)/g, '$1') : ''; };
+const resumo = m => ({ id: m.id, nome: m.nome, autor: m.autor, versao: m.versao, descricao: m.descricao, tam: m.codigo.length, baixados: m.baixados || 0, data: m.data, atualizado: m.atualizado || m.data });
+function lerCorpo(req, max, cb) {
+  let n = 0; const partes = [];
+  req.on('data', d => { n += d.length; if (n > max) { req.destroy(); return; } partes.push(d); });
+  req.on('end', () => { if (n > max) return cb(null); try { cb(JSON.parse(Buffer.concat(partes).toString('utf8'))); } catch (e) { cb(null); } });
+}
+function rotaMods(req, res, url) {
+  if (req.method === 'OPTIONS') { res.writeHead(204, CORS); return res.end(); }
+  const partes = url.split('/').filter(Boolean);           // ['mods', id?, acao?]
+  const id = partes[1], acao = partes[2];
+  if (req.method === 'GET' && !id) {
+    const l = Object.values(galeria).filter(m => (m.denuncias || []).length < DENUNCIAS_MAX).map(resumo).sort((a, b) => b.baixados - a.baixados || b.atualizado - a.atualizado);
+    return json(res, 200, { ok: true, mods: l });
+  }
+  const m = id && galeria[id];
+  if (req.method === 'GET' && id && !acao) {
+    if (!m || (m.denuncias || []).length >= DENUNCIAS_MAX) return json(res, 404, { ok: false, erro: 'Mod não encontrado.' });
+    m.baixados = (m.baixados || 0) + 1; salvarGaleria();
+    return json(res, 200, Object.assign(resumo(m), { ok: true, codigo: m.codigo }));
+  }
+  if (req.method === 'POST' && id && acao === 'denunciar') {
+    if (!m) return json(res, 404, { ok: false, erro: 'Mod não encontrado.' });
+    const ip = hashK(ipDe(req)); m.denuncias = m.denuncias || [];
+    if (!m.denuncias.includes(ip)) m.denuncias.push(ip);
+    salvarGaleria(); return json(res, 200, { ok: true, removido: m.denuncias.length >= DENUNCIAS_MAX });
+  }
+  if (req.method === 'POST' && id && acao === 'retirar') {
+    return lerCorpo(req, 2000, b => {
+      if (!m) return json(res, 404, { ok: false, erro: 'Mod não encontrado.' });
+      if (!b || hashK(b.chave) !== m.chave) return json(res, 403, { ok: false, erro: 'Só quem publicou pode retirar este mod.' });
+      delete galeria[id]; salvarGaleria(); json(res, 200, { ok: true });
+    });
+  }
+  if (req.method === 'POST' && !id) {
+    const ip = ipDe(req), agora = Date.now(), L = (limites.get(ip) || []).filter(t => agora - t < 3600000);
+    if (L.length >= 6) return json(res, 429, { ok: false, erro: 'Muitas publicações seguidas. Tente de novo daqui a uma hora.' });
+    return lerCorpo(req, MODS_TAM + 4000, b => {
+      if (!b || typeof b.codigo !== 'string') return json(res, 400, { ok: false, erro: 'Envio inválido ou grande demais (máx. ' + Math.round(MODS_TAM / 1000) + ' KB).' });
+      const cod = b.codigo.trim();
+      if (cod.length < 30 || cod.length > MODS_TAM) return json(res, 400, { ok: false, erro: 'O mod precisa ter entre 30 caracteres e ' + Math.round(MODS_TAM / 1000) + ' KB.' });
+      if (!/Eldoria\.registrar\s*\(/.test(cod)) return json(res, 400, { ok: false, erro: 'O mod precisa chamar Eldoria.registrar({ ... }).' });
+      try { new vm.Script('(function(Eldoria){' + cod + '\n})'); } catch (e) { return json(res, 400, { ok: false, erro: 'O código tem um erro: ' + e.message }); }
+      const mid = campo(cod, 'id', 40);
+      if (!/^[\w-]{2,40}$/.test(mid)) return json(res, 400, { ok: false, erro: "O mod precisa de um id: 'meu_mod' (letras, números, _ e -)." });
+      const nome = campo(cod, 'nome', 60) || mid;
+      const ex = galeria[mid];
+      if (ex && hashK(b.chave || '') !== ex.chave) return json(res, 409, { ok: false, erro: 'Já existe um mod publicado com o id "' + mid + '". Troque o id do seu mod.' });
+      if (!ex && Object.keys(galeria).length >= MODS_MAX) return json(res, 507, { ok: false, erro: 'A galeria está cheia.' });
+      const novaChave = ex ? b.chave : crypto.randomBytes(16).toString('hex');
+      galeria[mid] = { id: mid, nome, autor: campo(cod, 'autor', 40) || 'Anônimo', versao: campo(cod, 'versao', 12), descricao: campo(cod, 'descricao', 200), codigo: cod,
+        chave: hashK(novaChave), baixados: ex ? ex.baixados || 0 : 0, data: ex ? ex.data : agora, atualizado: agora, denuncias: ex ? ex.denuncias || [] : [] };
+      L.push(agora); limites.set(ip, L); salvarGaleria();
+      json(res, 200, { ok: true, id: mid, nome, chave: novaChave, atualizado: !!ex });
+    });
+  }
+  return json(res, 404, { ok: false, erro: 'Rota desconhecida.' });
+}
+
 // ---------- HTTP: o jogo e a saúde do servidor ----------
 const srv = http.createServer((req, res) => {
-  let url = decodeURIComponent((req.url || '/').split('?')[0]);
+  let url = '/';
+  try { url = decodeURIComponent((req.url || '/').split('?')[0]); } catch (e) { res.writeHead(400); return res.end(); }
+  if (url === '/mods' || url.startsWith('/mods/')) return rotaMods(req, res, url);
   if (url === '/saude') { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ ok: true, jogadores: online().length, max: MAX })); }
   if (url === '/') url = '/index.html';
   const rel = url.replace(/^\/+/, '');

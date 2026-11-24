@@ -8,3 +8,5 @@ miami/node_modules/
 __pycache__/
 # estado da Sala Oficial (gerado pelo servidor)
 rede/sala.json
+# galeria de mods da comunidade (gerado pelo servidor)
+rede/mods_publicados.json

@@ -129,6 +129,11 @@ const Mods = {
     const voltar = () => Game.started ? UI.openMenu('system') : UI.showTitle();
     const el = UI.show('mods', `<div class="panel"><div class="ptitle">🧩 Mods</div>
       <div class="small dim">Mods mudam o jogo: itens, inimigos, eventos, missões... Instale só mods de quem você confia: um mod pode fazer qualquer coisa dentro do jogo.</div>
+      <div class="row" style="gap:6px;flex-wrap:wrap;margin:6px 0">
+        <button class="mbtn" style="flex:1;min-width:160px" ${f(() => ModsGaleria.abrir())}>🌍 Galeria de Mods<br><span class="small">ative mods feitos por outros jogadores</span></button>
+        <button class="mbtn" style="flex:1;min-width:160px" ${f(() => ModsGaleria.publicar())}>📤 Publicar meu mod<br><span class="small">coloque o seu mod na galeria</span></button>
+      </div>
+      <div class="ptitle" style="font-size:18px">Instalados</div>
       <div class="slots">${linhas}</div>
       <div class="ptitle" style="font-size:18px;margin-top:8px">Instalar um mod</div>
       <div class="row" style="flex-wrap:wrap;gap:6px">
