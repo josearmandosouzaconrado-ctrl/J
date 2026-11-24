@@ -28,14 +28,17 @@ HERE = os.path.join(ROOT, 'android')
 ADM = '--adm' in sys.argv
 # --miami: gera o APK do jogo "Miami: Surto Zumbi" (pasta miami/www)
 MIAMI = '--miami' in sys.argv
+# --completo: o APK antigo, com o jogo inteiro dentro (~4 MB). Sem ele sai o APK LEVE (poucos KB),
+# que baixa o jogo do GitHub na primeira vez que abre (pasta leve/, gerada aqui mesmo).
+COMPLETO = '--completo' in sys.argv
 OUT = os.path.join(ROOT, 'CronicasDeEldoria-ADM.apk' if ADM else 'CronicasDeEldoria.apk')
 
 # o pacote mudou na 0.60 (a chave de assinatura antiga se perdeu): o app novo instala ao lado do antigo
 PACKAGE = 'com.eldoria.cronicas2.adm' if ADM else 'com.eldoria.cronicas2'
 APP_NAME = 'Eldoria ADM (novo)' if ADM else 'Eldoria (novo)'
 UA_TAG = ' EldoriaAPK EldoriaADM' if ADM else ' EldoriaAPK'
-VERSION_CODE = 93
-VERSION_NAME = '0.61.0-beta'
+VERSION_CODE = 94
+VERSION_NAME = '0.62.0-beta'
 SIGN_DIR = 'signing'
 CERT_NOME = 'Cronicas de Eldoria'
 if MIAMI:
@@ -527,9 +530,74 @@ def main_miami():
     print(f'APK gerado: {OUT} ({len(apk) // 1024} KB)')
 
 
+LEVE_BASES = ['https://raw.githubusercontent.com/josearmandosouzaconrado-ctrl/J/HEAD/']
+LEVE_TIPOS = {'.webp': 'image/webp', '.png': 'image/png', '.ttf': 'font/ttf', '.woff2': 'font/woff2', '.woff': 'font/woff'}
+
+
+def gerar_leve():
+    """Escreve leve/versao.json e o código comprimido (normal e ADM) que o APK leve baixa."""
+    import json, re, subprocess
+    subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'gerar_imgdata.py')], check=True)
+    sys.path.insert(0, os.path.join(ROOT, 'tools'))
+    from enxugar import enxugar
+    from pacote import scripts_do_index, comprimir
+    html = open(os.path.join(ROOT, 'index.html'), encoding='utf-8').read()
+    todos = scripts_do_index(html)
+    pasta = os.path.join(ROOT, 'leve'); os.makedirs(pasta, exist_ok=True)
+    h = lambda b: hashlib.sha1(b).hexdigest()[:12]
+    man = {'v': None}
+    for adm in (False, True):
+        nomes = todos if adm else [x for x in todos if x not in ADM_SO]
+        partes = [enxugar(n, open(os.path.join(ROOT, n), 'rb').read()) for n in nomes]
+        blob = b''.join(partes)
+        z = comprimir(blob)
+        arq = 'leve/codigo_adm.lzma' if adm else 'leve/codigo.lzma'
+        open(os.path.join(ROOT, arq), 'wb').write(z)
+        man['codigo_adm' if adm else 'codigo'] = {'p': arq, 'h': h(z), 'tam': len(z), 'z': len(blob), 'nomes': nomes, 'T': [len(x) for x in partes]}
+    arquivos = []
+    for full, rel in web_files():
+        ext = os.path.splitext(rel)[1]
+        if rel.startswith(('js/', 'icons/')) or rel in ('index.html', 'manifest.json', 'css/style.css') or ext not in LEVE_TIPOS: continue
+        b = open(full, 'rb').read()
+        arquivos.append({'p': rel, 'h': h(b), 'tam': len(b), 'tipo': LEVE_TIPOS[ext]})
+    man['arquivos'] = arquivos
+    man['css'] = enxugar('css/style.css', open(os.path.join(ROOT, 'css', 'style.css'), 'rb').read()).decode('utf-8')
+    corpo = html.split('<body>', 1)[1].rsplit('</body>', 1)[0]
+    man['corpo'] = re.sub(r'<script src="[^"]+"></script>\n?', '', corpo).strip()
+    man['v'] = re.search(r"GAME_VERSION = '([^']+)'", open(os.path.join(ROOT, 'js', 'util.js'), encoding='utf-8').read()).group(1)
+    man['id'] = h(json.dumps(man, sort_keys=True).encode())
+    open(os.path.join(pasta, 'versao.json'), 'w', encoding='utf-8').write(json.dumps(man, ensure_ascii=False, separators=(',', ':')))
+    total = sum(a['tam'] for a in arquivos) + man['codigo']['tam']
+    print(f'leve/ gerado: versão {man["v"]}, primeiro download {total // 1024} KB')
+
+
+def main_leve():
+    import json
+    gerar_leve()
+    sys.path.insert(0, os.path.join(ROOT, 'tools'))
+    from enxugar import enxugar_js
+    pag = open(os.path.join(HERE, 'leve.html'), encoding='utf-8').read()
+    dec = enxugar_js(open(os.path.join(ROOT, 'tools', 'unlzma.js'), encoding='utf-8').read())
+    pag = pag.replace('/*UNLZMA*/', dec).replace('/*ADM*/false', 'true' if ADM else 'false')
+    pag = pag.replace("/*BASES*/['https://raw.githubusercontent.com/josearmandosouzaconrado-ctrl/J/HEAD/']", json.dumps(LEVE_BASES))
+    icon = os.path.join(ROOT, 'icons', 'icon-adm-192.png' if ADM else 'icon-192.png')
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, 'w') as z:
+        add(z, 'AndroidManifest.xml', build_manifest())
+        add(z, 'classes.dex', build_dex())
+        add(z, 'resources.arsc', build_arsc('res/drawable/icon.png'), store=True)
+        add(z, 'res/drawable/icon.png', open(icon, 'rb').read(), store=True)
+        add(z, 'assets/index.html', pag.encode('utf-8'))
+    apk = sign_v2(buf.getvalue())
+    open(OUT, 'wb').write(apk)
+    print(f'APK leve gerado: {OUT} ({len(apk) // 1024} KB)')
+
+
 def main():
     if MIAMI:
         return main_miami()
+    if not COMPLETO:
+        return main_leve()
     # imagens embutidas sempre em dia com img/
     import subprocess, sys
     subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'gerar_imgdata.py')], check=True)

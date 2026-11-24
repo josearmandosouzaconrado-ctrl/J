@@ -15,6 +15,7 @@ for name in sorted(os.listdir(os.path.join(ROOT, 'img'))):
     data = base64.b64encode(open(os.path.join(ROOT, 'img', name), 'rb').read()).decode()
     out.append(f"  'img/{name}': 'data:image/png;base64,{data}',")
 out.append('};')
-out.append("function imgSrc(path) { return IMG_DATA[path] || path; }")
+# no APK leve as imagens grandes chegam baixadas (ARQ_LEVE: caminho -> data URI)
+out.append("function imgSrc(path) { return IMG_DATA[path] || (typeof ARQ_LEVE !== 'undefined' && ARQ_LEVE[path]) || path; }")
 open(os.path.join(ROOT, 'js', 'imgdata.js'), 'w').write('\n'.join(out) + '\n')
 print('js/imgdata.js gerado')

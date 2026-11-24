@@ -7,6 +7,7 @@ on:
     paths:
       - 'CronicasDeEldoria.apk'
       - 'CronicasDeEldoria-ADM.apk'
+      - 'leve/versao.json'
       - '.github/workflows/apk.yml'
   workflow_dispatch:
 permissions:
@@ -22,7 +23,7 @@ jobs:
         run: |
           VER=$(sed -n "s/.*GAME_VERSION = '\([^']*\)'.*/\1/p" js/util.js)
           TAG="v$VER"
-          NOTAS="Crônicas de Eldoria $VER (beta). Baixe CronicasDeEldoria.apk no celular Android e instale (permita instalar de fontes desconhecidas). CronicasDeEldoria-ADM.apk é a versão com o painel de testes."
+          NOTAS="Crônicas de Eldoria $VER (beta). Baixe CronicasDeEldoria.apk no celular Android e instale (permita instalar de fontes desconhecidas). O APK é leve (poucos KB): na primeira vez que abre, ele baixa o jogo (cerca de 4 MB) e depois funciona sem internet, atualizando sozinho. CronicasDeEldoria-ADM.apk é a versão com o painel de testes."
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" --target "$GITHUB_SHA" --title "Crônicas de Eldoria $VER" --notes "$NOTAS" --latest
           fi

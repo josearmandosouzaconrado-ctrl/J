@@ -33,7 +33,7 @@ const Anime = {
       const i = new Image();
       i.onload = () => { this.img[n] = i; feitos++; prog && prog(feitos / nomes.length); ok(); };
       i.onerror = () => { feitos++; prog && prog(feitos / nomes.length); ok(); };
-      i.src = 'anime/arte/' + n + '.webp';
+      i.src = imgSrc('anime/arte/' + n + '.webp');
     })));
   },
   // versões tingidas/silhueta (guardadas para não refazer a cada quadro)
@@ -385,7 +385,7 @@ const Anime = {
     const f = UI.reg(), visto = id => { try { return localStorage.getItem('eldoria_anime_' + id) === '1'; } catch (e) { return false; } };
     const m = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
     const cards = this.caps.map(c => `<div class="anime-card">
-        <img src="anime/arte/${c.capa}.webp" alt="">
+        <img src="${imgSrc('anime/arte/' + c.capa + '.webp')}" alt="">
         <div class="ac-txt"><div class="ac-n">${c.titulo}${visto(c.id) ? ' <span class="ac-ok">✓ assistido</span>' : ''}</div><div class="ac-t">${c.subtitulo}</div><div class="ac-d">${c.sinopse}</div><div class="ac-m">${m(c.dur)} • legendado</div></div>
         <button class="mbtn gold" ${f(() => { UI.close && UI.close(); this.tocar(c); })}>▶ Assistir</button></div>`).join('');
     const el = UI.show('anime', `<div class="panel anime-menu"><div class="ptitle">Crônicas de Eldoria — O Anime</div>

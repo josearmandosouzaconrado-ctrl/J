@@ -1,3 +1,4 @@
+// (APK completo: python3 android/build_apk.py --completo. O APK leve tem o teste tools/testes/apk_leve.js)
 // Teste do APK: abre o jogo de dentro do APK (assets) como o aplicativo Android abriria.
 // Uso: node tools/testes/apk.js CronicasDeEldoria.apk
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const fs = require('fs'); const os = require('os'); const path = require('path');

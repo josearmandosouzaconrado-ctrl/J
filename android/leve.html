@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#140c1c">
+<title>Crônicas de Eldoria</title>
+<style>
+html,body{margin:0;height:100%;background:#140c1c;color:#f2e6cc;font-family:monospace}
+#leve{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:16px;box-sizing:border-box}
+#leve h1{margin:0;font-size:30px;color:#ffd070;letter-spacing:1px}
+#leve .barra{width:min(440px,80vw);height:14px;border:2px solid #c8a050;background:#000}
+#leve .barra>div{height:100%;width:0;background:#e0b040;transition:width .2s}
+#leve button{font:inherit;font-size:16px;padding:8px 18px;background:#3a2a18;color:#ffd070;border:2px solid #c8a050}
+#leve-det{font-size:12px;opacity:.75;max-width:520px}
+</style>
+</head>
+<body>
+<div id="leve">
+  <h1>Crônicas de Eldoria</h1>
+  <div id="leve-msg">Preparando...</div>
+  <div class="barra"><div id="leve-fill"></div></div>
+  <div id="leve-det"></div>
+  <button id="leve-bt" style="display:none">Tentar de novo</button>
+</div>
+<script>
+'use strict';
+// =====================================================================
+//  APK LEVE — o aplicativo traz só esta página. Na primeira vez que abre,
+//  baixa o jogo completo do GitHub (código e imagens) e guarda no aparelho
+//  (IndexedDB). Depois abre sem internet. Quando há internet, confere se há
+//  versão nova e baixa só o que mudou; a novidade vale ao abrir de novo.
+// =====================================================================
+/*UNLZMA*/
+(function () {
+  const ADM = /*ADM*/false;
+  const BASES = /*BASES*/['https://raw.githubusercontent.com/josearmandosouzaconrado-ctrl/J/HEAD/'];
+  const $ = id => document.getElementById(id);
+  const msg = (t, d) => { $('leve-msg').textContent = t; if (d !== undefined) $('leve-det').textContent = d; };
+  const barra = k => { $('leve-fill').style.width = Math.round(Math.max(0, Math.min(1, k)) * 100) + '%'; };
+  const kb = n => n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.round(n / 1024) + ' KB';
+  // ---------- guardar no aparelho (IndexedDB; sem ele, só na memória) ----------
+  let db = null; const mem = new Map();
+  const abrirDB = () => new Promise(ok => { try { const r = indexedDB.open('eldoria_leve', 1); r.onupgradeneeded = () => r.result.createObjectStore('a'); r.onsuccess = () => ok(r.result); r.onerror = () => ok(null); r.onblocked = () => ok(null); } catch (e) { ok(null); } });
+  const op = (modo, f) => new Promise(ok => { if (!db) return ok(undefined); try { const q = f(db.transaction('a', modo).objectStore('a')); q.onsuccess = () => ok(q.result); q.onerror = () => ok(undefined); } catch (e) { ok(undefined); } });
+  const ler = async k => mem.has(k) ? mem.get(k) : op('readonly', s => s.get(k));
+  const gravar = async (k, v) => { const r = db ? await op('readwrite', s => s.put(v, k)) : undefined; if (r === undefined) mem.set(k, v); };
+  const apagar = k => { mem.delete(k); return op('readwrite', s => s.delete(k)); };
+  const chaves = async () => (await op('readonly', s => s.getAllKeys())) || [];
+  // ---------- internet ----------
+  const pedir = async (p, comoJSON, prog) => {
+    for (const b of BASES) {
+      try {
+        const r = await fetch(b + encodeURI(p), { cache: 'no-store' });
+        if (!r.ok) continue;
+        if (comoJSON) return await r.json();
+        if (!r.body || !prog) return await r.arrayBuffer();
+        const rd = r.body.getReader(), partes = []; let n = 0;
+        for (;;) { const { done, value } = await rd.read(); if (done) break; partes.push(value); n += value.length; prog(n); }
+        const u = new Uint8Array(n); let o = 0; for (const x of partes) { u.set(x, o); o += x.length; }
+        return u.buffer;
+      } catch (e) { /* tenta o próximo endereço */ }
+    }
+    return null;
+  };
+  const itens = m => m.arquivos.concat([ADM ? m.codigo_adm : m.codigo]);
+  const chave = it => it.p + '@' + it.h;
+  const completo = async m => { const K = new Set(await chaves()); for (const it of itens(m)) if (!K.has(chave(it)) && !mem.has(chave(it))) return false; return true; };
+  // ---------- baixar a versão mais nova ----------
+  async function atualizar(atual, primeira) {
+    if (primeira) msg('Conectando...', '');
+    const m = await pedir('leve/versao.json?t=' + Date.now(), true);
+    if (!m || !m.codigo) { if (primeira) falhou('Sem internet', 'Na primeira vez o jogo precisa de internet para baixar (cerca de 4 MB). Depois ele abre sem internet.'); return; }
+    if (!primeira && atual && atual.id === m.id) return;
+    const K = new Set(await chaves());
+    const faltam = itens(m).filter(it => !K.has(chave(it)) && !mem.has(chave(it)));
+    const total = faltam.reduce((s, it) => s + it.tam, 0) || 1; let feito = 0;
+    for (const it of faltam) {
+      if (primeira) msg(atual ? 'Atualizando o jogo...' : 'Baixando o jogo (só na primeira vez)...', kb(feito) + ' de ' + kb(total));
+      const buf = await pedir(it.p + '?h=' + it.h, false, n => { if (primeira) { barra((feito + n) / total); msg($('leve-msg').textContent, kb(feito + n) + ' de ' + kb(total)); } });
+      if (!buf || buf.byteLength !== it.tam) { if (primeira) falhou('O download parou', 'A conexão caiu ou o jogo estava sendo atualizado. Tente de novo.'); return; }
+      await gravar(chave(it), buf); feito += it.tam;
+    }
+    await gravar('_versao', m);
+    const usar = new Set(itens(m).map(chave)); usar.add('_versao');
+    for (const k of await chaves()) if (!usar.has(k)) await apagar(k);
+    if (primeira) { barra(1); rodar(m); }
+    else if (faltam.length && typeof Game !== 'undefined' && Game.toast) Game.toast('Atualização ' + m.v + ' baixada: vale na próxima vez que abrir o jogo.', '#a0ffa0');
+  }
+  function falhou(t, d) {
+    msg(t, d); const b = $('leve-bt'); b.style.display = '';
+    b.onclick = () => { b.style.display = 'none'; barra(0); iniciar(); };
+  }
+  const dataURL = (buf, tipo) => new Promise(ok => { const f = new FileReader(); f.onload = () => ok(f.result); f.onerror = () => ok(''); f.readAsDataURL(new Blob([buf], { type: tipo })); });
+  // ---------- abrir o jogo ----------
+  async function rodar(m) {
+    msg('Abrindo o jogo...', 'versão ' + m.v);
+    try {
+      const mapa = {};
+      for (const it of m.arquivos) mapa[it.p] = await dataURL(await ler(chave(it)), it.tipo);
+      window.ARQ_LEVE = mapa;
+      const st = document.createElement('style');
+      st.textContent = m.css.replace(/url\(['"]?([^'")]+)['"]?\)/g, (a, u) => mapa['css/' + u] ? "url('" + mapa['css/' + u] + "')" : a);
+      document.head.appendChild(st);
+      const c = ADM ? m.codigo_adm : m.codigo;
+      const o = unlzma(new Uint8Array(await ler(chave(c))), c.z), td = new TextDecoder('utf-8');
+      $('leve').remove();
+      document.body.insertAdjacentHTML('afterbegin', m.corpo);
+      let p = 0;
+      for (let i = 0; i < c.nomes.length; i++) {
+        const e = document.createElement('script');
+        e.text = td.decode(o.subarray(p, p + c.T[i])) + '\n//# sourceURL=' + c.nomes[i];
+        p += c.T[i];
+        document.head.appendChild(e);
+      }
+      window.dispatchEvent(new Event('load'));
+      setTimeout(() => atualizar(m, false), 15000);
+    } catch (e) {
+      await apagar('_versao');
+      document.body.innerHTML = '<div id="leve"><h1>Crônicas de Eldoria</h1><div id="leve-msg"></div><div class="barra"><div id="leve-fill"></div></div><div id="leve-det"></div><button id="leve-bt" style="display:none">Tentar de novo</button></div>';
+      falhou('Não foi possível abrir o jogo', String(e && e.message || e));
+    }
+  }
+  async function iniciar() {
+    if (!db) db = await abrirDB();
+    const atual = await ler('_versao');
+    if (atual && atual.codigo && await completo(atual)) return rodar(atual);
+    await atualizar(atual, true);
+  }
+  iniciar();
+})();
+</script>
+</body>
+</html>
