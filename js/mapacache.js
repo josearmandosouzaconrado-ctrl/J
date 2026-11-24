@@ -31,11 +31,7 @@ const MapaCache = {
           W.navWater = new Uint8Array(v.nav);
           W.mapImg = null; W.mapRow = MAP_H; W.mapDone = true; W.mapDoCache = true;
           // estradas novas (as obras do jogador) por cima
-          W.mapCtx.fillStyle = 'rgba(170,130,80,0.9)';
-          for (const [ck, set] of W.roadTiles) {
-            const cx = ck % 1024, cy = Math.floor(ck / 1024);
-            for (const i of set) { if ((i & 3) || ((i >> 5) & 3)) continue; W.mapCtx.fillRect(Math.floor((cx * 32 + (i & 31)) / W.mapStep), Math.floor((cy * 32 + (i >> 5)) / W.mapStep), 1, 1); }
-          }
+          W.estradasNoMapa();
         };
       } catch (e) { }
     });

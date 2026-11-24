@@ -666,7 +666,13 @@ const Fronteiras = {
     const W = Game.world, C = this.CEL, gw = Math.ceil(WORLD_W / C), gh = Math.ceil(WORLD_H / C);
     if (this._terra && this._tSeed === W.seed && this._tW === W) return this._terra;
     const t = new Uint8Array(gw * gh);
-    for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) { const b = W.baseTile(x * C + (C >> 1), y * C + (C >> 1)); t[y * gw + x] = TWATER[b] || b === T.DEEP ? 0 : 1; }
+    // com o mapa-múndi pronto, a grade de água dele já diz onde é terra (calcular o terreno ponto a ponto travava o celular)
+    const nav = W.mapDone && W.navWater, st = W.mapStep || 16;
+    for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
+      const tx = x * C + (C >> 1), ty = y * C + (C >> 1);
+      if (nav) { const mx = Math.min(MAP_W - 1, Math.floor(tx / st)), my = Math.min(MAP_H - 1, Math.floor(ty / st)); t[y * gw + x] = nav[my * MAP_W + mx] ? 0 : 1; continue; }
+      const b = W.baseTile(tx, ty); t[y * gw + x] = TWATER[b] || b === T.DEEP ? 0 : 1;
+    }
     this._terra = t; this._tSeed = W.seed; this._tW = W;
     return t;
   },

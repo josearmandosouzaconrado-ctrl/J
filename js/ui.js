@@ -842,7 +842,21 @@ const UI = {
     const ox = cw / 2 - this.mox * z, oy = ch / 2 - this.moy * z;
     ctx.fillStyle = '#10182a'; ctx.fillRect(0, 0, cw, ch);
     ctx.imageSmoothingEnabled = false;
-    if (!W.mapDone) { while (!W.mapDone) W.stepMapImage(32); }
+    // mapa ainda não montado: monta aos poucos (cerca de 25 ms por quadro) mostrando o progresso,
+    // em vez de montar tudo de uma vez (isso travava o celular por vários segundos)
+    if (!W.mapDone) {
+      W.stepMapImage(100000, 25);
+      if (!W.mapDone) {
+        const k = W.mapRow / MAP_H, bw = Math.min(360, cw * 0.6), bx = (cw - bw) / 2, by = ch / 2;
+        ctx.font = '20px VT323, monospace'; ctx.textAlign = 'center'; ctx.fillStyle = '#f2e6cc';
+        ctx.fillText('Desenhando o mapa do mundo... ' + Math.floor(k * 100) + '%', cw / 2, by - 14);
+        ctx.fillStyle = '#000'; ctx.fillRect(bx, by, bw, 12); ctx.strokeStyle = '#c8a050'; ctx.strokeRect(bx, by, bw, 12);
+        ctx.fillStyle = '#e0b040'; ctx.fillRect(bx + 1, by + 1, (bw - 2) * k, 10);
+        ctx.font = '14px VT323, monospace'; ctx.fillStyle = 'rgba(242,230,204,0.6)'; ctx.fillText('Só na primeira vez: depois o mapa fica guardado no aparelho.', cw / 2, by + 34);
+        if (!this._mapAF) this._mapAF = requestAnimationFrame(() => { this._mapAF = 0; if (this.mcv === cv && cv.isConnected) this.drawMap(); });
+        return;
+      }
+    }
     ctx.drawImage(W.mapCanvas, ox, oy, MAP_W * z, MAP_H * z);
     ctx.drawImage(this.fog, ox, oy, MAP_W * z, MAP_H * z);
     const toS = (tx, ty) => [ox + tx / 16 * z, oy + ty / 16 * z];

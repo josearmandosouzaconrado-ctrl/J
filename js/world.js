@@ -1514,6 +1514,22 @@ class World {
     this.mapStep = step;
     if (typeof MapaCache !== 'undefined') MapaCache.carregar(this);
   }
+  // estradas no mapa-múndi: cada ponto do mapa vale 16x16 quadradinhos e fica marrom se QUALQUER
+  // quadradinho dele for estrada (antes só um a cada 4x4 contava: estradas finas e as que cortam
+  // montanhas sumiam ou viravam pontinhos)
+  estradasNoMapa() {
+    const st = this.mapStep || 16, cel = new Uint8Array(MAP_W * MAP_H), L = [];
+    for (const [k, set] of this.roadTiles) {
+      const cx = k % 1024, cy = Math.floor(k / 1024);
+      for (const i of set) {
+        const mx = Math.floor((cx * 32 + (i & 31)) / st), my = Math.floor((cy * 32 + (i >> 5)) / st), j = my * MAP_W + mx;
+        if (mx < 0 || my < 0 || mx >= MAP_W || my >= MAP_H || cel[j]) continue;
+        cel[j] = 1; L.push(mx, my);
+      }
+    }
+    const g = this.mapCtx; g.fillStyle = 'rgba(160,112,60,0.95)';
+    for (let q = 0; q < L.length; q += 2) g.fillRect(L[q], L[q + 1], 1, 1);
+  }
   // rows: limite de linhas; budget (ms): para antes se o quadro já gastou tempo demais
   // (o tempo é conferido no meio da linha também: uma linha inteira já passava do limite nos celulares)
   stepMapImage(rows = 8, budget = 0) {
@@ -1537,12 +1553,7 @@ class World {
     }
     if (this.mapRow >= R) {
       this.mapCtx.putImageData(this.mapImg, 0, 0); this._mapBase = this.mapImg.data.buffer; this.mapImg = null;   // já está no canvas; a cópia (sem as estradas) fica só até ser guardada
-      // estradas
-      this.mapCtx.fillStyle = 'rgba(170,130,80,0.9)';
-      for (const [k, set] of this.roadTiles) {
-        const cx = k % 1024, cy = Math.floor(k / 1024);
-        for (const i of set) { if ((i & 3) || ((i >> 5) & 3)) continue; this.mapCtx.fillRect(Math.floor((cx * 32 + (i & 31)) / step), Math.floor((cy * 32 + (i >> 5)) / step), 1, 1); }
-      }
+      this.estradasNoMapa();
       this.mapDone = true;
       if (typeof MapaCache !== 'undefined') MapaCache.salvar(this);
     }
