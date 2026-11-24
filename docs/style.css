@@ -250,3 +250,13 @@ body.teclado #abas{display:none}
 #asAcoes{margin-top:12px;width:100%;max-width:520px}
 #asAcoes .cartoes{justify-content:center;flex-wrap:wrap}
 .asDica{margin-top:auto;font-size:12.5px;color:#64748b;text-align:center}
+
+/* ===== painel da bolha flutuante (abre por cima de outros apps) ===== */
+html.bolha,html.bolha body{background:transparent!important}
+html.bolha #topo,html.bolha #vistas,html.bolha #abas,html.bolha #bannerAtualizacao{display:none!important}
+html.bolha #assistente{display:flex;inset:auto 0 0 0;top:0;border-radius:24px 24px 0 0;background:radial-gradient(circle at 50% 30%,#1e1b4bf2 0%,#05060af2 75%);padding-top:6px;box-shadow:0 -8px 30px #000a}
+html.bolha #asOrbe{width:120px;height:120px;margin:8px 0 10px}
+html.bolha #asOrbe span{inset:34px}
+html.bolha #asOrbe i:nth-child(2){inset:12px}
+html.bolha #asOrbe i:nth-child(3){inset:23px}
+html.bolha .asDica{display:none}

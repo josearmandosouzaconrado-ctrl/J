@@ -1,4 +1,4 @@
-const CACHE = 'nexo-6';
+const CACHE = 'nexo-7';
 const ARQUIVOS = ["./", "LICENCA-wllama.txt", "animes.js", "apk.js", "app.js", "icon-192.png", "icon-512.png", "index.html", "jogos.js", "local.js", "modelos.js", "motor.js", "novidades.js", "style.css", "voz.js", "wllama.js"];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(ARQUIVOS)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });

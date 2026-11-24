@@ -23,6 +23,19 @@ Cada versão tem um **número e um nome**, por exemplo **1.3.0 "Criador de Jogos
 - Dentro do app: ⚙ → **Versão e atualizações** mostra a sua versão. Quando sai uma nova, aparece no topo do chat o aviso **🎁 Atualização X — "Nome"** com o botão **⬇ Baixar e instalar**.
 - No GitHub: a página https://github.com/josearmandosouzaconrado-ctrl/J/releases mostra cada versão com o nome. Baixe sempre o **NexoIA.apk** da release **"versão mais nova"**. Ele instala por cima, sem perder nada.
 
+## Novidades da versão 1.5: "Jarvis Flutuante"
+
+O Nexo agora é um **app Android nativo** (Java + WebView), compilado com o Android SDK oficial (`python3 android/build_nexo_nativo.py`).
+
+- **Voz dentro do APK:** reconhecimento e fala do próprio Android. O 🎙️ e o 🎤 funcionam no app.
+- **Assistente flutuante (bolha):** em ⚙ → **Assistente flutuante**, toque em **Ligar**. Aparece uma bolha com o gatinho por cima de qualquer app.
+  - Com a **tela acesa**, fale o nome (ex.: **"Jarvis"**) e o painel abre por cima do app que você estiver usando.
+  - Dá para falar junto: *"Jarvis, abre o Free Fire"*, *"Jarvis, quais jogos eu tenho?"*, *"Jarvis, que horas são?"*.
+  - Toque na bolha para abrir ou fechar e **segure** para desligar. Arraste para mudar de lugar.
+  - Com a tela apagada ele para de ouvir (economiza bateria). Uma notificação mostra que ele está ouvindo.
+- **Apps e jogos:** ele vê os apps instalados, separa os jogos e abre qualquer um pelo nome (tolera nomes parecidos, como "free fire" para "Free Fire MAX").
+- **Permissões** que o app pede: microfone, exibir sobre outros apps e notificações. No **Xiaomi/Redmi**, ative também (botão **🔧 Permissões do Xiaomi**): "Exibir janelas pop-up em segundo plano", "Início automático" e bateria "Sem restrições".
+
 ## Novidades da versão 1.4: "Assistente de Voz"
 
 - **Nexo como site, sem instalar nada:** https://josearmandosouzaconrado-ctrl.github.io/J/ (abra no **Google Chrome**). No menu ⋮ do Chrome, toque em **"Adicionar à tela inicial"** para ele ganhar ícone.

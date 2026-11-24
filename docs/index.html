@@ -165,6 +165,16 @@
       <select id="cfgVozVel"><option value="0.9">Devagar</option><option value="1.05">Normal</option><option value="1.25">Rápida</option><option value="1.5">Muito rápida</option></select>
     </label>
 
+    <div id="secBolha" style="display:none">
+      <h3>Assistente flutuante (bolha)</h3>
+      <p class="dica">Uma bolha com o gatinho fica por cima de qualquer app. Com a tela acesa, fale o nome do assistente (ou a palavra para chamar) e ele abre por cima do que você estiver usando: <i>"Jarvis, abre o Free Fire"</i>, <i>"Jarvis, quais jogos eu tenho?"</i>. Toque na bolha para abrir ou fechar; segure para desligar.</p>
+      <p class="dica" id="estadoBolha"></p>
+      <button class="botao largo forte" id="btnBolha">🫧 Ligar o assistente flutuante</button>
+      <label class="interruptor"><input type="checkbox" id="cfgSilenciar"> <span>Silenciar o "bip" do microfone enquanto ele espera o nome (abaixa a mídia por meio segundo a cada escuta)</span></label>
+      <p class="dica">No Xiaomi/Redmi, para abrir jogos e não ser fechado pelo sistema: toque abaixo e ative <b>"Exibir janelas pop-up em segundo plano"</b> e <b>"Exibir sobre outros apps"</b>. Em Configurações → Apps → Nexo IA, ative também <b>"Início automático"</b> e, em Economia de bateria, escolha <b>"Sem restrições"</b>.</p>
+      <button class="botao largo" id="btnPermXiaomi">🔧 Permissões do Xiaomi</button>
+    </div>
+
     <h3>Pesquisas</h3>
     <label>Chave do Gemini para pesquisar no Google <small>(grátis, opcional se o provedor já é o Gemini)</small>
       <input id="cfgGemini" type="password" placeholder="mesma chave do aistudio.google.com" autocomplete="off">

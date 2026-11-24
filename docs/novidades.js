@@ -1,4 +1,12 @@
 window.NOVIDADES = [
+  {"versao": "1.5.0", "codigo": 7, "nome": "Jarvis Flutuante", "data": "24/11/2026", "itens": [
+    "App nativo de verdade (Java), com voz do próprio Android: agora a voz funciona dentro do APK",
+    "Assistente flutuante: uma bolha por cima de qualquer app; fale o nome dele (ex.: Jarvis) e ele abre por cima do que você estiver usando",
+    "Vê os apps e jogos instalados: \"Jarvis, quais jogos eu tenho?\"",
+    "Abre apps e jogos pelo nome: \"Jarvis, abre o Free Fire\"",
+    "Botões de alarme, timer, ligar e WhatsApp funcionam direto no app",
+    "Responde na hora, sem IA, a horas, data e comandos de apps"
+  ]},
   {"versao": "1.4.0", "codigo": 6, "nome": "Assistente de Voz", "data": "24/11/2026", "itens": [
     "Modo assistente de voz (🎙️): você fala, ele responde em voz alta e volta a ouvir, como um assistente pessoal",
     "Nome do assistente e palavra para chamar configuráveis (ex.: Jarvis)",

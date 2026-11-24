@@ -34,6 +34,7 @@ const CFG_PADRAO = { prov: 'local', pesquisaLocal: true, chaves: {}, modelos: {}
   nomeAssistente: 'Nexo', vozPalavra: '', vozResponder: true, vozVelocidade: 1.05, vozMudo: false };
 // no APK a página abre de file:// (com acesso liberado a qualquer site); no site, só APIs com CORS funcionam
 const NO_APK = location.protocol === 'file:';
+const NA_BOLHA = /[?&]bolha=1/.test(location.search);   // painel da bolha flutuante (por cima de outros apps)
 let modoVoz = false;
 const nomeIA = () => (cfg.nomeAssistente || 'Nexo').trim() || 'Nexo';
 let cfg = carregar('nexo_cfg', CFG_PADRAO);
@@ -133,6 +134,10 @@ const FERRAMENTAS = [
     params: { acao: { type: 'string', enum: ['ligar', 'sms', 'whatsapp', 'mapa', 'alarme', 'timer', 'youtube', 'site', 'email'] },
       numero: { type: 'string', description: 'telefone com DDD (ligar, sms, whatsapp)' }, texto: { type: 'string', description: 'mensagem, busca, endereço, link ou nome do alarme' },
       hora: { type: 'string', description: 'HH:MM para alarme' }, minutos: { type: 'integer', description: 'duração do timer em minutos' } }, obrig: ['acao'] },
+  { nome: 'listar_apps', nativo: true, desc: 'Lista os apps e jogos instalados no celular do usuário.',
+    params: { so_jogos: { type: 'boolean', description: 'true para listar só os jogos' } }, obrig: [] },
+  { nome: 'abrir_app', nativo: true, desc: 'Abre um app ou jogo instalado no celular pelo nome (ex.: "Free Fire", "Minecraft", "WhatsApp").',
+    params: { nome: { type: 'string', description: 'nome do app ou jogo' } }, obrig: ['nome'] },
   { nome: 'github_repos', github: true, desc: 'Lista os repositórios do GitHub do usuário.', params: {}, obrig: [] },
   { nome: 'github_ler', github: true, desc: 'Lê um arquivo ou lista uma pasta de um repositório do GitHub.',
     params: { repo: { type: 'string', description: 'dono/nome ou só o nome (repositório do usuário)' }, caminho: { type: 'string', description: 'caminho do arquivo ou pasta ("" para a raiz)' },
@@ -145,7 +150,7 @@ const FERRAMENTAS = [
     params: { repo: { type: 'string', description: 'dono/nome ou só o nome' }, titulo: { type: 'string', description: 'título' }, corpo: { type: 'string', description: 'texto em markdown' } },
     obrig: ['repo', 'titulo'] },
 ];
-const ferramentasAtivas = () => FERRAMENTAS.filter(f => !f.github || (cfg.github || '').trim());
+const ferramentasAtivas = () => FERRAMENTAS.filter(f => (!f.github || (cfg.github || '').trim()) && (!f.nativo || window.NexoNativo));
 
 const ROTULOS = {
   pesquisar_web: a => (chaveGemini() ? '🔎 Pesquisando no Google: ' : '🔎 Pesquisando na internet: ') + a.consulta,
@@ -157,6 +162,8 @@ const ROTULOS = {
   ler_pagina: a => '📄 Lendo ' + (a.url || '').replace(/^https?:\/\//, '').slice(0, 50),
   criar_jogo: a => '🎮 Salvando e testando o jogo: ' + (a.titulo || ''),
   acao_celular: a => '📱 Preparando: ' + (a.acao || ''),
+  listar_apps: a => a.so_jogos ? '🎮 Vendo seus jogos' : '📱 Vendo seus apps',
+  abrir_app: a => '🚀 Abrindo ' + (a.nome || ''),
   jogo_pronto: a => '⚡ Montando jogo de ' + (a.tipo || '') + ': ' + (a.titulo || ''),
   ler_jogo: a => '🎮 Abrindo o jogo ' + (a.titulo || ''),
   github_repos: () => '🐙 GitHub: listando repositórios',
@@ -315,6 +322,18 @@ const EXECUTAR = {
       cartoes: [{ tipo: 'acao', rotulo, url }] };
   },
 
+  async listar_apps({ so_jogos }) {
+    const l = appsInstalados().filter(a => !so_jogos || a.jogo);
+    return { ia: { total: l.length, apps: l.map(a => a.nome + (a.jogo ? ' (jogo)' : '')) },
+      cartoes: l.slice(0, 20).map(a => ({ tipo: 'app', rotulo: (a.jogo ? '🎮 ' : '📱 ') + a.nome, pacote: a.pacote })) };
+  },
+  async abrir_app({ nome }) {
+    const a = acharApp(nome);
+    if (!a) return { ia: { erro: 'não encontrei esse app instalado', parecidos: appsInstalados().map(x => x.nome).filter(x => normal(x)[0] === normal(nome)[0]).slice(0, 8) } };
+    const ok = NexoNativo.abrirApp(a.pacote);
+    return { ia: ok ? { ok: true, abriu: a.nome } : { erro: 'o Android não deixou abrir ' + a.nome }, fecharDepois: ok };
+  },
+
   async jogo_pronto(a) {
     const j = Jogos.criarDeModelo(a);
     return { ia: { ok: true, titulo: j.titulo, tipo: j.config.tipo, tema: j.config.tema, aviso: 'Jogo pronto e testado na aba Jogos. O usuário pode editar com ✏️.' },
@@ -358,6 +377,81 @@ const EXECUTAR = {
     return { ia: { ok: true, numero: r.number, link: r.html_url } };
   },
 };
+
+// ---------- apps instalados (APK nativo) ----------
+const normal = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+let cacheApps = null, cacheAppsT = 0;
+function appsInstalados() {
+  if (!window.NexoNativo) return [];
+  if (!cacheApps || Date.now() - cacheAppsT > 60000) {
+    try { cacheApps = JSON.parse(NexoNativo.apps()).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')); } catch (e) { cacheApps = []; }
+    cacheAppsT = Date.now();
+  }
+  return cacheApps;
+}
+function distancia(a, b) {
+  const m = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let ant = m[0]; m[0] = i;
+    for (let j = 1; j <= b.length; j++) { const t = m[j]; m[j] = Math.min(m[j] + 1, m[j - 1] + 1, ant + (a[i - 1] === b[j - 1] ? 0 : 1)); ant = t; }
+  }
+  return m[b.length];
+}
+// acha o app pelo nome falado (tolera "free fire max", "o minecraft", erros pequenos de reconhecimento)
+function acharApp(nome) {
+  const alvo = normal(nome).replace(/^(o|a|os|as|meu|minha|jogo|app|aplicativo)\s+/g, '').replace(/\s+(pra mim|por favor|agora)$/, '');
+  if (!alvo) return null;
+  let melhor = null, nota = 0;
+  for (const a of appsInstalados()) {
+    const n = normal(a.nome), semEsp = n.replace(/ /g, ''), alvoSem = alvo.replace(/ /g, '');
+    let p = 0;
+    if (n === alvo || semEsp === alvoSem) p = 100;
+    else if (n.startsWith(alvo) || semEsp.startsWith(alvoSem)) p = 85 - (n.length - alvo.length) * 0.5;
+    else if (n.includes(alvo) || semEsp.includes(alvoSem)) p = 70;
+    else if (alvo.includes(n) && n.length >= 3) p = 60;
+    else {
+      const d = distancia(alvoSem, semEsp.slice(0, alvoSem.length + 2));
+      if (d <= Math.max(1, Math.floor(alvoSem.length / 4))) p = 55 - d * 5;
+      const palavras = alvo.split(' ').filter(w => w.length > 2);
+      const comuns = palavras.filter(w => n.split(' ').some(x => x === w || (w.length > 3 && distancia(w, x) <= 1))).length;
+      if (palavras.length && comuns) p = Math.max(p, 40 + 20 * comuns / palavras.length);
+    }
+    if (a.jogo) p += 1;   // em empate, prefere o jogo
+    if (p > nota) { nota = p; melhor = a; }
+  }
+  return nota >= 50 ? melhor : null;
+}
+// comandos que o próprio app resolve na hora, sem esperar a IA
+const CMD_ABRIR = /^(?:(?:por favor|pfv)\s+)?(?:abr[ae]|abrir|abre|inicia|iniciar|executa|executar|roda|rodar|bota|liga|entra(?:r)? n[oa]|vamos jogar|quero jogar|joga|jogar)\s+(?:o |a |no |na |um |uma |meu |minha )?(?:jogo |app |aplicativo )?(.{2,60}?)[.!?]*$/i;
+const CMD_JOGOS = /\b(quais|que|qual|lista|listar|mostra|mostrar|me diz|fala|diz|tem)\b.*\bjogos?\b|\bjogos?\b.*\b(tenho|baixad|instalad|no (meu )?celular)/i;
+const CMD_APPS = /\b(quais|que|lista|listar|mostra|mostrar|quantos)\b.*\b(apps?|aplicativos?)\b.*\b(tenho|baixad|instalad|celular)|\b(apps?|aplicativos?)\b.*\b(tenho|instalad)/i;
+function comandoLocal(texto) {
+  const t = texto.trim();
+  if (/^(que|quais) horas?\b|^que hora/i.test(t)) return { texto: 'Agora são ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) + '.' };
+  if (/^(que|qual) (dia|data)\b.*hoje|^hoje [ée] que dia/i.test(t)) return { texto: 'Hoje é ' + new Date().toLocaleDateString('pt-BR', { dateStyle: 'full' }) + '.' };
+  if (!window.NexoNativo) return null;
+  if (CMD_JOGOS.test(t) && !/\b(cri[ae]|fa[çz]a|gera|monta|melhores|recomend|lan[çc]a)/i.test(t)) {
+    const jogos = appsInstalados().filter(a => a.jogo);
+    if (!jogos.length) return { texto: 'Não encontrei jogos instalados no celular. (Alguns jogos não se identificam como jogo; pergunte "quais apps eu tenho".)' };
+    return { texto: `Você tem ${jogos.length} ${jogos.length === 1 ? 'jogo' : 'jogos'}: ${jogos.map(j => j.nome).join(', ')}. Qual você quer abrir?`,
+      cartoes: jogos.slice(0, 20).map(a => ({ tipo: 'app', rotulo: '🎮 ' + a.nome, pacote: a.pacote })) };
+  }
+  if (CMD_APPS.test(t)) {
+    const l = appsInstalados();
+    return { texto: `Você tem ${l.length} apps instalados. Alguns: ${l.slice(0, 25).map(a => a.nome).join(', ')}${l.length > 25 ? '…' : ''}.`,
+      cartoes: l.slice(0, 20).map(a => ({ tipo: 'app', rotulo: (a.jogo ? '🎮 ' : '📱 ') + a.nome, pacote: a.pacote })) };
+  }
+  const m = t.match(CMD_ABRIR);
+  if (m) {
+    const a = acharApp(m[1]);
+    if (a) {
+      const ok = NexoNativo.abrirApp(a.pacote);
+      return ok ? { texto: `Abrindo ${a.nome}.`, fecharDepois: true } : { texto: `O Android não deixou abrir ${a.nome}. Em ⚙ → Assistente flutuante, toque em "Permissões do Xiaomi" e libere "pop-up em segundo plano".` };
+    }
+    if (/^(abr|inici|execut|jog|entr)/i.test(t)) return { texto: `Não encontrei "${m[1]}" instalado no celular.` };
+  }
+  return null;
+}
 
 // ---------- GitHub (REST, com o token do usuário) ----------
 async function gh(caminho, opcoes = {}) {
@@ -518,7 +612,7 @@ Criar jogos e apps (você é um game designer e programador de elite):
 - O usuário transforma o jogo em APK na aba Jogos (botão APK).`;
   s += `
 
-Ações no celular: para ligar, mandar mensagem, WhatsApp, abrir mapa, criar alarme ou timer, use acao_celular (aparece um botão que o usuário toca para confirmar).`;
+Ações no celular: para ligar, mandar mensagem, WhatsApp, abrir mapa, criar alarme ou timer, use acao_celular (aparece um botão que o usuário toca para confirmar).${window.NexoNativo ? ' Você também vê e abre os apps e jogos instalados: listar_apps e abrir_app.' : ''}`;
   if (modoVoz) s += `
 
 MODO VOZ ATIVO: sua resposta será FALADA em voz alta. Responda curto (1 a 4 frases), em linguagem falada natural, como um assistente pessoal elegante e prestativo. Sem markdown, sem listas, sem links, sem emojis. Detalhes longos e links ficam nos cartões da tela.`;
@@ -563,6 +657,7 @@ function historicoApi(conv) {
 }
 
 async function responder(conv, aoPasso, sinal, aoVivo) {
+  let fecharDepoisTool = false;
   const msgs = historicoApi(conv);
   const tipo = prov().tipo;
   const cartoes = [];
@@ -572,6 +667,7 @@ async function responder(conv, aoPasso, sinal, aoVivo) {
       if (!EXECUTAR[nome]) throw new Error('ferramenta desconhecida');
       const r = await EXECUTAR[nome](args || {});
       if (r.cartoes) cartoes.push(...r.cartoes);
+      if (r.fecharDepois) fecharDepoisTool = true;
       passo(true);
       const limite = /^(ler_jogo|github_ler)$/.test(nome) ? 150000 : 12000;
       const txt = JSON.stringify(r.ia === undefined ? { ok: true } : r.ia);
@@ -586,7 +682,7 @@ async function responder(conv, aoPasso, sinal, aoVivo) {
   else if (tipo === 'gemini') texto = await laçoGemini(msgs, rodar, sinal);
   else if (tipo === 'anthropic') texto = await laçoAnthropic(msgs, rodar, sinal, aoVivo || (() => {}), aoPasso);
   else texto = await laçoOpenAI(msgs, rodar, sinal);
-  return { texto, cartoes };
+  return { texto, cartoes, fecharDepois: fecharDepoisTool };
 }
 
 function lerArgs(s) { try { return typeof s === 'string' ? JSON.parse(s || '{}') : (s || {}); } catch (e) { return {}; } }
@@ -1052,7 +1148,12 @@ function desenharCartoes(lista) {
   for (const c of lista) {
     const a = document.createElement('a');
     a.href = c.tipo === 'acao' ? '#' : linkSeguro(c.url || '');
-    if (c.tipo === 'acao') {
+    if (c.tipo === 'app') {
+      a.className = 'acaoCelular';
+      a.href = '#';
+      a.textContent = c.rotulo;
+      a.onclick = e => { e.preventDefault(); if (window.NexoNativo) { NexoNativo.abrirApp(c.pacote); if (window.Voz && Voz.BOLHA) NexoNativo.fecharPainel(); } };
+    } else if (c.tipo === 'acao') {
       a.className = 'acaoCelular';
       a.href = c.url;
       a.textContent = c.rotulo;
@@ -1215,16 +1316,26 @@ async function enviar(textoUsuario, opcoes = {}) {
   };
 
   const conv = atual;
+  const cmd = comandoLocal(textoUsuario);
+  if (cmd) {
+    const resp = { papel: 'ia', texto: cmd.texto, cartoes: cmd.cartoes || [], passos: ['✔ ⚡ Comando do celular'] };
+    conv.msgs.push(resp);
+    salvarConversas();
+    if (conv === atual) { linha.replaceWith(desenharMsg(resp)); rolarFim(); }
+    modoVoz = false;
+    return Object.assign({ fecharDepois: !!cmd.fecharDepois }, resp);
+  }
   const apiAntes = conv.api ? JSON.stringify(conv.api) : null;
   ocupado = new AbortController();
   elEnviar.classList.add('parar'); elEnviar.textContent = '■';
-  let resposta;
+  let resposta, fecharDepois = false;
   try {
     const msgsApi = conv.api.msgs;
     if (prov().tipo === 'gemini') msgsApi.push({ role: 'user', parts: [{ text: textoUsuario }] });
     else msgsApi.push({ role: 'user', content: textoUsuario });
     const r = await responder(conv, aoPasso, ocupado.signal, aoVivo);
     resposta = { papel: 'ia', texto: r.texto, cartoes: r.cartoes.slice(0, 20), passos };
+    if (r.fecharDepois) fecharDepois = true;
   } catch (e) {
     conv.api = apiAntes ? JSON.parse(apiAntes) : undefined;   // desfaz a rodada que falhou
     resposta = { papel: 'ia', erro: true, passos, texto: explicarErro(e) };
@@ -1235,7 +1346,7 @@ async function enviar(textoUsuario, opcoes = {}) {
   salvarConversas();
   if (conv === atual) { linha.replaceWith(desenharMsg(resposta)); rolarFim(); }
   modoVoz = false;
-  return resposta;
+  return Object.assign({ fecharDepois }, resposta);
 }
 
 function explicarErro(e) {
@@ -1382,6 +1493,8 @@ function abrirConfig() {
   $('#cfgPalavra').value = cfg.vozPalavra || '';
   $('#cfgVozResponder').checked = cfg.vozResponder !== false;
   $('#cfgVozVel').value = cfg.vozVelocidade || 1.05;
+  $('#cfgSilenciar').checked = cfg.bolhaSilenciar !== false;
+  atualizarBolhaUI();
   $('#cfgGithub').value = cfg.github || '';
   $('#cfgRepoJogos').value = cfg.repoJogos || '';
   $('#cfgRepoPrivado').checked = !!cfg.repoPrivado;
@@ -1419,6 +1532,8 @@ $('#salvarCfg').onclick = () => {
   cfg.vozPalavra = $('#cfgPalavra').value.trim();
   cfg.vozResponder = $('#cfgVozResponder').checked;
   cfg.vozVelocidade = +$('#cfgVozVel').value || 1.05;
+  cfg.bolhaSilenciar = $('#cfgSilenciar').checked;
+  sincronizarNativo();
   if (provEditando === 'local') cfg.pesquisaLocal = $('#cfgPesquisaLocal').checked;
   cfg.github = $('#cfgGithub').value.trim();
   cfg.repoJogos = $('#cfgRepoJogos').value.trim() || 'nexo-jogos';
@@ -1506,6 +1621,33 @@ addEventListener('resize', () => {
 elEnviar.addEventListener('mousedown', e => e.preventDefault());
 elEnviar.addEventListener('pointerdown', e => e.preventDefault());
 
+// ---------- assistente flutuante (bolha) — só no APK nativo ----------
+function sincronizarNativo() {
+  if (!window.NexoNativo) return;
+  try { NexoNativo.salvarConfig(nomeIA(), (cfg.vozPalavra || '').trim() || nomeIA(), cfg.bolhaSilenciar !== false); } catch (e) { /* ok */ }
+}
+function atualizarBolhaUI() {
+  const nat = !!window.NexoNativo && !(window.Voz && Voz.BOLHA);
+  $('#secBolha').style.display = nat ? '' : 'none';
+  if (!nat) return;
+  const ligada = NexoNativo.bolhaLigada();
+  $('#estadoBolha').textContent = ligada ? `✔ Ligada: diga "${(cfg.vozPalavra || '').trim() || nomeIA()}" com a tela acesa, em qualquer app.` : 'Desligada.';
+  $('#btnBolha').textContent = ligada ? '⏹ Desligar o assistente flutuante' : '🫧 Ligar o assistente flutuante';
+}
+window.aoEventoBolha = t => {
+  if (t === 'sobreposicao') avisar('Ative "Exibir sobre outros apps" para o Nexo na tela que abriu e depois volte para o Nexo.');
+  else if (t === 'ligada') aviso('Assistente flutuante ligado');
+  else if (/^erro/.test(t)) avisar('Não consegui ligar: ' + t);
+  setTimeout(atualizarBolhaUI, 300);
+};
+$('#btnBolha').onclick = () => {
+  sincronizarNativo();
+  if (NexoNativo.bolhaLigada()) NexoNativo.desligarBolha(); else NexoNativo.ligarBolha();
+  setTimeout(atualizarBolhaUI, 800);
+};
+$('#btnPermXiaomi').onclick = () => NexoNativo.permissoesExtras();
+sincronizarNativo();
+
 // ---------- versão, novidades e aviso de atualização ----------
 const VERSAO = (window.NOVIDADES || [{ versao: '?', codigo: 0, nome: '' }])[0];
 const URL_ATUALIZACAO = 'https://github.com/josearmandosouzaconrado-ctrl/J/releases/download/nexo-ultima/';
@@ -1534,24 +1676,25 @@ async function procurarAtualizacao(mostrarSempre) {
     if (est) est.innerHTML = `🎁 Nova versão: <b>${esc(n.versao)} "${esc(n.nome)}"</b> — <a href="${URL_ATUALIZACAO}NexoIA.apk">baixar</a>`;
   } catch (e) { if (est) est.textContent = 'Não consegui verificar agora (' + e.message + ').'; }
 }
-$('#dicaVoz').textContent = (window.SpeechRecognition || window.webkitSpeechRecognition)
+$('#dicaVoz').textContent = (window.Voz && Voz.podeOuvir) || window.NexoNativo || (window.SpeechRecognition || window.webkitSpeechRecognition)
   ? 'Toque em 🎙️ (ao lado da caixa de texto) para conversar falando, como um assistente pessoal. O 🎤 dita uma frase.'
   : 'A voz funciona no site do Nexo aberto no Google Chrome (o app em APK não tem reconhecimento de voz). Site: https://josearmandosouzaconrado-ctrl.github.io/J/';
-if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) $('#btnJarvis').classList.add('semVoz');
+
 $('#versaoAtual').textContent = `Você está na versão ${VERSAO.versao} — "${VERSAO.nome}"`;
 $('#verNovidades').onclick = () => avisar(textoNovidades(window.NOVIDADES || []));
 $('#checarAtualizacao').onclick = () => procurarAtualizacao(true);
 // mostra uma vez as novidades depois de atualizar
 (function () {
   const vista = carregar('nexo_versao_vista', 0);
+  if (NA_BOLHA) return;
   if (vista && vista < VERSAO.codigo) setTimeout(() => avisar(`Atualizado para ${VERSAO.versao} — "${VERSAO.nome}"!\n\n` + VERSAO.itens.map(i => '• ' + i).join('\n')), 800);
   guardar('nexo_versao_vista', VERSAO.codigo);
 })();
-if (Date.now() - carregar('nexo_ultima_checagem', 0) > 6 * 3600e3) setTimeout(() => procurarAtualizacao(false), 2500);
+if (!NA_BOLHA && Date.now() - carregar('nexo_ultima_checagem', 0) > 6 * 3600e3) setTimeout(() => procurarAtualizacao(false), 2500);
 
 // ---------- início ----------
 montarSugestoes();
 atual = conversas.find(c => c.msgs.length) || null;
 if (atual && Date.now() - (atual.criada || 0) > 6 * 3600e3) atual = null;   // depois de um tempo abre uma conversa nova
 mostrarConversa();
-if (precisaConfigurar()) setTimeout(() => { abrirConfig(); aviso('Bem-vindo! Escolha a IA e cole a chave'); }, 400);
+if (!NA_BOLHA && precisaConfigurar()) setTimeout(() => { abrirConfig(); aviso('Bem-vindo! Escolha a IA e cole a chave'); }, 400);
