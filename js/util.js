@@ -1,6 +1,6 @@
 'use strict';
 // rodando dentro do aplicativo Android (APK)?
-const GAME_VERSION = '0.62.2';
+const GAME_VERSION = '0.63.0';
 const IS_APK = /EldoriaAPK/.test(navigator.userAgent);
 // versão ADM (painel de testes): APK 'Eldoria ADM' ou o endereço com ?adm
 const IS_ADM = /EldoriaADM/.test(navigator.userAgent) || /[?&]adm\b/.test(location.search);
@@ -160,4 +160,6 @@ let _uid = 1;
 function uid() { return (Date.now().toString(36) + (_uid++).toString(36) + Math.floor(Math.random() * 1e6).toString(36)); }
 function cap(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+const ESTRADA_AGUA_MAX = 16;   // uma estrada atravessa no máximo isso de água seguida (rio vira ponte; mar não)
+const CHUNK_LARG = 4096;   // chave dos trechos do mundo: cy * CHUNK_LARG + cx (o mundo tem bem menos que 4096 trechos de largura)
 function tkey(x, y) { return x + ',' + y; }

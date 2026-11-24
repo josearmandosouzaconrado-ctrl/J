@@ -43,7 +43,7 @@ const Fazendas = {
     for (const l of [W.dungeons, W.pois]) for (const o of l) if (o.x > x0 - 8 && o.x < x0 + FW + 8 && o.y > y0 - 8 && o.y < y0 + FH + 8) return false;
     for (let y = y0; y < y0 + FH; y += 3) for (let x = x0; x < x0 + FW; x += 3) {
       const t = W.baseTile(x, y); if (!FAZ_TERRA.has(t) || W._e > 0.66) return false;
-      if (W.roadTiles.has(tkey(x, y))) return false;
+      if (Gestao.ehEstrada(W, x, y)) return false;
     }
     return true;
   },

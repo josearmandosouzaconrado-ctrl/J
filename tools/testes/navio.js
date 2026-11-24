@@ -10,7 +10,7 @@ const { chromium } = require('playwright');
   const r = await p.evaluate(() => new Promise(ok => {
     const W = Game.world, de = W.ports[0], para = W.ports.find(q => q !== de && q.port.cont === de.port.cont) || W.ports[1];
     const antes = W.mapDone; let pior = 0, ult = performance.now(); const T0 = ult;
-    const T = performance.now(); const npc = Game.actors.find(a => a.team === 'npc' && a.look && a.look.k === 'hum') || Game.actors.find(a => a.look); Game.voyage(de, para, { name: 'Capitão', look: npc.look }); const chamada = performance.now() - T;
+    const T = performance.now(); const npc = Game.actors.find(a => a.team === 'npc' && a.look && a.look.k === 'hum') || Game.actors.find(a => a.look) || Game.player; Game.voyage(de, para, { name: 'Capitão', look: npc.look }); const chamada = performance.now() - T;
     const f = () => { const t = performance.now(); pior = Math.max(pior, t - ult); ult = t; const navio = !!(Game.level && Game.level.isShip);
       if (navio || t - T0 > 90000) setTimeout(() => ok({ antes, chamada, pior, navio, s: ((performance.now() - T0) / 1000).toFixed(1) }), 500); else requestAnimationFrame(f); };
     requestAnimationFrame(f); }));

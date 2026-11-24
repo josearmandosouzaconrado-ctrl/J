@@ -293,9 +293,11 @@ class World {
   }
 
   // ---------- Chunks ----------
-  ckey(cx, cy) { return cy * 1024 + cx; }
+  // número de cada trecho de 32x32. O mundo tem até 1.698 trechos de largura: com "* 1024" os trechos do
+  // leste (quase toda Aurévia) ganhavam o número de outro lugar e as estradas deles iam parar no meio do mar.
+  ckey(cx, cy) { return cy * CHUNK_LARG + cx; }
   getChunk(cx, cy) {
-    const k = cy * 1024 + cx;
+    const k = this.ckey(cx, cy);
     let ch = this.chunks.get(k);
     if (ch) { ch.t = this.tick; return ch; }
     ch = this.genChunk(cx, cy);
@@ -307,7 +309,7 @@ class World {
   evictChunks() {
     // tira da memória os trechos usados há mais tempo, mas nunca os que estão perto do herói (senão a tela some)
     const P = Game.player, pcx = P ? Math.floor(P.x / 512) : -99, pcy = P ? Math.floor(P.y / 512) : -99;
-    const arr = [...this.chunks.entries()].filter(([k]) => { const cx = k % 1024, cy = Math.floor(k / 1024); return Math.abs(cx - pcx) > 2 || Math.abs(cy - pcy) > 2; }).sort((a, b) => a[1].t - b[1].t);
+    const arr = [...this.chunks.entries()].filter(([k]) => { const cx = k % CHUNK_LARG, cy = Math.floor(k / CHUNK_LARG); return Math.abs(cx - pcx) > 2 || Math.abs(cy - pcy) > 2; }).sort((a, b) => a[1].t - b[1].t);
     for (let i = 0; i < Math.min(120, arr.length); i++) { this.chunks.delete(arr[i][0]); this.dropCanvas(arr[i][0]); }
   }
   // as imagens do chão (512x512) são reaproveitadas em vez de criar uma nova a cada trecho
@@ -325,7 +327,7 @@ class World {
       tiles[i] = this.baseTile(x0 + lx, y0 + ly);
       reg[i] = this._r;
     }
-    const k = cy * 1024 + cx;
+    const k = this.ckey(cx, cy);
     const roads = this.roadTiles.get(k);
     const isRoad = new Uint8Array(1024);
     if (roads) for (const i of roads) {
@@ -1376,11 +1378,57 @@ class World {
     for (const e of edges) {
       const ga = this.closestGate(e.a, e.b), gb = this.closestGate(e.b, e.a);
       const pts = [[ga.x, ga.y], [gb.x, gb.y]];
-      const path = this.wiggle(pts[0], pts[1], rng, 0);
+      // estrada não cruza o mar: com mais de ESTRADA_AGUA_MAX quadradinhos de água seguidos, tenta outros traçados
+      // (contornando lagos e baías); se nenhum servir, a ligação fica só por navio. Pontes curtas sobre rios continuam.
+      let path = null;
+      for (let t = 0; t < 6 && !path; t++) { const c = this.wiggle(pts[0], pts[1], rng, t ? -1 - t : 0); if (this.maiorTrechoDeAgua(c) <= ESTRADA_AGUA_MAX) path = c; }
+      if (!path) continue;
       // conecta ao portão em linha reta a partir da saída
       for (let i = 0; i < path.length - 1; i++) this.rasterRoad(path[i][0], path[i][1], path[i + 1][0], path[i + 1][1], e.w);
       this.extendGate(ga, e.w); this.extendGate(gb, e.w);
     }
+    this.ligarIsoladas(rng, S);
+  }
+  // cidades e portos que ficaram sem estrada (a ligação da região cruzava o mar): liga à cidade mais
+  // próxima que dá para alcançar por terra, de qualquer região. Enseadas de piratas ficam escondidas.
+  temEstradaPerto(s) {
+    const L = s.gates && s.gates.length ? s.gates : [{ x: s.x, y: s.y }];
+    for (const g of L) for (let dy = -8; dy <= 8; dy++) for (let dx = -8; dx <= 8; dx++) {
+      const x = g.x + dx, y = g.y + dy, r = this.roadTiles.get(this.ckey(x >> 5, y >> 5));
+      if (r && r.has(((y & 31) << 5) | (x & 31))) return true;
+    }
+    return false;
+  }
+  ligarIsoladas(rng, S) {
+    for (const s of S) {
+      if (s.type === 'enseada' || this.temEstradaPerto(s)) continue;
+      const cands = this.settlements.filter(o => o !== s && o.type !== 'enseada' && contAt(o.x, o.y) === contAt(s.x, s.y))
+        .map(o => [o, dist(o.x, o.y, s.x, s.y)]).filter(([, d]) => d < 2600).sort((a, b) => a[1] - b[1]).slice(0, 8);
+      for (const [o] of cands) {
+        const ga = this.closestGate(s, o), gb = this.closestGate(o, s);
+        let path = null;
+        for (let t = 0; t < 4 && !path; t++) { const c = this.wiggle([ga.x, ga.y], [gb.x, gb.y], rng, t ? -1 - t : 0); if (this.maiorTrechoDeAgua(c) <= ESTRADA_AGUA_MAX) path = c; }
+        if (!path) continue;
+        for (let i = 0; i < path.length - 1; i++) this.rasterRoad(path[i][0], path[i][1], path[i + 1][0], path[i + 1][1], 2);
+        this.extendGate(ga, 2); this.extendGate(gb, 2);
+        (this.roadEdges || (this.roadEdges = [])).push({ a: s, b: o, w: 2 });
+        break;
+      }
+    }
+  }
+  maiorTrechoDeAgua(path) {
+    let maior = 0, agora = 0;
+    for (let i = 0; i < path.length - 1; i++) {
+      let [x, y] = path[i].map(Math.round); const [x1, y1] = path[i + 1].map(Math.round);
+      const dx = Math.abs(x1 - x), dy = -Math.abs(y1 - y), sx = x < x1 ? 1 : -1, sy = y < y1 ? 1 : -1; let err = dx + dy;
+      for (let n = 0; n < 20000; n++) {
+        const t = this.baseTile(x, y);
+        if (TWATER[t] || t === T.DEEP) { if (++agora > maior) maior = agora; } else agora = 0;
+        if (x === x1 && y === y1) break;
+        const e2 = 2 * err; if (e2 >= dy) { err += dy; x += sx; } if (e2 <= dx) { err += dx; y += sy; }
+      }
+    }
+    return maior;
   }
   extendGate(g, w) {
     if (g.gx === undefined) return;
@@ -1401,11 +1449,12 @@ class World {
     if (len < 28 || depth > 7) return [a, b];
     const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
     const nx = -(b[1] - a[1]) / len, ny = (b[0] - a[0]) / len;
-    let off = rng.range(-0.18, 0.18) * len;
+    const larga = depth < 0 ? 1 + (-depth) * 0.15 : 1; if (depth < 0) depth = 0;   // novas tentativas: desvios maiores
+    let off = rng.range(-0.18, 0.18) * len * larga;
     // evita água/montanha: testa alguns deslocamentos
     let best = off, bestScore = -1;
     for (let k = 0; k < 5; k++) {
-      const o = k === 0 ? off : rng.range(-0.25, 0.25) * len;
+      const o = k === 0 ? off : rng.range(-0.25, 0.25) * len * larga;
       const px = Math.round(mx + nx * o), py = Math.round(my + ny * o);
       const t = this.baseTile(px, py);
       const score = (TSOLID[t] ? 0 : TWATER[t] ? 1 : t === T.LAVA ? 0 : 3) - Math.abs(o) / len;
@@ -1520,7 +1569,7 @@ class World {
   estradasNoMapa() {
     const st = this.mapStep || 16, cel = new Uint8Array(MAP_W * MAP_H), L = [];
     for (const [k, set] of this.roadTiles) {
-      const cx = k % 1024, cy = Math.floor(k / 1024);
+      const cx = k % CHUNK_LARG, cy = Math.floor(k / CHUNK_LARG);
       for (const i of set) {
         const mx = Math.floor((cx * 32 + (i & 31)) / st), my = Math.floor((cy * 32 + (i >> 5)) / st), j = my * MAP_W + mx;
         if (mx < 0 || my < 0 || mx >= MAP_W || my >= MAP_H || cel[j]) continue;
