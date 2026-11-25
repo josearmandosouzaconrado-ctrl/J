@@ -173,6 +173,7 @@ function sair(c) {
 }
 const online = () => [...conexoes].filter(c => c.p);
 const porId = id => online().find(c => c.p.id === id);
+const REL_TIPOS = new Set(['namoro', 'namoroR', 'carinho', 'casar', 'casarR', 'filho', 'filhoR', 'fim']);
 const limpa = (s, n) => String(s || '').replace(/[<>\u0000-\u001f]/g, '').trim().slice(0, n);
 const num = (v, a, b) => { v = Number(v); return Number.isFinite(v) ? Math.max(a, Math.min(b, v)) : a; };
 const publico = p => ({ id: p.id, nome: p.nome, st: p.st, look: p.look, w: p.w, reino: p.reino, cor: p.cor, vila: p.vila, abates: sala.abates[p.pid] || 0 });
@@ -242,6 +243,13 @@ function receber(c, m) {
       const alvo = porId(m.to); if (!alvo || alvo === c || emGuerra(p.pid, alvo.p.pid)) return;
       sala.guerras.push({ k: chave(p.pid, alvo.p.pid), a: p.pid, b: alvo.p.pid, desde: agora, placar: {} }); salvar();
       return todos({ t: 'guerra', a: p.id, b: alvo.p.id, an: p.reino || p.nome, bn: alvo.p.reino || alvo.p.nome });
+    }
+    // namoro, casamento e filhos entre jogadores: mensagem particular, só para o outro jogador
+    case 'rel': {
+      const alvo = porId(m.to); if (!alvo || alvo === c || !REL_TIPOS.has(m.k)) return;
+      if (agora - (c.relT || 0) < 400) return; c.relT = agora;
+      const d = m.d && typeof m.d === 'object' && JSON.stringify(m.d).length < 3000 ? m.d : {};
+      return enviar(alvo, { t: 'rel', from: p.id, nome: p.nome, k: m.k, d });
     }
     case 'paz': { const alvo = porId(m.to); if (alvo && emGuerra(p.pid, alvo.p.pid)) enviar(alvo, { t: 'pazPedido', from: p.id, nome: p.reino || p.nome }); return; }
     case 'pazR': {

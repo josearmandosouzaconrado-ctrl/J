@@ -240,6 +240,12 @@ const Sala = {
         this.dados.guerras.push({ k: this.chave(p.pid, alvo.p.pid), a: p.pid, b: alvo.p.pid, desde: agora, placar: {} }); this.salvar();
         return this.todos({ t: 'guerra', a: p.id, b: alvo.p.id, an: p.reino || p.nome, bn: alvo.p.reino || alvo.p.nome });
       }
+      case 'rel': {
+        const alvo = this.porId(m.to); if (!alvo || alvo === c || !['namoro', 'namoroR', 'carinho', 'casar', 'casarR', 'filho', 'filhoR', 'fim'].includes(m.k)) return;
+        if (agora - (c.relT || 0) < 400) return; c.relT = agora;
+        const d = m.d && typeof m.d === 'object' && JSON.stringify(m.d).length < 3000 ? m.d : {};
+        return this.enviar(alvo, { t: 'rel', from: p.id, nome: p.nome, k: m.k, d });
+      }
       case 'paz': { const alvo = this.porId(m.to); if (alvo && this.emGuerra(p.pid, alvo.p.pid)) this.enviar(alvo, { t: 'pazPedido', from: p.id, nome: p.reino || p.nome }); return; }
       case 'pazR': {
         const alvo = this.porId(m.to); if (!alvo || !this.emGuerra(p.pid, alvo.p.pid)) return;
