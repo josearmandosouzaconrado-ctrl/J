@@ -287,8 +287,7 @@ class SalaoJarl {
     if (!this.hrim || x < 0 || y < 0 || x > HRIM.x + HRIM.rx + 30 || y > HRIM_PONTE.y1 + HRIM_PONTE.r + 10) return t;
     return Hrimgard.tile(this, x, y, t);
   };
-  const gs0 = World.prototype.generateSites;
-  World.prototype.generateSites = function () { gs0.call(this); try { Hrimgard.gerar(this); } catch (e) { console.error('hrimgard', e); this.hrim = null; } };
+  (World.depois = World.depois || []).push(['hrimgard', W => { try { Hrimgard.gerar(W); } catch (e) { console.error('hrimgard', e); W.hrim = null; } }]);
   // desenho, interação e o tique de 1 segundo vão junto com os da alcateia Nyxar
   const nd0 = Nyxar.drawables; Nyxar.drawables = function () { nd0.apply(this, arguments); Hrimgard.drawables.apply(Hrimgard, arguments); };
   const nf0 = Nyxar.findInteract; Nyxar.findInteract = function (fx, fy) { const a = nf0.apply(this, arguments), b = Hrimgard.findInteract(fx, fy); return !a ? b : !b ? a : (b.d < a.d ? b : a); };

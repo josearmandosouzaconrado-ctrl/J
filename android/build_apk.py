@@ -37,8 +37,8 @@ OUT = os.path.join(ROOT, 'CronicasDeEldoria-ADM.apk' if ADM else 'CronicasDeEldo
 PACKAGE = 'com.eldoria.cronicas2.adm' if ADM else 'com.eldoria.cronicas2'
 APP_NAME = 'Eldoria ADM (novo)' if ADM else 'Eldoria (novo)'
 UA_TAG = ' EldoriaAPK EldoriaADM' if ADM else ' EldoriaAPK'
-VERSION_CODE = 102
-VERSION_NAME = '0.68.0-beta'
+VERSION_CODE = 103
+VERSION_NAME = '0.69.0-beta'
 SIGN_DIR = 'signing'
 CERT_NOME = 'Cronicas de Eldoria'
 if MIAMI:
@@ -579,6 +579,10 @@ def main_leve():
     pag = open(os.path.join(HERE, 'leve.html'), encoding='utf-8').read()
     dec = enxugar_js(open(os.path.join(ROOT, 'tools', 'unlzma.js'), encoding='utf-8').read())
     pag = pag.replace('/*UNLZMA*/', dec).replace('/*ADM*/false', 'true' if ADM else 'false')
+    # a tela de download usa a mesma cena e a mesma fonte do jogo
+    import base64
+    pag = pag.replace('/*CENA*/', enxugar_js(open(os.path.join(ROOT, 'js', 'cena_carga.js'), encoding='utf-8').read()))
+    pag = pag.replace('/*FONTE*/', base64.b64encode(open(os.path.join(ROOT, 'css', 'fonts', 'VT323-Regular.ttf'), 'rb').read()).decode())
     pag = pag.replace("/*BASES*/['https://raw.githubusercontent.com/josearmandosouzaconrado-ctrl/J/HEAD/']", json.dumps(LEVE_BASES))
     icon = os.path.join(ROOT, 'icons', 'icon-adm-192.png' if ADM else 'icon-192.png')
     buf = io.BytesIO()

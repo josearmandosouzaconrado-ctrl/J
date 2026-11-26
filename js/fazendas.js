@@ -124,8 +124,7 @@ const Fazendas = {
 };
 // ---------- ganchos ----------
 (function () {
-  const g0 = World.prototype.generateSites;
-  World.prototype.generateSites = function () { g0.apply(this, arguments); try { Fazendas.gerar(this); } catch (e) { console.warn('Fazendas', e); this.fazendas = []; } };
+  (World.depois = World.depois || []).push(['fazendas', W => { try { Fazendas.gerar(W); } catch (e) { console.warn('Fazendas', e); W.fazendas = []; } }]);
   const b0 = World.prototype.buildingsInView;
   World.prototype.buildingsInView = function (x0, y0, x1, y1) {
     const out = b0.call(this, x0, y0, x1, y1);

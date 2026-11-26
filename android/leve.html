@@ -6,23 +6,27 @@
 <meta name="theme-color" content="#140c1c">
 <title>Crônicas de Eldoria</title>
 <style>
-html,body{margin:0;height:100%;background:#140c1c;color:#f2e6cc;font-family:monospace}
-#leve{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:16px;box-sizing:border-box}
-#leve h1{margin:0;font-size:30px;color:#ffd070;letter-spacing:1px}
-#leve .barra{width:min(440px,80vw);height:14px;border:2px solid #c8a050;background:#000}
-#leve .barra>div{height:100%;width:0;background:#e0b040;transition:width .2s}
-#leve button{font:inherit;font-size:16px;padding:8px 18px;background:#3a2a18;color:#ffd070;border:2px solid #c8a050}
-#leve-det{font-size:12px;opacity:.75;max-width:520px}
+@font-face{font-family:VT323;src:url(data:font/ttf;base64,/*FONTE*/) format('truetype')}
+html,body{margin:0;height:100%;background:#140c24;color:#f2e6cc;font-family:VT323,monospace;overflow:hidden}
+#leve{position:fixed;inset:0;overflow:hidden}
+#leve canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}
+.logo{position:absolute;left:0;right:0;top:5%;text-align:center;font-size:clamp(34px,7.5vw,72px);line-height:.9;color:#f0c040;text-shadow:3px 3px 0 #5a1a10,6px 6px 0 #000;letter-spacing:2px}
+.logo small{display:block;font-size:.36em;color:#f2e6cc;letter-spacing:5px;text-shadow:2px 2px 0 #000;margin-top:4px}
+.baixo{position:absolute;left:50%;bottom:max(12px,3%);transform:translateX(-50%);width:min(620px,88%);text-align:center}
+#leve-msg{font-size:clamp(22px,3.6vw,30px);color:#ffe8a0;text-shadow:2px 2px 0 #000}
+#leve-det{font-size:clamp(16px,2.6vw,20px);color:#e0d0b8;text-shadow:1px 1px 0 #000;min-height:1.2em;margin:2px 0 6px}
+.barra{position:relative;height:18px;border:3px solid #c8a050;box-shadow:0 0 0 2px #2a1a10,inset 0 0 0 2px #000,0 4px 0 rgba(0,0,0,.5);background:#1a0e14;overflow:hidden}
+#leve-fill{position:absolute;left:0;top:0;bottom:0;width:100%;transform-origin:left;transform:scaleX(0);background:linear-gradient(#ffe080,#f0b030 45%,#c07018);transition:transform .25s steps(6)}
+.brilho{position:absolute;top:0;bottom:0;width:28%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);animation:br 1.6s linear infinite}
+@keyframes br{from{transform:translateX(-120%)}to{transform:translateX(420%)}}
+#leve-pct{position:absolute;right:6px;top:-1px;font-size:16px;color:#fff;text-shadow:1px 1px 0 #000}
+#leve-dica{margin-top:10px;font-size:clamp(15px,2.4vw,19px);color:#d8c8a8;background:rgba(10,6,16,.72);border:2px solid #5a4030;padding:6px 10px;min-height:2.4em}
+#leve-dica b{color:#f0c040}
+#leve-bt{margin-top:8px;font:inherit;font-size:20px;padding:6px 20px;background:#3a2a18;color:#ffd070;border:3px solid #c8a050;box-shadow:0 3px 0 #000}
 </style>
 </head>
 <body>
-<div id="leve">
-  <h1>Crônicas de Eldoria</h1>
-  <div id="leve-msg">Preparando...</div>
-  <div class="barra"><div id="leve-fill"></div></div>
-  <div id="leve-det"></div>
-  <button id="leve-bt" style="display:none">Tentar de novo</button>
-</div>
+<div id="leve"></div>
 <script>
 'use strict';
 // =====================================================================
@@ -33,11 +37,22 @@ html,body{margin:0;height:100%;background:#140c1c;color:#f2e6cc;font-family:mono
 // =====================================================================
 /*UNLZMA*/
 (function () {
+/*CENA*/
   const ADM = /*ADM*/false;
   const BASES = /*BASES*/['https://raw.githubusercontent.com/josearmandosouzaconrado-ctrl/J/HEAD/'];
   const $ = id => document.getElementById(id);
+  // a tela: a mesma cena e a mesma barra do jogo (js/cena_carga.js)
+  const montar = () => {
+    const el = $('leve') || document.body.appendChild(Object.assign(document.createElement('div'), { id: 'leve' }));
+    el.innerHTML = '<canvas></canvas><div class="logo">Crônicas de Eldoria<small>bem-vindo(a)!</small></div><div class="baixo"><div id="leve-msg">Preparando...</div><div id="leve-det"></div><div class="barra"><div id="leve-fill"></div><div class="brilho"></div><div id="leve-pct"></div></div><div id="leve-dica"></div><button id="leve-bt" style="display:none">Tentar de novo</button></div>';
+    CenaCarga.animar(el.querySelector('canvas'));
+    let i = Math.floor(Math.random() * DICAS_CARGA.length);
+    const dica = () => { const d = $('leve-dica'); if (!d) return clearInterval(t); i = (i + 1) % DICAS_CARGA.length; d.innerHTML = '<b>Dica:</b> ' + DICAS_CARGA[i]; };
+    const t = setInterval(dica, 5500); dica();
+  };
+  montar();
   const msg = (t, d) => { $('leve-msg').textContent = t; if (d !== undefined) $('leve-det').textContent = d; };
-  const barra = k => { $('leve-fill').style.width = Math.round(Math.max(0, Math.min(1, k)) * 100) + '%'; };
+  const barra = k => { k = Math.max(0, Math.min(1, k)); $('leve-fill').style.transform = 'scaleX(' + k + ')'; $('leve-pct').textContent = Math.floor(k * 100) + '%'; };
   const kb = n => n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.round(n / 1024) + ' KB';
   // ---------- guardar no aparelho (IndexedDB; sem ele, só na memória) ----------
   let db = null; const mem = new Map();
@@ -117,7 +132,7 @@ html,body{margin:0;height:100%;background:#140c1c;color:#f2e6cc;font-family:mono
       setTimeout(() => atualizar(m, false), 15000);
     } catch (e) {
       await apagar('_versao');
-      document.body.innerHTML = '<div id="leve"><h1>Crônicas de Eldoria</h1><div id="leve-msg"></div><div class="barra"><div id="leve-fill"></div></div><div id="leve-det"></div><button id="leve-bt" style="display:none">Tentar de novo</button></div>';
+      document.body.innerHTML = ''; montar();
       falhou('Não foi possível abrir o jogo', String(e && e.message || e));
     }
   }

@@ -29,7 +29,7 @@ const ORE_BY_REGION = {
 };
 
 class World {
-  constructor(seed) {
+  constructor(seed, adiar) {
     this.seed = seed | 0;
     this.isWorld = true;
     this.nE = new Simplex(seed * 7 + 1); this.nM = new Simplex(seed * 7 + 2); this.nW = new Simplex(seed * 7 + 3);
@@ -46,9 +46,8 @@ class World {
     this.doors = new Map(); this.entrances = new Map(); this.signs = new Map(); this.poiAt = new Map();
     this.roadTiles = new Map(); this.stampIndex = new Map(); this.homes = [];
     this.mods = null; // estado de modificações (baús abertos etc.), injetado pelo jogo
-    const t0 = performance.now();
-    this.generateSites();
-    this.genTime = performance.now() - t0;
+    // adiar: o jogo cria o mundo aos poucos (World.etapas), mostrando o progresso na tela de carregamento
+    if (!adiar) { const t0 = performance.now(); this.generateSites(); this.genTime = performance.now() - t0; }
   }
 
   // ---------- Amostragem do terreno ----------
@@ -519,7 +518,10 @@ class World {
   }
   farFrom(x, y, list, d) { for (const o of list) if (Math.abs(o.x - x) < d && Math.abs(o.y - y) < d && dist(o.x, o.y, x, y) < d) return false; return true; }
 
-  generateSites() {
+  generateSites() { for (const _ of this.etapas()) { /* tudo de uma vez */ } }
+  // a criação do mundo em etapas: cada "yield" é uma pausa em que a tela de carregamento anda
+  *etapas() {
+    yield ['cidades', 0];
     const rng = new RNG(this.seed * 31 + 17);
     const all = [];
     let sid = 0;
@@ -553,7 +555,9 @@ class World {
         all.push(s); this.settlements.push(s);
       }
     }
-    for (const s of this.settlements) this.layoutSettlement(s);
+    yield ['layout', 0];
+    { let i = 0; for (const s of this.settlements) { this.layoutSettlement(s); if (++i % 8 === 0) yield ['layout', i / this.settlements.length]; } }
+    yield ['masmorras', 0];
     // ---- Masmorras únicas
     let did = 0;
     const dungeonList = [];
@@ -587,6 +591,7 @@ class World {
     }
     for (const d of dungeonList) { this.stampDungeon(d); this.dungeons.push(d); }
     this.dungeonById = {}; for (const d of this.dungeons) this.dungeonById[d.id] = d;
+    yield ['pois', 0];
     // ---- Acampamentos, pedras rúnicas e santuários
     let pid = 0;
     for (const R of this.regions) {
@@ -617,14 +622,14 @@ class World {
     });
     this.placeAcademy();
     // ---- Estradas
+    yield ['estradas', 0];
     this.buildRoads(rng);
     this.placeDestiny();
-    this.generateKaeloria();
-    this.generateValtheria();
-    this.generateIsland();
-    this.generateElyndra();
-    if (this.generatePindorama) this.generatePindorama();
-    if (this.generateAurevia) this.generateAurevia();
+    yield ['kaeloria', 0]; this.generateKaeloria();
+    yield ['valtheria', 0]; this.generateValtheria();
+    yield ['elyndra', 0]; this.generateIsland(); this.generateElyndra();
+    if (this.generatePindorama) { yield ['pindorama', 0]; this.generatePindorama(); }
+    if (this.generateAurevia) { yield ['aurevia', 0]; this.generateAurevia(); }
     // placas
     for (const s of this.settlements) {
       for (const g of s.gates) {
@@ -634,6 +639,8 @@ class World {
         this.signs.set(tkey(sx, sy), s);
       }
     }
+    // o que os outros arquivos acrescentam depois (Hrimgard, fazendas, domínios nobres...)
+    for (const [k, fn] of (World.depois || [])) { yield [k, 0]; fn(this); }   // World.depois: [nome, função(mundo)]
   }
 
   // ---------- Kaeloria: o continente de além-mar ----------
@@ -1416,14 +1423,17 @@ class World {
       }
     }
   }
-  maiorTrechoDeAgua(path) {
-    let maior = 0, agora = 0;
+  // o maior trecho de água seguido no caminho (confere um ponto sim, outro não, e para assim que passa do limite)
+  maiorTrechoDeAgua(path, limite = ESTRADA_AGUA_MAX) {
+    let maior = 0, agora = 0, par = 0;
     for (let i = 0; i < path.length - 1; i++) {
       let [x, y] = path[i].map(Math.round); const [x1, y1] = path[i + 1].map(Math.round);
       const dx = Math.abs(x1 - x), dy = -Math.abs(y1 - y), sx = x < x1 ? 1 : -1, sy = y < y1 ? 1 : -1; let err = dx + dy;
       for (let n = 0; n < 20000; n++) {
-        const t = this.baseTile(x, y);
-        if (TWATER[t] || t === T.DEEP) { if (++agora > maior) maior = agora; } else agora = 0;
+        if ((par++ & 1) === 0) {
+          const t = this.baseTile(x, y);
+          if (TWATER[t] || t === T.DEEP) { agora += 2; if (agora > maior) { maior = agora; if (maior > limite) return maior; } } else agora = 0;
+        }
         if (x === x1 && y === y1) break;
         const e2 = 2 * err; if (e2 >= dy) { err += dy; x += sx; } if (e2 <= dx) { err += dx; y += sy; }
       }

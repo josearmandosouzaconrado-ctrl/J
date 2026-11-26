@@ -835,7 +835,7 @@ class NavioLevel extends ShipLevel {
   const P = World.prototype;
   P._base0 = P.baseTile;
   const nat0 = P.natObj, gen0 = P.generateSites;
-  P.generateSites = function () { gen0.call(this); try { Mar.gerarIlhas(this); } catch (e) { console.error('ilhas', e); this.ilhas = null; this.ilhaGrade = null; } };
+  (World.depois = World.depois || []).push(['ilhas', W => { try { Mar.gerarIlhas(W); } catch (e) { console.error('ilhas', e); W.ilhas = null; W.ilhaGrade = null; } }]);
   P.baseTile = function (x, y) {
     const t = this._base0(x, y);
     if (!this.ilhaGrade || (t !== T.DEEP && t !== T.WATER)) return t;

@@ -322,8 +322,7 @@ Sprites.extraBuilding.mansao = function (sp) {
 // ---------- ganchos ----------
 (function () {
   // criar os domínios e as mansões junto com o mundo (depois das fazendas)
-  const g0 = World.prototype.generateSites;
-  World.prototype.generateSites = function () { g0.apply(this, arguments); try { Dominios.gerar(this); } catch (e) { console.warn('Domínios', e); this.mansoes = []; } };
+  (World.depois = World.depois || []).push(['dominios', W => { try { Dominios.gerar(W); } catch (e) { console.warn('Domínios', e); W.mansoes = []; } }]);
   const b0 = World.prototype.buildingsInView;
   World.prototype.buildingsInView = function (x0, y0, x1, y1) {
     const out = b0.call(this, x0, y0, x1, y1);
