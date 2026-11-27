@@ -273,19 +273,11 @@ const UI = {
   },
   // espera o mapa-múndi (e a carta náutica dos navios) ficar pronto sem travar: monta aos poucos
   // (~25 ms por quadro) com uma barra de progresso e então chama fn. Já pronto: chama fn na hora.
+  // navios: a carta náutica precisa do mapa pronto; se faltar um pedaço, termina na hora (sem tela de espera)
   esperarMapa(titulo, fn) {
     const W = Game.world;
-    if (!W || W.mapDone) return fn();
-    this.dialog(titulo, null, `<div id="esp-mapa">Preparando a carta náutica... 0%</div><div style="height:10px;border:1px solid #c8a050;background:#000;margin-top:6px"><div id="esp-barra" style="height:100%;width:0;background:#e0b040"></div></div><div class="small dim" style="margin-top:6px">Só na primeira vez: depois fica guardada no aparelho.</div>`, []);
-    const passo = () => {
-      if (Game.world !== W) return;
-      W.stepMapImage(100000, 25);
-      const k = Math.floor(W.mapRow / MAP_H * 100), a = document.getElementById('esp-mapa'), b = document.getElementById('esp-barra');
-      if (!a && !W.mapDone) return;          // o jogador fechou a janela: desiste (o mapa continua sendo montado aos poucos no jogo)
-      if (a) a.textContent = 'Preparando a carta náutica... ' + k + '%'; if (b) b.style.width = k + '%';
-      if (W.mapDone) { this.close(); fn(); } else requestAnimationFrame(passo);
-    };
-    requestAnimationFrame(passo);
+    if (W && !W.mapDone) while (!W.mapDone) W.stepMapImage(100000);
+    return fn();
   },
   dialog(name, look, html, options) {
     const f = this.reg();
@@ -858,21 +850,8 @@ const UI = {
     const ox = cw / 2 - this.mox * z, oy = ch / 2 - this.moy * z;
     ctx.fillStyle = '#10182a'; ctx.fillRect(0, 0, cw, ch);
     ctx.imageSmoothingEnabled = false;
-    // mapa ainda não montado: monta aos poucos (cerca de 25 ms por quadro) mostrando o progresso,
-    // em vez de montar tudo de uma vez (isso travava o celular por vários segundos)
-    if (!W.mapDone) {
-      W.stepMapImage(100000, 25);
-      if (!W.mapDone) {
-        const k = W.mapRow / MAP_H, bw = Math.min(360, cw * 0.6), bx = (cw - bw) / 2, by = ch / 2;
-        ctx.font = '20px VT323, monospace'; ctx.textAlign = 'center'; ctx.fillStyle = '#f2e6cc';
-        ctx.fillText('Desenhando o mapa do mundo... ' + Math.floor(k * 100) + '%', cw / 2, by - 14);
-        ctx.fillStyle = '#000'; ctx.fillRect(bx, by, bw, 12); ctx.strokeStyle = '#c8a050'; ctx.strokeRect(bx, by, bw, 12);
-        ctx.fillStyle = '#e0b040'; ctx.fillRect(bx + 1, by + 1, (bw - 2) * k, 10);
-        ctx.font = '14px VT323, monospace'; ctx.fillStyle = 'rgba(242,230,204,0.6)'; ctx.fillText('Só na primeira vez: depois o mapa fica guardado no aparelho.', cw / 2, by + 34);
-        if (!this._mapAF) this._mapAF = requestAnimationFrame(() => { this._mapAF = 0; if (this.mcv === cv && cv.isConnected) this.drawMap(); });
-        return;
-      }
-    }
+    // o mapa é preparado no menu e durante o jogo; se ainda faltar um pedaço, termina na hora (sem tela de espera)
+    if (!W.mapDone) { while (!W.mapDone) W.stepMapImage(100000); }
     ctx.drawImage(W.mapCanvas, ox, oy, MAP_W * z, MAP_H * z);
     ctx.drawImage(this.fog, ox, oy, MAP_W * z, MAP_H * z);
     const toS = (tx, ty) => [ox + tx / 16 * z, oy + ty / 16 * z];

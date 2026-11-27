@@ -298,7 +298,7 @@ const Game = {
     if (this.state === 'title') { this.renderTitle(dt); return; }
     if (!this.started) return;
     // o mapa-múndi vai sendo montado com o tempo que sobra: menos ainda quando o aparelho está lento
-    if (this.world && !this.world.mapDone) this.world.stepMapImage(10, dt > 1 / 40 ? 0.8 : 2.5);
+    if (this.world && !this.world.mapDone) this.world.stepMapImage(40, dt > 1 / 40 ? 1 : 4);
     if (!this.paused && !this.player.dead) {
       if (this.hitstop > 0) this.hitstop -= dt;
       else this.update(dt);

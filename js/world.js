@@ -46,7 +46,7 @@ class World {
     this.doors = new Map(); this.entrances = new Map(); this.signs = new Map(); this.poiAt = new Map();
     this.roadTiles = new Map(); this.stampIndex = new Map(); this.homes = [];
     this.mods = null; // estado de modificações (baús abertos etc.), injetado pelo jogo
-    // adiar: o jogo cria o mundo aos poucos (World.etapas), mostrando o progresso na tela de carregamento
+    // adiar: o mundo é criado aos poucos (World.etapas), escondido, enquanto o jogador está no menu (js/preparo.js)
     if (!adiar) { const t0 = performance.now(); this.generateSites(); this.genTime = performance.now() - t0; }
   }
 
@@ -519,7 +519,7 @@ class World {
   farFrom(x, y, list, d) { for (const o of list) if (Math.abs(o.x - x) < d && Math.abs(o.y - y) < d && dist(o.x, o.y, x, y) < d) return false; return true; }
 
   generateSites() { for (const _ of this.etapas()) { /* tudo de uma vez */ } }
-  // a criação do mundo em etapas: cada "yield" é uma pausa em que a tela de carregamento anda
+  // a criação do mundo em etapas: cada "yield" é uma pausa (o menu continua leve enquanto o mundo é preparado)
   *etapas() {
     yield ['cidades', 0];
     const rng = new RNG(this.seed * 31 + 17);
